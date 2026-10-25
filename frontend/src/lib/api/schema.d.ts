@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria a conta do restaurante (teste grátis) */
+        post: operations["signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -28,6 +45,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Cadastro self-service do restaurante */
+        SignupRequest: {
+            /** @example Sakura Sushi */
+            establishmentName: string;
+            /** @example Marina Tanaka */
+            ownerName: string;
+            /**
+             * @description CPF ou CNPJ, com ou sem pontuação
+             * @example 11.222.333/0001-81
+             */
+            document: string;
+            /** @example (11) 98765-4321 */
+            whatsapp: string;
+            /**
+             * Format: email
+             * @example marina@sakurasushi.com.br
+             */
+            email: string;
+            /** @description Mínimo de 10 caracteres, com letras e números */
+            password: string;
+            /** @description Aceite dos termos de uso e da política de privacidade */
+            acceptedTerms: boolean;
+        };
         ProblemDetail: {
             /** Format: uri */
             type?: string;
@@ -40,6 +80,16 @@ export interface components {
             properties?: {
                 [key: string]: unknown;
             };
+        };
+        SignupResponse: {
+            /** Format: uuid */
+            organizationId: string;
+            /** Format: uuid */
+            establishmentId: string;
+            /** Format: uuid */
+            userId: string;
+            /** @example sakura-sushi */
+            slug: string;
         };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
@@ -103,6 +153,48 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    signup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupRequest"];
+            };
+        };
+        responses: {
+            /** @description Conta criada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupResponse"];
+                };
+            };
+            /** @description Dados inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description E-mail já cadastrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listPlans: {
         parameters: {
             query?: {
