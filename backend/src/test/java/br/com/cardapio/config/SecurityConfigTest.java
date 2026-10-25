@@ -61,4 +61,21 @@ class SecurityConfigTest {
                 .isNotEqualTo("<script>alert(1)</script>")
                 .matches("[A-Za-z0-9-]{8,64}");
     }
+
+    @Test
+    void swaggerIsPublicWithItsOwnCsp() {
+        var result = mvc.get().uri("/swagger-ui/index.html");
+        assertThat(result).hasStatusOk();
+        assertThat(result.exchange().getResponse().getHeader("Content-Security-Policy"))
+                .contains("style-src 'self' 'unsafe-inline'")
+                .contains("img-src 'self' data:");
+        assertThat(mvc.get().uri("/v3/api-docs")).hasStatusOk();
+    }
+
+    @Test
+    void apiKeepsStrictCsp() {
+        var result = mvc.get().uri("/api/v1/plans");
+        assertThat(result.exchange().getResponse().getHeader("Content-Security-Policy"))
+                .doesNotContain("unsafe-inline");
+    }
 }

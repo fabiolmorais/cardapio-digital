@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista os planos de assinatura (público) */
+        /**
+         * Lista os planos de assinatura
+         * @description Público, sem autenticação. Retorna os planos ativos na ordem de exibição. Preços em centavos; campos nulos significam "sob consulta" (preço) ou "ilimitado" (limites).
+         */
         get: operations["listPlans"];
         put?: never;
         post?: never;
@@ -25,6 +28,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
             /** Format: int32 */
@@ -90,7 +106,9 @@ export interface operations {
     listPlans: {
         parameters: {
             query?: {
+                /** @description Número da página, começando em 0 */
                 page?: number;
+                /** @description Itens por página (1 a 100) */
                 size?: number;
             };
             header?: never;
@@ -99,13 +117,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Página de planos */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponsePlan"];
+                };
+            };
+            /** @description Parâmetros de paginação inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

@@ -3,6 +3,7 @@ package br.com.cardapio.config;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,7 +24,32 @@ import java.util.List;
 @EnableConfigurationProperties(CorsProperties.class)
 class SecurityConfig {
 
+    /**
+     * Documentação da API (Swagger UI). A página do Swagger precisa de estilos inline e imagens
+     * embutidas, então recebe um CSP próprio, mais flexível, só nestas rotas.
+     * Em produção a documentação é desligada (OPENAPI_ENABLED=false).
+     */
     @Bean
+    @Order(1)
+    SecurityFilterChain apiDocsSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(b -> b.disable())
+                .formLogin(f -> f.disable())
+                .logout(l -> l.disable())
+                .headers(h -> h
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                                        + "frame-ancestors 'none'; object-src 'none'; base-uri 'none'"))
+                        .frameOptions(f -> f.deny()))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // API sem sessão; autenticação por token (etapa 2)
@@ -43,7 +69,6 @@ class SecurityConfig {
                                 .maxAgeInSeconds(Duration.ofDays(365).toSeconds())))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/plans").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
