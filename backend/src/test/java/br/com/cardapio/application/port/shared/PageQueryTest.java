@@ -1,4 +1,4 @@
-package br.com.cardapio.domain.shared.model;
+package br.com.cardapio.application.port.shared;
 
 import org.junit.jupiter.api.Test;
 

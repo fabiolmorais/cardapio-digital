@@ -1,8 +1,8 @@
 package br.com.cardapio.application.port.out.plan;
 
 import br.com.cardapio.domain.plan.model.Plan;
-import br.com.cardapio.domain.shared.model.PageQuery;
-import br.com.cardapio.domain.shared.model.ResultPage;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 
 /**
  * Planos são dados globais do sistema (não pertencem a um restaurante),

@@ -1,4 +1,4 @@
-package br.com.cardapio.domain.shared.model;
+package br.com.cardapio.application.port.shared;
 
 /**
  * Pedido de uma página de resultados. A primeira página é a 0.

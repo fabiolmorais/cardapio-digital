@@ -3,8 +3,8 @@ package br.com.cardapio.application.service.plan;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.domain.plan.model.Plan;
-import br.com.cardapio.domain.shared.model.PageQuery;
-import br.com.cardapio.domain.shared.model.ResultPage;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import org.springframework.transaction.annotation.Transactional;
 
 public class ListPlansService implements ListPlansUseCase {

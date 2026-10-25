@@ -2,7 +2,7 @@ package br.com.cardapio.adapter.in.web.plan;
 
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
-import br.com.cardapio.domain.shared.model.PageQuery;
+import br.com.cardapio.application.port.shared.PageQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

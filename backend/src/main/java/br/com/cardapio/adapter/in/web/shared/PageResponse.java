@@ -1,6 +1,6 @@
 package br.com.cardapio.adapter.in.web.shared;
 
-import br.com.cardapio.domain.shared.model.ResultPage;
+import br.com.cardapio.application.port.shared.ResultPage;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
