@@ -1,6 +1,6 @@
 package br.com.cardapio.adapter.out.security;
 
-import br.com.cardapio.application.port.out.account.PasswordHasher;
+import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.domain.account.model.PasswordHash;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;

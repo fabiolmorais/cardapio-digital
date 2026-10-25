@@ -7,7 +7,7 @@ import br.com.cardapio.domain.account.model.User;
 
 final class AccountPersistenceMapper {
 
-    public AccountPersistenceMapper() {
+    private AccountPersistenceMapper() {
     }
 
     static OrganizationJpaEntity toEntity(Organization o) {

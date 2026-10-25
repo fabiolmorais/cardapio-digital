@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "membership")
-public class MembershipJpaEntity {
+class MembershipJpaEntity {
 
     @Id
     private UUID id;

@@ -1,13 +1,9 @@
 package br.com.cardapio.domain.account.model;
 
-import br.com.cardapio.domain.shared.model.Document;
-import br.com.cardapio.domain.shared.model.Email;
-import br.com.cardapio.domain.shared.model.PhoneNumber;
-
 import java.util.Objects;
 
 /**
- * A conta que assina o serviço (dona de um ou mais estabelecimentos).
+ * O restaurante. É a unidade de separação de dados: tudo pertence a um estabelecimento.
  */
 public record Establishment(
         EstablishmentId id,

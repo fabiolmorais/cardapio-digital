@@ -4,7 +4,7 @@ import br.com.cardapio.application.port.in.account.SignupUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.out.account.LoadEstablishmentPort;
 import br.com.cardapio.application.port.out.account.LoadUserPort;
-import br.com.cardapio.application.port.out.account.PasswordHasher;
+import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.account.SaveAccountPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.service.account.SignupService;
