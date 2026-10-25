@@ -25,7 +25,7 @@ public record PlanResponse(
         @Schema(requiredMode = REQUIRED) SupportLevelDto support) {
 
     public enum PlanFeatureDto {
-        PRODUCT_VIDEOS, PREP_STATIONS, ROLES_AND_PERMISSIONS, ADVANCED_REPORTS, REPORT_EXPORT, MULTI_UNIT
+        PRODUCT_VIDEOS, PREP_STATIONS, ROLES_AND_PERMISSIONS, REPORTS, REPORT_EXPORT, MULTI_UNIT
     }
 
     public enum SupportLevelDto {
