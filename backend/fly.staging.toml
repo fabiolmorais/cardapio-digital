@@ -1,0 +1,29 @@
+# Staging no Fly.io (São Paulo). Segredos via `fly secrets set` (DB_URL, DB_PASSWORD, FLYWAY_PASSWORD, SENTRY_DSN...).
+app = "cardapio-api-staging"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SENTRY_ENVIRONMENT = "staging"
+  LOGGING_STRUCTURED_FORMAT_CONSOLE = "logstash"
+  OPENAPI_ENABLED = "true"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "15s"
+    timeout = "5s"
+    method = "GET"
+    path = "/actuator/health/readiness"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

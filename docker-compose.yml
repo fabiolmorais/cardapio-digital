@@ -1,0 +1,25 @@
+# Ambiente local de desenvolvimento.
+# As senhas vêm do arquivo .env (copie de .env.example).
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cardapio-postgres
+    environment:
+      POSTGRES_DB: cardapio
+      POSTGRES_USER: ${FLYWAY_USERNAME:?defina no .env}
+      POSTGRES_PASSWORD: ${FLYWAY_PASSWORD:?defina no .env}
+      APP_DB_USERNAME: ${DB_USERNAME:?defina no .env}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?defina no .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d cardapio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
