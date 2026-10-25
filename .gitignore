@@ -1,0 +1,30 @@
+# Documentação local (não versionar)
+/contexto/
+/especificacoes/
+/CLAUDE.md
+
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Back-end (Java/Maven)
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Front-end (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+next-env.d.ts
+
+# IDEs e sistema
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
