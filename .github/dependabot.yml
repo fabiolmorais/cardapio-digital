@@ -1,11 +1,26 @@
 version: 2
 updates:
+  # Atualizações pequenas (minor e patch) chegam agrupadas num PR por ecossistema.
+  # Versões maiores (major) chegam em PRs separados, para revisar com calma.
   - package-ecosystem: maven
     directory: /backend
     schedule: { interval: weekly }
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /frontend
     schedule: { interval: weekly }
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Os tipos do Node acompanham a versão usada no projeto (Node 22).
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions:
+        patterns: ["*"]

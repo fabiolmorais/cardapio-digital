@@ -123,17 +123,30 @@ jobs:
   dependency-check:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     defaults:
       run:
         working-directory: backend
     steps:
+      - name: Avisa se falta a chave da NVD
+        if: env.NVD_API_KEY == ''
+        run: echo "::warning title=Dependency-Check pulado::Cadastre o segredo NVD_API_KEY (grátis em https://nvd.nist.gov/developers/request-an-api-key) para verificar vulnerabilidades nas dependências do back-end."
       - uses: actions/checkout@v4
+        if: env.NVD_API_KEY != ''
       - uses: actions/setup-java@v4
+        if: env.NVD_API_KEY != ''
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Cache da base de vulnerabilidades (NVD)
+        if: env.NVD_API_KEY != ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: nvd-${{ runner.os }}-
       - name: OWASP Dependency-Check
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: ./mvnw -B org.owasp:dependency-check-maven:13.0.0:check -DfailBuildOnCVSS=7 -DnvdApiKey=$NVD_API_KEY
+        if: env.NVD_API_KEY != ''
+        run: ./mvnw -B org.owasp:dependency-check-maven:13.0.0:check -DfailBuildOnCVSS=7 -DnvdApiKey="$NVD_API_KEY"
