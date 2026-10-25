@@ -44,6 +44,19 @@ class PlanControllerTest {
     }
 
     @Test
+    void reportsAreOnlyInBusinessAndEnterprise() {
+        var result = mvc.get().uri("/api/v1/plans");
+
+        assertThat(result).bodyJson().extractingPath("$.content[0].features").asArray().doesNotContain("REPORTS");
+        assertThat(result).bodyJson().extractingPath("$.content[1].features").asArray()
+                .doesNotContain("REPORTS", "REPORT_EXPORT");
+        assertThat(result).bodyJson().extractingPath("$.content[2].features").asArray()
+                .contains("REPORTS", "REPORT_EXPORT");
+        assertThat(result).bodyJson().extractingPath("$.content[3].features").asArray()
+                .contains("REPORTS", "REPORT_EXPORT");
+    }
+
+    @Test
     void paginates() {
         var result = mvc.get().uri("/api/v1/plans?page=1&size=3");
 

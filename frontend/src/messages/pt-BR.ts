@@ -28,7 +28,7 @@ export const messages = {
       PRODUCT_VIDEOS: "Vídeos nos pratos",
       PREP_STATIONS: "Filas de cozinha e bar",
       ROLES_AND_PERMISSIONS: "Perfis e permissões",
-      ADVANCED_REPORTS: "Relatórios avançados",
+      REPORTS: "Relatórios de vendas, equipe e atendimento",
       REPORT_EXPORT: "Exportação de relatórios",
       MULTI_UNIT: "Várias unidades",
     },
