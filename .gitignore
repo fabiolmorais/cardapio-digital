@@ -2,6 +2,7 @@
 /contexto/
 /especificacoes/
 /CLAUDE.md
+/docs/guias/
 
 # Segredos
 .env
