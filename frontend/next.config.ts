@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Só em desenvolvimento: libera o acesso pelo IP da rede local (testar no celular).
+  allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
   turbopack: {
     rules: {
       "*.css": {
