@@ -15,6 +15,7 @@ concurrency:
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,6 +26,7 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
@@ -45,6 +47,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
@@ -64,6 +67,10 @@ jobs:
   e2e:
     needs: [backend, frontend]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Imagem oficial do Playwright: já traz o Chromium e as bibliotecas do sistema, sem apt no CI.
+    # A versão precisa ser a mesma do @playwright/test no frontend/package.json.
+    container: mcr.microsoft.com/playwright:v1.64.1-noble
     services:
       postgres:
         image: postgres:17-alpine
@@ -76,13 +83,17 @@ jobs:
           --health-cmd "pg_isready -U ci -d cardapio"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DB_URL: jdbc:postgresql://localhost:5432/cardapio
+      # Dentro do container, o Postgres do "services" responde pelo nome do serviço.
+      DB_URL: jdbc:postgresql://postgres:5432/cardapio
       DB_USERNAME: ci
       DB_PASSWORD: ci-only
       API_URL: http://localhost:8080
       NEXT_PUBLIC_API_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
+      - name: Libera a pasta do projeto para o Git
+        # No container o Git roda como root, mas a pasta pertence ao usuário do runner.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -92,6 +103,12 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Confere a versão do Playwright da imagem
+        working-directory: frontend
+        run: |
+          PW=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          test "$PW" = "1.64.1" \
+            || (echo "Playwright $PW no package-lock: atualize a imagem do container do job e2e" && exit 1)
       - uses: actions/download-artifact@v4
         with:
           name: backend-jar
@@ -110,7 +127,6 @@ jobs:
       - name: Playwright
         working-directory: frontend
         run: |
-          npx playwright install --with-deps chromium
           npm run build
           npm run test:e2e
       - uses: actions/upload-artifact@v4
@@ -123,6 +139,7 @@ jobs:
   dependency-check:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     defaults:
