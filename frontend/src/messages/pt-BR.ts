@@ -34,6 +34,10 @@ export const messages = {
       confirmPassword: "Repita a senha",
     },
     passwordHint: "Use letras e números. Guardamos só uma versão protegida da senha.",
+    passwordMatch: {
+      ok: "As senhas são iguais",
+      mismatch: "As senhas ainda não são iguais",
+    },
     termsBefore: "Li e aceito os ",
     terms: "termos de uso",
     termsMiddle: " e a ",

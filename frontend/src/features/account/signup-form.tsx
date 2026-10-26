@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CircleAlert, CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -76,14 +76,20 @@ export function SignupForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [passwordMismatch, setPasswordMismatch] = useState(false);
-  const [masked, setMasked] = useState<Partial<Record<FieldName, string>>>({});
+  /** Campos controlados: os com máscara e os de senha (para conferir as duas enquanto digita). */
+  const [values, setValues] = useState<Partial<Record<FieldName, string>>>({});
   const mutation = useMutation<Schemas["SignupResponse"], SignupFailure, SignupRequest>({ mutationFn: signup });
+
+  const confirmPassword = values.confirmPassword ?? "";
+  const passwordMatch: "empty" | "match" | "mismatch" =
+    confirmPassword === "" ? "empty" : confirmPassword === (values.password ?? "") ? "match" : "mismatch";
+  const isControlled = (field: Field) => Boolean(field.format) || field.type === "password";
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const value = (name: FieldName) => String(form.get(name) ?? "");
-    if (value("password") !== value("confirmPassword")) {
+    if (passwordMatch !== "match") {
       setPasswordMismatch(true);
       return;
     }
@@ -144,18 +150,48 @@ export function SignupForm() {
               required
               minLength={field.type === "password" ? 10 : undefined}
               maxLength={field.maxLength}
-              {...(field.format && {
-                value: masked[field.name] ?? "",
-                onChange: (e: ChangeEvent<HTMLInputElement>) =>
-                  setMasked((current) => ({ ...current, [field.name]: field.format!(e.target.value) })),
+              {...(isControlled(field) && {
+                value: values[field.name] ?? "",
+                onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                  const next = field.format ? field.format(e.target.value) : e.target.value;
+                  setValues((current) => ({ ...current, [field.name]: next }));
+                  if (field.type === "password") setPasswordMismatch(false);
+                },
               })}
-              {...(field.name === "confirmPassword" && { onChange: () => setPasswordMismatch(false) })}
               aria-invalid={
-                invalid.has(field.name) || (field.name === "confirmPassword" && passwordMismatch) || undefined
+                invalid.has(field.name) ||
+                (field.name === "confirmPassword" && passwordMatch === "mismatch") ||
+                undefined
               }
-              aria-describedby={field.type === "password" ? "password-hint" : undefined}
-              className="h-12 rounded-xl px-4 text-base"
+              aria-describedby={
+                field.name === "confirmPassword"
+                  ? "password-hint password-match"
+                  : field.type === "password"
+                    ? "password-hint"
+                    : undefined
+              }
+              className={
+                field.name === "confirmPassword" && passwordMatch === "match"
+                  ? "h-12 rounded-xl border-success/70 px-4 text-base focus-visible:border-success focus-visible:ring-success/30"
+                  : "h-12 rounded-xl px-4 text-base"
+              }
             />
+            {field.name === "confirmPassword" && (
+              <p
+                id="password-match"
+                aria-live="polite"
+                className={
+                  passwordMatch === "match"
+                    ? "flex min-h-5 items-center gap-1.5 text-sm text-success"
+                    : "flex min-h-5 items-center gap-1.5 text-sm text-destructive"
+                }
+              >
+                {passwordMatch === "match" && <CircleCheck aria-hidden className="size-4" />}
+                {passwordMatch === "mismatch" && <CircleAlert aria-hidden className="size-4" />}
+                {passwordMatch === "match" && t.passwordMatch.ok}
+                {passwordMatch === "mismatch" && t.passwordMatch.mismatch}
+              </p>
+            )}
           </div>
         ))}
         <p id="password-hint" className="text-xs text-muted-foreground sm:col-span-2">

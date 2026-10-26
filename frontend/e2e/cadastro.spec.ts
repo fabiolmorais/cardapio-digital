@@ -49,6 +49,27 @@ test("cadastro recusa senhas diferentes antes de enviar", async ({ page }) => {
   await expect(page.getByLabel("Confirme a senha")).toHaveAttribute("aria-invalid", "true");
 });
 
+test("aviso de senhas aparece enquanto a pessoa digita", async ({ page }) => {
+  await page.goto("/cadastro");
+  const password = page.getByLabel("Senha", { exact: true });
+  const confirm = page.getByLabel("Confirme a senha");
+  const status = page.locator("#password-match");
+
+  await password.fill("sushi2026bom");
+  await expect(status).toHaveText("");
+
+  await confirm.pressSequentially("sushi2026");
+  await expect(status).toHaveText("As senhas ainda não são iguais");
+  await expect(confirm).toHaveAttribute("aria-invalid", "true");
+
+  await confirm.pressSequentially("bom");
+  await expect(status).toHaveText("As senhas são iguais");
+  await expect(confirm).not.toHaveAttribute("aria-invalid");
+
+  await password.fill("sushi2026outra");
+  await expect(status).toHaveText("As senhas ainda não são iguais");
+});
+
 test("telefone e documento são formatados enquanto a pessoa digita", async ({ page }) => {
   await page.goto("/cadastro");
   const phone = page.getByLabel("WhatsApp");
