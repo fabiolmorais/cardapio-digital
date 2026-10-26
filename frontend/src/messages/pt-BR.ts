@@ -68,6 +68,43 @@ export const messages = {
       imageAlt: "Mesa de restaurante japonês com barca de sushis",
     },
   },
+  login: {
+    title: "Entrar no painel",
+    subtitle: "Para donos e gerentes. A equipe do salão entra com PIN no celular.",
+    fields: {
+      email: "E-mail",
+      password: "Senha",
+    },
+    placeholders: {
+      email: "voce@restaurante.com.br",
+      password: "Sua senha",
+    },
+    submit: "Entrar",
+    submitting: "Entrando…",
+    noAccount: "Ainda não usa?",
+    signup: "Teste grátis por 14 dias",
+    errors: {
+      generic: "Não foi possível entrar agora. Tente de novo em instantes.",
+      fields: "Preencha o e-mail e a senha.",
+    },
+    backgroundAlt: "",
+  },
+  panel: {
+    title: "Painel",
+    greeting: (name: string) => `Olá, ${name}`,
+    workingAt: "Você está no",
+    roleLabel: "Seu papel",
+    roles: {
+      OWNER: "Dono",
+      MANAGER: "Gerente",
+      STAFF: "Garçom",
+      KITCHEN: "Cozinha",
+    },
+    loading: "Carregando seus dados…",
+    error: "Não foi possível carregar seus dados. Entre de novo.",
+    comingSoon: "O painel ao vivo, as mesas e o cardápio chegam nas próximas etapas.",
+    logout: "Sair",
+  },
   plans: {
     perMonth: "/mês",
     perYear: (value: string) => `ou ${value} por ano`,
