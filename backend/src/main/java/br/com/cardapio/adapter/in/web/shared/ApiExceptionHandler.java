@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.shared;
 import br.com.cardapio.domain.account.exception.AccessRevokedException;
 import br.com.cardapio.domain.account.exception.EmailAlreadyRegisteredException;
 import br.com.cardapio.domain.account.exception.InvalidCredentialsException;
+import br.com.cardapio.domain.account.exception.InvalidSessionException;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import jakarta.validation.ConstraintViolationException;
@@ -50,7 +51,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
-    @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class})
+    @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class, InvalidSessionException.class})
     ProblemDetail handleUnauthorized(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }

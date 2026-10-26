@@ -7,11 +7,13 @@ import br.com.cardapio.domain.account.model.Role;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.support.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -29,6 +31,24 @@ class AuthControllerTest {
 
     @Autowired
     AccessTokenIssuer tokenIssuer;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    private MvcTestResult refresh(String refreshToken) {
+        var request = mvc.post().uri("/api/v1/auth/refresh");
+        if (refreshToken != null) {
+            request = request.cookie(new Cookie("refresh_token", refreshToken));
+        }
+        return request.exchange();
+    }
+
+    /** Valor do cookie refresh_token gravado pela resposta. */
+    private static String refreshCookie(MvcTestResult result) {
+        Cookie cookie = result.getResponse().getCookie("refresh_token");
+        assertThat(cookie).as("cookie refresh_token na resposta").isNotNull();
+        return cookie.getValue();
+    }
 
     /** Cria uma conta nova pela própria API e devolve o e-mail. */
     private String signup() {
@@ -113,4 +133,63 @@ class AuthControllerTest {
                 .hasStatus(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    void loginPutsTheRefreshTokenInAProtectedCookie() throws Exception {
+        MvcTestResult login = login(signup(), PASSWORD);
+
+        String setCookie = login.getResponse().getHeader(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie).startsWith("refresh_token=")
+                .contains("HttpOnly", "Secure", "SameSite=Strict", "Path=/api/v1/auth", "Max-Age=");
+        // O refresh token nunca vai no corpo (o JavaScript não pode vê-lo).
+        assertThat(login.getResponse().getContentAsString()).doesNotContain(refreshCookie(login));
+    }
+
+    @Test
+    void refreshGivesANewAccessTokenAndRotatesTheCookie() throws Exception {
+        MvcTestResult login = login(signup(), PASSWORD);
+
+        MvcTestResult renewed = refresh(refreshCookie(login));
+
+        assertThat(renewed).hasStatusOk();
+        assertThat(refreshCookie(renewed)).isNotEqualTo(refreshCookie(login));
+        MvcTestResult me = mvc.get().uri("/api/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + json(renewed, "$.accessToken")).exchange();
+        assertThat(me).hasStatusOk();
+    }
+
+    @Test
+    void reusingAnOldRefreshTokenEndsTheSession() throws Exception {
+        String first = refreshCookie(login(signup(), PASSWORD));
+        String second = refreshCookie(refresh(first));
+
+        assertThat(refresh(first)).hasStatus(HttpStatus.UNAUTHORIZED);
+        assertThat(refresh(second)).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void refreshWithoutOrWithUnknownCookieGets401() {
+        assertThat(refresh(null)).hasStatus(HttpStatus.UNAUTHORIZED);
+        assertThat(refresh("inventado")).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void logoutClearsTheCookieAndEndsTheSession() throws Exception {
+        String token = refreshCookie(login(signup(), PASSWORD));
+
+        MvcTestResult logout = mvc.post().uri("/api/v1/auth/logout").cookie(new Cookie("refresh_token", token)).exchange();
+
+        assertThat(logout).hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(logout.getResponse().getHeader(HttpHeaders.SET_COOKIE)).contains("refresh_token=", "Max-Age=0");
+        assertThat(refresh(token)).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    /** Garçom desligado: o token de acesso dele morre em até 15 min, e a renovação é recusada na hora. */
+    @Test
+    void personRemovedFromTheRestaurantCannotRenew() throws Exception {
+        MvcTestResult login = login(signup(), PASSWORD);
+        jdbc.update("UPDATE membership SET active = false WHERE user_id = ?",
+                UUID.fromString(json(login, "$.userId")));
+
+        assertThat(refresh(refreshCookie(login))).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
 }

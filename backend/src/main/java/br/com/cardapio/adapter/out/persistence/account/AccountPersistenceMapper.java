@@ -38,4 +38,15 @@ final class AccountPersistenceMapper {
                 new EstablishmentId(row.getEstablishmentId()), row.getEstablishmentName(),
                 row.getEstablishmentSlug(), Role.valueOf(row.getRole()));
     }
+
+    static RefreshTokenJpaEntity toEntity(RefreshToken t) {
+        return new RefreshTokenJpaEntity(t.id().value(), t.familyId().value(), t.userId().value(),
+                t.establishmentId().value(), t.hash().value(), t.createdAt(), t.expiresAt(), t.revokedAt());
+    }
+
+    static RefreshToken toDomain(RefreshTokenJpaEntity e) {
+        return new RefreshToken(new RefreshTokenId(e.getId()), new RefreshTokenId(e.getFamilyId()),
+                new UserId(e.getUserId()), new EstablishmentId(e.getEstablishmentId()),
+                new RefreshTokenHash(e.getTokenHash()), e.getCreatedAt(), e.getExpiresAt(), e.getRevokedAt());
+    }
 }

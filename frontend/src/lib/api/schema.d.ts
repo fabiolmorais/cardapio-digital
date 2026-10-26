@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca o refresh token do cookie por um token de acesso novo */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerra a sessão e apaga o cookie do refresh token */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -30,7 +64,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Entra com e-mail e senha e recebe o token de acesso */
+        /** Entra com e-mail e senha; devolve o token de acesso e grava o refresh token num cookie HttpOnly */
         post: operations["login"];
         delete?: never;
         options?: never;
@@ -125,11 +159,6 @@ export interface components {
             /** @example sakura-sushi */
             slug: string;
         };
-        LoginRequest: {
-            /** @example marina@sakurasushi.com.br */
-            email: string;
-            password: string;
-        };
         EstablishmentAccess: {
             /** Format: uuid */
             id: string;
@@ -151,6 +180,11 @@ export interface components {
             userId: string;
             userName: string;
             establishment: components["schemas"]["EstablishmentAccess"];
+        };
+        LoginRequest: {
+            /** @example marina@sakurasushi.com.br */
+            email: string;
+            password: string;
         };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
@@ -260,6 +294,57 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
+            };
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessão renovada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Sessão terminou; é preciso entrar de novo */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessão encerrada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
