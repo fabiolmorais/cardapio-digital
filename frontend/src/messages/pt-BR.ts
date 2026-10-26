@@ -22,14 +22,16 @@ export const messages = {
       document: "CPF ou CNPJ",
       email: "E-mail",
       password: "Senha",
+      confirmPassword: "Confirme a senha",
     },
     placeholders: {
       establishmentName: "Ex.: Sakura Sushi",
       ownerName: "Como podemos te chamar?",
-      whatsapp: "(11) 90000-0000",
-      document: "Só números ou com pontuação",
+      whatsapp: "(81) 99999-9999",
+      document: "000.000.000-00",
       email: "voce@restaurante.com.br",
       password: "Mínimo de 10 caracteres",
+      confirmPassword: "Repita a senha",
     },
     passwordHint: "Use letras e números. Guardamos só uma versão protegida da senha.",
     termsBefore: "Li e aceito os ",
@@ -43,6 +45,7 @@ export const messages = {
     errors: {
       fields: "Confira os campos destacados.",
       terms: "Para continuar, aceite os termos de uso e a política de privacidade.",
+      passwordMismatch: "As senhas não são iguais. Digite a mesma senha nos dois campos.",
       generic: "Não foi possível criar a conta agora. Tente de novo em instantes.",
     },
     success: {
