@@ -22,6 +22,7 @@ Até o MVP, não há ambiente publicado: tudo roda na sua máquina (ADR 0005). P
 ```bash
 hostname -I                                     # descubra o IP da máquina, ex.: 192.168.0.10
 # no .env da raiz:      CORS_ALLOWED_ORIGINS=http://localhost:3000,http://192.168.0.10:3000
+#                       REFRESH_COOKIE_SECURE=false  (o cookie da sessão só vale em https; sem isso, o F5 no painel pede login de novo)
 # no frontend/.env.local: NEXT_PUBLIC_API_URL=http://192.168.0.10:8080
 #                         DEV_ALLOWED_ORIGINS=192.168.0.10
 cd frontend && npm run dev -- -H 0.0.0.0        # abra http://192.168.0.10:3000 no celular

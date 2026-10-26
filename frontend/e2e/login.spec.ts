@@ -1,27 +1,5 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
-
-const API_URL = process.env.API_URL ?? "http://localhost:8080";
-const PASSWORD = "sushi2026bom";
-
-/** Cria uma conta nova direto pela API e devolve o e-mail e o nome do restaurante. */
-async function createAccount(request: APIRequestContext) {
-  const id = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-  const email = `dono-${id}@teste.com`;
-  const establishmentName = `Restaurante Login ${id}`;
-  const response = await request.post(`${API_URL}/api/v1/signup`, {
-    data: {
-      establishmentName,
-      ownerName: "Marina Tanaka",
-      document: "11222333000181",
-      whatsapp: "81999999999",
-      email,
-      password: PASSWORD,
-      acceptedTerms: true,
-    },
-  });
-  expect(response.status()).toBe(201);
-  return { email, establishmentName };
-}
+import { expect, test } from "@playwright/test";
+import { createAccount, PASSWORD } from "./support/account";
 
 test("login leva ao painel com os dados de quem entrou", async ({ page, request }) => {
   const { email, establishmentName } = await createAccount(request);
