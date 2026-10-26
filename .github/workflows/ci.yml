@@ -91,6 +91,9 @@ jobs:
       NEXT_PUBLIC_API_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
+      - name: Libera a pasta do projeto para o Git
+        # No container o Git roda como root, mas a pasta pertence ao usuário do runner.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
