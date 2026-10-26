@@ -38,4 +38,8 @@ class UserJpaEntity {
     }
 
     UUID getId() { return id; }
+    String getName() { return name; }
+    String getEmail() { return email; }
+    String getPasswordHash() { return passwordHash; }
+    boolean isActive() { return active; }
 }

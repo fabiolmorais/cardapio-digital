@@ -57,6 +57,12 @@ springdoc:
   default-produces-media-type: application/json
 
 app:
+  security:
+    jwt:
+      # Chave HMAC de pelo menos 32 bytes. Gere com: openssl rand -base64 48
+      secret: ${JWT_SECRET}
+      issuer: cardapio-digital
+      access-token-ttl: 15m
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
