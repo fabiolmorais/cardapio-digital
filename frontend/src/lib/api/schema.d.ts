@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Entra com e-mail e senha e recebe o token de acesso */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -33,6 +50,23 @@ export interface paths {
          * @description Público, sem autenticação. Retorna os planos ativos na ordem de exibição. Preços em centavos; campos nulos significam "sob consulta" (preço) ou "ilimitado" (limites).
          */
         get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dados de quem está logado */
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -91,6 +125,33 @@ export interface components {
             /** @example sakura-sushi */
             slug: string;
         };
+        LoginRequest: {
+            /** @example marina@sakurasushi.com.br */
+            email: string;
+            password: string;
+        };
+        EstablishmentAccess: {
+            /** Format: uuid */
+            id: string;
+            /** @example Sakura Sushi */
+            name: string;
+            /** @example sakura-sushi */
+            slug: string;
+            /** @enum {string} */
+            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+        };
+        LoginResponse: {
+            /** @description JWT para o cabeçalho Authorization: Bearer */
+            accessToken: string;
+            /** @example Bearer */
+            tokenType: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            userId: string;
+            userName: string;
+            establishment: components["schemas"]["EstablishmentAccess"];
+        };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
             /** Format: int32 */
@@ -144,6 +205,13 @@ export interface components {
             /** @enum {string} */
             support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
         };
+        Me: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            email: string;
+            establishment: components["schemas"]["EstablishmentAccess"];
+        };
     };
     responses: never;
     parameters: never;
@@ -195,6 +263,39 @@ export interface operations {
             };
         };
     };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Login feito */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description E-mail ou senha incorretos */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listPlans: {
         parameters: {
             query?: {
@@ -225,6 +326,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
                 };
             };
         };

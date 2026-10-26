@@ -87,6 +87,7 @@ jobs:
       DB_URL: jdbc:postgresql://postgres:5432/cardapio
       DB_USERNAME: ci
       DB_PASSWORD: ci-only
+      JWT_SECRET: chave-do-ci-apenas-para-testes-0123456789abcdef
       API_URL: http://localhost:8080
       NEXT_PUBLIC_API_URL: http://localhost:8080
     steps:

@@ -12,10 +12,7 @@ import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Email;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,6 +94,16 @@ class SignupServiceTest {
         @Override
         public boolean existsByEmail(Email email) {
             return users.stream().anyMatch(u -> u.email().equals(email));
+        }
+
+        @Override
+        public Optional<User> findByEmail(Email email) {
+            return users.stream().filter(u -> u.email().equals(email)).findFirst();
+        }
+
+        @Override
+        public Optional<User> findById(UserId id) {
+            return users.stream().filter(u -> u.id().equals(id)).findFirst();
         }
 
         @Override

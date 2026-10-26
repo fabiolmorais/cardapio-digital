@@ -1,14 +1,15 @@
 package br.com.cardapio.adapter.out.persistence.account;
 
-import br.com.cardapio.application.port.out.account.LoadEstablishmentPort;
-import br.com.cardapio.application.port.out.account.LoadUserPort;
-import br.com.cardapio.application.port.out.account.SaveAccountPort;
+import br.com.cardapio.application.port.out.account.*;
 import br.com.cardapio.domain.account.model.*;
 import br.com.cardapio.domain.shared.model.Email;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Optional;
+
 @Component
-class AccountPersistenceAdapter implements LoadUserPort, LoadEstablishmentPort, SaveAccountPort {
+class AccountPersistenceAdapter implements LoadUserPort, LoadEstablishmentPort, LoadMembershipPort, SaveAccountPort {
 
     private final OrganizationJpaRepository organizations;
     private final EstablishmentJpaRepository establishments;
@@ -25,6 +26,28 @@ class AccountPersistenceAdapter implements LoadUserPort, LoadEstablishmentPort, 
     @Override
     public boolean existsByEmail(Email email) {
         return users.existsByEmail(email.value());
+    }
+
+    @Override
+    public Optional<User> findByEmail(Email email) {
+        return users.findByEmail(email.value()).map(AccountPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public Optional<User> findById(UserId id) {
+        return users.findById(id.value()).map(AccountPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public List<ActiveMembership> findActiveByUser(UserId userId) {
+        return memberships.findActiveByUser(userId.value()).stream()
+                .map(AccountPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<ActiveMembership> findActive(UserId userId, EstablishmentId establishmentId) {
+        return memberships.findActive(userId.value(), establishmentId.value()).map(AccountPersistenceMapper::toDomain);
     }
 
     @Override

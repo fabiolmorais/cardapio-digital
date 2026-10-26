@@ -3,3 +3,7 @@ spring:
     import: []
 sentry:
   dsn: ""
+app:
+  security:
+    jwt:
+      secret: chave-so-para-testes-com-mais-de-32-bytes-0123456789
