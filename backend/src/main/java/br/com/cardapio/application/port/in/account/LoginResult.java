@@ -7,6 +7,8 @@ import java.time.Instant;
 public record LoginResult(
         String accessToken,
         Instant expiresAt,
+        String refreshToken,
+        Instant refreshTokenExpiresAt,
         UserId userId,
         String userName,
         EstablishmentAccess establishment

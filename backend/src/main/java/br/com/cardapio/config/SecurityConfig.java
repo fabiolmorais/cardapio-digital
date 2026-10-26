@@ -77,7 +77,8 @@ class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/plans").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
+                                "/api/v1/auth/logout").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
         return http.build();

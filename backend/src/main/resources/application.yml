@@ -63,6 +63,11 @@ app:
       secret: ${JWT_SECRET}
       issuer: cardapio-digital
       access-token-ttl: 15m
+    refresh-token:
+      # Sessão dura até 14 dias sem uso; cada renovação conta de novo.
+      ttl: 14d
+      # Cookie só por HTTPS. Desligue (false) só para testar pelo IP da rede local, em http.
+      cookie-secure: ${REFRESH_COOKIE_SECURE:true}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
