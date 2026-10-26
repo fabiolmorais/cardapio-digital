@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
+import { useEffect, useRef, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,7 @@ async function login(body: LoginRequest): Promise<LoginResponse> {
 
 export function LoginForm() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const mutation = useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: login,
     onSuccess: (data) => {
@@ -45,6 +46,14 @@ export function LoginForm() {
     },
   });
 
+  // O Next guarda páginas já visitadas com o estado delas. Toda vez que a tela de entrar
+  // volta a aparecer, começa limpa: sem "Entrando…", sem erro antigo e sem a senha de antes.
+  const { reset } = mutation;
+  useEffect(() => {
+    reset();
+    formRef.current?.reset();
+  }, [reset]);
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -57,7 +66,7 @@ export function LoginForm() {
   const failed = mutation.isError;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby="login-error">
+    <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby="login-error">
       <div className="flex flex-col gap-2">
         <Label htmlFor="email" className="text-muted-foreground">
           {t.fields.email}

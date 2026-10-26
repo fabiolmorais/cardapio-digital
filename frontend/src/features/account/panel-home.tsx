@@ -36,7 +36,10 @@ export function PanelHome() {
 
   function logout() {
     setSession(null);
-    queryClient.clear(); // não deixa dados desta conta para a próxima pessoa que entrar
+    queryClient.clear();
+    // Recarrega a página inteira: nada desta conta (dados, telas guardadas) fica na memória
+    // para a próxima pessoa que usar o aparelho.
+    window.location.replace("/entrar");
   }
 
   if (me.isPending) {
