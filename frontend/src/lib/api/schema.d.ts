@@ -56,6 +56,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aparelhos vinculados ao restaurante, por nome */
+        get: operations["listDevices"];
+        put?: never;
+        /** Vincula o aparelho cujo código aparece na tela dele */
+        post: operations["linkDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/device-pairings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abre um pedido de vínculo e devolve o código para a tela */
+        post: operations["startDevicePairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/device-pairings/{id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** O aparelho pergunta se já foi vinculado; se sim, recebe o token no cookie device_token */
+        post: operations["claimDevicePairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -163,6 +215,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Desvincula o aparelho; o token dele deixa de valer */
+        delete: operations["unlinkDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -238,6 +307,61 @@ export interface components {
             userId: string;
             /** @example sakura-sushi */
             slug: string;
+        };
+        /** @description O gerente digita o código que aparece no aparelho novo */
+        LinkDeviceRequest: {
+            /** @example 482719 */
+            code: string;
+            /** @example Celular do salão */
+            name: string;
+            /** @enum {string} */
+            type: "WAITER" | "KITCHEN" | "TV";
+        };
+        /** @description Aparelho vinculado ao restaurante */
+        Device: {
+            /** Format: uuid */
+            id: string;
+            /** @example Celular do salão */
+            name: string;
+            /** @enum {string} */
+            type: "WAITER" | "KITCHEN" | "TV";
+            /** Format: date-time */
+            linkedAt: string;
+            /**
+             * Format: date-time
+             * @description Vazio: o aparelho ainda não buscou o token
+             */
+            lastSeenAt?: string;
+        };
+        /** @description Pedido de vínculo aberto pelo aparelho novo */
+        PairingStarted: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Mostrar na tela do aparelho
+             * @example 482719
+             */
+            code: string;
+            /** @description Guardar no aparelho e mandar ao buscar o token; nunca mostrar */
+            secret: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ClaimPairingRequest: {
+            /** @description O segredo recebido ao abrir o pedido */
+            secret: string;
+        };
+        /** @description PENDING: pergunte de novo em alguns segundos. LINKED: o token foi para o cookie device_token. */
+        ClaimPairingResponse: {
+            /** @enum {string} */
+            status: "PENDING" | "LINKED";
+            /** @description Só quando LINKED */
+            device?: components["schemas"]["Device"];
+            /**
+             * @description Só quando LINKED
+             * @example Sakura Sushi
+             */
+            establishmentName?: string;
         };
         EstablishmentAccess: {
             /** Format: uuid */
@@ -350,6 +474,17 @@ export interface components {
             /** @description Vazio para quem entra só por PIN (garçom, cozinha) */
             email?: string;
             establishment: components["schemas"]["EstablishmentAccess"];
+        };
+        PageResponseDevice: {
+            content: components["schemas"]["Device"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
     };
     responses: never;
@@ -509,6 +644,128 @@ export interface operations {
             };
             /** @description E-mail já cadastrado */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listDevices: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de aparelhos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDevice"];
+                };
+            };
+        };
+    };
+    linkDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Vinculado; o aparelho busca o token sozinho */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            /** @description Código fora do formato ou nome vazio */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Código não encontrado ou vencido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startDevicePairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido aberto */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingStarted"];
+                };
+            };
+        };
+    };
+    claimDevicePairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimPairingRequest"];
+            };
+        };
+        responses: {
+            /** @description PENDING ou LINKED */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPairingResponse"];
+                };
+            };
+            /** @description Pedido desconhecido, vencido, segredo errado ou token já entregue */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -774,6 +1031,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    unlinkDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desvinculado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um aparelho deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

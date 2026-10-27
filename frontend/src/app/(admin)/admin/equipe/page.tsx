@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TeamManager } from "@/features/team/team-manager";
+import { TeamPage as TeamAndDevices } from "@/features/team/team-page";
 import { messages } from "@/messages/pt-BR";
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function TeamPage() {
-  return <TeamManager />;
+  return <TeamAndDevices />;
 }
