@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.shared;
 import br.com.cardapio.domain.account.exception.*;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
+import br.com.cardapio.domain.shared.exception.NotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,8 +60,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /** Também para recurso de outro restaurante: 404, sem revelar que ele existe. */
-    @ExceptionHandler(TeamMemberNotFoundException.class)
-    ProblemDetail handleNotFound(TeamMemberNotFoundException ex) {
+    @ExceptionHandler(NotFoundException.class)
+    ProblemDetail handleNotFound(NotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 

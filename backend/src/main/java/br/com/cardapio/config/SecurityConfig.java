@@ -79,6 +79,9 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()
+                        // O aparelho novo ainda não é de ninguém: quem o identifica é o segredo do pedido.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/device-pairings",
+                                "/api/v1/device-pairings/*/claim").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
         return http.build();
