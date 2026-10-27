@@ -30,6 +30,8 @@ final class AccountFakes implements LoadUserPort, LoadMembershipPort, PasswordHa
     final List<Row> memberships = new ArrayList<>();
     final Map<RefreshTokenId, RefreshToken> refreshTokens = new LinkedHashMap<>();
     TokenSubject lastSubject;
+    /** Simula outra renovação revogando o token entre a leitura e o UPDATE. */
+    boolean anotherRenewalWinsTheRace;
     int matchesCalls;
     private int generated;
     private Instant now = Instant.parse("2026-10-26T12:00:00Z");
@@ -113,6 +115,16 @@ final class AccountFakes implements LoadUserPort, LoadMembershipPort, PasswordHa
     @Override
     public Optional<RefreshToken> findByHash(RefreshTokenHash hash) {
         return refreshTokens.values().stream().filter(t -> t.hash().equals(hash)).findFirst();
+    }
+
+    @Override
+    public boolean revokeIfActive(RefreshTokenId id, Instant at) {
+        RefreshToken token = refreshTokens.get(id);
+        if (anotherRenewalWinsTheRace || token == null || token.isRevoked()) {
+            return false;
+        }
+        refreshTokens.put(id, token.revoke(at));
+        return true;
     }
 
     @Override

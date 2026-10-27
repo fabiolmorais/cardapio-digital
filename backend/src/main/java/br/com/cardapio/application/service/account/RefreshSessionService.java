@@ -63,6 +63,11 @@ public class RefreshSessionService implements RefreshSessionUseCase {
             throw new InvalidSessionException();
         }
 
+        if (!refreshTokens.revokeIfActive(current.id(), now)) {
+            // Outra renovação usou este mesmo token agora há pouco: também é reuso.
+            refreshTokens.revokeFamily(current.familyId(), now);
+            throw new InvalidSessionException();
+        }
         return sessionIssuer.rotate(current, user.get(), membership.get());
     }
 }

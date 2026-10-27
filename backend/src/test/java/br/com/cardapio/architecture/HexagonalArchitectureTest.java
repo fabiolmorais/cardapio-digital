@@ -5,9 +5,7 @@ import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 /**
@@ -105,6 +103,14 @@ class HexagonalArchitectureTest {
             .that().areAnnotatedWith("jakarta.persistence.Entity")
             .should().resideInAPackage(PERSISTENCE)
             .as("6. entidades JPA ficam em adapter/out/persistence");
+
+    // Multi-tenant: a coluna establishment_id só entra numa entidade herdando a base que traz o filtro.
+    @ArchTest
+    static final ArchRule establishmentIdComesWithTheFilter = noFields()
+            .that().haveName("establishmentId")
+            .should().beDeclaredInClassesThat().areAnnotatedWith("jakarta.persistence.Entity")
+            .as("multi-tenant: entidades herdam establishmentId de EstablishmentScopedEntity (que traz o filtro)");
+
 
     // Complemento: sem Lombok e sem Jackson no núcleo.
     @ArchTest

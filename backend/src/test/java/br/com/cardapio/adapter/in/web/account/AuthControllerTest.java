@@ -17,7 +17,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -191,5 +193,37 @@ class AuthControllerTest {
                 UUID.fromString(json(login, "$.userId")));
 
         assertThat(refresh(refreshCookie(login))).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Duas renovações ao mesmo tempo com o mesmo token (duas abas, ou o dono e um ladrão):
+     * no máximo uma passa, e a sessão termina. Repete algumas vezes para as duas
+     * requisições se cruzarem de verdade no banco.
+     */
+    @Test
+    void twoRenewalsAtTheSameTimeWithTheSameTokenEndTheSession() throws Exception {
+        for (int round = 0; round < 10; round++) {
+            String token = refreshCookie(login(signup(), PASSWORD));
+            CountDownLatch start = new CountDownLatch(1);
+            Callable<MvcTestResult> renew = () -> {
+                start.await();
+                return refresh(token);
+            };
+
+            List<MvcTestResult> results;
+            try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+                Future<MvcTestResult> first = pool.submit(renew);
+                Future<MvcTestResult> second = pool.submit(renew);
+                start.countDown();
+                results = List.of(first.get(), second.get());
+            }
+
+            List<MvcTestResult> accepted = results.stream()
+                    .filter(r -> r.getResponse().getStatus() == HttpStatus.OK.value()).toList();
+            assertThat(accepted).as("renovações aceitas na rodada %d", round).hasSizeLessThanOrEqualTo(1);
+            for (MvcTestResult ok : accepted) {
+                assertThat(refresh(refreshCookie(ok))).hasStatus(HttpStatus.UNAUTHORIZED);
+            }
+        }
     }
 }

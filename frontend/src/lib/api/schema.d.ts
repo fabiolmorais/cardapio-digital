@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/v1/team-members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista a equipe (ativos primeiro, depois por nome) */
+        get: operations["listTeamMembers"];
+        put?: never;
+        /** Cadastra uma pessoa na equipe */
+        post: operations["addTeamMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signup": {
         parameters: {
             query?: never;
@@ -72,6 +90,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/team-members/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uma pessoa da equipe */
+        get: operations["getTeamMember"];
+        put?: never;
+        post?: never;
+        /** Desliga uma pessoa da equipe (o registro fica, para o histórico) */
+        delete: operations["deactivateTeamMember"];
+        options?: never;
+        head?: never;
+        /** Muda o papel e/ou o PIN de uma pessoa da equipe */
+        patch: operations["updateTeamMember"];
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -113,6 +150,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Cadastro de uma pessoa da equipe */
+        AddTeamMemberRequest: {
+            /** @example Carlos Souza */
+            name: string;
+            /**
+             * @description MANAGER, STAFF ou KITCHEN
+             * @enum {string}
+             */
+            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+            /**
+             * @description 4 a 6 números, sem sequências óbvias
+             * @example 2580
+             */
+            pin: string;
+        };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Pessoa da equipe do restaurante */
+        TeamMember: {
+            /** Format: uuid */
+            id: string;
+            /** @example Carlos Souza */
+            name: string;
+            /** @enum {string} */
+            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+            /** @description false = desligado do restaurante */
+            active: boolean;
+        };
         /** @description Cadastro self-service do restaurante */
         SignupRequest: {
             /** @example Sakura Sushi */
@@ -135,19 +211,6 @@ export interface components {
             password: string;
             /** @description Aceite dos termos de uso e da política de privacidade */
             acceptedTerms: boolean;
-        };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
         };
         SignupResponse: {
             /** Format: uuid */
@@ -185,6 +248,19 @@ export interface components {
             /** @example marina@sakurasushi.com.br */
             email: string;
             password: string;
+        };
+        /** @description Só os campos enviados mudam */
+        UpdateTeamMemberRequest: {
+            /**
+             * @description Novo papel: MANAGER, STAFF ou KITCHEN
+             * @enum {string}
+             */
+            role?: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+            /**
+             * @description Novo PIN: 4 a 6 números
+             * @example 7391
+             */
+            pin?: string;
         };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
@@ -243,7 +319,8 @@ export interface components {
             /** Format: uuid */
             userId: string;
             name: string;
-            email: string;
+            /** @description Vazio para quem entra só por PIN (garçom, cozinha) */
+            email?: string;
             establishment: components["schemas"]["EstablishmentAccess"];
         };
     };
@@ -255,6 +332,73 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listTeamMembers: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    addTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTeamMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Cadastrada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
+            /** @description Dados inválidos ou PIN fácil de adivinhar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     signup: {
         parameters: {
             query?: never;
@@ -372,6 +516,110 @@ export interface operations {
             };
             /** @description E-mail ou senha incorretos */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está na equipe deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desligada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está na equipe deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeamMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está na equipe deste restaurante */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

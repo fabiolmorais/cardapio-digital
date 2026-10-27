@@ -13,6 +13,20 @@ interface RefreshTokenJpaRepository extends JpaRepository<RefreshTokenJpaEntity,
 
     Optional<RefreshTokenJpaEntity> findByTokenHash(String tokenHash);
 
+    /**
+     * Revoga um token só se ele ainda estiver ativo. Se duas renovações chegarem juntas, o
+     * PostgreSQL trava a linha: a segunda espera a primeira terminar, vê revoked_at preenchido
+     * e não altera nada (devolve 0).
+     */
+    @Modifying
+    @Query("""
+            UPDATE RefreshTokenJpaEntity t
+               SET t.revokedAt = :now
+             WHERE t.id = :id
+               AND t.revokedAt IS NULL
+            """)
+    int revokeIfActive(@Param("id") UUID id, @Param("now") Instant now);
+
     /** Um UPDATE só, para a família inteira. Só mexe nos que ainda estão ativos. */
     @Modifying
     @Query("""

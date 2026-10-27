@@ -2,13 +2,22 @@ package br.com.cardapio.config;
 
 import br.com.cardapio.application.port.in.account.*;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
+import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
+import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
+import br.com.cardapio.application.port.in.team.ListTeamUseCase;
+import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
+import br.com.cardapio.application.port.out.team.TeamMemberPort;
 import br.com.cardapio.application.service.account.*;
 import br.com.cardapio.application.service.plan.ListPlansService;
+import br.com.cardapio.application.service.team.AddTeamMemberService;
+import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
+import br.com.cardapio.application.service.team.ListTeamService;
+import br.com.cardapio.application.service.team.UpdateTeamMemberService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,5 +71,25 @@ class UseCaseConfig {
     @Bean
     GetCurrentAccountUseCase getCurrentAccountUseCase(LoadUserPort loadUserPort, LoadMembershipPort loadMembershipPort) {
         return new GetCurrentAccountService(loadUserPort, loadMembershipPort);
+    }
+
+    @Bean
+    ListTeamUseCase listTeamUseCase(TeamMemberPort teamMemberPort) {
+        return new ListTeamService(teamMemberPort);
+    }
+
+    @Bean
+    AddTeamMemberUseCase addTeamMemberUseCase(TeamMemberPort teamMemberPort, PasswordHasher passwordHasher) {
+        return new AddTeamMemberService(teamMemberPort, passwordHasher);
+    }
+
+    @Bean
+    UpdateTeamMemberUseCase updateTeamMemberUseCase(TeamMemberPort teamMemberPort, PasswordHasher passwordHasher) {
+        return new UpdateTeamMemberService(teamMemberPort, passwordHasher);
+    }
+
+    @Bean
+    DeactivateTeamMemberUseCase deactivateTeamMemberUseCase(TeamMemberPort teamMemberPort) {
+        return new DeactivateTeamMemberService(teamMemberPort);
     }
 }
