@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { PairingScreen } from "@/features/devices/pairing-screen";
+import { DeviceEntry } from "@/features/devices/device-entry";
 import { messages } from "@/messages/pt-BR";
 
 export const metadata: Metadata = {
-  title: `${messages.pairing.title} · ${messages.app.name}`,
+  title: `${messages.pin.team} · ${messages.app.name}`,
 };
 
 export default function DevicePage() {
-  return <PairingScreen />;
+  return <DeviceEntry />;
 }

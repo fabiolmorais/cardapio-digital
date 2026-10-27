@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, type Schemas } from "@/lib/api/client";
+import { setLoginOrigin } from "@/lib/auth/login-origin";
 import { startSession } from "@/lib/auth/session";
 import { messages } from "@/messages/pt-BR";
 
@@ -42,6 +43,7 @@ export function LoginForm() {
         userName: data.userName,
         establishment: data.establishment,
       });
+      setLoginOrigin("password");
       router.push("/painel");
     },
   });

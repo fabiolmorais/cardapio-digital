@@ -125,6 +125,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Entra com PIN num aparelho vinculado (cookie device_token); devolve a mesma sessão do login */
+        post: operations["pinLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -207,6 +224,40 @@ export interface paths {
         };
         /** Dados de quem está logado */
         get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Este aparelho e o restaurante dele */
+        get: operations["getCurrentDevice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device/team-members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quem pode entrar por PIN neste aparelho, por nome */
+        get: operations["listPinMembers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -385,6 +436,13 @@ export interface components {
             userName: string;
             establishment: components["schemas"]["EstablishmentAccess"];
         };
+        /** @description Quem tocou no próprio nome e o PIN digitado */
+        PinLoginRequest: {
+            /** Format: uuid */
+            memberId: string;
+            /** @example 2580 */
+            pin: string;
+        };
         LoginRequest: {
             /** @example marina@sakurasushi.com.br */
             email: string;
@@ -485,6 +543,32 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        /** @description O aparelho que está chamando e o restaurante dele */
+        CurrentDevice: {
+            device: components["schemas"]["Device"];
+            /** @example Sakura Sushi */
+            establishmentName: string;
+        };
+        PageResponsePinMember: {
+            content: components["schemas"]["PinMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Pessoa que pode entrar por PIN neste aparelho */
+        PinMember: {
+            /** Format: uuid */
+            id: string;
+            /** @example Carlos Souza */
+            name: string;
+            /** @enum {string} */
+            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
         };
     };
     responses: never;
@@ -806,6 +890,68 @@ export interface operations {
             };
         };
     };
+    pinLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Login feito */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description PIN incorreto, ou aparelho não vinculado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O aparelho é uma TV */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A pessoa não pode entrar por PIN neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Erros demais: PIN bloqueado por alguns minutos */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     logout: {
         parameters: {
             query?: never;
@@ -1031,6 +1177,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    getCurrentDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aparelho vinculado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentDevice"];
+                };
+            };
+            /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listPinMembers: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de pessoas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponsePinMember"];
+                };
+            };
+            /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O aparelho é uma TV */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

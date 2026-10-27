@@ -37,3 +37,30 @@ export async function loginThroughForm(page: Page, email: string) {
 export function panelGreeting(page: Page) {
   return page.getByRole("heading", { name: `Olá, ${OWNER_NAME}` });
 }
+
+/** Entra pela API e devolve o token de acesso do dono. */
+export async function apiLogin(request: APIRequestContext, email: string) {
+  const response = await request.post(`${API_URL}/api/v1/auth/login`, { data: { email, password: PASSWORD } });
+  expect(response.status()).toBe(200);
+  return (await response.json()).accessToken as string;
+}
+
+/** Cadastra alguém na equipe pela API e devolve o id. */
+export async function addTeamMember(request: APIRequestContext, token: string, name: string, role: string, pin: string) {
+  const response = await request.post(`${API_URL}/api/v1/team-members`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { name, role, pin },
+  });
+  expect(response.status()).toBe(201);
+  return (await response.json()).id as string;
+}
+
+/** O dono vincula, pela API, o código que aparece na tela do aparelho. */
+export async function linkDeviceByCode(request: APIRequestContext, token: string, code: string, name: string) {
+  const response = await request.post(`${API_URL}/api/v1/devices`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { code, name, type: "WAITER" },
+  });
+  expect(response.status()).toBe(201);
+  return (await response.json()).id as string;
+}

@@ -25,9 +25,9 @@ test("aparelho novo mostra o código e é vinculado pelo painel", async ({ brows
   await page.getByRole("button", { name: "Vincular", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Celular do salão vinculado" })).toBeVisible();
 
-  // O celular percebe sozinho e recebe o token num cookie que o JavaScript não lê.
-  await expect(phone.getByRole("heading", { name: "Aparelho vinculado" })).toBeVisible({ timeout: 10_000 });
-  await expect(phone.getByText(/Celular do salão agora é do Restaurante Login/)).toBeVisible();
+  // O celular percebe sozinho, recebe o token num cookie que o JavaScript não lê e passa para o PIN.
+  await expect(phone.getByRole("heading", { name: "Quem está entrando?" })).toBeVisible({ timeout: 10_000 });
+  await expect(phone.getByText("Aparelho vinculado · Celular do salão")).toBeVisible();
   const cookie = (await phoneContext.cookies()).find((c) => c.name === "device_token");
   expect(cookie?.httpOnly).toBe(true);
   expect(cookie?.sameSite).toBe("Strict");
