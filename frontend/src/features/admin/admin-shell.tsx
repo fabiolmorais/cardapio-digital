@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, LogOut, Users } from "lucide-react";
+import { Home, LogOut, QrCode, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -14,6 +14,7 @@ const t = messages.admin;
 
 const NAV = [
   { href: "/painel", label: t.nav.panel, icon: Home },
+  { href: "/admin/mesas", label: t.nav.floor, icon: QrCode },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
 ] as const;
 
