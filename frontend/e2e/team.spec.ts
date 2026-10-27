@@ -12,7 +12,7 @@ function row(page: Page, name: string) {
   return page.getByRole("row").filter({ hasText: name });
 }
 
-test("dono cadastra, edita e desliga alguém da equipe", async ({ page, request }) => {
+test("dono cadastra, edita, desliga e religa alguém da equipe", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
   await openTeam(page);
@@ -52,6 +52,12 @@ test("dono cadastra, edita e desliga alguém da equipe", async ({ page, request 
   await expect(confirm).toBeHidden();
   await expect(row(page, "Carlos Souza")).toContainText("Desligado");
   await expect(page.getByRole("button", { name: "Desligar Carlos Souza" })).toHaveCount(0);
+
+  // Religar traz a mesma pessoa de volta, com o papel que ela tinha.
+  await page.getByRole("button", { name: "Religar Carlos Souza" }).click();
+  await expect(row(page, "Carlos Souza")).toContainText("Ativo");
+  await expect(row(page, "Carlos Souza")).toContainText("Cozinha");
+  await expect(page.getByRole("button", { name: "Desligar Carlos Souza" })).toBeVisible();
 });
 
 test("PIN fácil mostra o erro do servidor sem fechar o formulário", async ({ page, request }) => {

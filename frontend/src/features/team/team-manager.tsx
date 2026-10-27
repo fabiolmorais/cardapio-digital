@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { DeactivateDialog } from "./deactivate-dialog";
 import { MemberFormDialog } from "./member-form-dialog";
-import { fetchTeam, type TeamMember } from "./team-api";
+import { fetchTeam, reactivateTeamMember, type TeamMember } from "./team-api";
 import { assignableRoles, canManageMember, canManageTeam, type Role } from "./team-rules";
 
 const t = messages.team;
@@ -51,6 +51,13 @@ export function TeamManager() {
   });
 
   const roles = assignableRoles(actor);
+
+  // Religar não pede confirmação: é o caminho de volta, e desfazer é só desligar de novo.
+  const queryClient = useQueryClient();
+  const reactivation = useMutation({
+    mutationFn: (member: TeamMember) => reactivateTeamMember(member.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+  });
 
   return (
     <div className="flex flex-col gap-6 px-4 py-6 sm:px-7">
@@ -150,7 +157,7 @@ export function TeamManager() {
                             >
                               {t.edit}
                             </Button>
-                            {member.active && (
+                            {member.active ? (
                               <Button
                                 variant="ghost"
                                 className="h-10 px-3 text-destructive hover:text-destructive"
@@ -158,6 +165,18 @@ export function TeamManager() {
                                 onClick={() => setRemoving(member)}
                               >
                                 {t.deactivate}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                className="h-10 px-3 text-brand-text hover:text-brand-text"
+                                aria-label={t.reactivateLabel(member.name)}
+                                disabled={reactivation.isPending}
+                                onClick={() => reactivation.mutate(member)}
+                              >
+                                {reactivation.isPending && reactivation.variables?.id === member.id
+                                  ? t.reactivating
+                                  : t.reactivate}
                               </Button>
                             )}
                           </span>
@@ -169,6 +188,12 @@ export function TeamManager() {
               </tbody>
             </table>
           </div>
+
+          {reactivation.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              {t.reactivateError(reactivation.variables?.name ?? "")}
+            </p>
+          )}
 
           {team.data.totalPages > 1 && (
             <nav className="flex items-center justify-end gap-3" aria-label={t.title}>

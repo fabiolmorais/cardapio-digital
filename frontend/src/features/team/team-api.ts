@@ -46,6 +46,14 @@ export async function updateTeamMember(id: string, body: UpdateTeamMemberRequest
   throw failure(response, error);
 }
 
+export async function reactivateTeamMember(id: string): Promise<TeamMember> {
+  const { data, error, response } = await api.POST("/api/v1/team-members/{id}/reactivation", {
+    params: { path: { id } },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
 export async function deactivateTeamMember(id: string): Promise<void> {
   const { error, response } = await api.DELETE("/api/v1/team-members/{id}", { params: { path: { id } } });
   if (!response.ok) throw failure(response, error);

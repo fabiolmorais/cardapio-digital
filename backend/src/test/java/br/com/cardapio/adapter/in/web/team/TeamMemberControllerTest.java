@@ -135,6 +135,13 @@ class TeamMemberControllerTest {
         // Desligados vão para o fim da lista.
         assertThat(get(sakura.token(), TEAM)).bodyJson().extractingPath("$.content[*].name").asArray()
                 .containsExactly("Marina", "Carlos Souza");
+
+        // Religar devolve a mesma pessoa, com o papel que ela tinha.
+        MvcTestResult back = post(sakura.token(), TEAM + "/" + carlos + "/reactivation", "");
+        assertThat(back).hasStatusOk();
+        assertThat(back).bodyJson().extractingPath("$.id").isEqualTo(carlos);
+        assertThat(back).bodyJson().extractingPath("$.role").isEqualTo("KITCHEN");
+        assertThat(back).bodyJson().extractingPath("$.active").isEqualTo(true);
     }
 
     @Test
@@ -178,6 +185,7 @@ class TeamMemberControllerTest {
         assertThat(patch(manager, carlos, "{\"role\":\"MANAGER\"}")).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(patch(manager, ana, "{\"pin\":\"7391\"}")).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(delete(manager, owner)).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(post(manager, TEAM + "/" + ana + "/reactivation", "")).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(delete(sakura.token(), owner)).hasStatus(HttpStatus.FORBIDDEN);
     }
 
@@ -194,6 +202,7 @@ class TeamMemberControllerTest {
         assertThat(patch(other.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"7391\"}"))
                 .hasStatus(HttpStatus.NOT_FOUND);
         assertThat(delete(other.token(), carlos)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(post(other.token(), TEAM + "/" + carlos + "/reactivation", "")).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(get(other.token(), TEAM)).bodyJson().extractingPath("$.content[*].id").asArray()
                 .doesNotContain(carlos);
 

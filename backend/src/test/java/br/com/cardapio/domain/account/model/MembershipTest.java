@@ -58,4 +58,16 @@ class MembershipTest {
         assertThat(gone.active()).isFalse();
         assertThat(gone.id()).isEqualTo(waiter.id());
     }
+
+    @Test
+    void reactivateBringsBackTheSameRoleAndPin() {
+        Membership waiter = Membership.teamMember(carlos, sakura, Role.STAFF, PIN).deactivate();
+
+        Membership back = waiter.reactivate();
+
+        assertThat(back.active()).isTrue();
+        assertThat(back.id()).isEqualTo(waiter.id());
+        assertThat(back.role()).isEqualTo(Role.STAFF);
+        assertThat(back.pinHash()).isEqualTo(PIN);
+    }
 }

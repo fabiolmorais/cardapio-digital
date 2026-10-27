@@ -44,13 +44,16 @@ class TeamMemberController {
     private final AddTeamMemberUseCase addTeamMember;
     private final UpdateTeamMemberUseCase updateTeamMember;
     private final DeactivateTeamMemberUseCase deactivateTeamMember;
+    private final ReactivateTeamMemberUseCase reactivateTeamMember;
 
     TeamMemberController(ListTeamUseCase listTeam, AddTeamMemberUseCase addTeamMember,
-                         UpdateTeamMemberUseCase updateTeamMember, DeactivateTeamMemberUseCase deactivateTeamMember) {
+                         UpdateTeamMemberUseCase updateTeamMember, DeactivateTeamMemberUseCase deactivateTeamMember,
+                         ReactivateTeamMemberUseCase reactivateTeamMember) {
         this.listTeam = listTeam;
         this.addTeamMember = addTeamMember;
         this.updateTeamMember = updateTeamMember;
         this.deactivateTeamMember = deactivateTeamMember;
+        this.reactivateTeamMember = reactivateTeamMember;
     }
 
     @GetMapping
@@ -111,5 +114,17 @@ class TeamMemberController {
         deactivateTeamMember.deactivate(
                 new DeactivateTeamMemberCommand(user.establishmentId(), user.role(), new MembershipId(id)));
         return ResponseEntity.noContent().build();
+    }
+
+    /** Desfaz o DELETE: a pessoa volta com o mesmo registro, papel e PIN. */
+    @PostMapping("/{id}/reactivation")
+    @Operation(operationId = "reactivateTeamMember", summary = "Religa uma pessoa desligada da equipe")
+    @ApiResponse(responseCode = "200", description = "Religada (ou já estava ativa)")
+    @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    TeamMemberResponse reactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        AuthenticatedUser user = AuthenticatedUser.from(jwt);
+        return TeamMemberResponse.from(reactivateTeamMember.reactivate(
+                new ReactivateTeamMemberCommand(user.establishmentId(), user.role(), new MembershipId(id))));
     }
 }
