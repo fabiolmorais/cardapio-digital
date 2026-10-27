@@ -26,6 +26,8 @@ interface DeviceJpaRepository extends JpaRepository<DeviceJpaEntity, UUID> {
 
     Optional<DeviceJpaEntity> findByIdAndEstablishmentId(UUID id, UUID establishmentId);
 
+    Optional<DeviceJpaEntity> findByTokenHashAndRevokedAtIsNull(String tokenHash);
+
     /** Nome do restaurante, para o aparelho mostrar na tela depois de vinculado. */
     @Query("SELECT e.name FROM EstablishmentJpaEntity e WHERE e.id = :id")
     Optional<String> findEstablishmentName(@Param("id") UUID establishmentId);

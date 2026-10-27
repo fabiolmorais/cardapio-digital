@@ -1,8 +1,10 @@
 package br.com.cardapio.adapter.out.persistence.account;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -49,6 +51,22 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
     @Query(value = TEAM_MEMBER + " ORDER BY m.active DESC, lower(u.name), m.id",
             countQuery = "SELECT count(m) FROM MembershipJpaEntity m WHERE m.establishmentId = :establishmentId")
     Page<TeamMemberRow> findTeam(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /** Quem pode entrar por PIN: ativos e que não são o dono. */
+    @Query(value = TEAM_MEMBER + " AND m.active = true AND m.role <> 'OWNER' ORDER BY lower(u.name), m.id",
+            countQuery = """
+                    SELECT count(m) FROM MembershipJpaEntity m
+                     WHERE m.establishmentId = :establishmentId AND m.active = true AND m.role <> 'OWNER'
+                    """)
+    Page<TeamMemberRow> findPinMembers(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /**
+     * SELECT … FOR UPDATE: trava a linha do vínculo até o fim da transação. Outra transação que
+     * pedir a mesma trava espera aqui. Usado para contar as tentativas de PIN sem perder nenhuma.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM MembershipJpaEntity m WHERE m.id = :id AND m.establishmentId = :establishmentId")
+    Optional<MembershipJpaEntity> lockById(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
 
     @Query(TEAM_MEMBER + " AND m.id = :id")
     Optional<TeamMemberRow> findTeamMember(@Param("establishmentId") UUID establishmentId, @Param("id") UUID id);

@@ -17,6 +17,9 @@ public interface TeamMemberPort {
     /** Vazio se a pessoa não existe ou é de outro restaurante. */
     Optional<TeamMember> findMember(EstablishmentId establishmentId, MembershipId memberId);
 
+    /** Quem pode entrar por PIN: ativos e que não são o dono, por nome. */
+    ResultPage<TeamMember> findPinMembers(EstablishmentId establishmentId, PageQuery page);
+
     /** Grava a pessoa nova e o vínculo dela com o restaurante. */
     void addMember(User user, Membership membership);
 

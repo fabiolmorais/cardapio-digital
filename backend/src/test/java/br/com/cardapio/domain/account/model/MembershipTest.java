@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MembershipTest {
 
-    private static final PasswordHash PIN = new PasswordHash("hash:2580");
+    private static final PasswordHash PIN = new PasswordHash("hash:258014");
     private final UserId carlos = UserId.newId();
     private final EstablishmentId sakura = EstablishmentId.newId();
 
@@ -39,7 +39,7 @@ class MembershipTest {
     @Test
     void changesReturnANewMembershipAndKeepTheRest() {
         Membership waiter = Membership.teamMember(carlos, sakura, Role.STAFF, PIN);
-        PasswordHash newPin = new PasswordHash("hash:7391");
+        PasswordHash newPin = new PasswordHash("hash:739105");
 
         Membership kitchen = waiter.changeRole(Role.KITCHEN).changePin(newPin);
 
@@ -57,6 +57,15 @@ class MembershipTest {
 
         assertThat(gone.active()).isFalse();
         assertThat(gone.id()).isEqualTo(waiter.id());
+    }
+
+    @Test
+    void onlyActiveTeamMembersWithPinCanUseIt() {
+        Membership waiter = Membership.teamMember(carlos, sakura, Role.STAFF, PIN);
+
+        assertThat(waiter.canUsePin()).isTrue();
+        assertThat(waiter.deactivate().canUsePin()).isFalse();
+        assertThat(Membership.owner(carlos, sakura).canUsePin()).isFalse();
     }
 
     @Test

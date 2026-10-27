@@ -52,6 +52,16 @@ final class AccountPersistenceMapper {
                 row.getEstablishmentSlug(), Role.valueOf(row.getRole()));
     }
 
+    static PinLockoutJpaEntity toEntity(PinLockout l) {
+        return new PinLockoutJpaEntity(l.membershipId().value(), l.establishmentId().value(), l.failedAttempts(),
+                l.lockedUntil());
+    }
+
+    static PinLockout toDomain(PinLockoutJpaEntity e) {
+        return new PinLockout(new MembershipId(e.getMembershipId()), new EstablishmentId(e.getEstablishmentId()),
+                e.getFailedAttempts(), e.getLockedUntil());
+    }
+
     static RefreshTokenJpaEntity toEntity(RefreshToken t) {
         return new RefreshTokenJpaEntity(t.id().value(), t.familyId().value(), t.userId().value(),
                 t.establishmentId().value(), t.hash().value(), t.createdAt(), t.expiresAt(), t.revokedAt());

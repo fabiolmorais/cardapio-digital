@@ -28,10 +28,10 @@ class UpdateTeamMemberServiceTest {
     void ownerChangesRoleAndPin() {
         TeamMember carlos = fakes.given(sakura, "Carlos", Role.STAFF);
 
-        var updated = service.update(command(Role.OWNER, carlos.membership().id(), Role.MANAGER, "7391"));
+        var updated = service.update(command(Role.OWNER, carlos.membership().id(), Role.MANAGER, "739105"));
 
         assertThat(updated.role()).isEqualTo(Role.MANAGER);
-        assertThat(fakes.stored(carlos.membership().id()).pinHash().value()).isEqualTo("hash:7391");
+        assertThat(fakes.stored(carlos.membership().id()).pinHash().value()).isEqualTo("hash:739105");
     }
 
     @Test
@@ -41,7 +41,7 @@ class UpdateTeamMemberServiceTest {
         var updated = service.update(command(Role.OWNER, carlos.membership().id(), null, null));
 
         assertThat(updated.role()).isEqualTo(Role.STAFF);
-        assertThat(fakes.stored(carlos.membership().id()).pinHash().value()).isEqualTo("hash:2580");
+        assertThat(fakes.stored(carlos.membership().id()).pinHash().value()).isEqualTo("hash:258014");
     }
 
     @Test
@@ -51,7 +51,7 @@ class UpdateTeamMemberServiceTest {
 
         assertThatThrownBy(() -> service.update(command(Role.MANAGER, carlos.membership().id(), Role.MANAGER, null)))
                 .isInstanceOf(TeamPermissionException.class);
-        assertThatThrownBy(() -> service.update(command(Role.MANAGER, ana.membership().id(), null, "7391")))
+        assertThatThrownBy(() -> service.update(command(Role.MANAGER, ana.membership().id(), null, "739105")))
                 .isInstanceOf(TeamPermissionException.class);
         assertThat(fakes.stored(carlos.membership().id()).role()).isEqualTo(Role.STAFF);
     }
@@ -68,7 +68,7 @@ class UpdateTeamMemberServiceTest {
     void weakPinIsRefused() {
         TeamMember carlos = fakes.given(sakura, "Carlos", Role.STAFF);
 
-        assertThatThrownBy(() -> service.update(command(Role.OWNER, carlos.membership().id(), null, "0000")))
+        assertThatThrownBy(() -> service.update(command(Role.OWNER, carlos.membership().id(), null, "000000")))
                 .isInstanceOf(InvalidValueException.class);
     }
 

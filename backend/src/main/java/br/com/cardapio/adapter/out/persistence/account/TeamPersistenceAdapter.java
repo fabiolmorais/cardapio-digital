@@ -44,6 +44,15 @@ class TeamPersistenceAdapter implements TeamMemberPort {
     }
 
     @Override
+    public ResultPage<TeamMember> findPinMembers(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<TeamMemberRow> rows = memberships.findPinMembers(establishmentId.value(),
+                PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(AccountPersistenceMapper::toDomain).getContent(),
+                page.page(), page.size(), rows.getTotalElements());
+    }
+
+    @Override
     public Optional<TeamMember> findMember(EstablishmentId establishmentId, MembershipId memberId) {
         establishmentFilter.enable(establishmentId);
         return memberships.findTeamMember(establishmentId.value(), memberId.value())

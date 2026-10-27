@@ -3,6 +3,7 @@ package br.com.cardapio.application.service.device;
 import br.com.cardapio.application.port.in.device.DeviceSummary;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.RefreshTokenId;
 import br.com.cardapio.domain.device.exception.DeviceNotFoundException;
 import br.com.cardapio.domain.device.model.Device;
 import br.com.cardapio.domain.device.model.DeviceType;
@@ -19,7 +20,7 @@ class DeviceAdminServicesTest {
 
     private final DeviceFakes fakes = new DeviceFakes();
     private final ListDevicesService list = new ListDevicesService(fakes);
-    private final UnlinkDeviceService unlink = new UnlinkDeviceService(fakes, fakes.clock());
+    private final UnlinkDeviceService unlink = new UnlinkDeviceService(fakes, fakes, fakes.clock());
     private final EstablishmentId sakura = EstablishmentId.newId();
 
     private Device given(EstablishmentId establishmentId, String name) {
@@ -49,6 +50,20 @@ class DeviceAdminServicesTest {
         unlink.unlink(sakura, phone.id());
 
         assertThat(fakes.devices.get(phone.id()).isActive()).isFalse();
+    }
+
+    @Test
+    void unlinkEndsTheSessionsOpenedOnTheDevice() {
+        Device phone = given(sakura, "Celular do salão");
+        Device tablet = given(sakura, "Tablet da cozinha");
+        RefreshTokenId onPhone = RefreshTokenId.newId();
+        RefreshTokenId onTablet = RefreshTokenId.newId();
+        fakes.register(onPhone, phone.id(), sakura, NOW);
+        fakes.register(onTablet, tablet.id(), sakura, NOW);
+
+        unlink.unlink(sakura, phone.id());
+
+        assertThat(fakes.revokedSessions).containsExactly(onPhone);
     }
 
     @Test

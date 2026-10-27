@@ -15,8 +15,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 record AddTeamMemberRequest(
         @Schema(requiredMode = REQUIRED, example = "Carlos Souza") @NotBlank @Size(max = 120) String name,
         @Schema(requiredMode = REQUIRED, description = "MANAGER, STAFF ou KITCHEN") @NotNull Role role,
-        @Schema(requiredMode = REQUIRED, description = "4 a 6 números, sem sequências óbvias", example = "2580")
-        @NotBlank @Pattern(regexp = "\\d{4,6}") String pin
+        @Schema(requiredMode = REQUIRED, description = "6 números, sem sequências óbvias", example = "258014")
+        @NotBlank @Pattern(regexp = "\\d{6}") String pin
 ) {
 
     AddTeamMemberCommand toCommand(AuthenticatedUser user) {

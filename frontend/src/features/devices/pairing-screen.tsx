@@ -1,12 +1,12 @@
 "use client";
 
-import { CheckCircle2, Clock, UtensilsCrossed } from "lucide-react";
+import { Clock, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { messages } from "@/messages/pt-BR";
-import { claimPairing, PairingGoneError, startPairing, type ClaimPairingResponse, type PairingStarted } from "./device-api";
+import { claimPairing, PairingGoneError, startPairing, type PairingStarted } from "./device-api";
 
 const t = messages.pairing;
 
@@ -16,7 +16,7 @@ const POLL_MS = 3_000;
 const DEFAULT_TTL_MS = 10 * 60_000;
 
 /** O que aconteceu com o código atual depois que ele apareceu na tela. */
-type Outcome = { kind: "linked"; result: ClaimPairingResponse } | { kind: "expired" } | null;
+type Outcome = { kind: "linked" } | { kind: "expired" } | null;
 
 type Pairing = { pairing: PairingStarted; receivedAt: number; expiresAtLocal: number };
 
@@ -37,9 +37,9 @@ function formatRemaining(ms: number): string {
 /**
  * Tela do aparelho novo: mostra o código para o gerente digitar no painel e fica perguntando
  * ao back até ser vinculado. O token do aparelho chega num cookie HttpOnly, que esta tela
- * nunca vê.
+ * nunca vê; quando chega, avisa quem a usa (onLinked) para trocar pela tela do PIN.
  */
-export function PairingScreen() {
+export function PairingScreen({ onLinked }: { onLinked: () => void }) {
   const [outcome, setOutcome] = useState<Outcome>(null);
   // Começa vazio: Date.now() na renderização daria um valor diferente no servidor e no navegador.
   const [now, setNow] = useState<number | null>(null);
@@ -83,7 +83,8 @@ export function PairingScreen() {
         const result = await claimPairing(id, secret);
         if (cancelled) return;
         if (result.status === "LINKED") {
-          setOutcome({ kind: "linked", result });
+          setOutcome({ kind: "linked" });
+          onLinked();
           return;
         }
       } catch (error) {
@@ -102,7 +103,7 @@ export function PairingScreen() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [waiting]);
+  }, [waiting, onLinked]);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-7 px-6 pt-10 pb-8">
@@ -114,7 +115,9 @@ export function PairingScreen() {
       </div>
 
       {outcome?.kind === "linked" ? (
-        <Linked result={outcome.result} />
+        <p role="status" className="text-muted-foreground">
+          {t.loading}
+        </p>
       ) : (
         <>
           <div className="flex flex-col gap-2.5">
@@ -189,16 +192,5 @@ export function PairingScreen() {
         </>
       )}
     </main>
-  );
-}
-
-function Linked({ result }: { result: ClaimPairingResponse }) {
-  return (
-    <section className="flex flex-col items-start gap-4" role="status">
-      <CheckCircle2 aria-hidden className="size-12 text-success" />
-      <h1 className="text-2xl font-bold tracking-tight">{t.linkedTitle}</h1>
-      <p className="text-lg">{t.linkedText(result.device?.name ?? "", result.establishmentName ?? "")}</p>
-      <p className="text-muted-foreground">{t.linkedNext}</p>
-    </section>
   );
 }

@@ -19,7 +19,7 @@ final class TeamFakes implements TeamMemberPort, PasswordHasher {
         User user = User.teamMember(name);
         Membership membership = role == Role.OWNER
                 ? Membership.owner(user.id(), establishmentId)
-                : Membership.teamMember(user.id(), establishmentId, role, hash("2580"));
+                : Membership.teamMember(user.id(), establishmentId, role, hash("258014"));
         TeamMember member = new TeamMember(membership, name);
         members.put(membership.id(), member);
         return member;
@@ -40,6 +40,16 @@ final class TeamFakes implements TeamMemberPort, PasswordHasher {
         List<TeamMember> content = all.stream()
                 .skip((long) page.page() * page.size()).limit(page.size()).toList();
         return new ResultPage<>(content, page.page(), page.size(), all.size());
+    }
+
+    @Override
+    public ResultPage<TeamMember> findPinMembers(EstablishmentId establishmentId, PageQuery page) {
+        List<TeamMember> all = members.values().stream()
+                .filter(m -> m.membership().establishmentId().equals(establishmentId))
+                .filter(m -> m.membership().canUsePin())
+                .sorted(Comparator.comparing(TeamMember::name))
+                .toList();
+        return new ResultPage<>(all, page.page(), page.size(), all.size());
     }
 
     @Override

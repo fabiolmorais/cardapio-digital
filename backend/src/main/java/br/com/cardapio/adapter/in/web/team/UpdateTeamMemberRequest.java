@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Pattern;
 @Schema(name = "UpdateTeamMemberRequest", description = "Só os campos enviados mudam")
 record UpdateTeamMemberRequest(
         @Schema(description = "Novo papel: MANAGER, STAFF ou KITCHEN") Role role,
-        @Schema(description = "Novo PIN: 4 a 6 números", example = "7391") @Pattern(regexp = "\\d{4,6}") String pin
+        @Schema(description = "Novo PIN: 6 números", example = "739105") @Pattern(regexp = "\\d{6}") String pin
 ) {
     UpdateTeamMemberCommand toCommand(AuthenticatedUser user, MembershipId memberId) {
         return new UpdateTeamMemberCommand(user.establishmentId(), user.role(), memberId, role, pin);

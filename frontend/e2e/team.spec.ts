@@ -32,7 +32,7 @@ test("dono cadastra, edita, desliga e religa alguém da equipe", async ({ page, 
   const add = page.getByRole("dialog");
   await add.getByLabel("Nome").fill("Carlos Souza");
   await add.getByRole("radio", { name: /Garçom/ }).check();
-  await add.getByLabel("PIN").fill("2580");
+  await add.getByLabel("PIN").fill("258014");
   await add.getByRole("button", { name: "Adicionar" }).click();
   await expect(add).toBeHidden();
   await expect(row(page, "Carlos Souza")).toContainText("Garçom");
@@ -68,7 +68,7 @@ test("PIN fácil mostra o erro do servidor sem fechar o formulário", async ({ p
   await page.getByRole("button", { name: "Adicionar pessoa" }).click();
   const add = page.getByRole("dialog");
   await add.getByLabel("Nome").fill("Rita");
-  await add.getByLabel("PIN").fill("1234");
+  await add.getByLabel("PIN").fill("123456");
   await add.getByRole("button", { name: "Adicionar" }).click();
 
   await expect(add.getByRole("alert")).toHaveText("Esse PIN é fácil de adivinhar. Escolha outro");
