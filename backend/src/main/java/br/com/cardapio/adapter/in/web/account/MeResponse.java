@@ -11,11 +11,11 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 record MeResponse(
         @Schema(requiredMode = REQUIRED) UUID userId,
         @Schema(requiredMode = REQUIRED) String name,
-        @Schema(requiredMode = REQUIRED) String email,
+        @Schema(description = "Vazio para quem entra só por PIN (garçom, cozinha)") String email,
         @Schema(requiredMode = REQUIRED) EstablishmentAccessResponse establishment
 ) {
     static MeResponse from(CurrentAccount a) {
-        return new MeResponse(a.userId().value(), a.name(), a.email().value(),
+        return new MeResponse(a.userId().value(), a.name(), a.email() == null ? null : a.email().value(),
                 EstablishmentAccessResponse.from(a.establishment()));
     }
 }

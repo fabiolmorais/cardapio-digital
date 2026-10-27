@@ -29,6 +29,11 @@ class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     }
 
     @Override
+    public boolean revokeIfActive(RefreshTokenId id, Instant now) {
+        return tokens.revokeIfActive(id.value(), now) == 1;
+    }
+
+    @Override
     public void revokeFamily(RefreshTokenId familyId, Instant now) {
         tokens.revokeFamily(familyId.value(), now);
     }

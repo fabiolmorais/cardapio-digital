@@ -1,9 +1,6 @@
 package br.com.cardapio.adapter.in.web.shared;
 
-import br.com.cardapio.domain.account.exception.AccessRevokedException;
-import br.com.cardapio.domain.account.exception.EmailAlreadyRegisteredException;
-import br.com.cardapio.domain.account.exception.InvalidCredentialsException;
-import br.com.cardapio.domain.account.exception.InvalidSessionException;
+import br.com.cardapio.domain.account.exception.*;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import jakarta.validation.ConstraintViolationException;
@@ -54,6 +51,17 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class, InvalidSessionException.class})
     ProblemDetail handleUnauthorized(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(TeamPermissionException.class)
+    ProblemDetail handleForbidden(TeamPermissionException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    /** Também para recurso de outro restaurante: 404, sem revelar que ele existe. */
+    @ExceptionHandler(TeamMemberNotFoundException.class)
+    ProblemDetail handleNotFound(TeamMemberNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     /** Outras regras de negócio violadas. */

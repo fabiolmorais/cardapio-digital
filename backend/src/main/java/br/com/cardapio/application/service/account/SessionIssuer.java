@@ -47,12 +47,11 @@ public class SessionIssuer {
         return result(user, membership, raw, token);
     }
 
-    /** Renovação: revoga o token usado e emite o próximo da mesma família. */
+    /** Renovação: emite o próximo token da mesma família. Quem chama já revogou o token usado. */
     LoginResult rotate(RefreshToken current, User user, ActiveMembership membership) {
         Instant now = clock.instant();
         String raw = randomTokens.generate();
         RefreshToken next = current.rotate(RefreshTokenHash.of(raw), now, refreshTokenTtl);
-        refreshTokens.save(current.revoke(now));
         refreshTokens.save(next);
         return result(user, membership, raw, next);
     }

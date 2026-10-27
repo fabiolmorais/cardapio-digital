@@ -14,6 +14,12 @@ public interface RefreshTokenPort {
 
     Optional<RefreshToken> findByHash(RefreshTokenHash hash);
 
+    /**
+     * Revoga este token só se ele ainda estiver ativo, numa operação só no banco.
+     * Devolve false se outra renovação chegou antes e já o revogou.
+     */
+    boolean revokeIfActive(RefreshTokenId id, Instant now);
+
     /** Revoga todos os tokens ainda ativos da família (logout ou suspeita de cópia). */
     void revokeFamily(RefreshTokenId familyId, Instant now);
 }

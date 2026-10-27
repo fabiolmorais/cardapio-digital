@@ -52,6 +52,14 @@ class RefreshSessionServiceTest {
     }
 
     @Test
+    void losingTheRaceToAnotherRenewalEndsTheSession() {
+        fakes.anotherRenewalWinsTheRace = true;
+
+        assertThatThrownBy(() -> refresh.refresh(loggedIn.refreshToken())).isInstanceOf(InvalidSessionException.class);
+        assertThat(fakes.refreshTokens.values()).allMatch(RefreshToken::isRevoked);
+    }
+
+    @Test
     void expiredTokenIsRefused() {
         fakes.advance(AccountFakes.REFRESH_TTL);
 

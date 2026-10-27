@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.out.persistence.account;
 
+import br.com.cardapio.adapter.out.persistence.shared.EstablishmentScopedEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,16 +10,13 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "membership")
-class MembershipJpaEntity {
+class MembershipJpaEntity extends EstablishmentScopedEntity {
 
     @Id
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
-
-    @Column(name = "establishment_id", nullable = false)
-    private UUID establishmentId;
 
     @Column(nullable = false)
     private String role;
@@ -32,11 +30,12 @@ class MembershipJpaEntity {
     protected MembershipJpaEntity() {
     }
 
-    MembershipJpaEntity(UUID id, UUID userId, UUID establishmentId, String role, boolean active) {
+    MembershipJpaEntity(UUID id, UUID userId, UUID establishmentId, String role, String pinHash, boolean active) {
+        super(establishmentId);
         this.id = id;
         this.userId = userId;
-        this.establishmentId = establishmentId;
         this.role = role;
+        this.pinHash = pinHash;
         this.active = active;
     }
 

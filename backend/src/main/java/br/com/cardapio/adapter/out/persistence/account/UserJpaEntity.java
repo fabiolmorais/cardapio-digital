@@ -17,10 +17,11 @@ class UserJpaEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    /** Vazio para quem entra só por PIN (garçom, cozinha). */
+    @Column
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(nullable = false)
