@@ -1,23 +1,22 @@
 import createClient, { type Middleware } from "openapi-fetch";
-import { getAccessToken } from "@/lib/auth/session";
+import { getFreshAccessToken } from "@/lib/auth/session";
+import { clientOptions } from "./base";
 import type { components, paths } from "./schema";
 
 /**
  * Cliente tipado da API. Os tipos vêm de `npm run gen:api` (não declarar tipos da API à mão).
- * No servidor usa API_URL (rede interna); no navegador, NEXT_PUBLIC_API_URL.
  */
-const baseUrl =
-  typeof window === "undefined"
-    ? (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
-    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080");
+export const api = createClient<paths>(clientOptions);
 
-export const api = createClient<paths>({ baseUrl });
-
-/** No navegador, envia o token de quem entrou no painel em toda chamada. */
+/**
+ * No navegador, envia o token de quem entrou no painel em toda chamada, renovando antes se
+ * ele estiver para vencer. As rotas de /auth nunca levam o token: um token vencido faria o
+ * Spring Security responder 401 mesmo onde não é preciso estar logado.
+ */
 const auth: Middleware = {
-  onRequest({ request }) {
-    if (typeof window === "undefined") return;
-    const token = getAccessToken();
+  async onRequest({ request, schemaPath }) {
+    if (typeof window === "undefined" || schemaPath.startsWith("/api/v1/auth/")) return;
+    const token = await getFreshAccessToken();
     if (token) request.headers.set("Authorization", `Bearer ${token}`);
   },
 };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { getSession, subscribeToSession, type Session } from "./session";
+import { getServerSessionState, getSessionState, subscribeToSession, type SessionState } from "./session";
 
-/** Sessão atual; a tela redesenha quando alguém entra ou sai. No servidor é sempre nula. */
-export function useSession(): Session | null {
-  return useSyncExternalStore(subscribeToSession, getSession, () => null);
+/** Estado da sessão; a tela redesenha quando alguém entra ou sai. */
+export function useSession(): SessionState {
+  return useSyncExternalStore(subscribeToSession, getSessionState, getServerSessionState);
 }

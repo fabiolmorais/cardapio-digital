@@ -3,10 +3,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogOut, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
-import { setSession } from "@/lib/auth/session";
+import { endSession, restoreSession } from "@/lib/auth/session";
 import { useSession } from "@/lib/auth/use-session";
 import { messages } from "@/messages/pt-BR";
 
@@ -20,29 +20,38 @@ async function fetchMe() {
 
 /**
  * Primeira tela depois do login: confirma no back (GET /api/v1/me) quem está logado.
- * Sem sessão, volta para /entrar.
+ * Depois de um F5, recupera a sessão pelo cookie; sem sessão, volta para /entrar.
  */
 export function PanelHome() {
   const router = useRouter();
-  const session = useSession();
+  const { status } = useSession();
   const queryClient = useQueryClient();
-  const me = useQuery({ queryKey: ["me"], queryFn: fetchMe, enabled: session !== null, retry: false });
+  const [leaving, setLeaving] = useState(false);
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+    enabled: status === "authenticated",
+    retry: false,
+  });
 
   useEffect(() => {
-    if (session === null) router.replace("/entrar");
-  }, [session, router]);
+    if (status === "unknown") void restoreSession();
+    if (status === "anonymous") {
+      queryClient.clear();
+      router.replace("/entrar");
+    }
+  }, [status, router, queryClient]);
 
-  if (session === null) return null;
-
-  function logout() {
-    setSession(null);
+  async function logout() {
+    setLeaving(true);
+    await endSession();
     queryClient.clear();
     // Recarrega a página inteira: nada desta conta (dados, telas guardadas) fica na memória
     // para a próxima pessoa que usar o aparelho.
     window.location.replace("/entrar");
   }
 
-  if (me.isPending) {
+  if (status !== "authenticated" || me.isPending) {
     return <p className="text-muted-foreground">{t.loading}</p>;
   }
 
@@ -52,7 +61,7 @@ export function PanelHome() {
         <p role="alert" className="text-destructive">
           {t.error}
         </p>
-        <Button variant="outline" onClick={logout}>
+        <Button variant="outline" onClick={logout} disabled={leaving}>
           {t.logout}
         </Button>
       </div>
@@ -65,7 +74,7 @@ export function PanelHome() {
     <>
       <header className="flex items-start justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t.greeting(name)}</h1>
-        <Button variant="outline" onClick={logout}>
+        <Button variant="outline" onClick={logout} disabled={leaving}>
           <LogOut aria-hidden />
           {t.logout}
         </Button>

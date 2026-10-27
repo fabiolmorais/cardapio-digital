@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, type Schemas } from "@/lib/api/client";
-import { setSession } from "@/lib/auth/session";
+import { startSession } from "@/lib/auth/session";
 import { messages } from "@/messages/pt-BR";
 
 const t = messages.login;
@@ -36,7 +36,7 @@ export function LoginForm() {
   const mutation = useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: login,
     onSuccess: (data) => {
-      setSession({
+      startSession({
         accessToken: data.accessToken,
         expiresAt: data.expiresAt,
         userName: data.userName,
