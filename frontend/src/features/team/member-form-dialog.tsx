@@ -127,8 +127,8 @@ export function MemberFormDialog({ open, onOpenChange, roles, member }: Props) {
               name="pin"
               inputMode="numeric"
               autoComplete="off"
-              pattern="\d{4,6}"
-              minLength={4}
+              pattern="\d{6}"
+              minLength={6}
               maxLength={6}
               required={!editing}
               placeholder={t.form.pinPlaceholder}

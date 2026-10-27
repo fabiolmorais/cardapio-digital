@@ -2,14 +2,14 @@ import { devices, expect, test, type Browser, type APIRequestContext, type Page 
 import { addTeamMember, API_URL, apiLogin, createAccount, linkDeviceByCode } from "./support/account";
 
 const APP_URL = "http://localhost:3000";
-const PIN = "2580";
+const PIN = "258014";
 
 /** Restaurante com o Carlos (garçom) e um celular já vinculado, mostrando a tela do PIN. */
 async function waiterPhone(browser: Browser, request: APIRequestContext) {
   const { email } = await createAccount(request);
   const token = await apiLogin(request, email);
   await addTeamMember(request, token, "Carlos Souza", "STAFF", PIN);
-  await addTeamMember(request, token, "Rita Lima", "KITCHEN", "7391");
+  await addTeamMember(request, token, "Rita Lima", "KITCHEN", "739105");
 
   const context = await browser.newContext({ ...devices["Pixel 7"], locale: "pt-BR" });
   const phone = await context.newPage();
@@ -32,8 +32,7 @@ test("garçom entra com PIN, cai no painel e, ao sair, volta para o PIN", async 
   // O dono não aparece: ele entra com e-mail e senha.
   await expect(phone.getByRole("group", { name: "Equipe" }).getByRole("button")).toHaveCount(2);
   await phone.getByRole("button", { name: "Carlos Souza, Garçom" }).click();
-  await typePin(phone, PIN);
-  await phone.getByRole("button", { name: "Entrar" }).click();
+  await typePin(phone, PIN); // entra sozinho ao digitar o 6º dígito
 
   await expect(phone).toHaveURL(/\/painel$/);
   await expect(phone.getByRole("heading", { name: "Olá, Carlos Souza" })).toBeVisible();
@@ -51,16 +50,13 @@ test("PIN errado diz quantas tentativas restam e o quinto bloqueia", async ({ br
   await phone.getByRole("button", { name: "Carlos Souza, Garçom" }).click();
 
   for (const remaining of [4, 3, 2]) {
-    await typePin(phone, "9999");
-    await phone.getByRole("button", { name: "Entrar" }).click();
-    await expect(phone.locator("#pin-error")).toHaveText(`PIN incorreto. Restam ${remaining} tentativas.`);
+    await typePin(phone, "999999");
+      await expect(phone.locator("#pin-error")).toHaveText(`PIN incorreto. Restam ${remaining} tentativas.`);
   }
-  await typePin(phone, "9999");
-  await phone.getByRole("button", { name: "Entrar" }).click();
+  await typePin(phone, "999999");
   await expect(phone.locator("#pin-error")).toHaveText("PIN incorreto. Resta 1 tentativa.");
 
-  await typePin(phone, "9999");
-  await phone.getByRole("button", { name: "Entrar" }).click();
+  await typePin(phone, "999999");
   await expect(phone.locator("#pin-error")).toContainText("Muitas tentativas erradas. Tente de novo em 15 minutos");
   await expect(phone.getByRole("button", { name: "1", exact: true })).toBeDisabled();
   await context.close();
@@ -75,7 +71,6 @@ test("aparelho desvinculado volta para a tela do código", async ({ browser, req
 
   await phone.getByRole("button", { name: "Carlos Souza, Garçom" }).click();
   await typePin(phone, PIN);
-  await phone.getByRole("button", { name: "Entrar" }).click();
 
   await expect(phone.getByTestId("pairing-code")).toBeVisible({ timeout: 10_000 });
   await context.close();

@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PinLoginControllerTest {
 
     private static final String PASSWORD = "sushi2026bom";
-    private static final String PIN = "2580";
+    private static final String PIN = "258014";
 
     @Autowired
     MockMvcTester mvc;
@@ -142,12 +142,12 @@ class PinLoginControllerTest {
     @Test
     void wrongPinsCountDownLockAndTheLockExpires() throws Exception {
         for (int remaining = 4; remaining >= 1; remaining--) {
-            MvcTestResult wrong = pin(phoneToken, carlos, "9999");
+            MvcTestResult wrong = pin(phoneToken, carlos, "999999");
             assertThat(wrong).hasStatus(HttpStatus.UNAUTHORIZED);
             assertThat(json(wrong, "$.detail")).contains(String.valueOf(remaining));
         }
 
-        MvcTestResult locked = pin(phoneToken, carlos, "9999");
+        MvcTestResult locked = pin(phoneToken, carlos, "999999");
         assertThat(locked).hasStatus(HttpStatus.TOO_MANY_REQUESTS);
         assertThat(locked.getResponse().getHeader(HttpHeaders.RETRY_AFTER)).isEqualTo("900");
         assertThat(locked).bodyJson().extractingPath("$.minutesLeft").isEqualTo(15);
@@ -173,7 +173,7 @@ class PinLoginControllerTest {
             for (int i = 0; i < 8; i++) {
                 Callable<MvcTestResult> attempt = () -> {
                     start.await();
-                    return pin(phoneToken, carlos, "9999");
+                    return pin(phoneToken, carlos, "999999");
                 };
                 futures.add(pool.submit(attempt));
             }

@@ -14,7 +14,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(name = "PinLoginRequest", description = "Quem tocou no próprio nome e o PIN digitado")
 record PinLoginRequest(
         @Schema(requiredMode = REQUIRED) @NotNull UUID memberId,
-        @Schema(requiredMode = REQUIRED, example = "2580") @NotBlank @Pattern(regexp = "\\d{4,6}") String pin
+        @Schema(requiredMode = REQUIRED, example = "258014") @NotBlank @Pattern(regexp = "\\d{6}") String pin
 ) {
 
     PinLoginCommand toCommand(String deviceToken) {

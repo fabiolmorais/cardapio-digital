@@ -94,7 +94,7 @@ class TeamMemberControllerTest {
     /** Cadastra alguém e devolve o id. */
     private String add(String token, String name, Role role) throws Exception {
         MvcTestResult added = post(token, TEAM, """
-                {"name":"%s","role":"%s","pin":"2580"}""".formatted(name, role));
+                {"name":"%s","role":"%s","pin":"258014"}""".formatted(name, role));
         assertThat(added).hasStatus(HttpStatus.CREATED);
         return json(added, "$.id");
     }
@@ -102,20 +102,20 @@ class TeamMemberControllerTest {
     @Test
     void ownerAddsListsUpdatesAndDeactivatesAMember() throws Exception {
         MvcTestResult added = post(sakura.token(), TEAM, """
-                {"name":"Carlos Souza","role":"STAFF","pin":"2580"}""");
+                {"name":"Carlos Souza","role":"STAFF","pin":"258014"}""");
 
         assertThat(added).hasStatus(HttpStatus.CREATED);
         String carlos = json(added, "$.id");
         assertThat(added.getResponse().getHeader(HttpHeaders.LOCATION)).isEqualTo(TEAM + "/" + carlos);
         assertThat(added).bodyJson().extractingPath("$.role").isEqualTo("STAFF");
         assertThat(added).bodyJson().extractingPath("$.active").isEqualTo(true);
-        assertThat(added.getResponse().getContentAsString()).doesNotContain("2580", "pin");
+        assertThat(added.getResponse().getContentAsString()).doesNotContain("258014", "pin");
 
         // No banco: PIN só como hash BCrypt, e a pessoa não tem e-mail nem senha.
         Map<String, Object> row = jdbc.queryForMap("""
                 SELECT m.pin_hash, u.email, u.password_hash FROM membership m JOIN app_user u ON u.id = m.user_id
                 WHERE m.id = ?""", UUID.fromString(carlos));
-        assertThat((String) row.get("pin_hash")).startsWith("$2").doesNotContain("2580");
+        assertThat((String) row.get("pin_hash")).startsWith("$2").doesNotContain("258014");
         assertThat(row.get("email")).isNull();
         assertThat(row.get("password_hash")).isNull();
 
@@ -124,7 +124,7 @@ class TeamMemberControllerTest {
         assertThat(list).bodyJson().extractingPath("$.content[*].name").asArray().containsExactly("Carlos Souza", "Marina");
         assertThat(list).bodyJson().extractingPath("$.totalElements").isEqualTo(2);
 
-        MvcTestResult updated = patch(sakura.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"7391\"}");
+        MvcTestResult updated = patch(sakura.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"739105\"}");
         assertThat(updated).hasStatusOk();
         assertThat(updated).bodyJson().extractingPath("$.role").isEqualTo("KITCHEN");
 
@@ -146,11 +146,11 @@ class TeamMemberControllerTest {
 
     @Test
     void invalidDataGets400() throws Exception {
-        MvcTestResult missing = post(sakura.token(), TEAM, "{\"role\":\"STAFF\",\"pin\":\"25a0\"}");
+        MvcTestResult missing = post(sakura.token(), TEAM, "{\"role\":\"STAFF\",\"pin\":\"25a014\"}");
         assertThat(missing).hasStatus(HttpStatus.BAD_REQUEST);
         assertThat(missing).bodyJson().extractingPath("$.fields").asArray().containsExactly("name", "pin");
 
-        MvcTestResult weakPin = post(sakura.token(), TEAM, "{\"name\":\"Carlos\",\"role\":\"STAFF\",\"pin\":\"1234\"}");
+        MvcTestResult weakPin = post(sakura.token(), TEAM, "{\"name\":\"Carlos\",\"role\":\"STAFF\",\"pin\":\"123456\"}");
         assertThat(weakPin).hasStatus(HttpStatus.BAD_REQUEST);
         assertThat(json(weakPin, "$.detail")).contains("fácil de adivinhar");
     }
@@ -166,7 +166,7 @@ class TeamMemberControllerTest {
         String waiter = tokenFor(carlos, sakura.establishmentId(), Role.STAFF);
 
         assertThat(get(waiter, TEAM)).hasStatus(HttpStatus.FORBIDDEN);
-        assertThat(post(waiter, TEAM, "{\"name\":\"Rita\",\"role\":\"KITCHEN\",\"pin\":\"2580\"}"))
+        assertThat(post(waiter, TEAM, "{\"name\":\"Rita\",\"role\":\"KITCHEN\",\"pin\":\"258014\"}"))
                 .hasStatus(HttpStatus.FORBIDDEN);
     }
 
@@ -180,10 +180,10 @@ class TeamMemberControllerTest {
         String carlos = add(manager, "Carlos", Role.STAFF);
         assertThat(patch(manager, carlos, "{\"role\":\"KITCHEN\"}")).hasStatusOk();
 
-        assertThat(post(manager, TEAM, "{\"name\":\"Bia\",\"role\":\"MANAGER\",\"pin\":\"2580\"}"))
+        assertThat(post(manager, TEAM, "{\"name\":\"Bia\",\"role\":\"MANAGER\",\"pin\":\"258014\"}"))
                 .hasStatus(HttpStatus.FORBIDDEN);
         assertThat(patch(manager, carlos, "{\"role\":\"MANAGER\"}")).hasStatus(HttpStatus.FORBIDDEN);
-        assertThat(patch(manager, ana, "{\"pin\":\"7391\"}")).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(patch(manager, ana, "{\"pin\":\"739105\"}")).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(delete(manager, owner)).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(post(manager, TEAM + "/" + ana + "/reactivation", "")).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(delete(sakura.token(), owner)).hasStatus(HttpStatus.FORBIDDEN);
@@ -199,7 +199,7 @@ class TeamMemberControllerTest {
         Owner other = newRestaurant();
 
         assertThat(get(other.token(), TEAM + "/" + carlos)).hasStatus(HttpStatus.NOT_FOUND);
-        assertThat(patch(other.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"7391\"}"))
+        assertThat(patch(other.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"739105\"}"))
                 .hasStatus(HttpStatus.NOT_FOUND);
         assertThat(delete(other.token(), carlos)).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(post(other.token(), TEAM + "/" + carlos + "/reactivation", "")).hasStatus(HttpStatus.NOT_FOUND);

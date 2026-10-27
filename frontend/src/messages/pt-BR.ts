@@ -165,8 +165,8 @@ export const messages = {
       role: "Papel",
       pin: "PIN",
       newPin: "Novo PIN",
-      pinPlaceholder: "4 a 6 números",
-      pinHint: "Evite PINs fáceis, como 1234 ou 0000.",
+      pinPlaceholder: "6 números",
+      pinHint: "Evite PINs fáceis, como 123456 ou 000000.",
       newPinHint: "Deixe em branco para manter o PIN atual.",
       cancel: "Cancelar",
       save: "Salvar",
@@ -189,7 +189,7 @@ export const messages = {
     },
     errors: {
       generic: "Não foi possível salvar agora. Tente de novo em instantes.",
-      fields: "Confira o nome e o PIN (4 a 6 números).",
+      fields: "Confira o nome e o PIN (6 números).",
     },
   },
   devices: {
@@ -271,7 +271,6 @@ export const messages = {
       backspace: "Apagar",
     },
     forgotHelp: "Peça ao gerente um PIN novo: no painel, em Equipe e aparelhos, Editar.",
-    submit: "Entrar",
     submitting: "Entrando…",
     errors: {
       generic: "Não foi possível entrar agora. Tente de novo em instantes.",

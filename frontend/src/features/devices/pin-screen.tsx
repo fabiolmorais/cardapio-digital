@@ -21,8 +21,8 @@ import {
 const t = messages.pin;
 const roleNames = messages.panel.roles;
 
-const MIN_PIN = 4;
-const MAX_PIN = 6;
+/** O PIN tem sempre 6 dígitos: ao digitar o último, a tela entra sozinha. */
+const PIN_LENGTH = 6;
 const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
 
 function initials(name: string) {
@@ -88,18 +88,19 @@ export function PinScreen({ current, onDeviceLost }: Props) {
   }
 
   function press(digit: string) {
-    if (!selected || pin.length >= MAX_PIN) return;
-    setPin(pin + digit);
-    if (login.isError) login.reset();
-  }
-
-  function submit() {
-    if (selected && pin.length >= MIN_PIN) login.mutate({ memberId: selected, pin });
+    if (!selected || pin.length >= PIN_LENGTH || login.isPending) return;
+    const typed = pin + digit;
+    setPin(typed);
+    if (typed.length === PIN_LENGTH) {
+      login.mutate({ memberId: selected, pin: typed });
+    } else if (login.isError) {
+      login.reset();
+    }
   }
 
   const establishmentName = current.establishmentName;
   const locked = login.error?.status === 429;
-  const dots = Math.max(MIN_PIN, pin.length);
+  const dots = PIN_LENGTH;
   const keyClass =
     "h-17 rounded-[20px] border border-border bg-muted text-[26px] font-semibold transition-colors hover:bg-secondary focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-40";
   const ghostKeyClass =
@@ -186,6 +187,11 @@ export function PinScreen({ current, onDeviceLost }: Props) {
         <p id="pin-error" role="alert" aria-live="assertive" className="min-h-5 text-center text-sm text-destructive">
           {login.error?.message ?? ""}
         </p>
+        {login.isPending && (
+          <p role="status" className="text-center text-sm text-muted-foreground">
+            {t.submitting}
+          </p>
+        )}
         {showForgot && <p className="text-center text-sm text-muted-foreground">{t.forgotHelp}</p>}
         {!selected && members.data && members.data.length > 0 && (
           <p className="text-center text-sm text-muted-foreground">{t.pickName}</p>
@@ -224,21 +230,12 @@ export function PinScreen({ current, onDeviceLost }: Props) {
           type="button"
           className={cn(ghostKeyClass, "flex items-center justify-center")}
           aria-label={t.keys.backspace}
-          disabled={pin.length === 0}
+          disabled={pin.length === 0 || login.isPending}
           onClick={() => setPin(pin.slice(0, -1))}
         >
           <Delete aria-hidden className="size-6" />
         </button>
       </div>
-
-      <Button
-        size="xl"
-        className="h-13"
-        disabled={!selected || pin.length < MIN_PIN || login.isPending || locked}
-        onClick={submit}
-      >
-        {login.isPending ? t.submitting : t.submit}
-      </Button>
     </main>
   );
 }

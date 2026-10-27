@@ -3,21 +3,20 @@ package br.com.cardapio.domain.account.model;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 
 /**
- * Regra do PIN da equipe: 4 a 6 dígitos, sem os PINs óbvios (todos iguais ou em sequência).
- * O PIN é curto de propósito (digitado no salão, com pressa); quem o protege é o aparelho
- * vinculado e o limite de tentativas, não o tamanho.
+ * Regra do PIN da equipe: exatamente 6 dígitos, sem os PINs óbvios (todos iguais ou em
+ * sequência). Tamanho fixo deixa a tela simples (6 bolinhas, entra ao digitar o último) e
+ * dá 1 milhão de combinações; junto com o aparelho vinculado e o limite de tentativas, basta.
  */
 public final class PinPolicy {
 
-    public static final int MIN_LENGTH = 4;
-    public static final int MAX_LENGTH = 6;
+    public static final int LENGTH = 6;
 
     private PinPolicy() {
     }
 
     public static void check(String rawPin) {
-        if (rawPin == null || !rawPin.matches("\\d{" + MIN_LENGTH + "," + MAX_LENGTH + "}")) {
-            throw new InvalidValueException("O PIN precisa ter de " + MIN_LENGTH + " a " + MAX_LENGTH + " números");
+        if (rawPin == null || !rawPin.matches("\\d{" + LENGTH + "}")) {
+            throw new InvalidValueException("O PIN precisa ter " + LENGTH + " números");
         }
         if (allSameDigit(rawPin) || isSequence(rawPin, 1) || isSequence(rawPin, -1)) {
             throw new InvalidValueException("Esse PIN é fácil de adivinhar. Escolha outro");
@@ -28,7 +27,7 @@ public final class PinPolicy {
         return pin.chars().allMatch(c -> c == pin.charAt(0));
     }
 
-    /** 1234, 456789 (step 1) ou 9876, 4321 (step -1). */
+    /** 123456, 345678 (step 1) ou 987654, 654321 (step -1). */
     private static boolean isSequence(String pin, int step) {
         for (int i = 1; i < pin.length(); i++) {
             if (pin.charAt(i) - pin.charAt(i - 1) != step) {

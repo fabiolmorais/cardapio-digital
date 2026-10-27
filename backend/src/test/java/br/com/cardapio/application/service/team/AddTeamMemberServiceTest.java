@@ -24,34 +24,34 @@ class AddTeamMemberServiceTest {
 
     @Test
     void ownerAddsAWaiterWithHashedPin() {
-        TeamMemberSummary carlos = service.add(command(Role.OWNER, " Carlos ", Role.STAFF, "2580"));
+        TeamMemberSummary carlos = service.add(command(Role.OWNER, " Carlos ", Role.STAFF, "258014"));
 
         assertThat(carlos.name()).isEqualTo("Carlos");
         assertThat(carlos.role()).isEqualTo(Role.STAFF);
         assertThat(carlos.active()).isTrue();
         var stored = fakes.stored(carlos.id());
         assertThat(stored.establishmentId()).isEqualTo(sakura);
-        assertThat(stored.pinHash().value()).isEqualTo("hash:2580"); // nunca o PIN puro
+        assertThat(stored.pinHash().value()).isEqualTo("hash:258014"); // nunca o PIN puro
     }
 
     @Test
     void managerAddsKitchenButNotAnotherManager() {
-        assertThat(service.add(command(Role.MANAGER, "Rita", Role.KITCHEN, "2580")).role()).isEqualTo(Role.KITCHEN);
+        assertThat(service.add(command(Role.MANAGER, "Rita", Role.KITCHEN, "258014")).role()).isEqualTo(Role.KITCHEN);
 
-        assertThatThrownBy(() -> service.add(command(Role.MANAGER, "Ana", Role.MANAGER, "2580")))
+        assertThatThrownBy(() -> service.add(command(Role.MANAGER, "Ana", Role.MANAGER, "258014")))
                 .isInstanceOf(TeamPermissionException.class);
     }
 
     @Test
     void nobodyAddsAnotherOwner() {
-        assertThatThrownBy(() -> service.add(command(Role.OWNER, "Ana", Role.OWNER, "2580")))
+        assertThatThrownBy(() -> service.add(command(Role.OWNER, "Ana", Role.OWNER, "258014")))
                 .isInstanceOf(TeamPermissionException.class);
         assertThat(fakes.members).isEmpty();
     }
 
     @Test
     void weakPinIsRefusedAndNothingIsSaved() {
-        assertThatThrownBy(() -> service.add(command(Role.OWNER, "Carlos", Role.STAFF, "1234")))
+        assertThatThrownBy(() -> service.add(command(Role.OWNER, "Carlos", Role.STAFF, "123456")))
                 .isInstanceOf(InvalidValueException.class);
         assertThat(fakes.members).isEmpty();
     }

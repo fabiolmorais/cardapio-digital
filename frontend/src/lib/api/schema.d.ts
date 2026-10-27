@@ -297,8 +297,8 @@ export interface components {
              */
             role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
             /**
-             * @description 4 a 6 números, sem sequências óbvias
-             * @example 2580
+             * @description 6 números, sem sequências óbvias
+             * @example 258014
              */
             pin: string;
         };
@@ -440,7 +440,7 @@ export interface components {
         PinLoginRequest: {
             /** Format: uuid */
             memberId: string;
-            /** @example 2580 */
+            /** @example 258014 */
             pin: string;
         };
         LoginRequest: {
@@ -456,8 +456,8 @@ export interface components {
              */
             role?: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
             /**
-             * @description Novo PIN: 4 a 6 números
-             * @example 7391
+             * @description Novo PIN: 6 números
+             * @example 739105
              */
             pin?: string;
         };

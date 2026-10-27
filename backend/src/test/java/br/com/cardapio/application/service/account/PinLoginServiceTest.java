@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PinLoginServiceTest {
 
     private static final String DEVICE_TOKEN = "token-do-celular";
-    private static final String PIN = "2580";
+    private static final String PIN = "258014";
 
     private final AccountFakes accounts = new AccountFakes();
     private final PinLoginFakes pins = new PinLoginFakes();
@@ -79,11 +79,11 @@ class PinLoginServiceTest {
     void wrongPinsCountDownAndTheFifthLocks() {
         for (int remaining = 4; remaining >= 1; remaining--) {
             int expected = remaining;
-            assertThatThrownBy(() -> login(carlos, "9999"))
+            assertThatThrownBy(() -> login(carlos, "999999"))
                     .isInstanceOfSatisfying(InvalidPinException.class,
                             e -> assertThat(e.remainingAttempts()).isEqualTo(expected));
         }
-        assertThatThrownBy(() -> login(carlos, "9999")).isInstanceOf(PinLockedException.class);
+        assertThatThrownBy(() -> login(carlos, "999999")).isInstanceOf(PinLockedException.class);
         // Bloqueado, nem o PIN certo entra.
         assertThatThrownBy(() -> login(carlos, PIN))
                 .isInstanceOfSatisfying(PinLockedException.class, e -> assertThat(e.minutesLeft()).isEqualTo(15));
@@ -92,7 +92,7 @@ class PinLoginServiceTest {
     @Test
     void afterTheLockTheRightPinWorksAndClearsTheCount() {
         for (int i = 0; i < PinLockout.MAX_ATTEMPTS; i++) {
-            assertThatThrownBy(() -> login(carlos, "9999")).isInstanceOf(RuntimeException.class);
+            assertThatThrownBy(() -> login(carlos, "999999")).isInstanceOf(RuntimeException.class);
         }
         accounts.advance(PinLockout.LOCK_DURATION);
 
@@ -103,7 +103,7 @@ class PinLoginServiceTest {
     @Test
     void everyAttemptTakesTheLock() {
         login(carlos, PIN);
-        assertThatThrownBy(() -> login(carlos, "9999")).isInstanceOf(InvalidPinException.class);
+        assertThatThrownBy(() -> login(carlos, "999999")).isInstanceOf(InvalidPinException.class);
 
         assertThat(pins.locks).isEqualTo(2);
     }
