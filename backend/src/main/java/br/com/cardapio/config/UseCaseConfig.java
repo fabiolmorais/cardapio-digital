@@ -2,6 +2,7 @@ package br.com.cardapio.config;
 
 import br.com.cardapio.application.port.in.account.*;
 import br.com.cardapio.application.port.in.device.ClaimPairingUseCase;
+import br.com.cardapio.application.port.in.device.CurrentDeviceUseCase;
 import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
 import br.com.cardapio.application.port.in.device.ListDevicesUseCase;
 import br.com.cardapio.application.port.in.device.StartPairingUseCase;
@@ -9,6 +10,7 @@ import br.com.cardapio.application.port.in.device.UnlinkDeviceUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
+import br.com.cardapio.application.port.in.team.ListPinMembersUseCase;
 import br.com.cardapio.application.port.in.team.ListTeamUseCase;
 import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
@@ -17,12 +19,15 @@ import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
 import br.com.cardapio.application.port.out.device.DevicePort;
+import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
 import br.com.cardapio.application.service.account.*;
 import br.com.cardapio.application.service.device.ClaimPairingService;
+import br.com.cardapio.application.service.device.CurrentDeviceService;
+import br.com.cardapio.application.service.device.DeviceAuthenticator;
 import br.com.cardapio.application.service.device.LinkDeviceService;
 import br.com.cardapio.application.service.device.ListDevicesService;
 import br.com.cardapio.application.service.device.StartPairingService;
@@ -30,6 +35,7 @@ import br.com.cardapio.application.service.device.UnlinkDeviceService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
+import br.com.cardapio.application.service.team.ListPinMembersService;
 import br.com.cardapio.application.service.team.ListTeamService;
 import br.com.cardapio.application.service.team.ReactivateTeamMemberService;
 import br.com.cardapio.application.service.team.UpdateTeamMemberService;
@@ -137,7 +143,32 @@ class UseCaseConfig {
     }
 
     @Bean
-    UnlinkDeviceUseCase unlinkDeviceUseCase(DevicePort devicePort, Clock clock) {
-        return new UnlinkDeviceService(devicePort, clock);
+    UnlinkDeviceUseCase unlinkDeviceUseCase(DevicePort devicePort, DeviceSessionPort deviceSessionPort, Clock clock) {
+        return new UnlinkDeviceService(devicePort, deviceSessionPort, clock);
+    }
+
+    /** Não é caso de uso: é a peça que identifica o aparelho pelo token do cookie. */
+    @Bean
+    DeviceAuthenticator deviceAuthenticator(DevicePort devicePort, Clock clock) {
+        return new DeviceAuthenticator(devicePort, clock);
+    }
+
+    @Bean
+    CurrentDeviceUseCase currentDeviceUseCase(DeviceAuthenticator deviceAuthenticator) {
+        return new CurrentDeviceService(deviceAuthenticator);
+    }
+
+    @Bean
+    ListPinMembersUseCase listPinMembersUseCase(DeviceAuthenticator deviceAuthenticator, TeamMemberPort teamMemberPort) {
+        return new ListPinMembersService(deviceAuthenticator, teamMemberPort);
+    }
+
+    @Bean
+    PinLoginUseCase pinLoginUseCase(DeviceAuthenticator deviceAuthenticator, TeamMemberPort teamMemberPort,
+                                    PinLockoutPort pinLockoutPort, PasswordHasher passwordHasher,
+                                    LoadUserPort loadUserPort, LoadMembershipPort loadMembershipPort,
+                                    SessionIssuer sessionIssuer, DeviceSessionPort deviceSessionPort, Clock clock) {
+        return new PinLoginService(deviceAuthenticator, teamMemberPort, pinLockoutPort, passwordHasher, loadUserPort,
+                loadMembershipPort, sessionIssuer, deviceSessionPort, clock);
     }
 }

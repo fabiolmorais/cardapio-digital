@@ -43,6 +43,16 @@ final class TeamFakes implements TeamMemberPort, PasswordHasher {
     }
 
     @Override
+    public ResultPage<TeamMember> findPinMembers(EstablishmentId establishmentId, PageQuery page) {
+        List<TeamMember> all = members.values().stream()
+                .filter(m -> m.membership().establishmentId().equals(establishmentId))
+                .filter(m -> m.membership().canUsePin())
+                .sorted(Comparator.comparing(TeamMember::name))
+                .toList();
+        return new ResultPage<>(all, page.page(), page.size(), all.size());
+    }
+
+    @Override
     public Optional<TeamMember> findMember(EstablishmentId establishmentId, MembershipId memberId) {
         return Optional.ofNullable(members.get(memberId))
                 .filter(m -> m.membership().establishmentId().equals(establishmentId));

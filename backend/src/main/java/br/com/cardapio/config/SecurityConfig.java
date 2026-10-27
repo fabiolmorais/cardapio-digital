@@ -82,6 +82,9 @@ class SecurityConfig {
                         // O aparelho novo ainda não é de ninguém: quem o identifica é o segredo do pedido.
                         .requestMatchers(HttpMethod.POST, "/api/v1/device-pairings",
                                 "/api/v1/device-pairings/*/claim").permitAll()
+                        // Tela e login por PIN: quem identifica o aparelho é o cookie device_token.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/device", "/api/v1/auth/device/team-members").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/pin").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
         return http.build();

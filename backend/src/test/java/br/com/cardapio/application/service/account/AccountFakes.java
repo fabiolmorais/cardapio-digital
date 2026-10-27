@@ -59,6 +59,14 @@ final class AccountFakes implements LoadUserPort, LoadMembershipPort, PasswordHa
         return user;
     }
 
+    /** Vínculo com papel e restaurante escolhidos (a pessoa da equipe que entra por PIN). */
+    ActiveMembership addMembership(User user, EstablishmentId establishmentId, Role role) {
+        ActiveMembership m = new ActiveMembership(MembershipId.newId(), establishmentId, "Sakura Sushi",
+                "sakura-sushi", role);
+        memberships.add(new Row(user.id(), m));
+        return m;
+    }
+
     ActiveMembership addMembership(User user, String establishmentName) {
         ActiveMembership m = new ActiveMembership(MembershipId.newId(), EstablishmentId.newId(), establishmentName,
                 "sakura-sushi", Role.OWNER);

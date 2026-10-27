@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.out.security.TokenSubject;
 import br.com.cardapio.domain.account.model.RefreshToken;
 import br.com.cardapio.domain.account.model.RefreshTokenHash;
+import br.com.cardapio.domain.account.model.RefreshTokenId;
 import br.com.cardapio.domain.account.model.User;
 
 import java.time.Clock;
@@ -37,14 +38,23 @@ public class SessionIssuer {
         this.refreshTokenTtl = Objects.requireNonNull(refreshTokenTtl);
     }
 
+    /** Sessão nova e a família de refresh tokens que ela abriu. */
+    record IssuedSession(LoginResult result, RefreshTokenId familyId) {
+    }
+
     /** Login: abre uma família nova de refresh tokens. */
     LoginResult start(User user, ActiveMembership membership) {
+        return startFamily(user, membership).result();
+    }
+
+    /** Como o start, devolvendo também a família (o login por PIN liga a família ao aparelho). */
+    IssuedSession startFamily(User user, ActiveMembership membership) {
         Instant now = clock.instant();
         String raw = randomTokens.generate();
         RefreshToken token = RefreshToken.issue(user.id(), membership.establishmentId(),
                 RefreshTokenHash.of(raw), now, refreshTokenTtl);
         refreshTokens.save(token);
-        return result(user, membership, raw, token);
+        return new IssuedSession(result(user, membership, raw, token), token.familyId());
     }
 
     /** Renovação: emite o próximo token da mesma família. Quem chama já revogou o token usado. */

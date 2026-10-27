@@ -60,6 +60,15 @@ class MembershipTest {
     }
 
     @Test
+    void onlyActiveTeamMembersWithPinCanUseIt() {
+        Membership waiter = Membership.teamMember(carlos, sakura, Role.STAFF, PIN);
+
+        assertThat(waiter.canUsePin()).isTrue();
+        assertThat(waiter.deactivate().canUsePin()).isFalse();
+        assertThat(Membership.owner(carlos, sakura).canUsePin()).isFalse();
+    }
+
+    @Test
     void reactivateBringsBackTheSameRoleAndPin() {
         Membership waiter = Membership.teamMember(carlos, sakura, Role.STAFF, PIN).deactivate();
 

@@ -8,6 +8,7 @@ import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.device.model.Device;
 import br.com.cardapio.domain.device.model.DeviceId;
+import br.com.cardapio.domain.device.model.DeviceSecretHash;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,9 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /**
- * Aparelhos de um restaurante, com a defesa em dobro do Guia 4 (WHERE + filtro). A única
- * exceção é findForClaim, que roda antes de o aparelho saber de que restaurante é.
+ * Aparelhos de um restaurante, com a defesa em dobro do Guia 4 (WHERE + filtro). As exceções
+ * são as buscas em que o próprio aparelho prova quem é (segredo do pedido ou token): nelas
+ * ainda não se sabe o restaurante, é a busca que descobre.
  */
 @Component
 class DevicePersistenceAdapter implements DevicePort {
@@ -53,9 +55,17 @@ class DevicePersistenceAdapter implements DevicePort {
 
     @Override
     public Optional<LinkedDevice> findForClaim(DeviceId id) {
-        return devices.findById(id.value())
-                .map(DevicePersistenceMapper::toDomain)
-                .flatMap(device -> devices.findEstablishmentName(device.establishmentId().value())
-                        .map(name -> new LinkedDevice(device, name)));
+        return devices.findById(id.value()).flatMap(this::withEstablishmentName);
+    }
+
+    @Override
+    public Optional<LinkedDevice> findActiveByTokenHash(DeviceSecretHash tokenHash) {
+        return devices.findByTokenHashAndRevokedAtIsNull(tokenHash.value()).flatMap(this::withEstablishmentName);
+    }
+
+    private Optional<LinkedDevice> withEstablishmentName(DeviceJpaEntity entity) {
+        Device device = DevicePersistenceMapper.toDomain(entity);
+        return devices.findEstablishmentName(device.establishmentId().value())
+                .map(name -> new LinkedDevice(device, name));
     }
 }

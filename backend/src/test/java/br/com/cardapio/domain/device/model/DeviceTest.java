@@ -39,6 +39,15 @@ class DeviceTest {
     }
 
     @Test
+    void seenUpdatesTheLastUseAndTvDoesNotTakePins() {
+        Device tv = Device.link(sakura, "TV do salão", DeviceType.TV, NOW);
+
+        assertThat(tv.seen(NOW.plusSeconds(30)).lastSeenAt()).isEqualTo(NOW.plusSeconds(30));
+        assertThat(tv.acceptsPinLogin()).isFalse();
+        assertThat(Device.link(sakura, "Tablet", DeviceType.KITCHEN, NOW).acceptsPinLogin()).isTrue();
+    }
+
+    @Test
     void needsAName() {
         assertThatThrownBy(() -> Device.link(sakura, " ", DeviceType.KITCHEN, NOW))
                 .isInstanceOf(InvalidValueException.class);

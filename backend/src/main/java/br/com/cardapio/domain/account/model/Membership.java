@@ -56,6 +56,11 @@ public record Membership(
         return new Membership(id, userId, establishmentId, role, pinHash, false);
     }
 
+    /** Pode entrar por PIN: está ativo, não é o dono (que entra com e-mail e senha) e tem PIN. */
+    public boolean canUsePin() {
+        return active && role != Role.OWNER && pinHash != null;
+    }
+
     /** Religa quem foi desligado, com o mesmo papel e o mesmo PIN. */
     public Membership reactivate() {
         return new Membership(id, userId, establishmentId, role, pinHash, true);

@@ -1,6 +1,8 @@
 package br.com.cardapio.adapter.in.web.shared;
 
 import br.com.cardapio.domain.account.exception.*;
+import br.com.cardapio.domain.device.exception.InvalidDeviceException;
+import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.exception.NotFoundException;
@@ -49,14 +51,25 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
-    @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class, InvalidSessionException.class})
+    @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class, InvalidSessionException.class,
+            InvalidPinException.class, InvalidDeviceException.class})
     ProblemDetail handleUnauthorized(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    @ExceptionHandler(TeamPermissionException.class)
-    ProblemDetail handleForbidden(TeamPermissionException ex) {
+    @ExceptionHandler({TeamPermissionException.class, PinNotAllowedOnDeviceException.class})
+    ProblemDetail handleForbidden(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    /** 429 com o tempo de espera, também no cabeçalho Retry-After (em segundos), que é o padrão do HTTP. */
+    @ExceptionHandler(PinLockedException.class)
+    ResponseEntity<ProblemDetail> handlePinLocked(PinLockedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setProperty("minutesLeft", ex.minutesLeft());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.minutesLeft() * 60))
+                .body(problem);
     }
 
     /** Também para recurso de outro restaurante: 404, sem revelar que ele existe. */

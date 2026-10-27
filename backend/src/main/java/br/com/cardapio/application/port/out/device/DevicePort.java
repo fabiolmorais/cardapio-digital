@@ -5,6 +5,7 @@ import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.device.model.Device;
 import br.com.cardapio.domain.device.model.DeviceId;
+import br.com.cardapio.domain.device.model.DeviceSecretHash;
 
 import java.util.Optional;
 
@@ -24,4 +25,10 @@ public interface DevicePort {
      * conferir o segredo do pedido de vínculo, que é o que prova quem está pedindo.
      */
     Optional<LinkedDevice> findForClaim(DeviceId id);
+
+    /**
+     * O aparelho ativo dono deste token. Também é uma busca sem restaurante: é o próprio token
+     * (256 bits aleatórios, só o hash no banco) que diz de que restaurante o aparelho é.
+     */
+    Optional<LinkedDevice> findActiveByTokenHash(DeviceSecretHash tokenHash);
 }

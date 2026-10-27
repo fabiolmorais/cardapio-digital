@@ -50,6 +50,16 @@ public record Device(
         return new Device(id, establishmentId, name, type, Objects.requireNonNull(newTokenHash), createdAt, now, revokedAt);
     }
 
+    /** O aparelho usou o token agora (abriu a tela do PIN, alguém entrou). */
+    public Device seen(Instant now) {
+        return new Device(id, establishmentId, name, type, tokenHash, createdAt, now, revokedAt);
+    }
+
+    /** Na TV ninguém entra com PIN: ela só mostra os chamados e pedidos (Modo TV). */
+    public boolean acceptsPinLogin() {
+        return type != DeviceType.TV;
+    }
+
     /** Desvincular: o token deixa de valer. O registro fica (histórico). */
     public Device revoke(Instant now) {
         if (!isActive()) {

@@ -2,12 +2,14 @@ package br.com.cardapio.application.service.device;
 
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
 import br.com.cardapio.application.port.out.device.DevicePort;
+import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.device.LinkedDevice;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.RefreshTokenId;
 import br.com.cardapio.domain.device.model.*;
 
 import java.time.Clock;
@@ -20,7 +22,8 @@ import java.util.*;
  * Portas dos aparelhos em memória, com relógio que só anda quando o teste manda e códigos e
  * tokens previsíveis ("000001", "token-1"…).
  */
-final class DeviceFakes implements DevicePairingPort, DevicePort, RandomCodeGenerator, RandomTokenGenerator {
+final class DeviceFakes implements DevicePairingPort, DevicePort, DeviceSessionPort, RandomCodeGenerator,
+        RandomTokenGenerator {
 
     static final Duration TTL = Duration.ofMinutes(10);
     static final String ESTABLISHMENT_NAME = "Sakura Sushi";
@@ -29,6 +32,9 @@ final class DeviceFakes implements DevicePairingPort, DevicePort, RandomCodeGene
     final Map<DeviceId, Device> devices = new LinkedHashMap<>();
     /** Próximos códigos a sortear; vazio = sequência "000001", "000002"… */
     final Deque<String> nextCodes = new ArrayDeque<>();
+    /** Sessões abertas por PIN em cada aparelho, e as que já foram encerradas. */
+    final Map<RefreshTokenId, DeviceId> sessions = new LinkedHashMap<>();
+    final Set<RefreshTokenId> revokedSessions = new HashSet<>();
     private int codeCounter;
     private int tokenCounter;
     private Instant now = Instant.parse("2026-10-27T12:00:00Z");
@@ -97,6 +103,29 @@ final class DeviceFakes implements DevicePairingPort, DevicePort, RandomCodeGene
     @Override
     public Optional<LinkedDevice> findForClaim(DeviceId id) {
         return Optional.ofNullable(devices.get(id)).map(d -> new LinkedDevice(d, ESTABLISHMENT_NAME));
+    }
+
+    @Override
+    public Optional<LinkedDevice> findActiveByTokenHash(DeviceSecretHash tokenHash) {
+        return devices.values().stream()
+                .filter(d -> d.isActive() && tokenHash.equals(d.tokenHash()))
+                .findFirst()
+                .map(d -> new LinkedDevice(d, ESTABLISHMENT_NAME));
+    }
+
+    // DeviceSessionPort
+    @Override
+    public void register(RefreshTokenId familyId, DeviceId deviceId, EstablishmentId establishmentId, Instant at) {
+        sessions.put(familyId, deviceId);
+    }
+
+    @Override
+    public void revokeAll(DeviceId deviceId, Instant at) {
+        sessions.forEach((family, device) -> {
+            if (device.equals(deviceId)) {
+                revokedSessions.add(family);
+            }
+        });
     }
 
     // RandomCodeGenerator
