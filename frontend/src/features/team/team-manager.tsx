@@ -60,7 +60,7 @@ export function TeamManager() {
   });
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 sm:px-7">
+    <div className="flex min-w-0 flex-1 flex-col gap-6">
       <header className="flex flex-wrap items-end gap-4">
         <div className="mr-auto flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
