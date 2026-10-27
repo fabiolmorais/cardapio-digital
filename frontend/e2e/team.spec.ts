@@ -21,6 +21,9 @@ test("dono cadastra, edita e desliga alguém da equipe", async ({ page, request 
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
 
+  // Botões mostram a "mãozinha" (o Tailwind v4 tira isso por padrão).
+  await expect(page.getByRole("button", { name: "Adicionar pessoa" })).toHaveCSS("cursor", "pointer");
+
   // O dono já aparece na lista, sem botões (ninguém altera o dono).
   await expect(row(page, "Marina Tanaka")).toContainText("Dono");
   await expect(row(page, "Marina Tanaka").getByRole("button")).toHaveCount(0);
