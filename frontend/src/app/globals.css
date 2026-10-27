@@ -134,4 +134,11 @@
   html {
     @apply font-sans;
   }
+  /* O Tailwind v4 tirou a "mãozinha" dos botões; aqui ela volta para tudo que é clicável. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  input[type="radio"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled) {
+    cursor: pointer;
+  }
 }

@@ -5,6 +5,7 @@ import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.ListTeamUseCase;
+import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
@@ -17,6 +18,7 @@ import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
 import br.com.cardapio.application.service.team.ListTeamService;
+import br.com.cardapio.application.service.team.ReactivateTeamMemberService;
 import br.com.cardapio.application.service.team.UpdateTeamMemberService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -91,5 +93,10 @@ class UseCaseConfig {
     @Bean
     DeactivateTeamMemberUseCase deactivateTeamMemberUseCase(TeamMemberPort teamMemberPort) {
         return new DeactivateTeamMemberService(teamMemberPort);
+    }
+
+    @Bean
+    ReactivateTeamMemberUseCase reactivateTeamMemberUseCase(TeamMemberPort teamMemberPort) {
+        return new ReactivateTeamMemberService(teamMemberPort);
     }
 }

@@ -55,4 +55,9 @@ public record Membership(
     public Membership deactivate() {
         return new Membership(id, userId, establishmentId, role, pinHash, false);
     }
+
+    /** Religa quem foi desligado, com o mesmo papel e o mesmo PIN. */
+    public Membership reactivate() {
+        return new Membership(id, userId, establishmentId, role, pinHash, true);
+    }
 }

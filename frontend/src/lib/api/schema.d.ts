@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/team-members/{id}/reactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Religa uma pessoa desligada da equipe */
+        post: operations["reactivateTeamMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signup": {
         parameters: {
             query?: never;
@@ -262,6 +279,17 @@ export interface components {
              */
             pin?: string;
         };
+        PageResponseTeamMember: {
+            content: components["schemas"]["TeamMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
             /** Format: int32 */
@@ -346,6 +374,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Página da equipe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseTeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {
@@ -390,6 +427,46 @@ export interface operations {
             };
             /** @description Papel sem permissão para esta ação */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reactivateTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Religada (ou já estava ativa) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
+            /** @description Papel sem permissão para esta ação */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está na equipe deste restaurante */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -536,6 +613,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A pessoa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {
@@ -609,6 +695,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Alterada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {

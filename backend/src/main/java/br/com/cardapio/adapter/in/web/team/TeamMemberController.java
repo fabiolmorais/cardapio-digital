@@ -44,17 +44,21 @@ class TeamMemberController {
     private final AddTeamMemberUseCase addTeamMember;
     private final UpdateTeamMemberUseCase updateTeamMember;
     private final DeactivateTeamMemberUseCase deactivateTeamMember;
+    private final ReactivateTeamMemberUseCase reactivateTeamMember;
 
     TeamMemberController(ListTeamUseCase listTeam, AddTeamMemberUseCase addTeamMember,
-                         UpdateTeamMemberUseCase updateTeamMember, DeactivateTeamMemberUseCase deactivateTeamMember) {
+                         UpdateTeamMemberUseCase updateTeamMember, DeactivateTeamMemberUseCase deactivateTeamMember,
+                         ReactivateTeamMemberUseCase reactivateTeamMember) {
         this.listTeam = listTeam;
         this.addTeamMember = addTeamMember;
         this.updateTeamMember = updateTeamMember;
         this.deactivateTeamMember = deactivateTeamMember;
+        this.reactivateTeamMember = reactivateTeamMember;
     }
 
     @GetMapping
     @Operation(operationId = "listTeamMembers", summary = "Lista a equipe (ativos primeiro, depois por nome)")
+    @ApiResponse(responseCode = "200", description = "Página da equipe")
     PageResponse<TeamMemberResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Número da página, começando em 0")
@@ -68,6 +72,7 @@ class TeamMemberController {
 
     @GetMapping("/{id}")
     @Operation(operationId = "getTeamMember", summary = "Uma pessoa da equipe")
+    @ApiResponse(responseCode = "200", description = "A pessoa")
     @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     TeamMemberResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
@@ -89,6 +94,7 @@ class TeamMemberController {
 
     @PatchMapping("/{id}")
     @Operation(operationId = "updateTeamMember", summary = "Muda o papel e/ou o PIN de uma pessoa da equipe")
+    @ApiResponse(responseCode = "200", description = "Alterada")
     @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     TeamMemberResponse update(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
@@ -108,5 +114,17 @@ class TeamMemberController {
         deactivateTeamMember.deactivate(
                 new DeactivateTeamMemberCommand(user.establishmentId(), user.role(), new MembershipId(id)));
         return ResponseEntity.noContent().build();
+    }
+
+    /** Desfaz o DELETE: a pessoa volta com o mesmo registro, papel e PIN. */
+    @PostMapping("/{id}/reactivation")
+    @Operation(operationId = "reactivateTeamMember", summary = "Religa uma pessoa desligada da equipe")
+    @ApiResponse(responseCode = "200", description = "Religada (ou já estava ativa)")
+    @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    TeamMemberResponse reactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        AuthenticatedUser user = AuthenticatedUser.from(jwt);
+        return TeamMemberResponse.from(reactivateTeamMember.reactivate(
+                new ReactivateTeamMemberCommand(user.establishmentId(), user.role(), new MembershipId(id))));
     }
 }
