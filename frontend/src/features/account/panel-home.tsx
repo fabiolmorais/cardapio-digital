@@ -1,13 +1,13 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Store } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight, LogOut, Store, Users } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
-import { endSession, restoreSession } from "@/lib/auth/session";
-import { useSession } from "@/lib/auth/use-session";
+import { useLogout } from "@/lib/auth/use-logout";
+import { useRequiredSession } from "@/lib/auth/use-required-session";
+import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 
 const t = messages.panel;
@@ -23,33 +23,14 @@ async function fetchMe() {
  * Depois de um F5, recupera a sessão pelo cookie; sem sessão, volta para /entrar.
  */
 export function PanelHome() {
-  const router = useRouter();
-  const { status } = useSession();
-  const queryClient = useQueryClient();
-  const [leaving, setLeaving] = useState(false);
+  const { status } = useRequiredSession();
+  const { leaving, logout } = useLogout();
   const me = useQuery({
     queryKey: ["me"],
     queryFn: fetchMe,
     enabled: status === "authenticated",
     retry: false,
   });
-
-  useEffect(() => {
-    if (status === "unknown") void restoreSession();
-    if (status === "anonymous") {
-      queryClient.clear();
-      router.replace("/entrar");
-    }
-  }, [status, router, queryClient]);
-
-  async function logout() {
-    setLeaving(true);
-    await endSession();
-    queryClient.clear();
-    // Recarrega a página inteira: nada desta conta (dados, telas guardadas) fica na memória
-    // para a próxima pessoa que usar o aparelho.
-    window.location.replace("/entrar");
-  }
 
   if (status !== "authenticated" || me.isPending) {
     return <p className="text-muted-foreground">{t.loading}</p>;
@@ -91,6 +72,21 @@ export function PanelHome() {
           </span>
         </div>
       </section>
+      {canManageTeam(establishment.role) && (
+        <Link
+          href="/admin/equipe"
+          className="flex min-h-16 items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+            <Users aria-hidden className="size-6" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-lg font-semibold">{t.manageTeam}</span>
+            <span className="text-sm text-muted-foreground">{t.manageTeamDescription}</span>
+          </span>
+          <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
+        </Link>
+      )}
       <p className="text-muted-foreground">{t.comingSoon}</p>
     </>
   );

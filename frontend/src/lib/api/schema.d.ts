@@ -262,6 +262,17 @@ export interface components {
              */
             pin?: string;
         };
+        PageResponseTeamMember: {
+            content: components["schemas"]["TeamMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
             /** Format: int32 */
@@ -346,6 +357,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Página da equipe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseTeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {
@@ -536,6 +556,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A pessoa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {
@@ -609,6 +638,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Alterada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
             /** @description Papel sem permissão para esta ação */
             403: {
                 headers: {

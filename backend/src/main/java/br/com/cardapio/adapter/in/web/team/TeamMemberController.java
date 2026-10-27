@@ -55,6 +55,7 @@ class TeamMemberController {
 
     @GetMapping
     @Operation(operationId = "listTeamMembers", summary = "Lista a equipe (ativos primeiro, depois por nome)")
+    @ApiResponse(responseCode = "200", description = "Página da equipe")
     PageResponse<TeamMemberResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Número da página, começando em 0")
@@ -68,6 +69,7 @@ class TeamMemberController {
 
     @GetMapping("/{id}")
     @Operation(operationId = "getTeamMember", summary = "Uma pessoa da equipe")
+    @ApiResponse(responseCode = "200", description = "A pessoa")
     @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     TeamMemberResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
@@ -89,6 +91,7 @@ class TeamMemberController {
 
     @PatchMapping("/{id}")
     @Operation(operationId = "updateTeamMember", summary = "Muda o papel e/ou o PIN de uma pessoa da equipe")
+    @ApiResponse(responseCode = "200", description = "Alterada")
     @ApiResponse(responseCode = "404", description = "Não está na equipe deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     TeamMemberResponse update(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
