@@ -7,6 +7,14 @@ import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
 import br.com.cardapio.application.port.in.device.ListDevicesUseCase;
 import br.com.cardapio.application.port.in.device.StartPairingUseCase;
 import br.com.cardapio.application.port.in.device.UnlinkDeviceUseCase;
+import br.com.cardapio.application.port.in.floor.CreateSectorUseCase;
+import br.com.cardapio.application.port.in.floor.CreateTableUseCase;
+import br.com.cardapio.application.port.in.floor.DeactivateSectorUseCase;
+import br.com.cardapio.application.port.in.floor.ListSectorsUseCase;
+import br.com.cardapio.application.port.in.floor.ListTablesUseCase;
+import br.com.cardapio.application.port.in.floor.RenameSectorUseCase;
+import br.com.cardapio.application.port.in.floor.RotateTableTokenUseCase;
+import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
@@ -20,6 +28,8 @@ import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
 import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
+import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
@@ -32,6 +42,14 @@ import br.com.cardapio.application.service.device.LinkDeviceService;
 import br.com.cardapio.application.service.device.ListDevicesService;
 import br.com.cardapio.application.service.device.StartPairingService;
 import br.com.cardapio.application.service.device.UnlinkDeviceService;
+import br.com.cardapio.application.service.floor.CreateSectorService;
+import br.com.cardapio.application.service.floor.CreateTableService;
+import br.com.cardapio.application.service.floor.DeactivateSectorService;
+import br.com.cardapio.application.service.floor.ListSectorsService;
+import br.com.cardapio.application.service.floor.ListTablesService;
+import br.com.cardapio.application.service.floor.RenameSectorService;
+import br.com.cardapio.application.service.floor.RotateTableTokenService;
+import br.com.cardapio.application.service.floor.UpdateTableService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
@@ -170,5 +188,47 @@ class UseCaseConfig {
                                     SessionIssuer sessionIssuer, DeviceSessionPort deviceSessionPort, Clock clock) {
         return new PinLoginService(deviceAuthenticator, teamMemberPort, pinLockoutPort, passwordHasher, loadUserPort,
                 loadMembershipPort, sessionIssuer, deviceSessionPort, clock);
+    }
+
+    @Bean
+    ListSectorsUseCase listSectorsUseCase(SectorPort sectorPort) {
+        return new ListSectorsService(sectorPort);
+    }
+
+    @Bean
+    CreateSectorUseCase createSectorUseCase(SectorPort sectorPort) {
+        return new CreateSectorService(sectorPort);
+    }
+
+    @Bean
+    RenameSectorUseCase renameSectorUseCase(SectorPort sectorPort) {
+        return new RenameSectorService(sectorPort);
+    }
+
+    @Bean
+    DeactivateSectorUseCase deactivateSectorUseCase(SectorPort sectorPort) {
+        return new DeactivateSectorService(sectorPort);
+    }
+
+    @Bean
+    ListTablesUseCase listTablesUseCase(DiningTablePort diningTablePort) {
+        return new ListTablesService(diningTablePort);
+    }
+
+    @Bean
+    CreateTableUseCase createTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort,
+                                          RandomTokenGenerator randomTokenGenerator, Clock clock) {
+        return new CreateTableService(sectorPort, diningTablePort, randomTokenGenerator, clock);
+    }
+
+    @Bean
+    UpdateTableUseCase updateTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort) {
+        return new UpdateTableService(sectorPort, diningTablePort);
+    }
+
+    @Bean
+    RotateTableTokenUseCase rotateTableTokenUseCase(DiningTablePort diningTablePort,
+                                                    RandomTokenGenerator randomTokenGenerator, Clock clock) {
+        return new RotateTableTokenService(diningTablePort, randomTokenGenerator, clock);
     }
 }

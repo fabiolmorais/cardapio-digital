@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.shared;
 import br.com.cardapio.domain.account.exception.*;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
 import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
+import br.com.cardapio.domain.shared.exception.ConflictException;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.exception.NotFoundException;
@@ -46,8 +47,9 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(EmailAlreadyRegisteredException.class)
-    ProblemDetail handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
+    /** E-mail já cadastrado, nome de setor ou de mesa repetido… */
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 

@@ -39,6 +39,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mesas do restaurante (ou de um setor), ativas primeiro */
+        get: operations["listTables"];
+        put?: never;
+        /** Cria uma mesa num setor, já com o token do QR */
+        post: operations["createTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tables/{id}/token-rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca o QR da mesa: token novo, e o display impresso com o antigo para de funcionar */
+        post: operations["rotateTableToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signup": {
         parameters: {
             query?: never;
@@ -50,6 +85,24 @@ export interface paths {
         put?: never;
         /** Cria a conta do restaurante (teste grátis) */
         post: operations["signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setores ativos, na ordem de exibição, com a contagem de mesas */
+        get: operations["listSectors"];
+        put?: never;
+        /** Cria um setor (entra no fim da lista) */
+        post: operations["createSector"];
         delete?: never;
         options?: never;
         head?: never;
@@ -195,6 +248,41 @@ export interface paths {
         patch: operations["updateTeamMember"];
         trace?: never;
     };
+    "/api/v1/tables/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Renomeia, muda de setor, ativa ou desativa a mesa */
+        patch: operations["updateTable"];
+        trace?: never;
+    };
+    "/api/v1/sectors/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Desativa o setor (precisa estar sem mesas ativas) */
+        delete: operations["deactivateSector"];
+        options?: never;
+        head?: never;
+        /** Renomeia o setor */
+        patch: operations["renameSector"];
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -326,6 +414,29 @@ export interface components {
             /** @description false = desligado do restaurante */
             active: boolean;
         };
+        CreateTableRequest: {
+            /** @example 04 */
+            label: string;
+            /** Format: uuid */
+            sectorId: string;
+        };
+        /** @description Mesa do salão */
+        DiningTable: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            sectorId: string;
+            /** @example 04 */
+            label: string;
+            /** @description Vai na URL do QR Code: /m/{publicToken} */
+            publicToken: string;
+            /**
+             * Format: date-time
+             * @description Quando o QR atual foi gerado
+             */
+            tokenIssuedAt: string;
+            active: boolean;
+        };
         /** @description Cadastro self-service do restaurante */
         SignupRequest: {
             /** @example Sakura Sushi */
@@ -358,6 +469,27 @@ export interface components {
             userId: string;
             /** @example sakura-sushi */
             slug: string;
+        };
+        SectorRequest: {
+            /** @example Deck */
+            name: string;
+        };
+        /** @description Setor do salão */
+        Sector: {
+            /** Format: uuid */
+            id: string;
+            /** @example Salão principal */
+            name: string;
+            /**
+             * Format: int32
+             * @description Ordem de exibição, a partir de 0
+             */
+            position: number;
+            /**
+             * Format: int64
+             * @description Mesas ativas no setor
+             */
+            activeTables: number;
         };
         /** @description O gerente digita o código que aparece no aparelho novo */
         LinkDeviceRequest: {
@@ -461,8 +593,42 @@ export interface components {
              */
             pin?: string;
         };
+        /** @description Só os campos enviados mudam */
+        UpdateTableRequest: {
+            /** @example 04 */
+            label?: string;
+            /**
+             * Format: uuid
+             * @description Mover para outro setor
+             */
+            sectorId?: string;
+            /** @description Ativar ou desativar a mesa */
+            active?: boolean;
+        };
         PageResponseTeamMember: {
             content: components["schemas"]["TeamMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseDiningTable: {
+            content: components["schemas"]["DiningTable"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseSector: {
+            content: components["schemas"]["Sector"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -695,6 +861,115 @@ export interface operations {
             };
         };
     };
+    listTables: {
+        parameters: {
+            query?: {
+                /** @description Só as mesas deste setor */
+                sectorId?: string;
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de mesas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDiningTable"];
+                };
+            };
+            /** @description Mesa ou setor não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    createTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTableRequest"];
+            };
+        };
+        responses: {
+            /** @description Criada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiningTable"];
+                };
+            };
+            /** @description Mesa ou setor não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe uma mesa com esse nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    rotateTableToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description QR trocado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiningTable"];
+                };
+            };
+            /** @description Mesa ou setor não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     signup: {
         parameters: {
             query?: never;
@@ -727,6 +1002,64 @@ export interface operations {
                 };
             };
             /** @description E-mail já cadastrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listSectors: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de setores */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseSector"];
+                };
+            };
+        };
+    };
+    createSector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectorRequest"];
+            };
+        };
+        responses: {
+            /** @description Criado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sector"];
+                };
+            };
+            /** @description Já existe um setor com esse nome */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1117,6 +1450,114 @@ export interface operations {
                 };
             };
             /** @description Não está na equipe deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTableRequest"];
+            };
+        };
+        responses: {
+            /** @description Alterada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiningTable"];
+                };
+            };
+            /** @description Mesa ou setor não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe uma mesa com esse nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateSector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desativado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description O setor ainda tem mesas ativas */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    renameSector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectorRequest"];
+            };
+        };
+        responses: {
+            /** @description Renomeado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sector"];
+                };
+            };
+            /** @description Não é um setor ativo deste restaurante */
             404: {
                 headers: {
                     [name: string]: unknown;
