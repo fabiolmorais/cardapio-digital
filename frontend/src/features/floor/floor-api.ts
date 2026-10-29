@@ -63,3 +63,53 @@ export async function rotateTableToken(id: string): Promise<DiningTable> {
   if (data) return data;
   throw failure(response, error);
 }
+
+// Arquivos para impressão (QR Code e display).
+
+export type DisplayFormat = "PNG" | "SVG" | "PDF";
+export type DownloadedFile = { blob: Blob; fileName: string };
+
+/** Nome do arquivo que o back mandou no Content-Disposition (o CORS do back expõe esse cabeçalho). */
+function fileNameFrom(response: Response, fallback: string): string {
+  const header = response.headers.get("Content-Disposition") ?? "";
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1];
+  if (encoded) return decodeURIComponent(encoded);
+  return /filename="?([^";]+)"?/i.exec(header)?.[1] ?? fallback;
+}
+
+async function problemOf(response: Response): Promise<Error> {
+  const problem = await response
+    .clone()
+    .json()
+    .catch(() => undefined);
+  return failure(response, problem);
+}
+
+export async function fetchTableDisplay(tableId: string, format: DisplayFormat): Promise<DownloadedFile> {
+  const { data, response } = await api.GET("/api/v1/tables/{id}/display", {
+    params: { path: { id: tableId }, query: { format } },
+    parseAs: "blob",
+  });
+  if (!response.ok || !data) throw await problemOf(response);
+  return { blob: data, fileName: fileNameFrom(response, `mesa.${format.toLowerCase()}`) };
+}
+
+export async function fetchSectorDisplays(sectorId: string): Promise<DownloadedFile> {
+  const { data, response } = await api.GET("/api/v1/sectors/{id}/displays", {
+    params: { path: { id: sectorId } },
+    parseAs: "blob",
+  });
+  if (!response.ok || !data) throw await problemOf(response);
+  return { blob: data, fileName: fileNameFrom(response, "setor.pdf") };
+}
+
+/** Entrega o arquivo ao navegador como um download comum, com o nome que veio do back. */
+export function saveFile({ blob, fileName }: DownloadedFile) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  // Dá tempo de o navegador começar o download antes de liberar a memória.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
