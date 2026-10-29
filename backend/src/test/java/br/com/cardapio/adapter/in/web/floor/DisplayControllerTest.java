@@ -93,6 +93,17 @@ class DisplayControllerTest {
         assertThat(page).bodyJson().extractingPath("$.establishmentName").isEqualTo(sakura.establishmentName());
     }
 
+    /** O front (outra origem) precisa ler o nome do arquivo: o CORS expõe o Content-Disposition. */
+    @Test
+    void theFrontCanReadTheFileName() {
+        MvcTestResult png = mvc.get().uri("/api/v1/tables/" + table04 + "/display?format=PNG")
+                .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + sakura.token()).exchange();
+
+        assertThat(png).hasStatusOk();
+        assertThat(png.getResponse().getHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS)).contains("Content-Disposition");
+    }
+
     @Test
     void svgAndPdfOfATable() throws Exception {
         MvcTestResult svg = get(sakura.token(), "/api/v1/tables/" + table04 + "/display?format=SVG");

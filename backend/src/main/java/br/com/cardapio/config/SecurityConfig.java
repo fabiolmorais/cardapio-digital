@@ -108,7 +108,9 @@ class SecurityConfig {
         config.setAllowedOrigins(properties.allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id"));
-        config.setExposedHeaders(List.of("X-Request-Id"));
+        // Content-Disposition: o front lê o nome do arquivo baixado (display da mesa). Sem estar
+        // aqui, o navegador esconde o cabeçalho do JavaScript em respostas de outra origem.
+        config.setExposedHeaders(List.of("X-Request-Id", "Content-Disposition"));
         config.setAllowCredentials(true);
         config.setMaxAge(Duration.ofHours(1));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
