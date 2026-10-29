@@ -283,6 +283,57 @@ export interface paths {
         patch: operations["renameSector"];
         trace?: never;
     };
+    "/api/v1/tables/{id}/display": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Baixa o QR Code (PNG ou SVG) ou o display pronto para imprimir (PDF) da mesa */
+        get: operations["downloadTableDisplay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sectors/{id}/displays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF com o display de cada mesa ativa do setor */
+        get: operations["downloadSectorDisplays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A mesa do QR Code: restaurante e número */
+        get: operations["getPublicTable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -637,6 +688,13 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        /** @description A mesa do QR Code, para a página pública */
+        PublicTable: {
+            /** @example Sakura Sushi */
+            establishmentName: string;
+            /** @example 04 */
+            tableLabel: string;
         };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
@@ -1558,6 +1616,113 @@ export interface operations {
                 };
             };
             /** @description Não é um setor ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    downloadTableDisplay: {
+        parameters: {
+            query?: {
+                /** @description PNG ou SVG (só o QR) ou PDF (display completo) */
+                format?: "PNG" | "SVG" | "PDF";
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O arquivo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                    "image/svg+xml": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description Mesa ou setor não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    downloadSectorDisplays: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O PDF, uma mesa por página */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Não é um setor ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O setor não tem mesas ativas */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPublicTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mesa encontrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTable"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
             404: {
                 headers: {
                     [name: string]: unknown;

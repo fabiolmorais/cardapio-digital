@@ -65,6 +65,18 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
+		<!-- QR Code das mesas (Guia 8): gera a matriz do QR; o desenho em PNG, SVG e PDF é nosso. -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.4</version>
+		</dependency>
+		<!-- Display das mesas em PDF (Guia 8), com as fontes embutidas (não depende de fontes do sistema). -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>3.0.5</version>
+		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

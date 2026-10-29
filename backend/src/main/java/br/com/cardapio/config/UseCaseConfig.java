@@ -15,6 +15,7 @@ import br.com.cardapio.application.port.in.floor.ListTablesUseCase;
 import br.com.cardapio.application.port.in.floor.RenameSectorUseCase;
 import br.com.cardapio.application.port.in.floor.RotateTableTokenUseCase;
 import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
+import br.com.cardapio.application.port.in.floor.ViewPublicTableUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
@@ -30,6 +31,7 @@ import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
+import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
@@ -49,7 +51,9 @@ import br.com.cardapio.application.service.floor.ListSectorsService;
 import br.com.cardapio.application.service.floor.ListTablesService;
 import br.com.cardapio.application.service.floor.RenameSectorService;
 import br.com.cardapio.application.service.floor.RotateTableTokenService;
+import br.com.cardapio.application.service.floor.TableDisplayService;
 import br.com.cardapio.application.service.floor.UpdateTableService;
+import br.com.cardapio.application.service.floor.ViewPublicTableService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
@@ -230,5 +234,23 @@ class UseCaseConfig {
     RotateTableTokenUseCase rotateTableTokenUseCase(DiningTablePort diningTablePort,
                                                     RandomTokenGenerator randomTokenGenerator, Clock clock) {
         return new RotateTableTokenService(diningTablePort, randomTokenGenerator, clock);
+    }
+
+    /**
+     * Um bean só atende aos dois casos de uso de impressão: o TableDisplayService implementa as
+     * duas portas, e o Spring o injeta onde pedirem qualquer uma delas.
+     */
+    @Bean
+    TableDisplayService tableDisplayService(DiningTablePort diningTablePort, SectorPort sectorPort,
+                                            LoadEstablishmentPort loadEstablishmentPort,
+                                            TableDisplayRenderer tableDisplayRenderer,
+                                            @Value("${app.public-url}") String publicUrl) {
+        return new TableDisplayService(diningTablePort, sectorPort, loadEstablishmentPort, tableDisplayRenderer,
+                publicUrl);
+    }
+
+    @Bean
+    ViewPublicTableUseCase viewPublicTableUseCase(DiningTablePort diningTablePort) {
+        return new ViewPublicTableService(diningTablePort);
     }
 }

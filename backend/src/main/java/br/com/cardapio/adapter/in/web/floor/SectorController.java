@@ -6,6 +6,7 @@ import br.com.cardapio.application.port.in.floor.CreateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.DeactivateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.ListSectorsUseCase;
 import br.com.cardapio.application.port.in.floor.RenameSectorUseCase;
+import br.com.cardapio.application.port.in.floor.RenderSectorDisplaysUseCase;
 import br.com.cardapio.application.port.in.floor.SectorSummary;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -43,13 +44,16 @@ class SectorController {
     private final CreateSectorUseCase createSector;
     private final RenameSectorUseCase renameSector;
     private final DeactivateSectorUseCase deactivateSector;
+    private final RenderSectorDisplaysUseCase renderDisplays;
 
     SectorController(ListSectorsUseCase listSectors, CreateSectorUseCase createSector,
-                     RenameSectorUseCase renameSector, DeactivateSectorUseCase deactivateSector) {
+                     RenameSectorUseCase renameSector, DeactivateSectorUseCase deactivateSector,
+                     RenderSectorDisplaysUseCase renderDisplays) {
         this.listSectors = listSectors;
         this.createSector = createSector;
         this.renameSector = renameSector;
         this.deactivateSector = deactivateSector;
+        this.renderDisplays = renderDisplays;
     }
 
     private static EstablishmentId establishment(Jwt jwt) {
@@ -97,5 +101,17 @@ class SectorController {
     ResponseEntity<Void> deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         deactivateSector.deactivate(establishment(jwt), new SectorId(id));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/displays")
+    @Operation(operationId = "downloadSectorDisplays", summary = "PDF com o display de cada mesa ativa do setor")
+    @ApiResponse(responseCode = "200", description = "O PDF, uma mesa por página",
+            content = @Content(mediaType = "application/pdf", schema = @Schema(type = "string", format = "binary")))
+    @ApiResponse(responseCode = "404", description = "Não é um setor ativo deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "O setor não tem mesas ativas",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    ResponseEntity<byte[]> displays(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return Downloads.of(renderDisplays.render(establishment(jwt), new SectorId(id)));
     }
 }

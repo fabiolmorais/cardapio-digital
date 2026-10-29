@@ -32,6 +32,12 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
 
     Optional<DiningTableJpaEntity> findByIdAndEstablishmentId(UUID id, UUID establishmentId);
 
+    Optional<DiningTableJpaEntity> findByPublicTokenAndActiveTrue(String publicToken);
+
+    /** Nome do restaurante só se ele estiver ativo: restaurante desativado não abre página de mesa. */
+    @Query("SELECT e.name FROM EstablishmentJpaEntity e WHERE e.id = :id AND e.active = true")
+    Optional<String> findActiveEstablishmentName(@Param("id") UUID establishmentId);
+
     @Query("""
             SELECT count(t) > 0 FROM DiningTableJpaEntity t
              WHERE t.establishmentId = :establishmentId

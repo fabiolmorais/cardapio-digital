@@ -3,7 +3,9 @@ package br.com.cardapio.adapter.in.web.floor;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.floor.CreateTableUseCase;
+import br.com.cardapio.application.port.in.floor.DisplayFormat;
 import br.com.cardapio.application.port.in.floor.ListTablesUseCase;
+import br.com.cardapio.application.port.in.floor.RenderTableDisplayUseCase;
 import br.com.cardapio.application.port.in.floor.RotateTableTokenUseCase;
 import br.com.cardapio.application.port.in.floor.TableSummary;
 import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
@@ -46,13 +48,15 @@ class TableController {
     private final CreateTableUseCase createTable;
     private final UpdateTableUseCase updateTable;
     private final RotateTableTokenUseCase rotateToken;
+    private final RenderTableDisplayUseCase renderDisplay;
 
     TableController(ListTablesUseCase listTables, CreateTableUseCase createTable, UpdateTableUseCase updateTable,
-                    RotateTableTokenUseCase rotateToken) {
+                    RotateTableTokenUseCase rotateToken, RenderTableDisplayUseCase renderDisplay) {
         this.listTables = listTables;
         this.createTable = createTable;
         this.updateTable = updateTable;
         this.rotateToken = rotateToken;
+        this.renderDisplay = renderDisplay;
     }
 
     private static EstablishmentId establishment(Jwt jwt) {
@@ -100,5 +104,18 @@ class TableController {
     @ApiResponse(responseCode = "200", description = "QR trocado")
     TableResponse rotate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return TableResponse.from(rotateToken.rotate(establishment(jwt), new DiningTableId(id)));
+    }
+
+    @GetMapping("/{id}/display")
+    @Operation(operationId = "downloadTableDisplay",
+            summary = "Baixa o QR Code (PNG ou SVG) ou o display pronto para imprimir (PDF) da mesa")
+    @ApiResponse(responseCode = "200", description = "O arquivo", content = {
+            @Content(mediaType = "image/png", schema = @Schema(type = "string", format = "binary")),
+            @Content(mediaType = "image/svg+xml", schema = @Schema(type = "string", format = "binary")),
+            @Content(mediaType = "application/pdf", schema = @Schema(type = "string", format = "binary"))})
+    ResponseEntity<byte[]> display(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                   @Parameter(description = "PNG ou SVG (só o QR) ou PDF (display completo)")
+                                   @RequestParam(defaultValue = "PDF") DisplayFormat format) {
+        return Downloads.of(renderDisplay.render(establishment(jwt), new DiningTableId(id), format));
     }
 }

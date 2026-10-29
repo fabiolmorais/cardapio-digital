@@ -13,12 +13,16 @@ import {
   createSector,
   createTable,
   deactivateSector,
+  fetchSectorDisplays,
   fetchSectors,
+  fetchTableDisplay,
   fetchTables,
   renameSector,
   rotateTableToken,
+  saveFile,
   updateTable,
   type DiningTable,
+  type DownloadedFile,
   type Sector,
 } from "./floor-api";
 import { ConfirmDialog, SectorFormDialog, TableFormDialog } from "./floor-dialogs";
@@ -233,6 +237,7 @@ export function FloorManager() {
 
           <TablePanel
             table={selected}
+            sectorName={selected ? sectorName.get(selected.sectorId) : undefined}
             establishmentName={session.establishment.name}
             onEdit={(table) => setDialog({ kind: "edit-table", table })}
             onRotate={(table) => setDialog({ kind: "rotate", table })}
@@ -350,15 +355,39 @@ function ActiveSwitch({ table, onToggle }: { table: DiningTable; onToggle: () =>
 
 function TablePanel({
   table,
+  sectorName,
   establishmentName,
   onEdit,
   onRotate,
 }: {
   table: DiningTable | null;
+  sectorName: string | undefined;
   establishmentName: string;
   onEdit: (table: DiningTable) => void;
   onRotate: (table: DiningTable) => void;
 }) {
+  // O SVG do QR vem do back (com o token atual). A chave inclui o token: trocou o QR, a prévia muda.
+  const qr = useQuery({
+    queryKey: ["table-qr", table?.id, table?.publicToken],
+    queryFn: async () => (await fetchTableDisplay(table!.id, "SVG")).blob.text(),
+    enabled: table !== null,
+    staleTime: Infinity,
+  });
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  async function download(run: () => Promise<DownloadedFile>) {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      saveFile(await run());
+    } catch (error) {
+      setDownloadError((error as Error).message);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   if (!table) {
     return (
       <aside className="w-full rounded-2xl border border-border bg-card p-5 text-muted-foreground xl:max-w-sm">
@@ -378,16 +407,65 @@ function TablePanel({
         </Badge>
       </div>
 
-      {/* Prévia do display impresso. O QR de verdade e os arquivos vêm com o Guia 8. */}
+      {/* Prévia do display impresso (o PDF sai igual a isto). */}
       <div className="mx-auto flex w-60 flex-col items-center gap-3 rounded-[22px] bg-white px-5 py-5.5 text-[#16130F] shadow-[0_20px_50px_rgba(0,0,0,.45)]">
-        <span className="text-xs font-bold tracking-[1.5px] text-[#B8361A] uppercase">{establishmentName}</span>
-        <span className="flex size-40 items-center justify-center rounded-lg border-2 border-dashed border-[#C9C2BA] text-sm text-[#5C554E]">
-          {t.panel.qrPlaceholder}
+        <span className="text-center text-xs font-bold tracking-[1.5px] text-[#B8361A] uppercase">
+          {establishmentName}
         </span>
+        {qr.data ? (
+          // eslint-disable-next-line @next/next/no-img-element -- SVG gerado na hora, sem otimização de imagem
+          <img
+            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.data)}`}
+            alt={t.panel.qrAlt(table.label)}
+            className="size-40"
+          />
+        ) : (
+          <span className="flex size-40 items-center justify-center text-center text-sm text-[#5C554E]">
+            {qr.isError ? t.panel.qrError : t.panel.qrLoading}
+          </span>
+        )}
         <span className="text-center text-[13px] leading-[18px] text-[#5C554E]">{t.panel.callToAction}</span>
         <span className="text-[30px] leading-[30px] font-bold">{t.tableName(table.label)}</span>
       </div>
-      <p className="text-sm text-muted-foreground">{t.panel.downloadsSoon}</p>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-muted-foreground">{t.panel.downloads}</span>
+        <div className="grid grid-cols-3 gap-2">
+          {(["PNG", "SVG", "PDF"] as const).map((format) => (
+            <Button
+              key={format}
+              variant="outline"
+              className="h-11"
+              aria-label={t.panel.downloadLabel(format, table.label)}
+              disabled={downloading}
+              onClick={() => void download(() => fetchTableDisplay(table.id, format))}
+            >
+              {format}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">{t.panel.downloadHint}</p>
+        {sectorName && (
+          <Button
+            variant="outline"
+            className="h-11"
+            disabled={downloading}
+            onClick={() => void download(() => fetchSectorDisplays(table.sectorId))}
+          >
+            {t.panel.downloadSector(sectorName)}
+          </Button>
+        )}
+        {downloading && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {t.panel.downloading}
+          </p>
+        )}
+        {downloadError && (
+          <p role="alert" className="text-sm text-destructive">
+            {downloadError}
+          </p>
+        )}
+      </div>
 
       <Button variant="outline" size="xl" onClick={() => onEdit(table)}>
         {t.panel.edit}

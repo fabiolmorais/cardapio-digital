@@ -76,6 +76,8 @@ class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/plans").permitAll()
+                        // Página da mesa (QR Code): o cliente não tem login; quem identifica a mesa é o token.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()
@@ -106,7 +108,9 @@ class SecurityConfig {
         config.setAllowedOrigins(properties.allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id"));
-        config.setExposedHeaders(List.of("X-Request-Id"));
+        // Content-Disposition: o front lê o nome do arquivo baixado (display da mesa). Sem estar
+        // aqui, o navegador esconde o cabeçalho do JavaScript em respostas de outra origem.
+        config.setExposedHeaders(List.of("X-Request-Id", "Content-Disposition"));
         config.setAllowCredentials(true);
         config.setMaxAge(Duration.ofHours(1));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
