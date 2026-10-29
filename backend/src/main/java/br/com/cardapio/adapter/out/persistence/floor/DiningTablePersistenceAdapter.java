@@ -2,6 +2,7 @@ package br.com.cardapio.adapter.out.persistence.floor;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.floor.PublicTableView;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -9,6 +10,7 @@ import br.com.cardapio.domain.floor.exception.TableLabelTakenException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableToken;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +56,14 @@ class DiningTablePersistenceAdapter implements DiningTablePort {
                 : tables.findBySector(establishmentId.value(), sectorId.value(), pageable);
         return new ResultPage<>(rows.map(FloorPersistenceMapper::toDomain).getContent(),
                 page.page(), page.size(), rows.getTotalElements());
+    }
+
+    @Override
+    public Optional<PublicTableView> findActiveByToken(TableToken token) {
+        return tables.findByPublicTokenAndActiveTrue(token.value())
+                .map(FloorPersistenceMapper::toDomain)
+                .flatMap(table -> tables.findActiveEstablishmentName(table.establishmentId().value())
+                        .map(name -> new PublicTableView(table, name)));
     }
 
     @Override

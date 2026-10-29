@@ -1,6 +1,7 @@
 package br.com.cardapio.application.service.floor;
 
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.floor.PublicTableView;
 import br.com.cardapio.application.port.out.floor.SectorOverview;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
@@ -98,6 +99,12 @@ final class FloorFakes implements SectorPort, DiningTablePort, RandomTokenGenera
                         .thenComparingInt(t -> t.label().length()).thenComparing(DiningTable::label))
                 .toList();
         return new ResultPage<>(all, page.page(), page.size(), all.size());
+    }
+
+    @Override
+    public Optional<PublicTableView> findActiveByToken(TableToken token) {
+        return tables.values().stream().filter(t -> t.active() && t.token().equals(token)).findFirst()
+                .map(t -> new PublicTableView(t, "Sakura Sushi"));
     }
 
     @Override

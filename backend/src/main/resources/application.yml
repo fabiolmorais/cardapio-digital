@@ -68,6 +68,9 @@ app:
       ttl: 14d
       # Cookie só por HTTPS. Desligue (false) só para testar pelo IP da rede local, em http.
       cookie-secure: ${REFRESH_COOKIE_SECURE:true}
+  # Endereço público do front: o QR Code de cada mesa aponta para {public-url}/m/{token}.
+  # Para testar no celular pela rede local, use o IP da máquina (ver README).
+  public-url: ${APP_PUBLIC_URL:http://localhost:3000}
   devices:
     # Quanto tempo o código mostrado no aparelho novo vale para o gerente digitar.
     pairing-ttl: 10m

@@ -56,6 +56,11 @@ class AccountPersistenceAdapter implements LoadUserPort, LoadEstablishmentPort, 
     }
 
     @Override
+    public Optional<String> findName(EstablishmentId id) {
+        return establishments.findNameById(id.value());
+    }
+
+    @Override
     public void saveNewAccount(Organization organization, Establishment establishment, User owner, Membership membership) {
         organizations.save(AccountPersistenceMapper.toEntity(organization));
         establishments.save(AccountPersistenceMapper.toEntity(establishment));
