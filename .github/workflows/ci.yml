@@ -167,4 +167,5 @@ jobs:
           restore-keys: nvd-${{ runner.os }}-
       - name: OWASP Dependency-Check
         if: env.NVD_API_KEY != ''
-        run: ./mvnw -B org.owasp:dependency-check-maven:13.0.0:check -DfailBuildOnCVSS=7 -DnvdApiKey="$NVD_API_KEY"
+        # Falsos positivos e riscos aceitos ficam em dependency-check-suppressions.xml, com justificativa e validade.
+        run: ./mvnw -B org.owasp:dependency-check-maven:13.0.0:check -DfailBuildOnCVSS=7 -DnvdApiKey="$NVD_API_KEY" -DsuppressionFile=dependency-check-suppressions.xml
