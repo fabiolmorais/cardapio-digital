@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -172,52 +171,6 @@ export function TableFormDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** Confirmação de uma ação que não dá para desfazer sem trabalho (trocar QR, desativar setor). */
-export function ConfirmDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  confirmLabel,
-  onConfirm,
-}: Open & { title: string; description: string; confirmLabel: string; onConfirm: () => Promise<unknown> }) {
-  const mutation = useMutation({ mutationFn: onConfirm, onSuccess: () => onOpenChange(false) });
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) mutation.reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className={contentClass} role="alertdialog">
-        <DialogHeader>
-          <DialogTitle className="text-lg">{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-          {mutation.error?.message ?? ""}
-        </p>
-        <DialogFooter className={footerClass}>
-          <DialogClose render={<Button variant="outline" size="lg" className="h-11 px-4" />}>
-            {t.confirm.cancel}
-          </DialogClose>
-          <Button
-            variant="destructive"
-            size="lg"
-            className="h-11 px-4"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? t.confirm.working : confirmLabel}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
