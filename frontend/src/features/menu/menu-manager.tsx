@@ -313,7 +313,8 @@ function CategoryList({
           <li
             key={category.id}
             ref={reorder.rowRef(category.id)}
-            className={cn("flex items-center rounded-xl", reorder.draggingId === category.id && "bg-muted shadow-lg")}
+            style={reorder.rowStyle(category.id)}
+            className={cn("flex items-center rounded-xl", reorder.draggingId === category.id && "bg-card shadow-lg ring-1 ring-border")}
           >
             <DragHandle label={t.reorder.handle(category.name)} hintId={hintId} {...reorder.handleProps(category)} />
             <button
@@ -400,9 +401,10 @@ function ProductTable({
             <tr
               key={product.id}
               ref={reorder.rowRef(product.id)}
+              style={reorder.rowStyle(product.id)}
               className={cn(
                 "border-b border-border last:border-0",
-                reorder.draggingId === product.id && "bg-muted shadow-lg",
+                reorder.draggingId === product.id && "bg-card shadow-lg ring-1 ring-border",
               )}
             >
               <td className="px-1 py-1 sm:px-2">

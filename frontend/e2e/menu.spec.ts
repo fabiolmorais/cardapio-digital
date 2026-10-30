@@ -156,6 +156,38 @@ test("reordenar arrastando ou pelo teclado", async ({ page, request }) => {
   await expect(productNames(page)).toHaveText(["Sunomono", "Guioza", "Edamame"]);
 });
 
+test("arrastar categorias por cima de várias, duas vezes seguidas", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  const token = await apiLogin(request, email);
+  for (const name of ["Entradas", "Sushis", "Temakis", "Bebidas"]) await apiCategory(request, token, name);
+  await loginThroughForm(page, email);
+  await openMenu(page);
+  const names = page.getByRole("navigation", { name: "Categorias" }).getByRole("listitem");
+  await expect(names).toHaveText([/Entradas/, /Sushis/, /Temakis/, /Bebidas/]);
+
+  /**
+   * Arrasta a alça até passar do centro de outra linha (para baixo ou para cima), em muitos
+   * passos, como uma mão faria.
+   */
+  async function dragOnto(handleName: string, targetName: string, direction: 1 | -1) {
+    const handle = (await page.getByRole("button", { name: handleName }).boundingBox())!;
+    const target = (await names.filter({ hasText: targetName }).boundingBox())!;
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handle.x + handle.width / 2, target.y + target.height / 2 + 4 * direction, { steps: 20 });
+    await page.mouse.up();
+    await expect(page.getByRole("list").first()).toHaveAttribute("aria-busy", "false");
+  }
+
+  await dragOnto("Mover Entradas", "Bebidas", 1); // desce três posições
+  await expect(names).toHaveText([/Sushis/, /Temakis/, /Bebidas/, /Entradas/]);
+  await dragOnto("Mover Bebidas", "Sushis", -1); // e logo depois sobe outra
+  await expect(names).toHaveText([/Bebidas/, /Sushis/, /Temakis/, /Entradas/]);
+
+  await page.reload();
+  await expect(names).toHaveText([/Bebidas/, /Sushis/, /Temakis/, /Entradas/]);
+});
+
 test("categoria com produtos não pode ser desativada", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
