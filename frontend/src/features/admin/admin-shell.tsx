@@ -1,9 +1,9 @@
 "use client";
 
-import { Home, LogOut, QrCode, Users } from "lucide-react";
+import { BookOpen, Home, LogOut, QrCode, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
@@ -15,6 +15,7 @@ const t = messages.admin;
 const NAV = [
   { href: "/painel", label: t.nav.panel, icon: Home },
   { href: "/admin/mesas", label: t.nav.floor, icon: QrCode },
+  { href: "/admin/cardapio", label: t.nav.menu, icon: BookOpen },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
 ] as const;
 
@@ -35,7 +36,6 @@ function initials(name: string) {
 export function AdminShell({ children }: { children: ReactNode }) {
   const { status, session } = useRequiredSession();
   const { leaving, logout } = useLogout();
-  const pathname = usePathname();
 
   const establishment = status === "authenticated" ? session.establishment : null;
 
@@ -57,25 +57,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <span className="text-sm text-muted-foreground">{t.management}</span>
           </span>
         </div>
-        <nav className="flex gap-1 overflow-x-auto md:flex-col">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                  active && "bg-secondary text-foreground",
-                )}
-              >
-                <Icon aria-hidden className="size-4" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+        {/* O endereço só existe quando a página abre (rotas como /admin/cardapio/produtos/[id]):
+            o menu espera por ele num Suspense, já desenhado, só sem o item aceso. */}
+        <Suspense fallback={<AdminNav pathname={null} />}>
+          <ActiveAdminNav />
+        </Suspense>
         <Button variant="ghost" className="h-11 justify-start gap-3 px-3 md:mt-auto" onClick={logout} disabled={leaving}>
           <LogOut aria-hidden />
           {t.logout}
@@ -83,5 +69,34 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1">{children}</main>
     </div>
+  );
+}
+
+function ActiveAdminNav() {
+  return <AdminNav pathname={usePathname()} />;
+}
+
+function AdminNav({ pathname }: { pathname: string | null }) {
+  return (
+    <nav className="flex gap-1 overflow-x-auto md:flex-col">
+      {NAV.map(({ href, label, icon: Icon }) => {
+        // As telas de dentro (como /admin/cardapio/produtos/…) também acendem o item.
+        const active = pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+              active && "bg-secondary text-foreground",
+            )}
+          >
+            <Icon aria-hidden className="size-4" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

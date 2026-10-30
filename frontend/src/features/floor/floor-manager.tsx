@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
@@ -25,7 +26,7 @@ import {
   type DownloadedFile,
   type Sector,
 } from "./floor-api";
-import { ConfirmDialog, SectorFormDialog, TableFormDialog } from "./floor-dialogs";
+import { SectorFormDialog, TableFormDialog } from "./floor-dialogs";
 
 const t = messages.floor;
 const day = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });

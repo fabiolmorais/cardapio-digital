@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, LogOut, Store, Users } from "lucide-react";
+import { BookOpen, ChevronRight, LogOut, QrCode, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
@@ -11,6 +11,12 @@ import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 
 const t = messages.panel;
+
+const SHORTCUTS = [
+  { href: "/admin/mesas", icon: QrCode, text: t.manage.floor },
+  { href: "/admin/cardapio", icon: BookOpen, text: t.manage.menu },
+  { href: "/admin/equipe", icon: Users, text: t.manage.team },
+] as const;
 
 async function fetchMe() {
   const { data, response } = await api.GET("/api/v1/me");
@@ -73,19 +79,24 @@ export function PanelHome() {
         </div>
       </section>
       {canManageTeam(establishment.role) && (
-        <Link
-          href="/admin/equipe"
-          className="flex min-h-16 items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
-            <Users aria-hidden className="size-6" />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-lg font-semibold">{t.manageTeam}</span>
-            <span className="text-sm text-muted-foreground">{t.manageTeamDescription}</span>
-          </span>
-          <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
-        </Link>
+        <nav aria-label={t.shortcuts} className="flex flex-col gap-3">
+          {SHORTCUTS.map(({ href, icon: Icon, text }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex min-h-16 items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+                <Icon aria-hidden className="size-6" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-lg font-semibold">{text.title}</span>
+                <span className="text-sm text-muted-foreground">{text.description}</span>
+              </span>
+              <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
+            </Link>
+          ))}
+        </nav>
       )}
       <p className="text-muted-foreground">{t.comingSoon}</p>
     </>
