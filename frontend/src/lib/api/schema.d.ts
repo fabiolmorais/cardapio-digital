@@ -4,6 +4,59 @@
  */
 
 export interface paths {
+    "/api/v1/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Um produto, para a tela de edição */
+        get: operations["getProduct"];
+        /** Salva o formulário do produto (todos os campos; promoção vazia apaga a promoção) */
+        put: operations["updateProduct"];
+        post?: never;
+        /** Tira o produto do cardápio (o registro fica) */
+        delete: operations["deactivateProduct"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/menu-categories/{id}/product-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Nova ordem dos produtos da categoria (todos os ativos, do primeiro ao último) */
+        put: operations["reorderProducts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/menu-categories/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Nova ordem das categorias (todas as ativas, da primeira à última) */
+        put: operations["reorderMenuCategories"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/team-members": {
         parameters: {
             query?: never;
@@ -103,6 +156,42 @@ export interface paths {
         put?: never;
         /** Cria um setor (entra no fim da lista) */
         post: operations["createSector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Produtos ativos na ordem do cardápio, de uma categoria ou de todas, com busca pelo nome */
+        get: operations["listProducts"];
+        put?: never;
+        /** Cria um produto (entra no fim da categoria) */
+        post: operations["createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/menu-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Categorias ativas, na ordem do cardápio, com a contagem de produtos */
+        get: operations["listMenuCategories"];
+        put?: never;
+        /** Cria uma categoria (entra no fim do cardápio) */
+        post: operations["createMenuCategory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -283,6 +372,41 @@ export interface paths {
         patch: operations["renameSector"];
         trace?: never;
     };
+    "/api/v1/products/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Disponível ou "Esgotado hoje" */
+        patch: operations["changeProductAvailability"];
+        trace?: never;
+    };
+    "/api/v1/menu-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Desativa a categoria (precisa estar sem produtos) */
+        delete: operations["deactivateMenuCategory"];
+        options?: never;
+        head?: never;
+        /** Renomeia a categoria */
+        patch: operations["renameMenuCategory"];
+        trace?: never;
+    };
     "/api/v1/tables/{id}/display": {
         parameters: {
             query?: never;
@@ -426,6 +550,72 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ProductRequest: {
+            /** Format: uuid */
+            categoryId: string;
+            /** @example Hot roll da casa */
+            name: string;
+            /** @example Empanado na hora, com salmão e cream cheese. 4 peças. */
+            description?: string;
+            /**
+             * Format: int64
+             * @description Em centavos: 2790 = R$ 27,90
+             * @example 2790
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description Em centavos, menor que o preço. Vazio: sem promoção
+             * @example 2490
+             */
+            promoPriceCents?: number;
+            featured: boolean;
+            /** @description false: aparece como "Esgotado hoje" */
+            available: boolean;
+        };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Produto do cardápio. Preços em centavos */
+        Product: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            categoryId: string;
+            /** @example Hot roll da casa */
+            name: string;
+            /** @description Vazia quando o dono não escreveu */
+            description: string;
+            /**
+             * Format: int64
+             * @example 2790
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description null quando não há promoção
+             * @example 2490
+             */
+            promoPriceCents?: number;
+            featured: boolean;
+            available: boolean;
+            /** Format: int32 */
+            position: number;
+        };
+        /** @description Todos os itens da lista, na ordem nova */
+        ReorderRequest: {
+            ids: string[];
+        };
         /** @description Cadastro de uma pessoa da equipe */
         AddTeamMemberRequest: {
             /** @example Carlos Souza */
@@ -440,19 +630,6 @@ export interface components {
              * @example 258014
              */
             pin: string;
-        };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
         };
         /** @description Pessoa da equipe do restaurante */
         TeamMember: {
@@ -541,6 +718,24 @@ export interface components {
              * @description Mesas ativas no setor
              */
             activeTables: number;
+        };
+        MenuCategoryRequest: {
+            /** @example Entradas */
+            name: string;
+        };
+        /** @description Categoria do cardápio */
+        MenuCategory: {
+            /** Format: uuid */
+            id: string;
+            /** @example Entradas */
+            name: string;
+            /** Format: int32 */
+            position: number;
+            /**
+             * Format: int64
+             * @description Quantos produtos ativos a categoria tem
+             */
+            activeProducts: number;
         };
         /** @description O gerente digita o código que aparece no aparelho novo */
         LinkDeviceRequest: {
@@ -656,6 +851,10 @@ export interface components {
             /** @description Ativar ou desativar a mesa */
             active?: boolean;
         };
+        AvailabilityRequest: {
+            /** @description false: "Esgotado hoje" */
+            available: boolean;
+        };
         PageResponseTeamMember: {
             content: components["schemas"]["TeamMember"][];
             /** Format: int32 */
@@ -695,6 +894,17 @@ export interface components {
             establishmentName: string;
             /** @example 04 */
             tableLabel: string;
+        };
+        PageResponseProduct: {
+            content: components["schemas"]["Product"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
@@ -748,6 +958,17 @@ export interface components {
             features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
             /** @enum {string} */
             support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
+        };
+        PageResponseMenuCategory: {
+            content: components["schemas"]["MenuCategory"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
         Me: {
             /** Format: uuid */
@@ -803,6 +1024,174 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O produto */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Salvo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Produto ou categoria não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desativado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um produto deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reorderProducts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Reordenados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma categoria ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A lista mudou desde que a tela carregou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reorderMenuCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Reordenadas */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A lista mudou desde que a tela carregou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listTeamMembers: {
         parameters: {
             query?: {
@@ -1118,6 +1507,126 @@ export interface operations {
                 };
             };
             /** @description Já existe um setor com esse nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listProducts: {
+        parameters: {
+            query?: {
+                /** @description Só os produtos desta categoria */
+                categoryId?: string;
+                /** @description Parte do nome, sem diferenciar maiúsculas */
+                q?: string;
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de produtos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseProduct"];
+                };
+            };
+        };
+    };
+    createProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Criado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description A categoria não é uma categoria ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listMenuCategories: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de categorias */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseMenuCategory"];
+                };
+            };
+        };
+    };
+    createMenuCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Criada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuCategory"];
+                };
+            };
+            /** @description Já existe uma categoria com esse nome */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1617,6 +2126,123 @@ export interface operations {
             };
             /** @description Não é um setor ativo deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    changeProductAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Alterado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateMenuCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desativada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma categoria deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A categoria ainda tem produtos */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    renameMenuCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Renomeada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuCategory"];
+                };
+            };
+            /** @description Não é uma categoria ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe uma categoria com esse nome */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
