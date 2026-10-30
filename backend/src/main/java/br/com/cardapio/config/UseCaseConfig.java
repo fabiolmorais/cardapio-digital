@@ -16,6 +16,7 @@ import br.com.cardapio.application.port.in.floor.RenameSectorUseCase;
 import br.com.cardapio.application.port.in.floor.RotateTableTokenUseCase;
 import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
 import br.com.cardapio.application.port.in.floor.ViewPublicTableUseCase;
+import br.com.cardapio.application.port.in.menu.*;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
@@ -24,6 +25,8 @@ import br.com.cardapio.application.port.in.team.ListTeamUseCase;
 import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
+import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
+import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
@@ -54,6 +57,7 @@ import br.com.cardapio.application.service.floor.RotateTableTokenService;
 import br.com.cardapio.application.service.floor.TableDisplayService;
 import br.com.cardapio.application.service.floor.UpdateTableService;
 import br.com.cardapio.application.service.floor.ViewPublicTableService;
+import br.com.cardapio.application.service.menu.*;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
@@ -252,5 +256,67 @@ class UseCaseConfig {
     @Bean
     ViewPublicTableUseCase viewPublicTableUseCase(DiningTablePort diningTablePort) {
         return new ViewPublicTableService(diningTablePort);
+    }
+
+    // Cardápio (Guia 9)
+
+    @Bean
+    ListMenuCategoriesUseCase listMenuCategoriesUseCase(MenuCategoryPort menuCategoryPort) {
+        return new ListMenuCategoriesService(menuCategoryPort);
+    }
+
+    @Bean
+    CreateMenuCategoryUseCase createMenuCategoryUseCase(MenuCategoryPort menuCategoryPort) {
+        return new CreateMenuCategoryService(menuCategoryPort);
+    }
+
+    @Bean
+    RenameMenuCategoryUseCase renameMenuCategoryUseCase(MenuCategoryPort menuCategoryPort) {
+        return new RenameMenuCategoryService(menuCategoryPort);
+    }
+
+    @Bean
+    DeactivateMenuCategoryUseCase deactivateMenuCategoryUseCase(MenuCategoryPort menuCategoryPort) {
+        return new DeactivateMenuCategoryService(menuCategoryPort);
+    }
+
+    @Bean
+    ReorderMenuCategoriesUseCase reorderMenuCategoriesUseCase(MenuCategoryPort menuCategoryPort) {
+        return new ReorderMenuCategoriesService(menuCategoryPort);
+    }
+
+    @Bean
+    ListProductsUseCase listProductsUseCase(ProductPort productPort) {
+        return new ListProductsService(productPort);
+    }
+
+    @Bean
+    GetProductUseCase getProductUseCase(ProductPort productPort) {
+        return new GetProductService(productPort);
+    }
+
+    @Bean
+    CreateProductUseCase createProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
+        return new CreateProductService(menuCategoryPort, productPort);
+    }
+
+    @Bean
+    UpdateProductUseCase updateProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
+        return new UpdateProductService(menuCategoryPort, productPort);
+    }
+
+    @Bean
+    ChangeProductAvailabilityUseCase changeProductAvailabilityUseCase(ProductPort productPort) {
+        return new ChangeProductAvailabilityService(productPort);
+    }
+
+    @Bean
+    DeactivateProductUseCase deactivateProductUseCase(ProductPort productPort) {
+        return new DeactivateProductService(productPort);
+    }
+
+    @Bean
+    ReorderProductsUseCase reorderProductsUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
+        return new ReorderProductsService(menuCategoryPort, productPort);
     }
 }
