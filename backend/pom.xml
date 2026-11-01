@@ -18,7 +18,21 @@
 		<springdoc.version>3.2.0</springdoc.version>
 		<archunit.version>1.5.1</archunit.version>
 		<sentry.version>8.61.1</sentry.version>
+		<awssdk.version>2.56.0</awssdk.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<!-- Versões alinhadas de todos os módulos do AWS SDK. -->
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>${awssdk.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -76,6 +90,18 @@
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>
 			<version>3.0.5</version>
+		</dependency>
+		<!-- Fotos: API S3, que o Cloudflare R2 fala (e o S3Mock dos testes também). -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<exclusions>
+				<!-- Só usamos o cliente síncrono: o Netty (cliente assíncrono) não precisa vir. -->
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
