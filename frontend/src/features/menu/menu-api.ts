@@ -101,3 +101,81 @@ export async function deactivateProduct(id: string): Promise<void> {
   const { error, response } = await api.DELETE("/api/v1/products/{id}", { params: { path: { id } } });
   if (!response.ok) throw failure(response, error);
 }
+
+// Fotos do produto (Guia 10). O arquivo vai direto do navegador para o armazenamento (R2).
+
+export type ProductMedia = Schemas["ProductMedia"];
+type MediaUpload = Schemas["MediaUpload"];
+
+export async function fetchProductMedia(productId: string): Promise<ProductMedia[]> {
+  const { data, error, response } = await api.GET("/api/v1/products/{productId}/media", {
+    params: { path: { productId } },
+  });
+  if (data) return data.content;
+  throw failure(response, error);
+}
+
+/** Passo 1: o back confere o produto, o tipo e o tamanho e devolve a URL assinada. */
+async function startMediaUpload(productId: string, file: File): Promise<MediaUpload> {
+  const { data, error, response } = await api.POST("/api/v1/products/{productId}/media/uploads", {
+    params: { path: { productId } },
+    body: { contentType: file.type, sizeBytes: file.size },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/**
+ * Passo 2: o PUT direto no armazenamento. XMLHttpRequest, e não fetch, porque só ele informa
+ * o progresso do envio (a barra que o dono vê no 4G).
+ */
+function sendFile(upload: MediaUpload, file: File, onProgress: (fraction: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open(upload.method, upload.url);
+    for (const [name, value] of Object.entries(upload.headers)) request.setRequestHeader(name, value);
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress(event.loaded / event.total);
+    };
+    request.onload = () =>
+      request.status >= 200 && request.status < 300 ? resolve() : reject(new Error(messages.menu.photos.sendFailed));
+    request.onerror = () => reject(new Error(messages.menu.photos.sendFailed));
+    request.send(file);
+  });
+}
+
+/** Passo 3: o back confere a foto, gera os tamanhos e a põe no fim da galeria. */
+async function addProductMedia(productId: string, uploadId: string): Promise<ProductMedia> {
+  const { data, error, response } = await api.POST("/api/v1/products/{productId}/media", {
+    params: { path: { productId } },
+    body: { uploadId },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/** Os três passos de uma foto. */
+export async function uploadProductPhoto(
+  productId: string,
+  file: File,
+  onProgress: (fraction: number) => void,
+): Promise<ProductMedia> {
+  const upload = await startMediaUpload(productId, file);
+  await sendFile(upload, file, onProgress);
+  return addProductMedia(productId, upload.uploadId);
+}
+
+export async function removeProductMedia(productId: string, mediaId: string): Promise<void> {
+  const { error, response } = await api.DELETE("/api/v1/products/{productId}/media/{mediaId}", {
+    params: { path: { productId, mediaId } },
+  });
+  if (!response.ok) throw failure(response, error);
+}
+
+export async function reorderProductMedia(productId: string, ids: string[]): Promise<void> {
+  const { error, response } = await api.PUT("/api/v1/products/{productId}/media-order", {
+    params: { path: { productId } },
+    body: { ids },
+  });
+  if (!response.ok) throw failure(response, error);
+}
