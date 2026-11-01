@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/products/{productId}/media-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Nova ordem das fotos (todas, a primeira vira a capa) */
+        put: operations["reorderProductMedia"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{id}": {
         parameters: {
             query?: never;
@@ -174,6 +191,41 @@ export interface paths {
         put?: never;
         /** Cria um produto (entra no fim da categoria) */
         post: operations["createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{productId}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As fotos do produto, na ordem (a primeira é a capa) */
+        get: operations["listProductMedia"];
+        put?: never;
+        /** Passo 2: o arquivo já foi enviado; confere a foto, gera os 3 tamanhos e a põe na galeria */
+        post: operations["addProductMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{productId}/media/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 1: pede a URL assinada para enviar uma foto */
+        post: operations["startMediaUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -529,6 +581,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{productId}/media/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Tira a foto da galeria */
+        delete: operations["removeProductMedia"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/devices/{id}": {
         parameters: {
             query?: never;
@@ -550,6 +619,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Todos os itens da lista, na ordem nova */
+        ReorderRequest: {
+            ids: string[];
+        };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
         ProductRequest: {
             /** Format: uuid */
             categoryId: string;
@@ -572,19 +658,6 @@ export interface components {
             featured: boolean;
             /** @description false: aparece como "Esgotado hoje" */
             available: boolean;
-        };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
         };
         /** @description Produto do cardápio. Preços em centavos */
         Product: {
@@ -611,10 +684,6 @@ export interface components {
             available: boolean;
             /** Format: int32 */
             position: number;
-        };
-        /** @description Todos os itens da lista, na ordem nova */
-        ReorderRequest: {
-            ids: string[];
         };
         /** @description Cadastro de uma pessoa da equipe */
         AddTeamMemberRequest: {
@@ -718,6 +787,67 @@ export interface components {
              * @description Mesas ativas no setor
              */
             activeTables: number;
+        };
+        AddMediaRequest: {
+            /**
+             * Format: uuid
+             * @description O uploadId recebido no primeiro passo
+             */
+            uploadId: string;
+        };
+        /** @description Foto do produto. A de posição mais baixa é a capa */
+        ProductMedia: {
+            /** Format: uuid */
+            id: string;
+            /** @example IMAGE */
+            type: string;
+            /** Format: int32 */
+            position: number;
+            /**
+             * Format: int32
+             * @description Largura do tamanho grande, em pixels
+             */
+            width: number;
+            /**
+             * Format: int32
+             * @description Altura do tamanho grande, em pixels
+             */
+            height: number;
+            urls: components["schemas"]["ProductMediaUrls"];
+        };
+        /** @description Um endereço por tamanho */
+        ProductMediaUrls: {
+            /** @description Quadrada, 240 px */
+            thumb: string;
+            /** @description Até 720 px no maior lado */
+            medium: string;
+            /** @description Até 1440 px no maior lado */
+            large: string;
+        };
+        /** @description O arquivo que o navegador vai enviar */
+        MediaUploadRequest: {
+            /** @example image/jpeg */
+            contentType: string;
+            /**
+             * Format: int64
+             * @description Tamanho em bytes (até 8 MB)
+             * @example 2483112
+             */
+            sizeBytes: number;
+        };
+        /** @description Envie o arquivo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
+        MediaUpload: {
+            /** Format: uuid */
+            uploadId: string;
+            /** @description URL assinada, de uso único e curta validade */
+            url: string;
+            /** @example PUT */
+            method: string;
+            headers: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
         };
         MenuCategoryRequest: {
             /** @example Entradas */
@@ -906,6 +1036,17 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseProductMedia: {
+            content: components["schemas"]["ProductMedia"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PageResponsePlan: {
             content: components["schemas"]["Plan"][];
             /** Format: int32 */
@@ -1024,6 +1165,48 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    reorderProductMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Reordenadas */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A galeria mudou desde que a tela carregou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getProduct: {
         parameters: {
             query?: never;
@@ -1570,6 +1753,134 @@ export interface operations {
             };
             /** @description A categoria não é uma categoria ativa deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listProductMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Todas as fotos, numa página só (são no máximo 8) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseProductMedia"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    addProductMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Foto adicionada (no fim da galeria) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMedia"];
+                };
+            };
+            /** @description O arquivo não é uma foto JPG ou PNG que dá para usar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O arquivo não chegou, ou o produto já tem 8 fotos */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Como enviar o arquivo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O produto já tem 8 fotos */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2480,6 +2791,36 @@ export interface operations {
             };
             /** @description O aparelho é uma TV */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    removeProductMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+                mediaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removida */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma foto deste produto */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
