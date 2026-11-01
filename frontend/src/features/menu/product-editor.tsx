@@ -24,6 +24,7 @@ import {
   type Product,
   type ProductRequest,
 } from "./menu-api";
+import { ProductPhotos } from "./product-photos";
 
 const t = messages.menu.product;
 const DESCRIPTION_MAX = 300;
@@ -181,94 +182,107 @@ function ProductForm({
         </Button>
       </header>
 
-      <form
-        id={formId}
-        onSubmit={onSubmit}
-        className="flex max-w-3xl flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6"
-      >
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}name`} className="text-muted-foreground">
-            {t.name}
-          </Label>
-          <Input
-            id={`${id}name`}
-            name="name"
-            required
-            maxLength={80}
-            autoComplete="off"
-            defaultValue={product?.name}
-            placeholder={t.namePlaceholder}
-            className="h-12 rounded-xl px-4 text-base"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}description`} className="text-muted-foreground">
-            {t.description}
-          </Label>
-          <textarea
-            id={`${id}description`}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            maxLength={DESCRIPTION_MAX}
-            rows={3}
-            aria-describedby={`${id}description-hint`}
-            className="min-h-24 rounded-xl border border-input bg-transparent px-4 py-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-          />
-          <span id={`${id}description-hint`} className="text-sm text-muted-foreground">
-            {t.descriptionHint(description.length, DESCRIPTION_MAX)}
-          </span>
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-3">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <form
+          id={formId}
+          onSubmit={onSubmit}
+          className="flex min-w-0 flex-1 flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:max-w-3xl"
+        >
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}category`} className="text-muted-foreground">
-              {t.category}
+            <Label htmlFor={`${id}name`} className="text-muted-foreground">
+              {t.name}
             </Label>
-            <select
-              id={`${id}category`}
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
+            <Input
+              id={`${id}name`}
+              name="name"
               required
-              className="h-12 rounded-xl border border-input bg-transparent px-3 text-base dark:bg-input/30"
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              maxLength={80}
+              autoComplete="off"
+              defaultValue={product?.name}
+              placeholder={t.namePlaceholder}
+              className="h-12 rounded-xl px-4 text-base"
+            />
           </div>
-          <MoneyField
-            id={`${id}price`}
-            label={t.price}
-            value={price}
-            onChange={setPrice}
-            onBlur={() => tidy(price, setPrice)}
-            invalid={priceInvalid}
-            hint={t.priceHint}
-            required
-          />
-          <MoneyField
-            id={`${id}promo`}
-            label={`${t.promoPrice} (${t.optional})`}
-            value={promo}
-            onChange={setPromo}
-            onBlur={() => tidy(promo, setPromo)}
-            invalid={promoInvalid}
-            hint={t.promoHint}
-          />
-        </div>
 
-        <div className="border-t border-border" />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={`${id}description`} className="text-muted-foreground">
+              {t.description}
+            </Label>
+            <textarea
+              id={`${id}description`}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              maxLength={DESCRIPTION_MAX}
+              rows={3}
+              aria-describedby={`${id}description-hint`}
+              className="min-h-24 rounded-xl border border-input bg-transparent px-4 py-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            />
+            <span id={`${id}description-hint`} className="text-sm text-muted-foreground">
+              {t.descriptionHint(description.length, DESCRIPTION_MAX)}
+            </span>
+          </div>
 
-        <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
-        <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}category`} className="text-muted-foreground">
+                {t.category}
+              </Label>
+              <select
+                id={`${id}category`}
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                required
+                className="h-12 rounded-xl border border-input bg-transparent px-3 text-base dark:bg-input/30"
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <MoneyField
+              id={`${id}price`}
+              label={t.price}
+              value={price}
+              onChange={setPrice}
+              onBlur={() => tidy(price, setPrice)}
+              invalid={priceInvalid}
+              hint={t.priceHint}
+              required
+            />
+            <MoneyField
+              id={`${id}promo`}
+              label={`${t.promoPrice} (${t.optional})`}
+              value={promo}
+              onChange={setPromo}
+              onBlur={() => tidy(promo, setPromo)}
+              invalid={promoInvalid}
+              hint={t.promoHint}
+            />
+          </div>
 
-        <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-          {save.error?.message ?? ""}
-        </p>
-      </form>
+          <div className="border-t border-border" />
+
+          <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
+          <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
+
+          <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
+            {save.error?.message ?? ""}
+          </p>
+        </form>
+
+        {/* As fotos precisam do produto já salvo: o caminho no armazenamento leva o id dele. */}
+        <aside className="w-full lg:w-96 lg:shrink-0">
+          {product ? (
+            <ProductPhotos productId={product.id} productName={product.name} />
+          ) : (
+            <p className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+              {messages.menu.photos.saveFirst}
+            </p>
+          )}
+        </aside>
+      </div>
 
       {product && (
         <ConfirmDialog

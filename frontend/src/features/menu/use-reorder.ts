@@ -4,11 +4,14 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 
 type Item = { id: string };
 
+/** Direção da lista: "y" (de cima para baixo) ou "x" (da esquerda para a direita). */
+export type Axis = "x" | "y";
+
 /** O arraste em andamento: medidas tiradas no início, para a conta não depender do DOM mexendo. */
 type Drag = {
   id: string;
   from: number;
-  startY: number;
+  start: number;
   /** Centro de cada linha (na ordem original) no começo do arraste. */
   centers: number[];
   /** Quanto os vizinhos andam para abrir espaço: a altura da linha arrastada mais o espaço entre linhas. */
@@ -17,7 +20,8 @@ type Drag = {
 
 /**
  * Reordenar uma lista arrastando uma alça, sem biblioteca, com mouse, toque ou caneta; e,
- * para quem usa teclado ou leitor de tela, as setas para cima e para baixo com a alça selecionada.
+ * para quem usa teclado ou leitor de tela, as setas (para cima e para baixo; na lista horizontal,
+ * para os lados) com a alça selecionada.
  *
  * Durante o arraste, a ordem no DOM não muda: a linha arrastada segue o ponteiro com
  * `transform`, e as outras deslizam para abrir espaço. (Mover o elemento no DOM no meio do
@@ -28,7 +32,10 @@ export function useReorder<T extends Item>(
   items: T[],
   onCommit: (ids: string[]) => Promise<void>,
   describe: (item: T, position: number, total: number) => string,
+  axis: Axis = "y",
 ) {
+  const coordinate = (event: { clientX: number; clientY: number }) => (axis === "y" ? event.clientY : event.clientX);
+  const [backKey, forwardKey] = axis === "y" ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
   const [drag, setDrag] = useState<Drag | null>(null);
   const [offset, setOffset] = useState(0);
   const [saved, setSaved] = useState<string[] | null>(null);
@@ -60,7 +67,7 @@ export function useReorder<T extends Item>(
     if (!drag) return;
     let dy = 0;
     const move = (event: globalThis.PointerEvent) => {
-      dy = event.clientY - drag.startY;
+      dy = coordinate(event) - drag.start;
       setOffset(dy);
     };
     const drop = () => {
@@ -99,23 +106,24 @@ export function useReorder<T extends Item>(
         if (rects.some((r) => r === undefined)) return;
         const measured = rects as DOMRect[];
         const from = items.findIndex((x) => x.id === item.id);
-        const gap = measured.length > 1 ? Math.max(0, measured[1].top - measured[0].bottom) : 0;
+        const [lead, trail, size] = axis === "y" ? (["top", "bottom", "height"] as const) : (["left", "right", "width"] as const);
+        const gap = measured.length > 1 ? Math.max(0, measured[1][lead] - measured[0][trail]) : 0;
         setDrag({
           id: item.id,
           from,
-          startY: event.clientY,
-          centers: measured.map((r) => r.top + r.height / 2),
-          slot: measured[from].height + gap,
+          start: coordinate(event),
+          centers: measured.map((r) => r[lead] + r[size] / 2),
+          slot: measured[from][size] + gap,
         });
         setOffset(0);
       },
       onKeyDown(event: KeyboardEvent<HTMLElement>) {
-        if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+        if (event.key !== backKey && event.key !== forwardKey) return;
         event.preventDefault();
         if (saved || drag) return; // ainda salvando a mudança anterior
         const ids = items.map((x) => x.id);
         const from = ids.indexOf(item.id);
-        const to = event.key === "ArrowUp" ? from - 1 : from + 1;
+        const to = event.key === backKey ? from - 1 : from + 1;
         if (to < 0 || to >= ids.length) return;
         const next = ids.filter((id) => id !== item.id);
         next.splice(to, 0, item.id);
@@ -128,15 +136,16 @@ export function useReorder<T extends Item>(
   /** O deslocamento de cada linha durante o arraste (e nada fora dele). */
   function rowStyle(id: string): CSSProperties | undefined {
     if (!drag) return undefined;
+    const translate = axis === "y" ? "translateY" : "translateX";
     if (id === drag.id) {
-      return { transform: `translateY(${offset}px)`, position: "relative", zIndex: 10 };
+      return { transform: `${translate}(${offset}px)`, position: "relative", zIndex: 10 };
     }
     const index = items.findIndex((x) => x.id === id);
     const to = targetIndex(drag, offset);
     let shift = 0;
     if (drag.from < to && index > drag.from && index <= to) shift = -drag.slot;
     if (to < drag.from && index >= to && index < drag.from) shift = drag.slot;
-    return { transform: `translateY(${shift}px)`, transition: "transform 150ms ease" };
+    return { transform: `${translate}(${shift}px)`, transition: "transform 150ms ease" };
   }
 
   /** Para o hook medir a linha quando o arraste começa. */
