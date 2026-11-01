@@ -82,12 +82,22 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U ci -d cardapio"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      # Faz o papel do R2 (fotos): fala a API S3, sem chave de verdade.
+      s3mock:
+        image: adobe/s3mock:4.11.0
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: cardapio-e2e
     env:
       # Dentro do container, o Postgres do "services" responde pelo nome do serviço.
       DB_URL: jdbc:postgresql://postgres:5432/cardapio
       DB_USERNAME: ci
       DB_PASSWORD: ci-only
       JWT_SECRET: chave-do-ci-apenas-para-testes-0123456789abcdef
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_BUCKET: cardapio-e2e
+      STORAGE_PUBLIC_URL: http://s3mock:9090/cardapio-e2e
+      STORAGE_ACCESS_KEY_ID: ci
+      STORAGE_SECRET_ACCESS_KEY: ci-only
       API_URL: http://localhost:8080
       NEXT_PUBLIC_API_URL: http://localhost:8080
     steps:

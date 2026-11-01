@@ -66,6 +66,19 @@ import br.com.cardapio.application.service.team.ListTeamService;
 import br.com.cardapio.application.service.team.ReactivateTeamMemberService;
 import br.com.cardapio.application.service.team.UpdateTeamMemberService;
 import org.springframework.beans.factory.annotation.Value;
+import br.com.cardapio.application.port.in.menu.AddProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
+import br.com.cardapio.application.port.out.media.ImageProcessorPort;
+import br.com.cardapio.application.port.out.media.MediaStoragePort;
+import br.com.cardapio.application.port.out.menu.ProductMediaPort;
+import br.com.cardapio.application.service.menu.AddProductMediaService;
+import br.com.cardapio.application.service.menu.ListProductMediaService;
+import br.com.cardapio.application.service.menu.RemoveProductMediaService;
+import br.com.cardapio.application.service.menu.ReorderProductMediaService;
+import br.com.cardapio.application.service.menu.StartMediaUploadService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -318,5 +331,36 @@ class UseCaseConfig {
     @Bean
     ReorderProductsUseCase reorderProductsUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
         return new ReorderProductsService(menuCategoryPort, productPort);
+    }
+
+    // Fotos dos produtos (Guia 10)
+
+    @Bean
+    StartMediaUploadUseCase startMediaUploadUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+                                                    MediaStoragePort mediaStoragePort) {
+        return new StartMediaUploadService(productPort, productMediaPort, mediaStoragePort);
+    }
+
+    @Bean
+    AddProductMediaUseCase addProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+                                                  MediaStoragePort mediaStoragePort,
+                                                  ImageProcessorPort imageProcessorPort) {
+        return new AddProductMediaService(productPort, productMediaPort, mediaStoragePort, imageProcessorPort);
+    }
+
+    @Bean
+    ListProductMediaUseCase listProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+                                                    MediaStoragePort mediaStoragePort) {
+        return new ListProductMediaService(productPort, productMediaPort, mediaStoragePort);
+    }
+
+    @Bean
+    RemoveProductMediaUseCase removeProductMediaUseCase(ProductMediaPort productMediaPort) {
+        return new RemoveProductMediaService(productMediaPort);
+    }
+
+    @Bean
+    ReorderProductMediaUseCase reorderProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort) {
+        return new ReorderProductMediaService(productPort, productMediaPort);
     }
 }
