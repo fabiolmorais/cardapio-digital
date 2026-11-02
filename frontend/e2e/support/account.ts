@@ -56,10 +56,16 @@ export async function addTeamMember(request: APIRequestContext, token: string, n
 }
 
 /** O dono vincula, pela API, o código que aparece na tela do aparelho. */
-export async function linkDeviceByCode(request: APIRequestContext, token: string, code: string, name: string) {
+export async function linkDeviceByCode(
+  request: APIRequestContext,
+  token: string,
+  code: string,
+  name: string,
+  type: "WAITER" | "KITCHEN" | "TV" = "WAITER",
+) {
   const response = await request.post(`${API_URL}/api/v1/devices`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { code, name, type: "WAITER" },
+    data: { code, name, type },
   });
   expect(response.status()).toBe(201);
   return (await response.json()).id as string;
