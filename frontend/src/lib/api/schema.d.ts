@@ -197,6 +197,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abre a sessão deste celular na mesa (ou renova a que ele já tem), no cookie table_session */
+        post: operations["startTableSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -553,8 +570,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A mesa do QR Code: restaurante e número */
+        /** A mesa do QR Code: restaurante (com a marca), número e setor */
         get: operations["getPublicTable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O cardápio do restaurante da mesa: categorias com produtos, preços e a foto de capa */
+        get: operations["getPublicMenu"];
         put?: never;
         post?: never;
         delete?: never;
@@ -904,6 +938,13 @@ export interface components {
              */
             activeTables: number;
         };
+        TableSession: {
+            /**
+             * Format: date-time
+             * @description Vence se ficar este tempo sem uso
+             */
+            expiresAt: string;
+        };
         AddMediaRequest: {
             /**
              * Format: uuid
@@ -1160,12 +1201,84 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        /** @description A aparência da página: só os tons da cor escolhida */
+        PublicBrand: {
+            /** @enum {string} */
+            theme: "DARK" | "LIGHT";
+            /**
+             * @description Fundo dos botões, com texto branco
+             * @example #CC3F1C
+             */
+            primary: string;
+            /**
+             * @description Texto de destaque no tema em uso
+             * @example #FF8466
+             */
+            accent: string;
+            /** @description null quando o restaurante usa as iniciais */
+            logo?: components["schemas"]["PublicLogo"];
+            /** @description O @, sem o "@"; null quando não informado */
+            instagram?: string;
+            /** @description null quando não informado */
+            googleReviewUrl?: string;
+        };
+        PublicLogo: {
+            /** @description 128 px */
+            small: string;
+            /** @description 512 px */
+            large: string;
+        };
         /** @description A mesa do QR Code, para a página pública */
         PublicTable: {
             /** @example Sakura Sushi */
             establishmentName: string;
             /** @example 04 */
             tableLabel: string;
+            /** @example Salão principal */
+            sectorName: string;
+            brand: components["schemas"]["PublicBrand"];
+        };
+        PublicMenu: {
+            categories: components["schemas"]["PublicMenuCategory"][];
+        };
+        PublicMenuCategory: {
+            /** Format: uuid */
+            id: string;
+            /** @example Entradas */
+            name: string;
+            products: components["schemas"]["PublicMenuItem"][];
+        };
+        /** @description Preços em centavos */
+        PublicMenuItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Vazia quando o restaurante não escreveu */
+            description: string;
+            /**
+             * Format: int64
+             * @example 1990
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description null quando não há promoção
+             * @example 1590
+             */
+            promoPriceCents?: number;
+            featured: boolean;
+            /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
+            available: boolean;
+            /** @description A capa; null quando o produto não tem foto */
+            photo?: components["schemas"]["PublicMenuPhoto"];
+        };
+        PublicMenuPhoto: {
+            /** @description Quadrada, 240 px */
+            thumb: string;
+            /** @description Até 720 px */
+            medium: string;
+            /** @description Até 1440 px */
+            large: string;
         };
         PageResponseProduct: {
             content: components["schemas"]["Product"][];
@@ -1886,6 +1999,39 @@ export interface operations {
             };
             /** @description Já existe um setor com esse nome */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startTableSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessão em uso; o cookie vai no Set-Cookie */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableSession"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2947,6 +3093,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicTable"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPublicMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O cardápio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicMenu"];
                 };
             };
             /** @description QR inválido, trocado ou mesa desativada */

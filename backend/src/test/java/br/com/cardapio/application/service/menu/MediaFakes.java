@@ -62,6 +62,15 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
                 .mapToInt(m -> m.position() + 1).max().orElse(0);
     }
 
+    @Override
+    public List<ProductMedia> findCovers(EstablishmentId establishmentId) {
+        return media.values().stream()
+                .filter(m -> m.establishmentId().equals(establishmentId) && m.active())
+                .collect(Collectors.groupingBy(ProductMedia::productId,
+                        Collectors.minBy(Comparator.comparingInt(ProductMedia::position))))
+                .values().stream().flatMap(Optional::stream).toList();
+    }
+
     // MediaStoragePort
     @Override
     public SignedUpload signUpload(String path, String contentType, long sizeBytes, Duration validity) {

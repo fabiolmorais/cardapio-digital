@@ -18,6 +18,12 @@ public record Product(
         boolean active
 ) {
 
+    /**
+     * Produtos ativos por restaurante. A página da mesa carrega o cardápio inteiro de uma vez
+     * (ADR 0006), e este teto garante que ele nunca fica pesado demais para o 4G.
+     */
+    public static final int MAX_PER_ESTABLISHMENT = 500;
+
     public Product {
         Objects.requireNonNull(id);
         Objects.requireNonNull(establishmentId);

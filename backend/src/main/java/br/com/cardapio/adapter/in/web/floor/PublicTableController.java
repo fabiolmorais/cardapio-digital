@@ -28,7 +28,7 @@ class PublicTableController {
     }
 
     @GetMapping("/{token}")
-    @Operation(operationId = "getPublicTable", summary = "A mesa do QR Code: restaurante e número")
+    @Operation(operationId = "getPublicTable", summary = "A mesa do QR Code: restaurante (com a marca), número e setor")
     @ApiResponse(responseCode = "200", description = "Mesa encontrada")
     @ApiResponse(responseCode = "404", description = "QR inválido, trocado ou mesa desativada",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))

@@ -46,6 +46,15 @@ interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UUID> {
             """)
     int nextPosition(@Param("establishmentId") UUID establishmentId, @Param("categoryId") UUID categoryId);
 
+    long countByEstablishmentIdAndActiveTrue(UUID establishmentId);
+
+    /** O cardápio inteiro, na ordem: a mesma junção e a mesma ordem da busca, sem filtro de texto. */
+    @Query("""
+            SELECT p FROM ProductJpaEntity p JOIN MenuCategoryJpaEntity c ON c.id = p.categoryId
+             WHERE p.establishmentId = :establishmentId AND p.active = true
+            """ + ORDER)
+    List<ProductJpaEntity> findAllActive(@Param("establishmentId") UUID establishmentId);
+
     @Query("""
             SELECT count(p) FROM ProductJpaEntity p
              WHERE p.establishmentId = :establishmentId AND p.categoryId = :categoryId AND p.active = true

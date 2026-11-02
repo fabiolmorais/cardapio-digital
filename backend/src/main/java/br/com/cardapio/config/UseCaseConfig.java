@@ -1,5 +1,10 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.service.tablesession.StartTableSessionService;
+import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
+import br.com.cardapio.application.service.menu.GetPublicMenuService;
+import br.com.cardapio.application.port.in.menu.GetPublicMenuUseCase;
 import br.com.cardapio.application.port.in.account.*;
 import br.com.cardapio.application.port.in.device.ClaimPairingUseCase;
 import br.com.cardapio.application.port.in.device.CurrentDeviceUseCase;
@@ -278,8 +283,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    ViewPublicTableUseCase viewPublicTableUseCase(DiningTablePort diningTablePort) {
-        return new ViewPublicTableService(diningTablePort);
+    ViewPublicTableUseCase viewPublicTableUseCase(DiningTablePort diningTablePort, SectorPort sectorPort,
+                                                  BrandPort brandPort, MediaStoragePort mediaStoragePort) {
+        return new ViewPublicTableService(diningTablePort, sectorPort, brandPort, mediaStoragePort);
     }
 
     // Cardápio (Guia 9)
@@ -401,5 +407,22 @@ class UseCaseConfig {
     @Bean
     RemoveLogoUseCase removeLogoUseCase(BrandPort brandPort, MediaStoragePort mediaStoragePort) {
         return new RemoveLogoService(brandPort, mediaStoragePort);
+    }
+
+    // Página da mesa (Guia 12)
+
+    @Bean
+    GetPublicMenuUseCase getPublicMenuUseCase(DiningTablePort diningTablePort, MenuCategoryPort menuCategoryPort,
+                                              ProductPort productPort, ProductMediaPort productMediaPort,
+                                              MediaStoragePort mediaStoragePort) {
+        return new GetPublicMenuService(diningTablePort, menuCategoryPort, productPort, productMediaPort,
+                mediaStoragePort);
+    }
+
+    @Bean
+    StartTableSessionUseCase startTableSessionUseCase(DiningTablePort diningTablePort,
+                                                      TableSessionPort tableSessionPort,
+                                                      RandomTokenGenerator randomTokenGenerator, Clock clock) {
+        return new StartTableSessionService(diningTablePort, tableSessionPort, randomTokenGenerator, clock);
     }
 }

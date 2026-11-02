@@ -67,6 +67,18 @@ class ProductPersistenceAdapter implements ProductPort {
         return products.nextPosition(establishmentId.value(), categoryId.value());
     }
 
+    @Override
+    public long countActive(EstablishmentId establishmentId) {
+        establishmentFilter.enable(establishmentId);
+        return products.countByEstablishmentIdAndActiveTrue(establishmentId.value());
+    }
+
+    @Override
+    public List<Product> findAllActive(EstablishmentId establishmentId) {
+        establishmentFilter.enable(establishmentId);
+        return products.findAllActive(establishmentId.value()).stream().map(MenuPersistenceMapper::toDomain).toList();
+    }
+
     /**
      * "50% off" vira "%50!% off%": o texto vai entre curingas e os curingas que o próprio texto
      * tem (% e _) e o caractere de escape (!) ganham um "!" na frente, para valerem como letras.

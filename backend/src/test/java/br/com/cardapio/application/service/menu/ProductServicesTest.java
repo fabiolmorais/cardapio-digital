@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.menu;
 
+import br.com.cardapio.domain.menu.exception.MenuFullException;
 import br.com.cardapio.application.port.in.menu.ProductForm;
 import br.com.cardapio.application.port.in.menu.ProductSummary;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -140,5 +141,19 @@ class ProductServicesTest {
         ProductSummary mine = create.create(sakura, form(entradas.id(), "Edamame", 1990, null));
         assertThatThrownBy(() -> update.update(sakura, mine.id(), form(elsewhere.id(), "Edamame", 1990, null)))
                 .isInstanceOf(MenuCategoryNotFoundException.class);
+    }
+
+    @Test
+    void theMenuHasACeiling() {
+        for (int i = 0; i < Product.MAX_PER_ESTABLISHMENT; i++) {
+            fakes.givenProduct(entradas, "Produto " + i, 100);
+        }
+
+        assertThatThrownBy(() -> create.create(sakura, form(entradas.id(), "Mais um", 100, null)))
+                .isInstanceOf(MenuFullException.class);
+        // Em outro restaurante, o teto é outro.
+        MenuCategory deles = fakes.givenCategory(EstablishmentId.newId(), "Entradas");
+        assertThat(create.create(deles.establishmentId(), form(deles.id(), "Guioza", 100, null)).name())
+                .isEqualTo("Guioza");
     }
 }
