@@ -117,6 +117,10 @@ import br.com.cardapio.application.service.brand.UpdateBrandService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import br.com.cardapio.application.port.in.call.ListTvCallQueueUseCase;
+import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
+import br.com.cardapio.application.service.call.ListTvCallQueueService;
+import br.com.cardapio.application.service.realtime.WatchTvEventsService;
 import java.time.Clock;
 import java.time.Duration;
 
@@ -492,5 +496,18 @@ class UseCaseConfig {
                                                     TableSessionPort tableSessionPort,
                                                     EventStreamPort eventStreamPort, Clock clock) {
         return new WatchTableEventsService(diningTablePort, tableSessionPort, eventStreamPort, clock);
+    }
+
+    // Modo TV na TV vinculada (Guia 15)
+
+    @Bean
+    ListTvCallQueueUseCase listTvCallQueueUseCase(DeviceAuthenticator deviceAuthenticator, CallPort callPort) {
+        return new ListTvCallQueueService(deviceAuthenticator, callPort);
+    }
+
+    @Bean
+    WatchTvEventsUseCase watchTvEventsUseCase(DeviceAuthenticator deviceAuthenticator,
+                                              EventStreamPort eventStreamPort) {
+        return new WatchTvEventsService(deviceAuthenticator, eventStreamPort);
     }
 }

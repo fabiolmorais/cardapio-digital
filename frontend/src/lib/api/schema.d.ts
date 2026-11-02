@@ -754,6 +754,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/device/tv/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Avisos do restaurante na TV vinculada (sem login): "ready" e "call", como os da equipe */
+        get: operations["streamTvEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device/tv/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A fila de chamados na TV vinculada (sem login, pelo cookie) */
+        get: operations["listTvCallQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/device/team-members": {
         parameters: {
             query?: never;
@@ -3654,6 +3688,91 @@ export interface operations {
             };
             /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    streamTvEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo SSE; cada aviso traz só ids e status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Aparelho não vinculado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+            /** @description O aparelho não é uma TV */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+        };
+    };
+    listTvCallQueue: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página da fila */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseStaffCall"];
+                };
+            };
+            /** @description Aparelho não vinculado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O aparelho não é uma TV */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

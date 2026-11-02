@@ -60,6 +60,14 @@ public record Device(
         return type != DeviceType.TV;
     }
 
+    /**
+     * O Modo TV sem login (só de leitura, pelo cookie do aparelho) é só para a TV. Um celular ou
+     * tablet esquecido no balcão não mostra a fila para quem pegar: neles se entra com PIN.
+     */
+    public boolean showsTvModeWithoutLogin() {
+        return type == DeviceType.TV;
+    }
+
     /** Desvincular: o token deixa de valer. O registro fica (histórico). */
     public Device revoke(Instant now) {
         if (!isActive()) {

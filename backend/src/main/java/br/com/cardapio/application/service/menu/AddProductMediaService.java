@@ -16,6 +16,8 @@ import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class AddProductMediaService implements AddProductMediaUseCase {
@@ -47,9 +49,11 @@ public class AddProductMediaService implements AddProductMediaUseCase {
 
         ProductMedia photo = ProductMedia.newImage(establishmentId, productId, image.width(), image.height(),
                 media.nextPosition(establishmentId, productId));
+        Map<String, byte[]> files = new LinkedHashMap<>();
         for (ImageVariant variant : ImageVariant.values()) {
-            storage.store(photo.fileOf(variant), image.variants().get(variant), "image/jpeg");
+            files.put(photo.fileOf(variant), image.variants().get(variant));
         }
+        storage.storeAll(files, "image/jpeg"); // os três tamanhos ao mesmo tempo
         media.save(photo);
         storage.delete(uploadPath); // o original (com os metadados do celular) não fica guardado
         return ProductMediaMapper.toSummary(photo, storage);

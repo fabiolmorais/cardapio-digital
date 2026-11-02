@@ -12,8 +12,13 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * O armazenamento pela API S3, que o Cloudflare R2 implementa. Trocar de serviço (R2, S3 da
@@ -75,6 +80,31 @@ class S3MediaStorage implements MediaStoragePort {
     public void store(String path, byte[] content, String contentType) {
         s3.putObject(p -> p.bucket(properties.bucket()).key(path).contentType(contentType).cacheControl(CACHE_FOREVER),
                 RequestBody.fromBytes(content));
+    }
+
+    /**
+     * Os arquivos vão ao mesmo tempo, cada um numa thread virtual: o tempo total fica perto do
+     * de um envio só, e não da soma. O S3Client pode ser usado por várias threads de uma vez
+     * (ele tem um conjunto de conexões, o pool).
+     */
+    @Override
+    public void storeAll(Map<String, byte[]> files, String contentType) {
+        List<Future<?>> uploads;
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            uploads = files.entrySet().stream()
+                    .<Future<?>>map(file -> executor.submit(() -> store(file.getKey(), file.getValue(), contentType)))
+                    .toList();
+        } // o close() do executor espera todos os envios terminarem
+        for (Future<?> upload : uploads) {
+            try {
+                upload.get();
+            } catch (ExecutionException e) {
+                throw e.getCause() instanceof RuntimeException cause ? cause : new IllegalStateException(e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+        }
     }
 
     @Override

@@ -13,6 +13,8 @@ import br.com.cardapio.domain.brand.model.LogoVariant;
 import br.com.cardapio.domain.shared.exception.UploadNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** A mesma sequência das fotos (Guia 10): ler, conferir, gravar os arquivos, gravar o banco, apagar o original. */
@@ -36,9 +38,11 @@ public class SetLogoService implements SetLogoUseCase {
         ProcessedLogo logo = images.processLogo(original);
 
         Brand brand = brands.find(establishmentId).withNewLogo();
+        Map<String, byte[]> files = new LinkedHashMap<>();
         for (LogoVariant variant : LogoVariant.values()) {
-            storage.store(brand.logoFile(variant), logo.variants().get(variant), "image/png");
+            files.put(brand.logoFile(variant), logo.variants().get(variant));
         }
+        storage.storeAll(files, "image/png"); // os dois tamanhos ao mesmo tempo
         brands.save(brand);
         storage.delete(uploadPath);
         return BrandMapper.toSummary(brand, storage);

@@ -3,6 +3,7 @@ package br.com.cardapio.application.service.device;
 import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.LinkedDevice;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
+import br.com.cardapio.domain.device.exception.TvModeNotAllowedException;
 import br.com.cardapio.domain.device.model.Device;
 import br.com.cardapio.domain.device.model.DeviceSecretHash;
 
@@ -32,5 +33,14 @@ public class DeviceAuthenticator {
         Device seen = linked.device().seen(clock.instant());
         devices.save(seen);
         return new LinkedDevice(seen, linked.establishmentName());
+    }
+
+    /** O Modo TV sem login: além de vinculado, o aparelho precisa ser uma TV (senão, 403). */
+    public LinkedDevice authenticateTv(String rawToken) {
+        LinkedDevice linked = authenticate(rawToken);
+        if (!linked.device().showsTvModeWithoutLogin()) {
+            throw new TvModeNotAllowedException();
+        }
+        return linked;
     }
 }
