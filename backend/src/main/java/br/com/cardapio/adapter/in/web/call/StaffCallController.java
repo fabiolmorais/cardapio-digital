@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.call;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
+import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
 import br.com.cardapio.application.port.in.call.FinishCallUseCase;
 import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -36,11 +37,14 @@ class StaffCallController {
     private final ListCallQueueUseCase listQueue;
     private final AcceptCallUseCase acceptCall;
     private final FinishCallUseCase finishCall;
+    private final DeclineCallUseCase declineCall;
 
-    StaffCallController(ListCallQueueUseCase listQueue, AcceptCallUseCase acceptCall, FinishCallUseCase finishCall) {
+    StaffCallController(ListCallQueueUseCase listQueue, AcceptCallUseCase acceptCall, FinishCallUseCase finishCall,
+                        DeclineCallUseCase declineCall) {
         this.listQueue = listQueue;
         this.acceptCall = acceptCall;
         this.finishCall = finishCall;
+        this.declineCall = declineCall;
     }
 
     @GetMapping
@@ -60,7 +64,8 @@ class StaffCallController {
 
     @PostMapping("/{id}/accept")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
-    @Operation(operationId = "acceptCall", summary = "\"Estou indo\": o chamado fica com quem aceitou")
+    @Operation(operationId = "acceptCall",
+            summary = "\"Estou indo\": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa")
     @ApiResponse(responseCode = "200", description = "Aceito")
     @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
@@ -81,5 +86,18 @@ class StaffCallController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     StaffCallResponse finish(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return StaffCallResponse.from(finishCall.finish(AuthenticatedUser.from(jwt).establishmentId(), new CallId(id)));
+    }
+
+    @PostMapping("/{id}/decline")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "declineCall", summary = "Recusa um pedido de liberação: o celular não está no salão")
+    @ApiResponse(responseCode = "200", description = "Recusado (o chamado é cancelado)")
+    @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Não é um pedido de liberação, ou já foi respondido",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    StaffCallResponse decline(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return StaffCallResponse.from(declineCall.decline(AuthenticatedUser.from(jwt).establishmentId(),
+                new CallId(id)));
     }
 }

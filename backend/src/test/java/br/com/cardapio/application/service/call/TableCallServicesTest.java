@@ -2,16 +2,17 @@ package br.com.cardapio.application.service.call;
 
 import br.com.cardapio.application.port.in.call.RequestCallCommand;
 import br.com.cardapio.application.port.in.call.RequestedCall;
-import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.call.exception.CallNotFoundException;
+import br.com.cardapio.domain.call.exception.CallStateException;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTable;
-import br.com.cardapio.domain.shared.model.TokenHash;
+import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import br.com.cardapio.domain.tablesession.model.TableSession;
+import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
 import br.com.cardapio.domain.call.event.CallChanged;
@@ -23,9 +24,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,18 +35,7 @@ class TableCallServicesTest {
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
     private static final String QR_05 = "qr-da-mesa-05-00000000000";
 
-    private final Map<TokenHash, TableSession> sessionsByHash = new HashMap<>();
-    private final TableSessionPort sessions = new TableSessionPort() {
-        @Override
-        public void save(TableSession session) {
-            sessionsByHash.put(session.tokenHash(), session);
-        }
-
-        @Override
-        public Optional<TableSession> findByTokenHash(TokenHash tokenHash) {
-            return Optional.ofNullable(sessionsByHash.get(tokenHash));
-        }
-    };
+    private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryCalls calls = new InMemoryCalls();
     /** O que os serviços publicaram para o tempo real. */
@@ -61,8 +48,8 @@ class TableCallServicesTest {
     void tablesWithASessionOn04() {
         mesa04 = tables.given(sakura, "04", QR_04);
         DiningTable mesa05 = tables.given(sakura, "05", QR_05);
-        sessions.save(TableSession.open(sakura, mesa04.id(), TokenHash.of("celular-04"), NOW));
-        sessions.save(TableSession.open(sakura, mesa05.id(), TokenHash.of("celular-05"), NOW));
+        sessions.givenPresent(sakura, mesa04.id(), "celular-04", NOW);
+        sessions.givenPresent(sakura, mesa05.id(), "celular-05", NOW);
     }
 
     private CancelCallService cancel() {
@@ -151,5 +138,26 @@ class TableCallServicesTest {
                 .cancel(QR_05, "celular-05", call.id()))
                 .isInstanceOf(CallNotFoundException.class);
         assertThat(calls.saved.get(call.id()).status()).isEqualTo(CallStatus.PENDING);
+    }
+
+    @Test
+    void withoutPresenceTheButtonsAreLockedButTheUnlockRequestGoesThrough() {
+        sessions.given(sakura, mesa04.id(), "celular-de-fora", NOW);
+
+        for (CallType type : new CallType[]{CallType.WAITER, CallType.BILL}) {
+            assertThatThrownBy(() -> request("celular-de-fora", type, PaymentMethod.PIX))
+                    .as(type.name()).isInstanceOf(PresenceRequiredException.class);
+        }
+        RequestedCall unlock = request("celular-de-fora", CallType.UNLOCK, null);
+
+        assertThat(unlock.created()).isTrue();
+        assertThat(unlock.call().type()).isEqualTo(CallType.UNLOCK);
+        assertThat(calls.saved).hasSize(1);
+    }
+
+    @Test
+    void aPhoneAlreadyInTheRoomDoesNotAskForUnlock() {
+        assertThatThrownBy(() -> request("celular-04", CallType.UNLOCK, null))
+                .isInstanceOf(CallStateException.class).hasMessage("Sua mesa já está liberada.");
     }
 }

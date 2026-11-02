@@ -13,6 +13,7 @@ import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -98,6 +99,7 @@ class CallPersistenceAdapter implements CallPort {
                 r.getPaymentMethod() == null ? null : PaymentMethod.valueOf(r.getPaymentMethod()),
                 CallStatus.valueOf(r.getStatus()), r.getCreatedAt(), r.getAcceptedAt(),
                 r.getAcceptedBy() == null ? null : new UserId(r.getAcceptedBy()), r.getDoneAt(), r.getCanceledAt());
-        return new CallView(call, r.getTableLabel(), r.getSectorName(), r.getAcceptedByName());
+        return new CallView(call, r.getTableLabel(), r.getSectorName(), r.getAcceptedByName(),
+                r.getPresenceMethod() == null ? null : PresenceMethod.valueOf(r.getPresenceMethod()));
     }
 }

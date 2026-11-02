@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 /**
  * O tempo real de ponta a ponta: a mesa chama pela API, o aviso passa pelo NOTIFY do Postgres e
@@ -68,6 +69,8 @@ class LiveEventsTest {
                 "{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD));
         String owner = JsonPath.read(login, "$.accessToken");
         UUID establishment = UUID.fromString(JsonPath.read(login, "$.establishment.id"));
+        // Trava de presença (Guia 16): o MockMvc chega como 127.0.0.1, então esta é "a rede do salão".
+        send(put("/api/v1/presence-rule"), owner, "{\"networks\":[\"127.0.0.1\"]}");
         String sector = JsonPath.read(send(post("/api/v1/sectors"), owner, "{\"name\":\"Salão\"}"), "$.id");
         String qr04 = JsonPath.read(send(post("/api/v1/tables"), owner,
                 "{\"label\":\"04\",\"sectorId\":\"%s\"}".formatted(sector)), "$.publicToken");
@@ -93,9 +96,12 @@ class LiveEventsTest {
                 role)).value();
     }
 
+    /** Abre a sessão do celular e confirma a presença (pela rede do salão). */
     private Cookie session(String qr) throws Exception {
-        return mvc.perform(post("/api/v1/public/tables/" + qr + "/session")).andReturn().getResponse()
+        Cookie cookie = mvc.perform(post("/api/v1/public/tables/" + qr + "/session")).andReturn().getResponse()
                 .getCookie("table_session");
+        mvc.perform(post("/api/v1/public/tables/" + qr + "/presence").cookie(cookie));
+        return cookie;
     }
 
     private String call(String qr, Cookie phone, String body) throws Exception {

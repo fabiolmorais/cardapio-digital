@@ -10,9 +10,12 @@ import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.tablesession.model.PresenceMethod;
+import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
+import br.com.cardapio.support.InMemoryTableSessions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -24,12 +27,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** O lado da equipe: a fila, aceitar e concluir. */
+/** O lado da equipe: a fila, aceitar, concluir, e liberar ou recusar uma mesa. */
 class StaffCallServicesTest {
 
     private static final Instant NOW = Instant.parse("2026-11-02T20:00:00Z");
 
     private final InMemoryCalls calls = new InMemoryCalls();
+    private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     /** O que os serviços publicaram para o tempo real. */
     private final List<DomainEvent> published = new ArrayList<>();
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -37,7 +41,7 @@ class StaffCallServicesTest {
     private final UserId carlos = UserId.newId();
 
     private AcceptCallService accept() {
-        return new AcceptCallService(calls, published::add, clock);
+        return new AcceptCallService(calls, sessions, published::add, clock);
     }
 
     private FinishCallService finish() {
@@ -112,5 +116,51 @@ class StaffCallServicesTest {
         assertThatThrownBy(() -> finish().finish(other, call.id()))
                 .isInstanceOf(CallNotFoundException.class);
         assertThat(new ListCallQueueService(calls).list(other, new PageQuery(0, 50)).content()).isEmpty();
+    }
+
+    /** Um pedido de liberação de um celular que não provou a presença, e um vizinho de mesa na mesma situação. */
+    private Call unlockRequest(DiningTableId mesa) {
+        TableSession phone = sessions.given(sakura, mesa, "celular-de-fora", NOW);
+        sessions.given(sakura, mesa, "celular-do-amigo", NOW);
+        Call call = Call.open(sakura, mesa, phone.id(), CallType.UNLOCK, null, NOW);
+        calls.insertIfNoneOpen(call);
+        return call;
+    }
+
+    @Test
+    void releasingTheTableUnlocksEveryPhoneAtItAndClosesTheRequest() {
+        DiningTableId mesa04 = DiningTableId.newId();
+        Call call = unlockRequest(mesa04);
+        sessions.given(sakura, DiningTableId.newId(), "outra-mesa", NOW);
+
+        StaffCall released = accept().accept(sakura, call.id(), carlos);
+
+        assertThat(released.status()).isEqualTo(CallStatus.DONE);
+        for (String phone : new String[]{"celular-de-fora", "celular-do-amigo"}) {
+            assertThat(sessions.byToken(phone).presenceMethod()).as(phone).isEqualTo(PresenceMethod.STAFF);
+            assertThat(sessions.byToken(phone).unlockedBy()).isEqualTo(carlos);
+        }
+        assertThat(sessions.byToken("outra-mesa").isPresent()).isFalse();
+        assertThat(published).singleElement().isInstanceOfSatisfying(CallChanged.class,
+                event -> assertThat(event.status()).isEqualTo(CallStatus.DONE));
+    }
+
+    @Test
+    void decliningKeepsTheTableLocked() {
+        Call call = unlockRequest(DiningTableId.newId());
+
+        StaffCall declined = new DeclineCallService(calls, published::add, clock).decline(sakura, call.id());
+
+        assertThat(declined.status()).isEqualTo(CallStatus.CANCELED);
+        assertThat(sessions.byToken("celular-de-fora").isPresent()).isFalse();
+        assertThat(published).hasSize(1);
+    }
+
+    @Test
+    void onlyAnUnlockRequestCanBeDeclined() {
+        Call waiter = given(NOW);
+
+        assertThatThrownBy(() -> new DeclineCallService(calls, published::add, clock).decline(sakura, waiter.id()))
+                .isInstanceOf(CallStateException.class);
     }
 }

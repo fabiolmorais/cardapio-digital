@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { baseUrl } from "@/lib/api/base";
+import { startVisit } from "./table-calls";
 
 /**
  * Abre (ou renova) a sessão deste celular na mesa: o back grava o cookie table_session
@@ -12,10 +12,8 @@ import { baseUrl } from "@/lib/api/base";
  */
 export function StartSession({ token }: { token: string }) {
   useEffect(() => {
-    void fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => undefined);
+    // Abre a sessão e, com ela aberta, confere a presença pela rede do salão (trava de presença).
+    void startVisit(token);
   }, [token]);
   return null;
 }

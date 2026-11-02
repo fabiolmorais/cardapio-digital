@@ -71,6 +71,9 @@ class CallFlowTest {
                 "{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD));
         String owner = json(login, "$.accessToken");
         UUID establishment = UUID.fromString(json(login, "$.establishment.id"));
+        // Trava de presença (Guia 16): o MockMvc chega como 127.0.0.1, então esta é "a rede do salão".
+        mvc.put().uri("/api/v1/presence-rule").header(HttpHeaders.AUTHORIZATION, "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"networks\":[\"127.0.0.1\"]}").exchange();
         String sector = json(send("POST", owner, "/api/v1/sectors", "{\"name\":\"Salão principal\"}"), "$.id");
         String qr04 = json(send("POST", owner, "/api/v1/tables",
                 "{\"label\":\"04\",\"sectorId\":\"%s\"}".formatted(sector)), "$.publicToken");
@@ -91,10 +94,14 @@ class CallFlowTest {
                 .value();
     }
 
+    /** Abre a sessão do celular e confirma a presença (pela rede do salão). */
     private Cookie session(String qr) {
         MvcTestResult started = mvc.post().uri("/api/v1/public/tables/" + qr + "/session").exchange();
         assertThat(started).hasStatusOk();
-        return started.getResponse().getCookie("table_session");
+        Cookie cookie = started.getResponse().getCookie("table_session");
+        assertThat(mvc.post().uri("/api/v1/public/tables/" + qr + "/presence").cookie(cookie).exchange())
+                .bodyJson().extractingPath("$.present").isEqualTo(true);
+        return cookie;
     }
 
     private MvcTestResult call(String qr, Cookie cookie, String body) {

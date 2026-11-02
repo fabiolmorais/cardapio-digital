@@ -1,6 +1,7 @@
 package br.com.cardapio.domain.tablesession.model;
 
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.model.TokenHash;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TableSessionTest {
 
@@ -47,5 +49,30 @@ class TableSessionTest {
         assertThat(hash.value()).hasSize(64).doesNotContain("token-secreto");
         assertThat(TokenHash.of("token-secreto")).isEqualTo(hash);
         assertThat(TokenHash.of("outro")).isNotEqualTo(hash);
+    }
+
+    @Test
+    void itStartsOutsideAndTheFirstProofStays() {
+        assertThat(session.isPresent()).isFalse();
+
+        TableSession byWifi = session.confirmPresence(PresenceMethod.WIFI, NOW);
+        TableSession again = byWifi.confirmPresence(PresenceMethod.GPS, NOW.plusSeconds(60));
+
+        assertThat(byWifi.isPresent()).isTrue();
+        assertThat(again.presenceMethod()).isEqualTo(PresenceMethod.WIFI);
+        assertThat(again.presenceConfirmedAt()).isEqualTo(NOW);
+        assertThat(byWifi.touch(NOW.plusSeconds(90)).presenceMethod()).isEqualTo(PresenceMethod.WIFI);
+    }
+
+    @Test
+    void theWaiterUnlockRecordsWho() {
+        UserId carlos = UserId.newId();
+
+        TableSession unlocked = session.unlock(carlos, NOW);
+
+        assertThat(unlocked.presenceMethod()).isEqualTo(PresenceMethod.STAFF);
+        assertThat(unlocked.unlockedBy()).isEqualTo(carlos);
+        assertThatThrownBy(() -> session.confirmPresence(PresenceMethod.STAFF, NOW))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

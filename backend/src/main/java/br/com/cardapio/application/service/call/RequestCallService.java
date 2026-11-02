@@ -10,8 +10,10 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.call.event.CallChanged;
+import br.com.cardapio.domain.call.exception.CallStateException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallType;
+import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -42,6 +44,16 @@ public class RequestCallService implements RequestCallUseCase {
         TableVisits.Visit visit = TableVisits.require(tables, sessions, command.tableToken(), command.sessionToken(),
                 now);
         var establishmentId = visit.table().establishmentId();
+
+        // A trava de presença: chamar e pedir a conta, só no salão. O pedido de liberação é a saída
+        // de quem não conseguiu provar (e não faz sentido para quem já provou).
+        if (command.type() == CallType.UNLOCK) {
+            if (visit.session().isPresent()) {
+                throw new CallStateException("Sua mesa já está liberada.");
+            }
+        } else if (!visit.session().isPresent()) {
+            throw new PresenceRequiredException();
+        }
 
         // Já há um aberto deste tipo? É ele que volta (no máximo, com a forma de pagamento nova).
         Optional<Call> open = calls.findOpen(establishmentId, visit.table().id(), command.type());

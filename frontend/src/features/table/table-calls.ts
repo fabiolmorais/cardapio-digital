@@ -18,18 +18,57 @@ const REOPEN_MS = 3000;
  * As chamadas da mesa, com fetch direto (como a sessão): o cliente da API do painel traria junto
  * o login da equipe, que a página do cliente não usa e só pesaria no JavaScript.
  *
- * Os botões precisam da sessão do celular (cookie table_session). Se ela venceu ou ainda não
- * existe (401), abre uma sessão e tenta de novo, uma vez.
+ * Os botões precisam da sessão do celular (cookie table_session) e da presença no salão. Se a
+ * sessão venceu ou ainda não existe (401), abre uma; se a presença ainda não foi conferida (403),
+ * confere (pela rede do salão). Nos dois casos, tenta de novo, uma vez.
  */
 async function send(token: string, path: string, init: RequestInit = {}): Promise<Response> {
   const base = `${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}`;
   const go = () => fetch(`${base}${path}`, { ...init, credentials: "include" });
+  await startVisit(token); // a que a página já começou, se houver: assim não nascem duas sessões
   let response = await go();
   if (response.status === 401) {
-    await fetch(`${base}/session`, { method: "POST", credentials: "include" });
+    await startVisit(token, true);
+    response = await go();
+  } else if (response.status === 403) {
+    await checkPresence(token);
     response = await go();
   }
   return response;
+}
+
+const visits = new Map<string, Promise<void>>();
+
+/**
+ * Abre (ou renova) a sessão do celular e confere a presença, uma vez por página. Quem chega
+ * depois (um botão tocado logo ao abrir) espera a mesma, em vez de abrir outra sessão no meio:
+ * duas ao mesmo tempo deixariam o navegador com o cookie da que ainda não conferiu a presença.
+ *
+ * @param fresh abre uma nova mesmo que já haja uma (a sessão venceu: 401)
+ */
+export function startVisit(token: string, fresh = false): Promise<void> {
+  let visit = visits.get(token);
+  if (!visit || fresh) {
+    visit = fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then(() => checkPresence(token))
+      .catch(() => undefined);
+    visits.set(token, visit);
+  }
+  return visit;
+}
+
+/**
+ * "Estou no salão?" pela rede (sem pedir nada ao cliente). As telas da trava (localização e
+ * liberação pelo garçom) chegam no próximo PR; por enquanto, só a conferência pelo Wi-Fi.
+ */
+export async function checkPresence(token: string): Promise<void> {
+  await fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/presence`, {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => undefined);
 }
 
 /** A mensagem do back (Problem Details) ou uma genérica. */
@@ -105,18 +144,20 @@ export function useTableCalls(token: string) {
         if (source?.readyState === EventSource.CLOSED) {
           source = null;
           reopen = window.setTimeout(async () => {
-            await fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
-              method: "POST",
-              credentials: "include",
-            }).catch(() => undefined);
-            open();
+            await startVisit(token, true);
+            if (!stopped) open();
           }, REOPEN_MS);
         }
       };
     }
-    open();
+    // O canal só abre depois da visita (sessão e presença): sem ela, o servidor recusaria (401).
+    let stopped = false;
+    void startVisit(token).then(() => {
+      if (!stopped) open();
+    });
 
     return () => {
+      stopped = true;
       window.clearTimeout(first);
       window.clearInterval(fallback);
       window.clearTimeout(reopen);

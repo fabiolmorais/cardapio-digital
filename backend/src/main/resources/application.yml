@@ -68,6 +68,10 @@ app:
       ttl: 14d
       # Cookie só por HTTPS. Desligue (false) só para testar pelo IP da rede local, em http.
       cookie-secure: ${REFRESH_COOKIE_SECURE:true}
+  presence:
+    # O cabeçalho com o IP do cliente que SÓ o proxy da hospedagem escreve (no Fly.io, Fly-Client-IP).
+    # Vazio (desenvolvimento): vale o endereço da conexão. Nunca use X-Forwarded-For: o cliente o escreve.
+    client-ip-header: ${CLIENT_IP_HEADER:}
   # Endereço público do front: o QR Code de cada mesa aponta para {public-url}/m/{token}.
   # Para testar no celular pela rede local, use o IP da máquina (ver README).
   public-url: ${APP_PUBLIC_URL:http://localhost:3000}

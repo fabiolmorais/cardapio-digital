@@ -119,7 +119,7 @@ export const messages = {
       loading: "Carregando os chamados…",
       loadError: "Não foi possível carregar os chamados. Tentando de novo…",
       table: "Mesa",
-      types: { WAITER: "Chamar garçom", BILL: "Pedir a conta" },
+      types: { WAITER: "Chamar garçom", BILL: "Pedir a conta", UNLOCK: "Liberar mesa" },
       payment: { PIX: "Pix", CARD: "Cartão", CASH: "Dinheiro" },
       waitingFor: (time: string) => `esperando há ${time}`,
       accept: "Aceitar",

@@ -58,15 +58,20 @@ interface CallJpaRepository extends JpaRepository<CallJpaEntity, UUID> {
     Optional<CallJpaEntity> findOpen(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId,
                                      @Param("type") String type);
 
-    /** O começo comum das consultas com a mesa, o setor e quem aceitou (LEFT: pode não haver ninguém). */
+    /**
+     * O começo comum das consultas com a mesa, o setor, quem aceitou (LEFT: pode não haver ninguém)
+     * e como a sessão que chamou provou a presença.
+     */
     String VIEW = """
             SELECT c.id AS id, c.establishmentId AS establishmentId, c.tableId AS tableId, c.sessionId AS sessionId,
                    c.type AS type, c.paymentMethod AS paymentMethod, c.status AS status, c.createdAt AS createdAt,
                    c.acceptedAt AS acceptedAt, c.acceptedBy AS acceptedBy, c.doneAt AS doneAt,
-                   c.canceledAt AS canceledAt, t.label AS tableLabel, s.name AS sectorName, u.name AS acceptedByName
+                   c.canceledAt AS canceledAt, t.label AS tableLabel, s.name AS sectorName, u.name AS acceptedByName,
+                   ts.presenceMethod AS presenceMethod
               FROM CallJpaEntity c
               JOIN DiningTableJpaEntity t ON t.id = c.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
+              JOIN TableSessionJpaEntity ts ON ts.id = c.sessionId
               LEFT JOIN UserJpaEntity u ON u.id = c.acceptedBy
             """;
 

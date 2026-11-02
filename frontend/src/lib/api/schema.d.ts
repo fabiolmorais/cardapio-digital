@@ -40,6 +40,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/presence-rule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A configuração de presença (vazia se nunca configurada) */
+        get: operations["getPresenceRule"];
+        /** Troca a configuração de presença inteira */
+        put: operations["updatePresenceRule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/menu-categories/{id}/product-order": {
         parameters: {
             query?: never;
@@ -208,6 +226,23 @@ export interface paths {
         put?: never;
         /** Abre a sessão deste celular na mesa (ou renova a que ele já tem), no cookie table_session */
         post: operations["startTableSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confere se o celular está no salão: pela rede e, se vier, pela localização */
+        post: operations["checkPresence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -407,6 +442,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recusa um pedido de liberação: o celular não está no salão */
+        post: operations["declineCall"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{id}/accept": {
         parameters: {
             query?: never;
@@ -416,7 +468,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** "Estou indo": o chamado fica com quem aceitou */
+        /** "Estou indo": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa */
         post: operations["acceptCall"];
         delete?: never;
         options?: never;
@@ -926,6 +978,49 @@ export interface components {
             /** Format: int32 */
             position: number;
         };
+        PresenceLocation: {
+            /**
+             * Format: double
+             * @example -23.5577
+             */
+            latitude: number;
+            /**
+             * Format: double
+             * @example -46.6353
+             */
+            longitude: number;
+            /**
+             * Format: int32
+             * @description De 25 a 1000 metros
+             * @example 100
+             */
+            radiusMeters: number;
+        };
+        PresenceRuleRequest: {
+            /**
+             * @description IPs ou faixas CIDR da internet do salão (até 10)
+             * @example [
+             *       "189.45.212.18",
+             *       "2804:14c:6a::/64"
+             *     ]
+             */
+            networks: string[];
+            /**
+             * @description O nome do Wi-Fi do salão (sem a senha)
+             * @example Sakura Clientes
+             */
+            wifiName?: string;
+            /** @description O local e o raio; vazio para não usar a localização */
+            location?: components["schemas"]["PresenceLocation"];
+        };
+        PresenceRule: {
+            /** @description As faixas, sempre com o tamanho ("189.45.212.18/32") */
+            networks: string[];
+            wifiName?: string;
+            location?: components["schemas"]["PresenceLocation"];
+            /** @description A rede de onde você está agora, para o botão "Usar o IP desta rede" */
+            currentNetwork?: string;
+        };
         BrandRequest: {
             /** @example Sakura Sushi */
             name: string;
@@ -1099,9 +1194,40 @@ export interface components {
              */
             expiresAt: string;
         };
+        PresenceCheckRequest: {
+            /**
+             * Format: double
+             * @example -23.5577
+             */
+            latitude?: number;
+            /**
+             * Format: double
+             * @example -46.6353
+             */
+            longitude?: number;
+            /**
+             * Format: double
+             * @description Precisão informada pelo navegador, em metros
+             * @example 25
+             */
+            accuracyMeters?: number;
+        };
+        Presence: {
+            /** @description Pode chamar o garçom e pedir a conta */
+            present: boolean;
+            /**
+             * @description Como a presença foi provada; vazio enquanto não foi
+             * @enum {string}
+             */
+            method?: "WIFI" | "GPS" | "STAFF";
+            /** @description O restaurante marcou o local: vale oferecer a localização */
+            locationEnabled: boolean;
+            /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
+            wifiName?: string;
+        };
         CallRequest: {
             /** @enum {string} */
-            type: "WAITER" | "BILL";
+            type: "WAITER" | "BILL" | "UNLOCK";
             /**
              * @description Só no pedido de conta (BILL)
              * @enum {string}
@@ -1112,7 +1238,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "WAITER" | "BILL";
+            type: "WAITER" | "BILL" | "UNLOCK";
             /** @enum {string} */
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @enum {string} */
@@ -1290,7 +1416,7 @@ export interface components {
             tableLabel: string;
             sectorName: string;
             /** @enum {string} */
-            type: "WAITER" | "BILL";
+            type: "WAITER" | "BILL" | "UNLOCK";
             /** @enum {string} */
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @enum {string} */
@@ -1300,6 +1426,11 @@ export interface components {
             /** Format: date-time */
             acceptedAt?: string;
             acceptedByName?: string;
+            /**
+             * @description Como a mesa provou a presença (Wi-Fi, GPS ou garçom); vazio no pedido de liberação
+             * @enum {string}
+             */
+            presenceMethod?: "WIFI" | "GPS" | "STAFF";
         };
         EstablishmentAccess: {
             /** Format: uuid */
@@ -1759,6 +1890,59 @@ export interface operations {
             };
             /** @description Não é um produto deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPresenceRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A configuração e a rede de onde você está */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresenceRule"];
+                };
+            };
+        };
+    };
+    updatePresenceRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PresenceRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Salva */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresenceRule"];
+                };
+            };
+            /** @description IP, local ou raio inválido */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2239,6 +2423,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TableSession"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    checkPresence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PresenceCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Como está a presença desta sessão */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Presence"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description QR inválido, trocado ou mesa desativada */
@@ -2844,6 +3074,46 @@ export interface operations {
                 };
             };
             /** @description Ainda não foi aceito, ou já foi encerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    declineCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recusado (o chamado é cancelado) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffCall"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um pedido de liberação, ou já foi respondido */
             409: {
                 headers: {
                     [name: string]: unknown;

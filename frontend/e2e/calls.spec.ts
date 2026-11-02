@@ -9,6 +9,8 @@ async function restaurant(request: APIRequestContext) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  // Trava de presença: o navegador do teste chega pela rede local, que vira "o Wi-Fi do salão".
+  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
   const sector = await post("/api/v1/sectors", { name: "Salão principal" });
   const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
   return { qr: table.publicToken as string, email };

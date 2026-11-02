@@ -121,6 +121,15 @@ import br.com.cardapio.application.port.in.call.ListTvCallQueueUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
 import br.com.cardapio.application.service.call.ListTvCallQueueService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
+import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
+import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
+import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
+import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
+import br.com.cardapio.application.port.out.presence.PresenceRulePort;
+import br.com.cardapio.application.service.call.DeclineCallService;
+import br.com.cardapio.application.service.presence.CheckPresenceService;
+import br.com.cardapio.application.service.presence.GetPresenceRuleService;
+import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
 import java.time.Clock;
 import java.time.Duration;
 
@@ -475,8 +484,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    AcceptCallUseCase acceptCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
-        return new AcceptCallService(callPort, eventPublisherPort, clock);
+    AcceptCallUseCase acceptCallUseCase(CallPort callPort, TableSessionPort tableSessionPort,
+                                        EventPublisherPort eventPublisherPort, Clock clock) {
+        return new AcceptCallService(callPort, tableSessionPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -509,5 +519,28 @@ class UseCaseConfig {
     WatchTvEventsUseCase watchTvEventsUseCase(DeviceAuthenticator deviceAuthenticator,
                                               EventStreamPort eventStreamPort) {
         return new WatchTvEventsService(deviceAuthenticator, eventStreamPort);
+    }
+
+    // Trava de presença (Guia 16)
+
+    @Bean
+    CheckPresenceUseCase checkPresenceUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                              PresenceRulePort presenceRulePort, Clock clock) {
+        return new CheckPresenceService(diningTablePort, tableSessionPort, presenceRulePort, clock);
+    }
+
+    @Bean
+    GetPresenceRuleUseCase getPresenceRuleUseCase(PresenceRulePort presenceRulePort, Clock clock) {
+        return new GetPresenceRuleService(presenceRulePort, clock);
+    }
+
+    @Bean
+    UpdatePresenceRuleUseCase updatePresenceRuleUseCase(PresenceRulePort presenceRulePort, Clock clock) {
+        return new UpdatePresenceRuleService(presenceRulePort, clock);
+    }
+
+    @Bean
+    DeclineCallUseCase declineCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new DeclineCallService(callPort, eventPublisherPort, clock);
     }
 }

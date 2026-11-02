@@ -5,6 +5,7 @@ import br.com.cardapio.domain.account.exception.*;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
 import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
 import br.com.cardapio.domain.device.exception.TvModeNotAllowedException;
+import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.shared.exception.ConflictException;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
@@ -62,7 +63,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({TeamPermissionException.class, PinNotAllowedOnDeviceException.class,
-            TvModeNotAllowedException.class})
+            TvModeNotAllowedException.class, PresenceRequiredException.class})
     ProblemDetail handleForbidden(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }

@@ -84,4 +84,22 @@ class CallTest {
         Call done = bill.accept(carlos, NOW).finish(NOW);
         assertThatThrownBy(() -> done.withPaymentMethod(PaymentMethod.PIX)).isInstanceOf(CallStateException.class);
     }
+
+    @Test
+    void theUnlockRequestIsReleasedOrDeclinedInOneTouch() {
+        Call request = open(CallType.UNLOCK, PaymentMethod.PIX);
+
+        Call released = request.release(carlos, NOW.plusSeconds(20));
+        Call declined = request.decline(NOW.plusSeconds(20));
+
+        assertThat(request.paymentMethod()).isNull();
+        assertThat(released.status()).isEqualTo(CallStatus.DONE);
+        assertThat(released.acceptedBy()).isEqualTo(carlos);
+        assertThat(released.doneAt()).isEqualTo(NOW.plusSeconds(20));
+        assertThat(declined.status()).isEqualTo(CallStatus.CANCELED);
+        assertThatThrownBy(() -> request.accept(carlos, NOW)).isInstanceOf(CallStateException.class);
+        assertThatThrownBy(() -> released.decline(NOW)).isInstanceOf(CallStateException.class);
+        assertThatThrownBy(() -> open(CallType.WAITER, null).release(carlos, NOW))
+                .isInstanceOf(CallStateException.class);
+    }
 }
