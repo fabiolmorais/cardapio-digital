@@ -19,6 +19,8 @@ async function sakura(request: APIRequestContext) {
       googleReviewUrl: "https://g.page/r/CbX0exemplo/review",
     },
   });
+  // Trava de presença: o navegador do teste chega pela rede local, que vira "o Wi-Fi do salão".
+  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
   const sector = await post("/api/v1/sectors", { name: "Salão principal" });
   const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
   const entradas = await post("/api/v1/menu-categories", { name: "Entradas" });
@@ -111,6 +113,7 @@ test("o tema claro troca as cores da página", async ({ page, request }) => {
     headers,
     data: { name: "Bar Claro", color: "INDIGO", theme: "LIGHT" },
   });
+  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
   const sector = await (await request.post(`${API_URL}/api/v1/sectors`, { headers, data: { name: "Deck" } })).json();
   const table = await (
     await request.post(`${API_URL}/api/v1/tables`, { headers, data: { label: "D1", sectorId: sector.id } })

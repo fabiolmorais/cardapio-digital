@@ -8,7 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
-import { acceptCall, finishCall, type StaffCall } from "./calls-api";
+import { acceptCall, declineCall, finishCall, type StaffCall } from "./calls-api";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
@@ -120,7 +120,13 @@ export function CallQueue({ role }: { role: Role }) {
             const waited = (now - Date.parse(call.createdAt)) / 1000;
             const level = waited >= LATE_AFTER_S ? "late" : waited >= WARN_AFTER_S ? "warn" : "ok";
             const title = `${t.types[call.type]} · ${t.table} ${call.tableLabel}`;
-            const detail = [call.paymentMethod && t.payment[call.paymentMethod], call.sectorName]
+            const unlock = call.type === "UNLOCK";
+            // O pedido de liberação é justamente de quem não provou a presença; os outros dizem como provaram.
+            const detail = [
+              unlock ? t.notPresent : call.paymentMethod && t.payment[call.paymentMethod],
+              call.sectorName,
+              call.presenceMethod && t.presence[call.presenceMethod],
+            ]
               .filter(Boolean)
               .join(" · ");
             return (
@@ -153,10 +159,25 @@ export function CallQueue({ role }: { role: Role }) {
                     <span aria-hidden>{elapsed(waited)}</span>
                   </span>
                 </div>
-                {call.status === "PENDING" && canAct && (
+                {call.status === "PENDING" && canAct && !unlock && (
                   <Button className="h-11" disabled={busy !== null} onClick={() => act(call.id, acceptCall)}>
                     {busy === call.id ? t.accepting : t.accept}
                   </Button>
+                )}
+                {call.status === "PENDING" && canAct && unlock && (
+                  <div className="flex gap-2">
+                    <Button className="h-11 flex-1" disabled={busy !== null} onClick={() => act(call.id, acceptCall)}>
+                      {busy === call.id ? t.releasing : t.release}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11"
+                      disabled={busy !== null}
+                      onClick={() => act(call.id, declineCall)}
+                    >
+                      {t.decline}
+                    </Button>
+                  </div>
                 )}
                 {call.status === "IN_PROGRESS" && (
                   <div className="flex flex-wrap items-center gap-2">

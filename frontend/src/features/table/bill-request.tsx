@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
+import { PresencePanel } from "./presence-panel";
 import { cancelCall, requestCall, useTableCalls, type PaymentMethod } from "./table-calls";
 
 const t = tablePage.bill;
@@ -20,7 +21,8 @@ const METHODS: { id: PaymentMethod; icon: ReactNode }[] = [
  * O total da comanda entra aqui quando existirem os pedidos (Etapa 8).
  */
 export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: string | null }) {
-  const { calls, bill, busy, error, run } = useTableCalls(token);
+  const state = useTableCalls(token);
+  const { calls, bill, busy, error, run } = state;
   const [chosen, setChosen] = useState<PaymentMethod>("PIX");
   const [changing, setChanging] = useState(false);
   const home = `/m/${token}`;
@@ -48,6 +50,15 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       <>
         {header}
         <p className="text-(--mesa-muted)">{t.loading}</p>
+      </>
+    );
+  }
+
+  if (!state.present) {
+    return (
+      <>
+        {header}
+        <PresencePanel token={token} state={state} />
       </>
     );
   }

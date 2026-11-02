@@ -35,6 +35,13 @@ export async function acceptCall(id: string): Promise<StaffCall> {
   return data;
 }
 
+/** "Recusar" um pedido de liberação: o celular não está no salão. */
+export async function declineCall(id: string): Promise<StaffCall> {
+  const { data, error, response } = await api.POST("/api/v1/calls/{id}/decline", { params: { path: { id } } });
+  if (!data) throw problem(error, response.status);
+  return data;
+}
+
 export async function finishCall(id: string): Promise<StaffCall> {
   const { data, error, response } = await api.POST("/api/v1/calls/{id}/finish", { params: { path: { id } } });
   if (!data) throw problem(error, response.status);
