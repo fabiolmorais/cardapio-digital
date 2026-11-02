@@ -1,23 +1,25 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
+import { Tv, Volume2 } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { acceptCall, fetchCallQueue, finishCall, type StaffCall } from "./calls-api";
+import { enableSound, playChime } from "./alert-sound";
+import { acceptCall, finishCall, type StaffCall } from "./calls-api";
+import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
 type Role = "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
 
-/** Enquanto o tempo real não chega (Guia 14), a fila pergunta ao back de tempos em tempos. */
-const REFRESH_MS = 5000;
 /** Até 2 min, normal; até 4 min, atenção; depois, atrasado (desenho 7.1). */
 const WARN_AFTER_S = 120;
 const LATE_AFTER_S = 240;
 
 /** O relógio da tela, de segundo em segundo, para os cronômetros andarem sozinhos. */
-function useNow() {
+export function useNow() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -27,18 +29,20 @@ function useNow() {
 }
 
 /** 252 s → "4:12". */
-function elapsed(seconds: number) {
+export function elapsed(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 /**
  * A fila de chamados do painel (desenho 7.1, coluna Chamados): a mesa, o tipo, há quanto tempo
- * espera, e os botões Aceitar e Concluir. A cozinha só acompanha.
+ * espera, e os botões Aceitar e Concluir. A cozinha só acompanha. Atualiza na hora, pelo tempo
+ * real, e toca o alerta a cada chamado novo, se o som estiver ligado.
  */
 export function CallQueue({ role }: { role: Role }) {
   const queryClient = useQueryClient();
-  const queue = useQuery({ queryKey: ["call-queue"], queryFn: fetchCallQueue, refetchInterval: REFRESH_MS });
+  const { queue, connected } = useLiveCalls(useCallback(() => playChime(), []));
+  const soundOn = useSoundOn();
   const now = useNow();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +70,34 @@ export function CallQueue({ role }: { role: Role }) {
           {t.title}
         </h2>
         {queue.data && <span className="text-sm font-semibold text-brand-text">{t.open(calls.length)}</span>}
-        <span className="ml-auto text-sm text-muted-foreground">{t.order}</span>
+        <span className="text-sm text-muted-foreground">{t.order}</span>
+        <span
+          role="status"
+          className={cn("ml-auto flex items-center gap-1.5 text-sm", connected ? "text-success" : "text-muted-foreground")}
+        >
+          <span aria-hidden className={cn("size-2 rounded-full", connected ? "bg-success" : "bg-muted-foreground")} />
+          {connected ? t.live : t.reconnecting}
+        </span>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {soundOn ? (
+          <span className="flex h-9 items-center gap-1.5 rounded-lg bg-muted px-3 text-sm font-medium">
+            <Volume2 aria-hidden className="size-4" />
+            {t.soundOn}
+          </span>
+        ) : (
+          <Button variant="outline" onClick={() => void enableSound()}>
+            <Volume2 aria-hidden />
+            {t.enableSound}
+          </Button>
+        )}
+        <Link href="/painel/tv" className={buttonVariants({ variant: "outline" })}>
+          <Tv aria-hidden />
+          {t.openTv}
+        </Link>
+      </div>
+      {!soundOn && <p className="text-sm text-muted-foreground">{t.soundHint}</p>}
 
       {!canAct && <p className="text-sm text-muted-foreground">{t.kitchenOnly}</p>}
       {error && (

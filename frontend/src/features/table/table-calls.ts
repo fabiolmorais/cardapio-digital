@@ -9,8 +9,10 @@ export type TableCall = components["schemas"]["TableCall"];
 export type CallRequest = components["schemas"]["CallRequest"];
 export type PaymentMethod = NonNullable<CallRequest["paymentMethod"]>;
 
-/** Enquanto o tempo real não chega (Guia 14), a página pergunta de tempos em tempos. */
-const REFRESH_MS = 8000;
+/** Sem o tempo real (conexão caída), a página volta a perguntar de tempos em tempos. */
+const FALLBACK_REFRESH_MS = 15_000;
+/** Quanto esperar para abrir o canal de novo quando o servidor o recusa (sessão vencida, por exemplo). */
+const REOPEN_MS = 3000;
 
 /**
  * As chamadas da mesa, com fetch direto (como a sessão): o cliente da API do painel traria junto
@@ -59,8 +61,7 @@ export async function cancelCall(token: string, id: string): Promise<void> {
 }
 
 /**
- * Os chamados abertos da mesa, atualizados de tempos em tempos (só com a página visível), e as
- * ações. `run` faz uma ação, mostra o erro, se houver, e atualiza a lista depois.
+ * Os chamados abertos da mesa, atualizados na hora pelo tempo real, e as ações. `run` faz uma ação, mostra o erro, se houver, e atualiza a lista depois.
  */
 export function useTableCalls(token: string) {
   const [calls, setCalls] = useState<TableCall[] | null>(null);
@@ -76,19 +77,52 @@ export function useTableCalls(token: string) {
   }, [token]);
 
   useEffect(() => {
+    let live = false;
     // A primeira busca fica para logo depois da montagem (e não dentro do efeito), como as outras.
     const first = window.setTimeout(() => void refresh(), 0);
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refresh();
-    }, REFRESH_MS);
-    const onVisible = () => document.visibilityState === "visible" && void refresh();
-    document.addEventListener("visibilitychange", onVisible);
+    // Rede de segurança: enquanto o canal não está aberto, pergunta de tempos em tempos.
+    const fallback = window.setInterval(() => {
+      if (!live && document.visibilityState === "visible") void refresh();
+    }, FALLBACK_REFRESH_MS);
+
+    // O canal de tempo real da mesa (SSE): "ready" ao conectar e "call" quando um chamado dela
+    // muda. Os dois pedem para buscar de novo; o aviso não traz dados, só o motivo.
+    let source: EventSource | null = null;
+    let reopen: number | undefined;
+    const url = `${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/events`;
+    function open() {
+      source = new EventSource(url, { withCredentials: true });
+      const update = () => {
+        live = true;
+        void refresh();
+      };
+      source.addEventListener("ready", update);
+      source.addEventListener("call", update);
+      source.onerror = () => {
+        live = false;
+        // Se a conexão só caiu, o navegador reconecta sozinho. Se o servidor recusou (401: a
+        // sessão venceu), ele desiste: aí a página renova a sessão e abre o canal de novo.
+        if (source?.readyState === EventSource.CLOSED) {
+          source = null;
+          reopen = window.setTimeout(async () => {
+            await fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
+              method: "POST",
+              credentials: "include",
+            }).catch(() => undefined);
+            open();
+          }, REOPEN_MS);
+        }
+      };
+    }
+    open();
+
     return () => {
       window.clearTimeout(first);
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(fallback);
+      window.clearTimeout(reopen);
+      source?.close();
     };
-  }, [refresh]);
+  }, [refresh, token]);
 
   async function run(key: string, action: () => Promise<unknown>) {
     setBusy(key);
