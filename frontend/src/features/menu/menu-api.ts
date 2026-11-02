@@ -1,4 +1,5 @@
 import { api, type Schemas } from "@/lib/api/client";
+import { sendToStorage } from "@/lib/api/direct-upload";
 import { messages } from "@/messages/pt-BR";
 
 export type MenuCategory = Schemas["MenuCategory"];
@@ -125,25 +126,6 @@ async function startMediaUpload(productId: string, file: File): Promise<MediaUpl
   throw failure(response, error);
 }
 
-/**
- * Passo 2: o PUT direto no armazenamento. XMLHttpRequest, e não fetch, porque só ele informa
- * o progresso do envio (a barra que o dono vê no 4G).
- */
-function sendFile(upload: MediaUpload, file: File, onProgress: (fraction: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open(upload.method, upload.url);
-    for (const [name, value] of Object.entries(upload.headers)) request.setRequestHeader(name, value);
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress(event.loaded / event.total);
-    };
-    request.onload = () =>
-      request.status >= 200 && request.status < 300 ? resolve() : reject(new Error(messages.menu.photos.sendFailed));
-    request.onerror = () => reject(new Error(messages.menu.photos.sendFailed));
-    request.send(file);
-  });
-}
-
 /** Passo 3: o back confere a foto, gera os tamanhos e a põe no fim da galeria. */
 async function addProductMedia(productId: string, uploadId: string): Promise<ProductMedia> {
   const { data, error, response } = await api.POST("/api/v1/products/{productId}/media", {
@@ -161,7 +143,7 @@ export async function uploadProductPhoto(
   onProgress: (fraction: number) => void,
 ): Promise<ProductMedia> {
   const upload = await startMediaUpload(productId, file);
-  await sendFile(upload, file, onProgress);
+  await sendToStorage(upload, file, onProgress); // passo 2: direto no R2
   return addProductMedia(productId, upload.uploadId);
 }
 
