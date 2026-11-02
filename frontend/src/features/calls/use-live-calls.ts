@@ -2,38 +2,60 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { connectTvEvents } from "@/lib/realtime/device-events";
+import type { ServerEvent } from "@/lib/realtime/sse-parser";
 import { connectStaffEvents } from "@/lib/realtime/staff-events";
 import { isSoundOn, subscribeToSound } from "./alert-sound";
-import { fetchCallQueue, type StaffCall } from "./calls-api";
+import { fetchCallQueue, fetchTvCallQueue, type StaffCall } from "./calls-api";
 
 /** Sem o tempo real (rede ruim, servidor reiniciando), a fila volta a perguntar de tempos em tempos. */
 const FALLBACK_REFRESH_MS = 15_000;
+
+/** De onde vêm a fila e os avisos: a equipe (com login) ou a TV vinculada (pelo cookie). */
+export type LiveCallsSource = {
+  queryKey: string;
+  fetchQueue: () => Promise<StaffCall[]>;
+  connect: (onEvent: (event: ServerEvent) => void, onConnectedChange: (connected: boolean) => void) => () => void;
+  /** Conferir a fila de tempos em tempos mesmo com o tempo real ligado (a TV, para notar se foi desvinculada). */
+  safetyRefreshMs?: number;
+};
+
+export const staffSource: LiveCallsSource = {
+  queryKey: "call-queue",
+  fetchQueue: fetchCallQueue,
+  connect: connectStaffEvents,
+};
+
+export const tvDeviceSource: LiveCallsSource = {
+  queryKey: "tv-call-queue",
+  fetchQueue: fetchTvCallQueue,
+  connect: connectTvEvents,
+  safetyRefreshMs: 60_000,
+};
 
 /**
  * A fila de chamados ao vivo: busca pela API e atualiza a cada aviso do canal de tempo real
  * ("ready" ao conectar, "call" quando um chamado muda). Chama onNewCall para cada chamado que
  * aparece pela primeira vez (o som e o alerta da TV); os que já estavam na tela ao abrir, não.
  */
-export function useLiveCalls(onNewCall?: (call: StaffCall) => void) {
+export function useLiveCalls(onNewCall?: (call: StaffCall) => void, source: LiveCallsSource = staffSource) {
   const queryClient = useQueryClient();
   const [connected, setConnected] = useState(false);
   const queue = useQuery({
-    queryKey: ["call-queue"],
-    queryFn: fetchCallQueue,
-    refetchInterval: connected ? false : FALLBACK_REFRESH_MS,
+    queryKey: [source.queryKey],
+    queryFn: source.fetchQueue,
+    refetchInterval: connected ? (source.safetyRefreshMs ?? false) : FALLBACK_REFRESH_MS,
+    retry: false,
   });
 
   useEffect(
     () =>
-      connectStaffEvents(
-        (event) => {
-          if (event.name === "ready" || event.name === "call") {
-            void queryClient.invalidateQueries({ queryKey: ["call-queue"] });
-          }
-        },
-        setConnected,
-      ),
-    [queryClient],
+      source.connect((event) => {
+        if (event.name === "ready" || event.name === "call") {
+          void queryClient.invalidateQueries({ queryKey: [source.queryKey] });
+        }
+      }, setConnected),
+    [queryClient, source],
   );
 
   // Os chamados que esta tela já viu. Na primeira carga, todos entram sem alerta.

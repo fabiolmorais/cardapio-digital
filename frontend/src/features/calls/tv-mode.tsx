@@ -3,13 +3,14 @@
 import { Bell, Volume2, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { DeviceNotLinkedError } from "@/features/devices/device-api";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
 import { elapsed, useNow } from "./call-queue";
 import type { StaffCall } from "./calls-api";
-import { useLiveCalls, useSoundOn } from "./use-live-calls";
+import { staffSource, tvDeviceSource, useLiveCalls, useSoundOn, type LiveCallsSource } from "./use-live-calls";
 
 const t = messages.tv;
 const calls = messages.panel.calls;
@@ -32,41 +33,64 @@ export function TvMode() {
   if (status !== "authenticated") {
     return <p className="p-10 text-2xl text-muted-foreground">{t.loading}</p>;
   }
-  if (!started) {
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-8 p-10 text-center">
-        <span className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Volume2 aria-hidden className="size-12" />
-        </span>
-        <div className="flex max-w-xl flex-col gap-3">
-          <h1 className="text-4xl font-bold tracking-tight">{t.startTitle}</h1>
-          <p className="text-xl text-muted-foreground">{t.startText}</p>
-        </div>
-        <button
-          type="button"
-          onClick={async () => {
-            await enableSound();
-            await document.documentElement.requestFullscreen?.().catch(() => undefined);
-            setStarted(true);
-          }}
-          className="h-16 rounded-2xl bg-primary px-10 text-xl font-semibold text-primary-foreground focus-visible:ring-4 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          {t.start}
-        </button>
-        <button
-          type="button"
-          onClick={() => setStarted(true)}
-          className="text-lg text-muted-foreground underline-offset-4 hover:underline"
-        >
-          {t.startMuted}
-        </button>
-      </main>
-    );
-  }
-  return <TvBoard establishmentName={session.establishment.name} />;
+  if (!started) return <TvStart onStart={() => setStarted(true)} />;
+  return <TvBoard establishmentName={session.establishment.name} source={staffSource} exitHref="/painel" />;
 }
 
-function TvBoard({ establishmentName }: { establishmentName: string }) {
+/**
+ * O Modo TV na TV vinculada (/aparelho), sem login: a fila e os avisos vêm pelo cookie do
+ * aparelho. Não tem "sair": a TV só serve para isso. Se for desvinculada, onDeviceLost.
+ */
+export function DeviceTvMode({ establishmentName, onDeviceLost }: { establishmentName: string; onDeviceLost: () => void }) {
+  const [started, setStarted] = useState(false);
+  if (!started) return <TvStart onStart={() => setStarted(true)} />;
+  return <TvBoard establishmentName={establishmentName} source={tvDeviceSource} onDeviceLost={onDeviceLost} />;
+}
+
+/** O toque inicial: é ele que libera o som e a tela cheia (desenho 7.4). */
+function TvStart({ onStart }: { onStart: () => void }) {
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 p-10 text-center">
+      <span className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <Volume2 aria-hidden className="size-12" />
+      </span>
+      <div className="flex max-w-xl flex-col gap-3">
+        <h1 className="text-4xl font-bold tracking-tight">{t.startTitle}</h1>
+        <p className="text-xl text-muted-foreground">{t.startText}</p>
+      </div>
+      <button
+        type="button"
+        onClick={async () => {
+          await enableSound();
+          await document.documentElement.requestFullscreen?.().catch(() => undefined);
+          onStart();
+        }}
+        className="h-16 rounded-2xl bg-primary px-10 text-xl font-semibold text-primary-foreground focus-visible:ring-4 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {t.start}
+      </button>
+      <button
+        type="button"
+        onClick={onStart}
+        className="text-lg text-muted-foreground underline-offset-4 hover:underline"
+      >
+        {t.startMuted}
+      </button>
+    </main>
+  );
+}
+
+function TvBoard({
+  establishmentName,
+  source,
+  exitHref,
+  onDeviceLost,
+}: {
+  establishmentName: string;
+  source: LiveCallsSource;
+  exitHref?: string;
+  onDeviceLost?: () => void;
+}) {
   const [alert, setAlert] = useState<StaffCall | null>(null);
   const soundOn = useSoundOn();
   const now = useNow();
@@ -74,9 +98,13 @@ function TvBoard({ establishmentName }: { establishmentName: string }) {
     playChime();
     setAlert(call);
   }, []);
-  const { queue, connected } = useLiveCalls(onNewCall);
+  const { queue, connected } = useLiveCalls(onNewCall, source);
   const list = queue.data ?? [];
   const waiting = list.some((call) => call.status === "PENDING");
+
+  useEffect(() => {
+    if (queue.error instanceof DeviceNotLinkedError) onDeviceLost?.();
+  }, [queue.error, onDeviceLost]);
 
   useEffect(() => {
     if (!alert) return;
@@ -107,13 +135,15 @@ function TvBoard({ establishmentName }: { establishmentName: string }) {
           </span>
         </div>
         <span className="font-mono text-7xl font-bold tabular-nums">{clock}</span>
-        <Link
-          href="/painel"
-          aria-label={t.exit}
-          className="flex size-14 items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <X aria-hidden className="size-7" />
-        </Link>
+        {exitHref && (
+          <Link
+            href={exitHref}
+            aria-label={t.exit}
+            className="flex size-14 items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <X aria-hidden className="size-7" />
+          </Link>
+        )}
       </header>
 
       <section aria-labelledby="tv-chamados" className="flex flex-col gap-5">

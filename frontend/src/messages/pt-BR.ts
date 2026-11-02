@@ -326,10 +326,6 @@ export const messages = {
     errors: {
       generic: "Não foi possível entrar agora. Tente de novo em instantes.",
     },
-    tv: {
-      title: "Este aparelho é uma TV",
-      text: "Na TV ninguém entra com PIN: ela vai mostrar os chamados e pedidos ao vivo (Modo TV), que chega numa próxima etapa.",
-    },
   },
   floor: {
     title: "Mesas e QR Codes",

@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, linkDeviceByCode, loginThroughForm } from "./support/account";
 
 // Cada teste usa dois navegadores (o celular da mesa e o painel do dono), com login: mais tempo.
 test.describe.configure({ timeout: 60_000 });
@@ -135,5 +135,31 @@ test("o Modo TV mostra o chamado novo em tela cheia, na hora", async ({ page, re
     await expect(panel.page.getByRole("heading", { name: "Chamados" })).toBeVisible();
   } finally {
     await panel.close();
+  }
+});
+
+test("a TV vinculada abre o Modo TV sozinha, sem login nem PIN", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  const token = await apiLogin(request, email);
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: "pt-BR" });
+  const tv = await context.newPage();
+  try {
+    await tv.goto("/aparelho");
+    const code = await tv.getByTestId("pairing-code").getAttribute("data-code");
+    await linkDeviceByCode(request, token, code!, "TV da cozinha", "TV");
+
+    await tv.getByRole("button", { name: "Ativar som e começar" }).click({ timeout: 10_000 });
+    await expect(tv.getByText("Nenhum chamado aberto.", { exact: true })).toBeVisible();
+    await expect(tv.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
+    // Só leitura: nada de sair para o painel nem de aceitar.
+    await expect(tv.getByRole("link", { name: "Sair do Modo TV" })).toHaveCount(0);
+
+    await page.goto(`/m/${qr}`);
+    await page.getByRole("button", { name: /Chamar garçom/ }).click();
+
+    await expect(tv.getByRole("alert").filter({ hasText: "Novo chamado" })).toContainText("Chamar garçom");
+    await expect(tv.getByRole("button", { name: "Aceitar" })).toHaveCount(0);
+  } finally {
+    await context.close();
   }
 });
