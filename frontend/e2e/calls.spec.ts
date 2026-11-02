@@ -40,14 +40,14 @@ test("a mesa chama o garçom, o painel aceita e conclui, e a mesa vê cada passo
 
     await call.getByRole("button", { name: "Aceitar" }).click();
     await expect(call).toContainText("Em atendimento · Marina Tanaka");
-    // A mesa vê só o primeiro nome de quem vem (atualiza sozinha em alguns segundos).
-    await expect(page.getByRole("status")).toContainText("Garçom a caminho", { timeout: 15_000 });
+    // A mesa vê na hora, pelo tempo real, e só o primeiro nome de quem vem.
+    await expect(page.getByRole("status")).toContainText("Garçom a caminho", { timeout: 3000 });
     await expect(page.getByRole("status")).toContainText("Marina aceitou seu chamado.");
     await expect(page.getByRole("status")).not.toContainText("Tanaka");
 
     await call.getByRole("button", { name: "Concluir" }).click();
     await expect(panel.page.getByText("Nenhum chamado aberto")).toBeVisible();
-    await expect(page.getByRole("status")).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("status")).toHaveCount(0, { timeout: 3000 });
   } finally {
     await panel.close();
   }
@@ -101,4 +101,39 @@ test("a mesa pede a conta, troca a forma de pagamento e o painel mostra a escolh
   await expect(page.getByRole("link", { name: "Voltar para a mesa" })).toHaveAttribute("href", `/m/${qr}`);
   await page.getByRole("link", { name: "Mesa", exact: true }).click();
   await expect(page.getByRole("link", { name: /Pedir a conta/ })).toContainText("Conta solicitada");
+});
+
+test("o painel liga o som e mostra que está ao vivo", async ({ request, browser }) => {
+  const { email } = await restaurant(request);
+  const panel = await ownerPanel(browser, email);
+  try {
+    await expect(panel.page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
+    await panel.page.getByRole("button", { name: "Ativar som" }).click();
+    await expect(panel.page.getByText("Som ligado")).toBeVisible();
+  } finally {
+    await panel.close();
+  }
+});
+
+test("o Modo TV mostra o chamado novo em tela cheia, na hora", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  const panel = await ownerPanel(browser, email);
+  try {
+    await panel.page.getByRole("link", { name: "Abrir Modo TV" }).click();
+    await panel.page.getByRole("button", { name: "Ativar som e começar" }).click();
+    await expect(panel.page.getByText("Nenhum chamado aberto.", { exact: true })).toBeVisible();
+    await expect(panel.page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
+
+    // A mesa chama; a TV não recarrega nada: o aviso chega pelo tempo real.
+    await page.goto(`/m/${qr}`);
+    await page.getByRole("button", { name: /Chamar garçom/ }).click();
+
+    const alert = panel.page.getByRole("alert").filter({ hasText: "Novo chamado" });
+    await expect(alert).toContainText("Chamar garçom");
+    await expect(alert).toContainText("04");
+    await expect(alert).toBeHidden({ timeout: 12_000 });
+    await expect(panel.page.getByRole("heading", { name: "Chamados" })).toBeVisible();
+  } finally {
+    await panel.close();
+  }
 });
