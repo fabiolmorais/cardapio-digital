@@ -1,7 +1,9 @@
 package br.com.cardapio.adapter.out.image;
 
 import br.com.cardapio.application.port.out.media.ProcessedImage;
-import br.com.cardapio.domain.menu.exception.InvalidImageException;
+import br.com.cardapio.application.port.out.media.ProcessedLogo;
+import br.com.cardapio.domain.brand.model.LogoVariant;
+import br.com.cardapio.domain.shared.exception.InvalidImageException;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.support.TestImages;
 import org.junit.jupiter.api.Test;
@@ -95,5 +97,37 @@ class JavaImageProcessorTest {
         assertThat(ExifOrientation.of(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF})).isEqualTo(1); // cortado
         assertThat(ExifOrientation.of(TestImages.withExifOrientation(TestImages.encode("jpeg", 300, 300), 8)))
                 .isEqualTo(8);
+    }
+
+    @Test
+    void theLogoFitsInATransparentSquareWithoutCutting() {
+        // Uma logo larga (400 × 200), com fundo transparente.
+        BufferedImage wide = new BufferedImage(400, 200, BufferedImage.TYPE_INT_ARGB);
+        var g = wide.createGraphics();
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, 400, 200);
+        g.dispose();
+
+        ProcessedLogo logo = processor.processLogo(TestImages.write(wide, "png"));
+
+        BufferedImage large = TestImages.read(logo.variants().get(LogoVariant.LARGE));
+        BufferedImage small = TestImages.read(logo.variants().get(LogoVariant.SMALL));
+        assertThat(logo.variants().get(LogoVariant.LARGE)).startsWith(0x89, 'P', 'N', 'G');
+        assertThat(large.getWidth()).isEqualTo(512);
+        assertThat(large.getHeight()).isEqualTo(512);
+        assertThat(small.getWidth()).isEqualTo(128);
+        // Ampliada para 512 × 256 e centralizada: em cima e embaixo sobra transparente.
+        assertThat(new Color(large.getRGB(256, 10), true).getAlpha()).isZero();
+        assertThat(new Color(large.getRGB(256, 256), true).getRed()).isGreaterThan(200);
+    }
+
+    @Test
+    void theLogoHasTheSameChecksAsThePhotos() {
+        assertThatThrownBy(() -> processor.processLogo("não sou imagem".getBytes(StandardCharsets.UTF_8)))
+                .isInstanceOf(InvalidImageException.class);
+        assertThatThrownBy(() -> processor.processLogo(TestImages.encode("png", 100, 100)))
+                .isInstanceOf(InvalidImageException.class)
+                .hasMessageContaining("128 × 128");
+        assertThat(processor.processLogo(TestImages.encode("jpeg", 150, 150)).variants()).hasSize(2);
     }
 }

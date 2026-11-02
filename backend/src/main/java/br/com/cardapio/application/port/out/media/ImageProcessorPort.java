@@ -8,4 +8,10 @@ public interface ImageProcessorPort {
 
     /** InvalidImageException se o arquivo não for uma foto JPG ou PNG que dá para usar. */
     ProcessedImage process(byte[] original);
+
+    /**
+     * A logo, em PNG quadrado (com o fundo transparente preservado), nos tamanhos de LogoVariant.
+     * InvalidImageException nas mesmas situações da foto.
+     */
+    ProcessedLogo processLogo(byte[] original);
 }

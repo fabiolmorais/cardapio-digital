@@ -9,7 +9,7 @@ import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.exception.MediaLimitReachedException;
-import br.com.cardapio.domain.menu.exception.UploadNotFoundException;
+import br.com.cardapio.domain.shared.exception.UploadNotFoundException;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.PhotoFile;
 import br.com.cardapio.domain.menu.model.ProductId;

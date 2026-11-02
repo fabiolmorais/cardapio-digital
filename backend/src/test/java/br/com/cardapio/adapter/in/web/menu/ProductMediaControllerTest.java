@@ -162,7 +162,7 @@ class ProductMediaControllerTest {
         MvcTestResult missing = send("POST", sakura.token(), media(guioza),
                 "{\"uploadId\":\"%s\"}".formatted(json(upload, "$.uploadId")));
         assertThat(missing).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
-        assertThat(json(missing, "$.detail")).isEqualTo("A foto não chegou. Envie de novo.");
+        assertThat(json(missing, "$.detail")).isEqualTo("O arquivo não chegou. Envie de novo.");
     }
 
     @Test
