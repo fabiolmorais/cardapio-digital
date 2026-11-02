@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpen, Home, LogOut, QrCode, Users } from "lucide-react";
+import { BookOpen, Home, LogOut, Palette, QrCode, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
+import { initials } from "@/lib/initials";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 
@@ -16,17 +17,9 @@ const NAV = [
   { href: "/painel", label: t.nav.panel, icon: Home },
   { href: "/admin/mesas", label: t.nav.floor, icon: QrCode },
   { href: "/admin/cardapio", label: t.nav.menu, icon: BookOpen },
+  { href: "/admin/marca", label: t.nav.brand, icon: Palette },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
 ] as const;
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 /**
  * Moldura das telas de gestão: menu à esquerda (no celular, em cima) e a tela à direita.
