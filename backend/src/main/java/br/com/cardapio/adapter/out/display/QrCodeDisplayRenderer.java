@@ -10,6 +10,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
+import org.openpdf.text.Image;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Rectangle;
 import org.openpdf.text.pdf.BaseFont;
@@ -44,7 +45,6 @@ class QrCodeDisplayRenderer implements TableDisplayRenderer {
     /** Pixels por módulo no PNG: um QR de ~37 módulos sai com ~600 px, bom para gráfica. */
     private static final int PNG_SCALE = 16;
 
-    private static final Color BRAND = new Color(0xB8, 0x36, 0x1A);
     private static final Color INK = new Color(0x16, 0x13, 0x0F);
     private static final Color MUTED = new Color(0x5C, 0x55, 0x4E);
 
@@ -144,9 +144,15 @@ class QrCodeDisplayRenderer implements TableDisplayRenderer {
         float centerX = page.getWidth() / 2;
         float maxTextWidth = page.getWidth() - 40;
 
-        // Nome do restaurante no alto, em maiúsculas; encolhe se for comprido.
+        // Nome do restaurante no alto, em maiúsculas e na cor da marca; com a logo, os dois lado a lado.
+        Color accent = Color.decode(display.accentColor());
         String name = display.establishmentName().toUpperCase();
-        text(canvas, bold, fitSize(bold, name, 11, maxTextWidth), BRAND, name, centerX, page.getHeight() - 42);
+        float nameY = page.getHeight() - 42;
+        if (display.logoPng() == null) {
+            text(canvas, bold, fitSize(bold, name, 11, maxTextWidth), accent, name, centerX, nameY);
+        } else {
+            drawLogoAndName(canvas, display.logoPng(), bold, accent, name, centerX, nameY, maxTextWidth);
+        }
 
         // O QR Code, desenhado como retângulos (vetor: nítido em qualquer impressora).
         BitMatrix matrix = encode(display.url());
@@ -170,6 +176,28 @@ class QrCodeDisplayRenderer implements TableDisplayRenderer {
 
         String table = "Mesa " + display.tableLabel();
         text(canvas, bold, fitSize(bold, table, 30, maxTextWidth), INK, table, centerX, below - 66);
+    }
+
+    /** Logo de 26 pt e o nome à direita dela; o conjunto fica centralizado na página. */
+    private static void drawLogoAndName(PdfContentByte canvas, byte[] logoPng, BaseFont bold, Color accent,
+                                        String name, float centerX, float baseline, float maxWidth) {
+        float logoSize = 26;
+        float gap = 6;
+        float size = fitSize(bold, name, 11, maxWidth - logoSize - gap);
+        float total = logoSize + gap + bold.getWidthPoint(name, size);
+        float left = centerX - total / 2;
+        try {
+            Image logo = Image.getInstance(logoPng);
+            // A logo fica centrada na altura do texto (o texto se apoia na linha de base).
+            canvas.addImage(logo, logoSize, 0, 0, logoSize, left, baseline - logoSize / 2 + size / 3);
+        } catch (IOException | DocumentException e) {
+            throw new IllegalStateException("logo inválida para o PDF", e);
+        }
+        canvas.beginText();
+        canvas.setFontAndSize(bold, size);
+        canvas.setColorFill(accent);
+        canvas.showTextAligned(PdfContentByte.ALIGN_LEFT, name, left + logoSize + gap, baseline, 0);
+        canvas.endText();
     }
 
     private static void text(PdfContentByte canvas, BaseFont font, float size, Color color, String value,

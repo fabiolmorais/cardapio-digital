@@ -79,6 +79,17 @@ import br.com.cardapio.application.service.menu.ListProductMediaService;
 import br.com.cardapio.application.service.menu.RemoveProductMediaService;
 import br.com.cardapio.application.service.menu.ReorderProductMediaService;
 import br.com.cardapio.application.service.menu.StartMediaUploadService;
+import br.com.cardapio.application.port.out.brand.BrandPort;
+import br.com.cardapio.application.port.in.brand.GetBrandUseCase;
+import br.com.cardapio.application.port.in.brand.RemoveLogoUseCase;
+import br.com.cardapio.application.port.in.brand.SetLogoUseCase;
+import br.com.cardapio.application.port.in.brand.StartLogoUploadUseCase;
+import br.com.cardapio.application.port.in.brand.UpdateBrandUseCase;
+import br.com.cardapio.application.service.brand.GetBrandService;
+import br.com.cardapio.application.service.brand.RemoveLogoService;
+import br.com.cardapio.application.service.brand.SetLogoService;
+import br.com.cardapio.application.service.brand.StartLogoUploadService;
+import br.com.cardapio.application.service.brand.UpdateBrandService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -259,10 +270,10 @@ class UseCaseConfig {
      */
     @Bean
     TableDisplayService tableDisplayService(DiningTablePort diningTablePort, SectorPort sectorPort,
-                                            LoadEstablishmentPort loadEstablishmentPort,
+                                            BrandPort brandPort, MediaStoragePort mediaStoragePort,
                                             TableDisplayRenderer tableDisplayRenderer,
                                             @Value("${app.public-url}") String publicUrl) {
-        return new TableDisplayService(diningTablePort, sectorPort, loadEstablishmentPort, tableDisplayRenderer,
+        return new TableDisplayService(diningTablePort, sectorPort, brandPort, mediaStoragePort, tableDisplayRenderer,
                 publicUrl);
     }
 
@@ -362,5 +373,33 @@ class UseCaseConfig {
     @Bean
     ReorderProductMediaUseCase reorderProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort) {
         return new ReorderProductMediaService(productPort, productMediaPort);
+    }
+
+    // Marca e aparência (Guia 11)
+
+    @Bean
+    GetBrandUseCase getBrandUseCase(BrandPort brandPort, MediaStoragePort mediaStoragePort) {
+        return new GetBrandService(brandPort, mediaStoragePort);
+    }
+
+    @Bean
+    UpdateBrandUseCase updateBrandUseCase(BrandPort brandPort, MediaStoragePort mediaStoragePort) {
+        return new UpdateBrandService(brandPort, mediaStoragePort);
+    }
+
+    @Bean
+    StartLogoUploadUseCase startLogoUploadUseCase(MediaStoragePort mediaStoragePort) {
+        return new StartLogoUploadService(mediaStoragePort);
+    }
+
+    @Bean
+    SetLogoUseCase setLogoUseCase(BrandPort brandPort, MediaStoragePort mediaStoragePort,
+                                  ImageProcessorPort imageProcessorPort) {
+        return new SetLogoService(brandPort, mediaStoragePort, imageProcessorPort);
+    }
+
+    @Bean
+    RemoveLogoUseCase removeLogoUseCase(BrandPort brandPort, MediaStoragePort mediaStoragePort) {
+        return new RemoveLogoService(brandPort, mediaStoragePort);
     }
 }

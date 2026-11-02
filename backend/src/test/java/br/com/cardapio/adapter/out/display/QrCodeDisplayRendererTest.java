@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.out.display;
 
 import br.com.cardapio.application.port.out.floor.DisplayContent;
+import br.com.cardapio.support.TestImages;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -40,13 +41,26 @@ class QrCodeDisplayRendererTest {
     @Test
     void pdfHasOnePagePerTableWithTheTexts() throws Exception {
         byte[] pdf = renderer.displaysPdf(List.of(
-                new DisplayContent("Sakura Sushi", "04", URL),
-                new DisplayContent("Sakura Sushi", "Varanda 2", URL)));
+                new DisplayContent("Sakura Sushi", "04", URL, "#B8361A", null),
+                new DisplayContent("Sakura Sushi", "Varanda 2", URL, "#B8361A", null)));
 
         assertThat(pdf).startsWith('%', 'P', 'D', 'F');
         assertThat(pdfPages(pdf)).isEqualTo(2);
         assertThat(pdfText(pdf, 1)).contains("SAKURA SUSHI", "Mesa 04", "Aponte a câmera");
         assertThat(pdfText(pdf, 2)).contains("Mesa Varanda 2");
+    }
+
+    @Test
+    void theLogoGoesNextToTheName() throws Exception {
+        byte[] logo = TestImages.encode("png", 128, 128);
+
+        byte[] withLogo = renderer.displaysPdf(List.of(new DisplayContent("Sakura Sushi", "04", URL, "#0F766E", logo)));
+        byte[] withoutLogo = renderer.displaysPdf(List.of(new DisplayContent("Sakura Sushi", "04", URL, "#0F766E", null)));
+
+        assertThat(pdfText(withLogo, 1)).contains("SAKURA SUSHI", "Mesa 04");
+        // Uma imagem dentro do PDF aparece como um objeto "/Subtype/Image".
+        assertThat(new String(withLogo, StandardCharsets.ISO_8859_1)).contains("/Subtype/Image");
+        assertThat(new String(withoutLogo, StandardCharsets.ISO_8859_1)).doesNotContain("/Subtype/Image");
     }
 
     @Test

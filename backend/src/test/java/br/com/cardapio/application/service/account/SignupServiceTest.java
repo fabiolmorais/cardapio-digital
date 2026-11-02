@@ -112,11 +112,6 @@ class SignupServiceTest {
         }
 
         @Override
-        public Optional<String> findName(EstablishmentId id) {
-            return Optional.empty();
-        }
-
-        @Override
         public void saveNewAccount(Organization organization, Establishment establishment, User owner,
                                    Membership membership) {
             organizations.add(organization);

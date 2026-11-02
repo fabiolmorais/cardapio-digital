@@ -74,6 +74,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/establishment/brand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A marca do restaurante e a paleta de cores */
+        get: operations["getBrand"];
+        /** Salva nome, cor, tema, Instagram e link de avaliação */
+        put: operations["updateBrand"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/team-members": {
         parameters: {
             query?: never;
@@ -244,6 +262,41 @@ export interface paths {
         put?: never;
         /** Cria uma categoria (entra no fim do cardápio) */
         post: operations["createMenuCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/establishment/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 2: o arquivo já foi enviado; confere e troca a logo */
+        post: operations["setLogo"];
+        /** Tira a logo (a página volta a mostrar as iniciais) */
+        delete: operations["removeLogo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/establishment/logo/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 1: pede a URL assinada para enviar a logo */
+        post: operations["startLogoUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -685,6 +738,69 @@ export interface components {
             /** Format: int32 */
             position: number;
         };
+        BrandRequest: {
+            /** @example Sakura Sushi */
+            name: string;
+            /** @enum {string} */
+            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+            /** @enum {string} */
+            theme: "DARK" | "LIGHT";
+            /**
+             * @description O @, o nome ou o link do perfil
+             * @example @sakurasushi.sp
+             */
+            instagram?: string;
+            /**
+             * @description Link de avaliação do Google
+             * @example https://g.page/r/CbX0exemplo/review
+             */
+            googleReviewUrl?: string;
+        };
+        Brand: {
+            name: string;
+            /** @enum {string} */
+            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+            /** @enum {string} */
+            theme: "DARK" | "LIGHT";
+            /** @description null quando não há logo (a tela mostra as iniciais) */
+            logo?: components["schemas"]["BrandLogo"];
+            /**
+             * @description O @, sem o "@"; null quando não informado
+             * @example sakurasushi.sp
+             */
+            instagram?: string;
+            /** @description null quando não informado */
+            googleReviewUrl?: string;
+            palette: components["schemas"]["PaletteColor"][];
+        };
+        /** @description A logo em PNG quadrado */
+        BrandLogo: {
+            /** @description 128 px */
+            small: string;
+            /** @description 512 px */
+            large: string;
+        };
+        PaletteColor: {
+            /** @enum {string} */
+            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+            /** @example Tomate */
+            label: string;
+            /**
+             * @description Fundo dos botões (texto branco por cima)
+             * @example #CC3F1C
+             */
+            primary: string;
+            /**
+             * @description Texto de destaque no tema escuro
+             * @example #FF8466
+             */
+            textOnDark: string;
+            /**
+             * @description Texto de destaque no tema claro
+             * @example #B8361A
+             */
+            textOnLight: string;
+        };
         /** @description Cadastro de uma pessoa da equipe */
         AddTeamMemberRequest: {
             /** @example Carlos Souza */
@@ -866,6 +982,32 @@ export interface components {
              * @description Quantos produtos ativos a categoria tem
              */
             activeProducts: number;
+        };
+        SetLogoRequest: {
+            /** Format: uuid */
+            uploadId: string;
+        };
+        LogoUploadRequest: {
+            /** @example image/png */
+            contentType: string;
+            /**
+             * Format: int64
+             * @description Tamanho em bytes (até 2 MB)
+             */
+            sizeBytes: number;
+        };
+        /** @description Envie a logo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
+        LogoUpload: {
+            /** Format: uuid */
+            uploadId: string;
+            url: string;
+            /** @example PUT */
+            method: string;
+            headers: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
         };
         /** @description O gerente digita o código que aparece no aparelho novo */
         LinkDeviceRequest: {
@@ -1366,6 +1508,59 @@ export interface operations {
             };
             /** @description A lista mudou desde que a tela carregou */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A marca */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+        };
+    };
+    updateBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrandRequest"];
+            };
+        };
+        responses: {
+            /** @description Salva */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+            /** @description Instagram ou link de avaliação inválido */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1939,6 +2134,101 @@ export interface operations {
             };
             /** @description Já existe uma categoria com esse nome */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    setLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLogoRequest"];
+            };
+        };
+        responses: {
+            /** @description Logo trocada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+            /** @description O arquivo não é uma imagem PNG ou JPG que dá para usar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O arquivo não chegou */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    removeLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Logo removida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+        };
+    };
+    startLogoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Como enviar o arquivo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogoUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -3,10 +3,11 @@ package br.com.cardapio.application.service.menu;
 import br.com.cardapio.application.port.out.media.ImageProcessorPort;
 import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.media.ProcessedImage;
+import br.com.cardapio.application.port.out.media.ProcessedLogo;
 import br.com.cardapio.application.port.out.media.SignedUpload;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
-import br.com.cardapio.domain.menu.exception.InvalidImageException;
+import br.com.cardapio.domain.shared.exception.InvalidImageException;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
@@ -91,5 +92,11 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
         Map<ImageVariant, byte[]> variants = Arrays.stream(ImageVariant.values())
                 .collect(Collectors.toMap(Function.identity(), v -> v.name().getBytes()));
         return new ProcessedImage(variants, 1440, 960);
+    }
+
+    /** As fotos não usam; está aqui porque o processador é um só (a logo tem o próprio teste). */
+    @Override
+    public ProcessedLogo processLogo(byte[] original) {
+        throw new UnsupportedOperationException();
     }
 }

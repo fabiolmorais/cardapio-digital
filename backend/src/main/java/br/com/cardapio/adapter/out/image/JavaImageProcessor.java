@@ -2,7 +2,9 @@ package br.com.cardapio.adapter.out.image;
 
 import br.com.cardapio.application.port.out.media.ImageProcessorPort;
 import br.com.cardapio.application.port.out.media.ProcessedImage;
-import br.com.cardapio.domain.menu.exception.InvalidImageException;
+import br.com.cardapio.application.port.out.media.ProcessedLogo;
+import br.com.cardapio.domain.brand.model.LogoVariant;
+import br.com.cardapio.domain.shared.exception.InvalidImageException;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Gera os 3 tamanhos com o ImageIO do próprio Java (nenhuma biblioteca a mais).
+ * Gera os tamanhos das fotos (JPEG) e da logo (PNG) com o ImageIO do próprio Java (nenhuma biblioteca a mais).
  *
  * Três cuidados de segurança e privacidade:
  * - o tipo real vem dos bytes (o leitor que o ImageIO acha para o arquivo), não do nome nem do
@@ -43,11 +45,13 @@ class JavaImageProcessor implements ImageProcessorPort {
     /** 50 megapixels: mais que qualquer câmera de celular comum, longe do que derruba o servidor. */
     private static final long MAX_PIXELS = 50_000_000L;
     private static final int MIN_SIDE = 200;
+    /** A logo pode ser menor que uma foto, mas não minúscula: 128 é o tamanho pequeno que geramos. */
+    private static final int LOGO_MIN_SIDE = 128;
     private static final float JPEG_QUALITY = 0.82f;
 
     @Override
     public ProcessedImage process(byte[] original) {
-        BufferedImage image = orient(read(original), ExifOrientation.of(original));
+        BufferedImage image = orient(read(original, MIN_SIDE), ExifOrientation.of(original));
         Map<ImageVariant, byte[]> variants = new EnumMap<>(ImageVariant.class);
         BufferedImage large = null;
         for (ImageVariant variant : ImageVariant.values()) {
@@ -60,7 +64,44 @@ class JavaImageProcessor implements ImageProcessorPort {
         return new ProcessedImage(variants, large.getWidth(), large.getHeight());
     }
 
-    private static BufferedImage read(byte[] bytes) {
+    /**
+     * A logo cabe inteira num quadrado transparente, centralizada (sem cortar nada, ao contrário da
+     * miniatura das fotos). Pode ser ampliada: uma logo de 200 px precisa ocupar o tamanho de 512.
+     */
+    @Override
+    public ProcessedLogo processLogo(byte[] original) {
+        BufferedImage image = orient(read(original, LOGO_MIN_SIDE), ExifOrientation.of(original));
+        Map<LogoVariant, byte[]> variants = new EnumMap<>(LogoVariant.class);
+        for (LogoVariant variant : LogoVariant.values()) {
+            variants.put(variant, png(fitInSquare(image, variant.side())));
+        }
+        return new ProcessedLogo(variants);
+    }
+
+    private static BufferedImage fitInSquare(BufferedImage image, int side) {
+        double scale = (double) side / Math.max(image.getWidth(), image.getHeight());
+        int w = Math.max(1, (int) Math.round(image.getWidth() * scale));
+        int h = Math.max(1, (int) Math.round(image.getHeight() * scale));
+        BufferedImage out = new BufferedImage(side, side, BufferedImage.TYPE_INT_ARGB); // começa transparente
+        Graphics2D g = out.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.drawImage(image, (side - w) / 2, (side - h) / 2, w, h, null);
+        g.dispose();
+        return out;
+    }
+
+    private static byte[] png(BufferedImage image) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", bytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Falha ao gerar o PNG", e);
+        }
+        return bytes.toByteArray();
+    }
+
+    private static BufferedImage read(byte[] bytes, int minSide) {
         try (ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
             if (!readers.hasNext()) {
@@ -77,8 +118,9 @@ class JavaImageProcessor implements ImageProcessorPort {
                 if (width * height > MAX_PIXELS) {
                     throw new InvalidImageException("A foto é grande demais. Use uma de até 50 megapixels.");
                 }
-                if (width < MIN_SIDE || height < MIN_SIDE) {
-                    throw new InvalidImageException("A foto é pequena demais. Use uma de pelo menos 200 × 200 pixels.");
+                if (width < minSide || height < minSide) {
+                    throw new InvalidImageException(
+                            "A imagem é pequena demais. Use uma de pelo menos " + minSide + " × " + minSide + " pixels.");
                 }
                 return reader.read(0);
             } finally {
