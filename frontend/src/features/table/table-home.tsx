@@ -1,8 +1,9 @@
-import { Bell, ChevronRight, ExternalLink, Receipt, Star, UtensilsCrossed } from "lucide-react";
+import { ChevronRight, ExternalLink, Star, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
+import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
 import type { PublicMenu, PublicTable } from "./table-data";
 
@@ -10,7 +11,7 @@ const t = messages.tablePage;
 
 /**
  * "Como podemos ajudar?" (desenho Main): a marca, a mesa, os botões (Chamar garçom e Pedir a
- * conta funcionam na Etapa 6), as categorias, os destaques e os links do restaurante.
+ * conta, a única parte com JavaScript), as categorias, os destaques e os links do restaurante.
  */
 export function TableHome({ token, table, menu }: { token: string; table: PublicTable; menu: PublicMenu | null }) {
   const brand = table.brand;
@@ -36,35 +37,7 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
         </h1>
       </section>
 
-      <section aria-label={t.actions} className="grid grid-cols-2 gap-3">
-        {/* Os botões aparecem já, para a página ter a cara final; funcionam na Etapa 6 (chamados). */}
-        <button
-          type="button"
-          disabled
-          className="flex h-32 flex-col items-start justify-between rounded-3xl bg-(--brand) p-4 text-left text-white disabled:cursor-not-allowed"
-        >
-          <span className="flex size-10 items-center justify-center rounded-xl bg-white/20">
-            <Bell aria-hidden className="size-5" />
-          </span>
-          <span className="flex flex-col">
-            <span className="font-semibold">{t.callWaiter}</span>
-            <span className="text-sm opacity-90">{t.soon}</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          disabled
-          className="flex h-32 flex-col items-start justify-between rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4 text-left disabled:cursor-not-allowed"
-        >
-          <span className="flex size-10 items-center justify-center rounded-xl border border-(--mesa-stroke)">
-            <Receipt aria-hidden className="size-5" />
-          </span>
-          <span className="flex flex-col">
-            <span className="font-semibold">{t.askBill}</span>
-            <span className="text-sm text-(--mesa-muted)">{t.soon}</span>
-          </span>
-        </button>
-      </section>
+      <TableActions token={token} />
 
       <Link
         href={menuHref}

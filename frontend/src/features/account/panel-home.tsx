@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
+import { CallQueue } from "@/features/calls/call-queue";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 
@@ -79,6 +80,7 @@ export function PanelHome() {
           </span>
         </div>
       </section>
+      <CallQueue role={establishment.role} />
       {canManageTeam(establishment.role) && (
         <nav aria-label={t.shortcuts} className="flex flex-col gap-3">
           {SHORTCUTS.map(({ href, icon: Icon, text }) => (

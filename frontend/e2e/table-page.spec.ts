@@ -44,9 +44,9 @@ test("a mesa abre com a marca, os botões, os destaques e os links do restaurant
   await expect(page.getByText("Sakura Sushi").first()).toBeVisible();
   await expect(page.getByText("Mesa 04 · Salão principal")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Peça semesperar.");
-  // Os botões aparecem, mas só funcionam na Etapa 6.
-  await expect(page.getByRole("button", { name: /Chamar garçom/ })).toBeDisabled();
-  await expect(page.getByRole("button", { name: /Pedir a conta/ })).toBeDisabled();
+  // Os dois botões da mesa (o fluxo dos chamados está em calls.spec.ts).
+  await expect(page.getByRole("button", { name: /Chamar garçom/ })).toBeEnabled();
+  await expect(page.getByRole("link", { name: /Pedir a conta/ })).toHaveAttribute("href", `/m/${qr}/conta`);
   // Destaques: só o Sunomono (destaque e disponível), no preço da promoção.
   const destaques = page.getByRole("region", { name: "Destaques" });
   await expect(destaques.getByRole("listitem")).toHaveCount(1);

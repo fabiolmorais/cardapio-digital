@@ -1,10 +1,11 @@
 import { UtensilsCrossed } from "lucide-react";
 import { formatCents } from "@/lib/format";
-import { messages } from "@/messages/pt-BR";
+import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
-import { discountPercent, type MenuItem } from "./table-data";
+import { discountPercent } from "./discount";
+import type { MenuItem } from "./table-data";
 
-const t = messages.tablePage.menu;
+const t = tablePage.menu;
 
 /**
  * Um produto na lista do cardápio: a foto, o nome, a descrição e o preço (com o "de/por" na
