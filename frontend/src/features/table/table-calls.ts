@@ -133,12 +133,14 @@ export function useTableCalls(token: string) {
   const [error, setError] = useState<string | null>(null);
   const present = presence?.present === true;
 
-  /** Pergunta de novo só enquanto não está confirmada (a liberação pelo garçom chega pelo tempo real). */
+  /**
+   * Pergunta de novo a cada aviso do tempo real: é assim que a liberação pelo garçom (e o bloqueio
+   * pela equipe) aparecem na hora.
+   */
   const refreshPresence = useCallback(async () => {
-    if (present) return;
     const next = await checkPresence(token);
     if (next) setPresence(next);
-  }, [token, present]);
+  }, [token]);
 
   const refresh = useCallback(async () => {
     try {

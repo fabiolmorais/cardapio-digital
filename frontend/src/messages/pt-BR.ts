@@ -132,6 +132,11 @@ export const messages = {
       releasing: "Liberando…",
       decline: "Recusar",
       notPresent: "Presença não confirmada",
+      block: "Bloquear este celular",
+      blockTitle: (table: string) => `Bloquear o celular da mesa ${table}?`,
+      blockText:
+        "Ele não poderá mais chamar nem pedir nesta visita, e os chamados abertos dele serão cancelados. Os outros celulares da mesa continuam normais.",
+      blockConfirm: "Bloquear",
       presence: { WIFI: "Wi-Fi", GPS: "GPS", STAFF: "Liberada pelo garçom" },
       live: "Ao vivo",
       reconnecting: "Reconectando…",
@@ -188,6 +193,17 @@ export const messages = {
       pin: "Local do restaurante",
       radius: (meters: number) => `Raio: ${meters} m`,
       point: (lat: string, lng: string) => `Ponto: ${lat}, ${lng}`,
+    },
+    session: {
+      title: "Sessão da mesa",
+      text: "Depois desse tempo sem uso, o celular precisa confirmar a presença de novo. Vale para as sessões que abrirem depois de salvar.",
+      label: "A sessão da mesa expira após",
+      option: (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const rest = minutes % 60;
+        const text = hours === 0 ? `${rest} minutos` : rest === 0 ? `${hours} ${hours === 1 ? "hora" : "horas"}` : `${hours} h ${rest} min`;
+        return `${text} sem uso`;
+      },
     },
     staff:
       "A liberação pelo garçom fica sempre ligada: se Wi-Fi e localização falharem, o cliente pede e o garçom libera com um toque. Sem nada configurado, vale só ela.",

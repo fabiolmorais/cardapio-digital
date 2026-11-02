@@ -12,9 +12,10 @@ record PresenceResponse(
         @Schema(description = "Como a presença foi provada; vazio enquanto não foi") PresenceMethod method,
         @Schema(requiredMode = REQUIRED, description = "O restaurante marcou o local: vale oferecer a localização")
         boolean locationEnabled,
-        @Schema(description = "O nome do Wi-Fi do salão, para sugerir ao cliente") String wifiName
+        @Schema(description = "O nome do Wi-Fi do salão, para sugerir ao cliente") String wifiName,
+        @Schema(requiredMode = REQUIRED, description = "A equipe bloqueou os chamados deste celular") boolean blocked
 ) {
     static PresenceResponse from(PresenceStatus s) {
-        return new PresenceResponse(s.present(), s.method(), s.locationEnabled(), s.wifiName());
+        return new PresenceResponse(s.present(), s.method(), s.locationEnabled(), s.wifiName(), s.blocked());
     }
 }

@@ -7,6 +7,7 @@ import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.model.TokenHash;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSession;
+import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -53,11 +54,37 @@ public final class InMemoryTableSessions implements TableSessionPort {
         int unlocked = 0;
         for (TableSession session : Map.copyOf(saved).values()) {
             if (session.establishmentId().equals(establishmentId) && session.isFor(tableId) && session.isActive(now)
-                    && !session.isPresent()) {
+                    && !session.isPresent() && !session.isBlocked()) {
                 save(session.unlock(by, now));
                 unlocked++;
             }
         }
         return unlocked;
+    }
+
+    @Override
+    public boolean block(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now) {
+        for (TableSession session : Map.copyOf(saved).values()) {
+            if (session.id().equals(sessionId) && session.establishmentId().equals(establishmentId)
+                    && !session.isBlocked()) {
+                save(session.block(by, now));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int endExpired(Instant now) {
+        int ended = 0;
+        for (TableSession s : Map.copyOf(saved).values()) {
+            if (s.endedAt() == null && !s.expiresAt().isAfter(now)) {
+                save(new TableSession(s.id(), s.establishmentId(), s.tableId(), s.tokenHash(), s.createdAt(),
+                        s.lastSeenAt(), s.expiresAt(), s.expiresAt(), s.presenceMethod(), s.presenceConfirmedAt(),
+                        s.unlockedBy(), s.idleLimit(), s.blockedAt(), s.blockedBy()));
+                ended++;
+            }
+        }
+        return ended;
     }
 }

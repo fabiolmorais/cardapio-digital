@@ -32,6 +32,12 @@ public record Call(
         Instant canceledAt
 ) {
 
+    /**
+     * Quantos chamados um mesmo celular pode ABRIR por minuto. Tocar de novo num chamado aberto não
+     * conta (ele não duplica); o que este limite segura é abrir e cancelar sem parar.
+     */
+    public static final int MAX_NEW_PER_MINUTE = 5;
+
     public Call {
         Objects.requireNonNull(id);
         Objects.requireNonNull(establishmentId);

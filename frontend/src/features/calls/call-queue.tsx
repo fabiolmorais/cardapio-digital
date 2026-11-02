@@ -1,14 +1,15 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Tv, Volume2 } from "lucide-react";
+import { Ban, Tv, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
-import { acceptCall, declineCall, finishCall, type StaffCall } from "./calls-api";
+import { acceptCall, blockCaller, declineCall, finishCall, type StaffCall } from "./calls-api";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
@@ -46,6 +47,7 @@ export function CallQueue({ role }: { role: Role }) {
   const now = useNow();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState<StaffCall | null>(null);
   const canAct = role !== "KITCHEN";
 
   async function act(id: string, action: (id: string) => Promise<StaffCall>) {
@@ -196,11 +198,35 @@ export function CallQueue({ role }: { role: Role }) {
                     )}
                   </div>
                 )}
+                {canAct && (
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => setBlocking(call)}
+                    className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-destructive hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
+                  >
+                    <Ban aria-hidden className="size-4" />
+                    {t.block}
+                  </button>
+                )}
               </li>
             );
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={blocking !== null}
+        onOpenChange={(open) => !open && setBlocking(null)}
+        title={blocking ? t.blockTitle(blocking.tableLabel) : ""}
+        description={t.blockText}
+        confirmLabel={t.blockConfirm}
+        onConfirm={async () => {
+          if (!blocking) return;
+          await blockCaller(blocking.id);
+          await queryClient.invalidateQueries({ queryKey: ["call-queue"] });
+        }}
+      />
     </section>
   );
 }

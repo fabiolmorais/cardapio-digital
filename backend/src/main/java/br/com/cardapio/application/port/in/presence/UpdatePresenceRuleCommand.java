@@ -11,10 +11,11 @@ import java.util.Objects;
  *
  * @param networks os IPs ou faixas, em texto ("189.45.212.18", "2804:14c:6a::/64")
  * @param location null para não usar a localização
- * @param clientIp o IP de quem está salvando (para a resposta trazer a rede atual)
+ * @param clientIp           o IP de quem está salvando (para a resposta trazer a rede atual)
+ * @param sessionIdleMinutes null para manter como está
  */
 public record UpdatePresenceRuleCommand(EstablishmentId establishmentId, List<String> networks, String wifiName,
-                                        GeoFence location, String clientIp) {
+                                        GeoFence location, String clientIp, Integer sessionIdleMinutes) {
 
     public UpdatePresenceRuleCommand {
         Objects.requireNonNull(establishmentId);

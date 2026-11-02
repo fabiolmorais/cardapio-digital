@@ -35,6 +35,8 @@ export const tablePage = {
     denied: "Sem permissão para a localização. Libere nas configurações do navegador, ou peça ao garçom.",
     noLocation: "Não deu para pegar sua localização agora. Tente de novo ou peça ao garçom.",
     notOnWifi: "Ainda não estamos vendo a rede do restaurante. Confira o Wi-Fi ou peça ao garçom.",
+    blockedTitle: "Chamados bloqueados neste celular",
+    blockedText: "A equipe do restaurante bloqueou os chamados deste celular. Fale com um garçom. O cardápio continua liberado.",
   },
   calls: {
     waiterSub: "Um toque e ele vem",

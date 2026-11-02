@@ -3,6 +3,8 @@ package br.com.cardapio.adapter.in.web.presence;
 import br.com.cardapio.domain.presence.model.GeoFence;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,7 +21,10 @@ record PresenceRuleRequest(
         @NotNull @Size(max = 10) List<@NotBlank @Size(max = 50) String> networks,
         @Schema(description = "O nome do Wi-Fi do salão (sem a senha)", example = "Sakura Clientes")
         @Size(max = 60) String wifiName,
-        @Schema(description = "O local e o raio; vazio para não usar a localização") @Valid Location location
+        @Schema(description = "O local e o raio; vazio para não usar a localização") @Valid Location location,
+        @Schema(description = "Quanto tempo sem uso a sessão da mesa aguenta (30 a 360); vazio mantém como está",
+                example = "120")
+        @Min(30) @Max(360) Integer sessionIdleMinutes
 ) {
 
     @Schema(name = "PresenceLocation")

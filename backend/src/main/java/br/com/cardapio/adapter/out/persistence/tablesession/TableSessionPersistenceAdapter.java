@@ -11,6 +11,7 @@ import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -31,7 +32,8 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
         sessions.save(new TableSessionJpaEntity(s.id().value(), s.establishmentId().value(), s.tableId().value(),
                 s.tokenHash().value(), s.createdAt(), s.lastSeenAt(), s.expiresAt(), s.endedAt(),
                 s.presenceMethod() == null ? null : s.presenceMethod().name(), s.presenceConfirmedAt(),
-                s.unlockedBy() == null ? null : s.unlockedBy().value()));
+                s.unlockedBy() == null ? null : s.unlockedBy().value(), (int) s.idleLimit().toMinutes(), s.blockedAt(),
+                s.blockedBy() == null ? null : s.blockedBy().value()));
     }
 
     /** Sem o filtro por restaurante: ainda não se sabe de qual é. O token diz (como no findActiveByToken da mesa). */
@@ -41,12 +43,26 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
                 new EstablishmentId(e.getEstablishmentId()), new DiningTableId(e.getTableId()),
                 new TokenHash(e.getTokenHash()), e.getCreatedAt(), e.getLastSeenAt(), e.getExpiresAt(),
                 e.getEndedAt(), e.getPresenceMethod() == null ? null : PresenceMethod.valueOf(e.getPresenceMethod()),
-                e.getPresenceConfirmedAt(), e.getUnlockedBy() == null ? null : new UserId(e.getUnlockedBy())));
+                e.getPresenceConfirmedAt(), e.getUnlockedBy() == null ? null : new UserId(e.getUnlockedBy()),
+                Duration.ofMinutes(e.getIdleMinutes()), e.getBlockedAt(),
+                e.getBlockedBy() == null ? null : new UserId(e.getBlockedBy())));
     }
 
     @Override
     public int unlockTable(EstablishmentId establishmentId, DiningTableId tableId, UserId by, Instant now) {
         establishmentFilter.enable(establishmentId);
         return sessions.unlockTable(establishmentId.value(), tableId.value(), by.value(), now);
+    }
+
+    @Override
+    public boolean block(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now) {
+        establishmentFilter.enable(establishmentId);
+        return sessions.block(sessionId.value(), establishmentId.value(), by.value(), now) == 1;
+    }
+
+    /** Sem o filtro por restaurante: é a limpeza do sistema inteiro. */
+    @Override
+    public int endExpired(Instant now) {
+        return sessions.endExpired(now);
     }
 }

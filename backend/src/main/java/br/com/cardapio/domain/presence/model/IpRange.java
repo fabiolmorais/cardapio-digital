@@ -4,6 +4,7 @@ import br.com.cardapio.domain.shared.exception.InvalidValueException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -107,9 +108,42 @@ public record IpRange(InetAddress address, int prefixBits) {
         return (candidate[fullBytes] & mask) == (network[fullBytes] & mask);
     }
 
-    /** Sempre com o tamanho ("189.45.212.18/32"): é assim que vai para o banco e para a tela. */
+    /**
+     * Sempre com o tamanho ("189.45.212.18/32"): é assim que vai para o banco e para a tela. O IPv6
+     * vai na forma curta (RFC 5952), "2804:14c:6a::/48", e não "2804:14c:6a:0:0:0:0:0/48".
+     */
     @Override
     public String toString() {
-        return address.getHostAddress() + "/" + prefixBits;
+        return format(address) + "/" + prefixBits;
+    }
+
+    /**
+     * A forma curta do IPv6: a maior sequência de dois ou mais grupos zerados vira "::" (a primeira,
+     * se houver empate). O Java já tira os zeros à esquerda de cada grupo; só falta isso.
+     */
+    static String format(InetAddress address) {
+        if (address.getAddress().length == 4) {
+            return address.getHostAddress();
+        }
+        String[] groups = address.getHostAddress().split(":");
+        int bestStart = -1;
+        int bestLength = 1; // uma sequência de um grupo só não vira "::"
+        for (int i = 0; i < groups.length; ) {
+            int j = i;
+            while (j < groups.length && groups[j].equals("0")) {
+                j++;
+            }
+            if (j - i > bestLength) {
+                bestStart = i;
+                bestLength = j - i;
+            }
+            i = Math.max(j, i + 1);
+        }
+        if (bestStart < 0) {
+            return String.join(":", groups);
+        }
+        String before = String.join(":", Arrays.copyOfRange(groups, 0, bestStart));
+        String after = String.join(":", Arrays.copyOfRange(groups, bestStart + bestLength, groups.length));
+        return before + "::" + after;
     }
 }

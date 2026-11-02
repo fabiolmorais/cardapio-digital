@@ -33,6 +33,9 @@ class PresenceRuleJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "radius_meters")
     private Integer radiusMeters;
 
+    @Column(name = "session_idle_minutes", nullable = false)
+    private int sessionIdleMinutes;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -40,7 +43,7 @@ class PresenceRuleJpaEntity extends EstablishmentScopedEntity {
     }
 
     PresenceRuleJpaEntity(UUID id, UUID establishmentId, String[] networks, String wifiName, Double latitude,
-                          Double longitude, Integer radiusMeters, Instant updatedAt) {
+                          Double longitude, Integer radiusMeters, int sessionIdleMinutes, Instant updatedAt) {
         super(establishmentId);
         this.id = id;
         this.networks = networks;
@@ -48,6 +51,7 @@ class PresenceRuleJpaEntity extends EstablishmentScopedEntity {
         this.latitude = latitude;
         this.longitude = longitude;
         this.radiusMeters = radiusMeters;
+        this.sessionIdleMinutes = sessionIdleMinutes;
         this.updatedAt = updatedAt;
     }
 
@@ -57,5 +61,6 @@ class PresenceRuleJpaEntity extends EstablishmentScopedEntity {
     Double getLatitude() { return latitude; }
     Double getLongitude() { return longitude; }
     Integer getRadiusMeters() { return radiusMeters; }
+    int getSessionIdleMinutes() { return sessionIdleMinutes; }
     Instant getUpdatedAt() { return updatedAt; }
 }

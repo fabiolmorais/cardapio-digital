@@ -3,8 +3,10 @@ package br.com.cardapio.application.service.tablesession;
 import br.com.cardapio.application.port.in.tablesession.TableSessionStarted;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
+import br.com.cardapio.domain.presence.model.PresenceRule;
 import br.com.cardapio.domain.shared.model.TokenHash;
 import br.com.cardapio.domain.tablesession.model.TableSession;
+import br.com.cardapio.support.InMemoryPresenceRules;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.Test;
@@ -22,12 +24,13 @@ class StartTableSessionServiceTest {
     private static final Instant NOW = Instant.parse("2026-11-02T20:00:00Z");
 
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
+    private final InMemoryPresenceRules rules = new InMemoryPresenceRules();
     private final TablesByToken tables = new TablesByToken();
     private int generated;
     private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
     private StartTableSessionService service() {
-        return new StartTableSessionService(tables, sessions, () -> "token-" + (++generated), clock);
+        return new StartTableSessionService(tables, sessions, rules, () -> "token-" + (++generated), clock);
     }
 
     private final EstablishmentId sakura = EstablishmentId.newId();
@@ -75,5 +78,16 @@ class StartTableSessionServiceTest {
         assertThatThrownBy(() -> service().start("qr-que-ninguem-gerou-0000", null))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(sessions.saved).isEmpty();
+    }
+
+    @Test
+    void aNewSessionUsesTheRestaurantIdleLimit() {
+        tables.given(sakura, "04", "qr-da-mesa-04-00000000000");
+        rules.save(PresenceRule.empty(sakura, NOW).withSessionIdleLimit(Duration.ofMinutes(30), NOW));
+
+        TableSessionStarted started = service().start("qr-da-mesa-04-00000000000", null);
+
+        assertThat(started.expiresAt()).isEqualTo(NOW.plus(Duration.ofMinutes(30)));
+        assertThat(sessions.byToken("token-1").idleLimit()).isEqualTo(Duration.ofMinutes(30));
     }
 }

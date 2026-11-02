@@ -68,6 +68,9 @@ app:
       ttl: 14d
       # Cookie só por HTTPS. Desligue (false) só para testar pelo IP da rede local, em http.
       cookie-secure: ${REFRESH_COOKIE_SECURE:true}
+  table-sessions:
+    # De quanto em quanto tempo as sessões de mesa vencidas são encerradas (Guia 17).
+    cleanup-interval: PT5M
   presence:
     # O cabeçalho com o IP do cliente que SÓ o proxy da hospedagem escreve (no Fly.io, Fly-Client-IP).
     # Vazio (desenvolvimento): vale o endereço da conexão. Nunca use X-Forwarded-For: o cliente o escreve.

@@ -8,7 +8,9 @@ import br.com.cardapio.domain.call.model.CallId;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +21,12 @@ public interface CallPort {
      * decide, mesmo com dois toques ao mesmo tempo). false: já havia um, e nada foi gravado.
      */
     boolean insertIfNoneOpen(Call call);
+
+    /** Quantos chamados este celular (a sessão) abriu DEPOIS daquele instante, cancelados também. */
+    long countOpenedBySessionAfter(EstablishmentId establishmentId, TableSessionId sessionId, Instant since);
+
+    /** Os chamados abertos deste celular (para cancelar quando a equipe o bloqueia). */
+    List<Call> findOpenBySession(EstablishmentId establishmentId, TableSessionId sessionId);
 
     /**
      * Grava a mudança SÓ SE o chamado ainda estiver no estado esperado. false: alguém mudou o

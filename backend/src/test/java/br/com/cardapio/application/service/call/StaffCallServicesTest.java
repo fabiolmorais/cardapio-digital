@@ -4,17 +4,18 @@ import br.com.cardapio.application.port.in.call.StaffCall;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
+import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallNotFoundException;
 import br.com.cardapio.domain.call.exception.CallStateException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
+import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
-import br.com.cardapio.domain.call.event.CallChanged;
-import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.support.InMemoryTableSessions;
 import org.junit.jupiter.api.Test;
 
@@ -162,5 +163,36 @@ class StaffCallServicesTest {
 
         assertThatThrownBy(() -> new DeclineCallService(calls, published::add, clock).decline(sakura, waiter.id()))
                 .isInstanceOf(CallStateException.class);
+    }
+
+    @Test
+    void blockingThePhoneCancelsItsOpenCalls() {
+        DiningTableId mesa = DiningTableId.newId();
+        TableSession prankster = sessions.given(sakura, mesa, "trote", NOW);
+        TableSession neighbour = sessions.given(sakura, mesa, "vizinho", NOW);
+        Call waiter = Call.open(sakura, mesa, prankster.id(), CallType.WAITER, null, NOW);
+        Call bill = Call.open(sakura, mesa, prankster.id(), CallType.BILL, PaymentMethod.PIX, NOW);
+        Call theirs = Call.open(sakura, DiningTableId.newId(), neighbour.id(), CallType.WAITER, null, NOW);
+        for (Call c : new Call[]{waiter, bill, theirs}) {
+            calls.insertIfNoneOpen(c);
+        }
+
+        new BlockCallerService(calls, sessions, published::add, clock).block(sakura, waiter.id(), carlos);
+
+        assertThat(sessions.byToken("trote").isBlocked()).isTrue();
+        assertThat(sessions.byToken("vizinho").isBlocked()).isFalse();
+        assertThat(calls.saved.get(waiter.id()).status()).isEqualTo(CallStatus.CANCELED);
+        assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.CANCELED);
+        assertThat(calls.saved.get(theirs.id()).status()).isEqualTo(CallStatus.PENDING);
+        assertThat(published).hasSize(2);
+    }
+
+    @Test
+    void anotherRestaurantCannotBlock() {
+        Call call = given(NOW);
+
+        assertThatThrownBy(() -> new BlockCallerService(calls, sessions, published::add, clock)
+                .block(EstablishmentId.newId(), call.id(), carlos))
+                .isInstanceOf(CallNotFoundException.class);
     }
 }

@@ -14,11 +14,14 @@ record PresenceRuleResponse(
         String wifiName,
         PresenceRuleRequest.Location location,
         @Schema(description = "A rede de onde você está agora, para o botão \"Usar o IP desta rede\"")
-        String currentNetwork
+        String currentNetwork,
+        @Schema(requiredMode = REQUIRED, description = "Quanto tempo sem uso a sessão da mesa aguenta, em minutos")
+        int sessionIdleMinutes
 ) {
     static PresenceRuleResponse from(PresenceSettings s) {
         var location = s.location() == null ? null : new PresenceRuleRequest.Location(s.location().latitude(),
                 s.location().longitude(), s.location().radiusMeters());
-        return new PresenceRuleResponse(s.networks(), s.wifiName(), location, s.currentNetwork());
+        return new PresenceRuleResponse(s.networks(), s.wifiName(), location, s.currentNetwork(),
+                s.sessionIdleMinutes());
     }
 }

@@ -5,18 +5,21 @@ import br.com.cardapio.application.port.in.call.RequestCallUseCase;
 import br.com.cardapio.application.port.in.call.RequestedCall;
 import br.com.cardapio.application.port.in.call.TableCall;
 import br.com.cardapio.application.port.out.call.CallPort;
-import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallStateException;
+import br.com.cardapio.domain.call.exception.TooManyCallsException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
+import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -45,6 +48,10 @@ public class RequestCallService implements RequestCallUseCase {
                 now);
         var establishmentId = visit.table().establishmentId();
 
+        // Celular bloqueado pela equipe: nada, nem o pedido de liberação.
+        if (visit.session().isBlocked()) {
+            throw new SessionBlockedException();
+        }
         // A trava de presença: chamar e pedir a conta, só no salão. O pedido de liberação é a saída
         // de quem não conseguiu provar (e não faz sentido para quem já provou).
         if (command.type() == CallType.UNLOCK) {
@@ -61,6 +68,11 @@ public class RequestCallService implements RequestCallUseCase {
             return new RequestedCall(view(changePaymentIfNeeded(open.get(), command)), false);
         }
 
+        // Um chamado NOVO conta para o limite dos últimos 60 segundos (devolver o que já estava aberto, não).
+        if (calls.countOpenedBySessionAfter(establishmentId, visit.session().id(), now.minus(Duration.ofMinutes(1)))
+                >= Call.MAX_NEW_PER_MINUTE) {
+            throw new TooManyCallsException();
+        }
         Call call = Call.open(establishmentId, visit.table().id(), visit.session().id(), command.type(),
                 command.paymentMethod(), now);
         if (calls.insertIfNoneOpen(call)) {

@@ -75,4 +75,25 @@ class TableSessionTest {
         assertThatThrownBy(() -> session.confirmPresence(PresenceMethod.STAFF, NOW))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void theIdleLimitComesFromTheRestaurantAndStays() {
+        TableSession short30 = TableSession.open(EstablishmentId.newId(), mesa04, TokenHash.of("x"),
+                Duration.ofMinutes(30), NOW);
+
+        assertThat(short30.expiresAt()).isEqualTo(NOW.plus(Duration.ofMinutes(30)));
+        assertThat(short30.touch(NOW.plusSeconds(600)).expiresAt()).isEqualTo(NOW.plusSeconds(600 + 1800));
+    }
+
+    @Test
+    void aBlockedPhoneCannotProveOrBeUnlocked() {
+        UserId carlos = UserId.newId();
+        TableSession blocked = session.block(carlos, NOW);
+
+        assertThat(blocked.isBlocked()).isTrue();
+        assertThat(blocked.blockedBy()).isEqualTo(carlos);
+        assertThat(blocked.confirmPresence(PresenceMethod.WIFI, NOW).isPresent()).isFalse();
+        assertThat(blocked.unlock(carlos, NOW).isPresent()).isFalse();
+        assertThat(blocked.block(UserId.newId(), NOW.plusSeconds(5)).blockedAt()).isEqualTo(NOW);
+    }
 }

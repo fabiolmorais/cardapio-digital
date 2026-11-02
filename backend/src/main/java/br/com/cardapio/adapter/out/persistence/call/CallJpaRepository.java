@@ -50,6 +50,17 @@ interface CallJpaRepository extends JpaRepository<CallJpaEntity, UUID> {
 
     Optional<CallJpaEntity> findByIdAndEstablishmentId(UUID id, UUID establishmentId);
 
+    /** O limite por minuto: o Spring Data monta o COUNT pelo nome do método. */
+    long countByEstablishmentIdAndSessionIdAndCreatedAtAfter(UUID establishmentId, UUID sessionId, Instant instant);
+
+    @Query("""
+            SELECT c FROM CallJpaEntity c
+             WHERE c.establishmentId = :establishmentId AND c.sessionId = :sessionId
+               AND c.status IN ('PENDING', 'IN_PROGRESS')
+            """)
+    List<CallJpaEntity> findOpenBySession(@Param("establishmentId") UUID establishmentId,
+                                          @Param("sessionId") UUID sessionId);
+
     @Query("""
             SELECT c FROM CallJpaEntity c
              WHERE c.establishmentId = :establishmentId AND c.tableId = :tableId AND c.type = :type

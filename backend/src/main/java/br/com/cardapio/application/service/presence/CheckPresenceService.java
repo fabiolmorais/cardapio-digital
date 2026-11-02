@@ -38,14 +38,16 @@ public class CheckPresenceService implements CheckPresenceUseCase {
                 .orElseGet(() -> PresenceRule.empty(visit.table().establishmentId(), now));
 
         TableSession session = visit.session();
-        if (!session.isPresent()) {
+        if (!session.isPresent() && !session.isBlocked()) {
             var proved = rule.check(command.clientIp(), command.position());
             if (proved.isPresent()) {
                 session = session.confirmPresence(proved.get(), now);
                 sessions.save(session);
             }
         }
-        return new PresenceStatus(session.isPresent(), session.presenceMethod(), rule.location() != null,
-                rule.wifiName());
+        // Bloqueado, não conta como presente, mesmo que tenha provado antes.
+        boolean present = session.isPresent() && !session.isBlocked();
+        return new PresenceStatus(present, session.presenceMethod(), rule.location() != null, rule.wifiName(),
+                session.isBlocked());
     }
 }

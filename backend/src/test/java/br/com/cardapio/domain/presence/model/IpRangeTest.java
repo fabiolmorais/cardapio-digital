@@ -35,7 +35,7 @@ class IpRangeTest {
     void ipv6UsesTheNetworkPart() {
         IpRange range = IpRange.networkOf("2804:14c:6a:1:a1b2:c3d4:e5f6:789");
 
-        assertThat(range).hasToString("2804:14c:6a:1:0:0:0:0/64");
+        assertThat(range).hasToString("2804:14c:6a:1::/64");
         // O fim do endereço muda (outro celular, ou o mesmo depois de um tempo); a rede é a mesma.
         assertThat(range.contains("2804:14c:6a:1:ffff:1:2:3")).isTrue();
         assertThat(range.contains("2804:14c:6a:2::1")).isFalse();
@@ -54,5 +54,15 @@ class IpRangeTest {
                 "", " ", "189.45.212.18/x"}) {
             assertThatThrownBy(() -> IpRange.parse(text)).as(text).isInstanceOf(InvalidValueException.class);
         }
+    }
+
+    @Test
+    void ipv6IsWrittenInTheShortForm() {
+        assertThat(IpRange.parse("2804:14c:6a:0:0:0:0:0/48")).hasToString("2804:14c:6a::/48");
+        assertThat(IpRange.parse("::1")).hasToString("::1/128");
+        assertThat(IpRange.parse("2001:db8:0:1:0:0:0:1")).hasToString("2001:db8:0:1::1/128");
+        // Com duas sequências do mesmo tamanho, a primeira vira "::"; um zero sozinho fica.
+        assertThat(IpRange.parse("2001:0:0:1:0:0:1:1")).hasToString("2001::1:0:0:1:1/128");
+        assertThat(IpRange.parse("2001:db8:0:1:1:1:1:1")).hasToString("2001:db8:0:1:1:1:1:1/128");
     }
 }

@@ -165,3 +165,26 @@ test("a TV vinculada abre o Modo TV sozinha, sem login nem PIN", async ({ page, 
     await context.close();
   }
 });
+
+test("a equipe bloqueia o celular de um trote, e ele vê o aviso na hora", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  await page.goto(`/m/${qr}`);
+  await page.getByRole("button", { name: /Chamar garçom/ }).click();
+  await expect(page.getByRole("status")).toContainText("Chamado enviado");
+
+  const panel = await ownerPanel(browser, email);
+  try {
+    const call = panel.page.getByRole("listitem", { name: "Chamar garçom · Mesa 04" });
+    await call.getByRole("button", { name: "Bloquear este celular" }).click();
+    await panel.page.getByRole("alertdialog").getByRole("button", { name: "Bloquear" }).click();
+    await expect(panel.page.getByText("Nenhum chamado aberto")).toBeVisible();
+
+    // O celular fica sabendo pelo tempo real: os botões somem e aparece o aviso.
+    await expect(page.getByRole("alert").filter({ hasText: "Chamados bloqueados neste celular" })).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByRole("button", { name: /Chamar garçom/ })).toHaveCount(0);
+  } finally {
+    await panel.close();
+  }
+});

@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +38,20 @@ class CallPersistenceAdapter implements CallPort {
     public boolean insertIfNoneOpen(Call c) {
         return calls.insertIfNoneOpen(c.id().value(), c.establishmentId().value(), c.tableId().value(),
                 c.sessionId().value(), c.type().name(), name(c.paymentMethod()), c.createdAt()) == 1;
+    }
+
+    @Override
+    public long countOpenedBySessionAfter(EstablishmentId establishmentId, TableSessionId sessionId, Instant instant) {
+        establishmentFilter.enable(establishmentId);
+        return calls.countByEstablishmentIdAndSessionIdAndCreatedAtAfter(establishmentId.value(), sessionId.value(),
+                instant);
+    }
+
+    @Override
+    public List<Call> findOpenBySession(EstablishmentId establishmentId, TableSessionId sessionId) {
+        establishmentFilter.enable(establishmentId);
+        return calls.findOpenBySession(establishmentId.value(), sessionId.value()).stream()
+                .map(CallPersistenceAdapter::toDomain).toList();
     }
 
     @Override

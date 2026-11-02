@@ -42,6 +42,12 @@ export async function declineCall(id: string): Promise<StaffCall> {
   return data;
 }
 
+/** "Bloquear este celular": quem abriu o chamado não chama mais nesta visita. */
+export async function blockCaller(id: string): Promise<void> {
+  const { error, response } = await api.POST("/api/v1/calls/{id}/block-caller", { params: { path: { id } } });
+  if (!response.ok) throw problem(error, response.status);
+}
+
 export async function finishCall(id: string): Promise<StaffCall> {
   const { data, error, response } = await api.POST("/api/v1/calls/{id}/finish", { params: { path: { id } } });
   if (!data) throw problem(error, response.status);
