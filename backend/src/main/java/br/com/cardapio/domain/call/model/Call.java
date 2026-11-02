@@ -65,8 +65,11 @@ public record Call(
                 createdAt, acceptedAt, acceptedBy, doneAt, canceledAt);
     }
 
-    /** "Toque para atender": só um garçom fica com o chamado. */
+    /** "Toque para atender": só um garçom fica com o chamado. A liberação usa o release. */
     public Call accept(UserId by, Instant now) {
+        if (type == CallType.UNLOCK) {
+            throw new CallStateException("Este pedido de liberação se responde com Liberar ou Recusar");
+        }
         if (status == CallStatus.IN_PROGRESS) {
             throw new CallStateException("Outra pessoa já aceitou este chamado");
         }
@@ -84,6 +87,33 @@ public record Call(
         }
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
                 createdAt, acceptedAt, acceptedBy, now, canceledAt);
+    }
+
+    /**
+     * "Liberar mesa": no pedido de liberação não há "estou indo" e depois "atendido". O garçom
+     * olha a mesa e libera com um toque, e o chamado termina ali (aceito e concluído juntos).
+     */
+    public Call release(UserId by, Instant now) {
+        requirePendingUnlock();
+        return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
+                createdAt, now, Objects.requireNonNull(by), now, canceledAt);
+    }
+
+    /** "Recusar": o garçom não libera (o celular não está no salão). O chamado é cancelado. */
+    public Call decline(Instant now) {
+        requirePendingUnlock();
+        return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.CANCELED,
+                createdAt, acceptedAt, acceptedBy, doneAt, now);
+    }
+
+    private void requirePendingUnlock() {
+        if (type != CallType.UNLOCK) {
+            throw new CallStateException("Só o pedido de liberação se libera ou recusa");
+        }
+        if (status != CallStatus.PENDING) {
+            throw new CallStateException(isOpen() ? "Outra pessoa já aceitou este chamado"
+                    : "Este chamado já foi encerrado");
+        }
     }
 
     /** A mesa desistiu (antes ou depois de alguém aceitar). */

@@ -11,6 +11,7 @@ import br.com.cardapio.domain.call.model.CallId;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -76,6 +77,7 @@ class InMemoryCalls implements CallPort {
     }
 
     private CallView view(Call call) {
-        return new CallView(call, "04", "Salão", call.acceptedBy() == null ? null : names.get(call.acceptedBy()));
+        return new CallView(call, "04", "Salão", call.acceptedBy() == null ? null : names.get(call.acceptedBy()),
+                call.type() == CallType.UNLOCK ? null : PresenceMethod.WIFI);
     }
 }

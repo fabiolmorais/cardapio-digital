@@ -2,7 +2,6 @@ package br.com.cardapio.application.service.realtime;
 
 import br.com.cardapio.application.port.in.realtime.LiveEvent;
 import br.com.cardapio.application.port.out.realtime.EventStreamPort;
-import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.model.CallId;
@@ -11,9 +10,8 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.event.DomainEvent;
-import br.com.cardapio.domain.shared.model.TokenHash;
 import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
-import br.com.cardapio.domain.tablesession.model.TableSession;
+import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,18 +51,7 @@ class WatchEventsServicesTest {
 
     private final FakeStream stream = new FakeStream();
     private final TablesByToken tables = new TablesByToken();
-    private final Map<TokenHash, TableSession> saved = new HashMap<>();
-    private final TableSessionPort sessions = new TableSessionPort() {
-        @Override
-        public void save(TableSession session) {
-            saved.put(session.tokenHash(), session);
-        }
-
-        @Override
-        public Optional<TableSession> findByTokenHash(TokenHash tokenHash) {
-            return Optional.ofNullable(saved.get(tokenHash));
-        }
-    };
+    private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     private final EstablishmentId sakura = EstablishmentId.newId();
     private final List<LiveEvent> received = new ArrayList<>();
@@ -74,7 +60,7 @@ class WatchEventsServicesTest {
     @BeforeEach
     void tableWithASession() {
         mesa04 = tables.given(sakura, "04", QR_04);
-        sessions.save(TableSession.open(sakura, mesa04.id(), TokenHash.of("celular-04"), NOW));
+        sessions.given(sakura, mesa04.id(), "celular-04", NOW);
     }
 
     private static CallChanged call(EstablishmentId establishmentId, DiningTableId tableId) {

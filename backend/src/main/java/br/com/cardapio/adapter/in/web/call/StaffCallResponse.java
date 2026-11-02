@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.call.StaffCall;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
+import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -21,10 +22,12 @@ record StaffCallResponse(
         @Schema(requiredMode = REQUIRED) CallStatus status,
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         Instant acceptedAt,
-        String acceptedByName
+        String acceptedByName,
+        @Schema(description = "Como a mesa provou a presença (Wi-Fi, GPS ou garçom); vazio no pedido de liberação")
+        PresenceMethod presenceMethod
 ) {
     static StaffCallResponse from(StaffCall c) {
         return new StaffCallResponse(c.id().value(), c.tableLabel(), c.sectorName(), c.type(), c.paymentMethod(),
-                c.status(), c.createdAt(), c.acceptedAt(), c.acceptedByName());
+                c.status(), c.createdAt(), c.acceptedAt(), c.acceptedByName(), c.presenceMethod());
     }
 }

@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 /**
  * O Modo TV na TV vinculada: a fila e o tempo real pelo cookie do aparelho, sem login. Só a TV
@@ -56,6 +57,8 @@ class TvModeTest {
                 """.formatted(name, email, PASSWORD));
         String owner = JsonPath.read(send(post("/api/v1/auth/login"), null,
                 "{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD)), "$.accessToken");
+        // Trava de presença (Guia 16): o MockMvc chega como 127.0.0.1, então esta é "a rede do salão".
+        send(put("/api/v1/presence-rule"), owner, "{\"networks\":[\"127.0.0.1\"]}");
         String sector = JsonPath.read(send(post("/api/v1/sectors"), owner, "{\"name\":\"Salão\"}"), "$.id");
         String qr = JsonPath.read(send(post("/api/v1/tables"), owner,
                 "{\"label\":\"04\",\"sectorId\":\"%s\"}".formatted(sector)), "$.publicToken");
@@ -87,6 +90,7 @@ class TvModeTest {
     private String call(Restaurant restaurant) throws Exception {
         Cookie phone = mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/session")).andReturn()
                 .getResponse().getCookie("table_session");
+        mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/presence").cookie(phone));
         return JsonPath.read(mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/calls").cookie(phone)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"WAITER\"}")).andReturn()
                 .getResponse().getContentAsString(), "$.id");

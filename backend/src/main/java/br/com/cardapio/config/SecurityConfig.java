@@ -83,6 +83,8 @@ class SecurityConfig {
                         // Os botões da mesa (Guia 13): também sem login; quem identifica o celular é o cookie da sessão.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/calls").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/calls/*").permitAll()
+                        // A trava de presença (Guia 16): a página da mesa confere se o celular está no salão.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/presence").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()

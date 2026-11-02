@@ -34,11 +34,21 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "ended_at")
     private Instant endedAt;
 
+    @Column(name = "presence_method")
+    private String presenceMethod;
+
+    @Column(name = "presence_confirmed_at")
+    private Instant presenceConfirmedAt;
+
+    @Column(name = "unlocked_by")
+    private UUID unlockedBy;
+
     protected TableSessionJpaEntity() {
     }
 
     TableSessionJpaEntity(UUID id, UUID establishmentId, UUID tableId, String tokenHash, Instant createdAt,
-                          Instant lastSeenAt, Instant expiresAt, Instant endedAt) {
+                          Instant lastSeenAt, Instant expiresAt, Instant endedAt, String presenceMethod,
+                          Instant presenceConfirmedAt, UUID unlockedBy) {
         super(establishmentId);
         this.id = id;
         this.tableId = tableId;
@@ -47,6 +57,9 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
         this.lastSeenAt = lastSeenAt;
         this.expiresAt = expiresAt;
         this.endedAt = endedAt;
+        this.presenceMethod = presenceMethod;
+        this.presenceConfirmedAt = presenceConfirmedAt;
+        this.unlockedBy = unlockedBy;
     }
 
     UUID getId() { return id; }
@@ -56,4 +69,7 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
     Instant getLastSeenAt() { return lastSeenAt; }
     Instant getExpiresAt() { return expiresAt; }
     Instant getEndedAt() { return endedAt; }
+    String getPresenceMethod() { return presenceMethod; }
+    Instant getPresenceConfirmedAt() { return presenceConfirmedAt; }
+    UUID getUnlockedBy() { return unlockedBy; }
 }

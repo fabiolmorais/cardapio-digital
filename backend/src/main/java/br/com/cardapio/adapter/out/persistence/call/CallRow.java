@@ -35,4 +35,6 @@ public interface CallRow {
     String getSectorName();
 
     String getAcceptedByName();
+
+    String getPresenceMethod();
 }
