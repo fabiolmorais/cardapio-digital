@@ -5,6 +5,7 @@ import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -52,5 +53,18 @@ class PresenceRuleTest {
         assertThat(rule.wifiName()).isEqualTo("Sakura");
         List<String> eleven = IntStream.rangeClosed(1, 11).mapToObj(i -> "10.0.0." + i).toList();
         assertThatThrownBy(() -> rule(eleven, null)).isInstanceOf(InvalidValueException.class);
+    }
+
+    @Test
+    void theSessionLastsTwoHoursUnlessTheRestaurantChanges() {
+        PresenceRule rule = PresenceRule.empty(sakura, NOW);
+
+        assertThat(rule.sessionIdleLimit()).isEqualTo(Duration.ofHours(2));
+        assertThat(rule.withSessionIdleLimit(Duration.ofMinutes(30), NOW).sessionIdleLimit())
+                .isEqualTo(Duration.ofMinutes(30));
+        assertThatThrownBy(() -> rule.withSessionIdleLimit(Duration.ofMinutes(10), NOW))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> rule.withSessionIdleLimit(Duration.ofHours(7), NOW))
+                .isInstanceOf(InvalidValueException.class);
     }
 }

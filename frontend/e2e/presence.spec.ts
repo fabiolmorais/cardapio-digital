@@ -128,12 +128,13 @@ test("o dono cadastra a rede de onde está, o nome do Wi-Fi e o local", async ({
   await page.getByLabel("IP ou faixa (CIDR)").fill("2804:14c:6a::/48");
   await page.getByRole("button", { name: "Adicionar" }).click();
   await page.getByLabel("Conferir pela localização").check();
+  await page.getByLabel("A sessão da mesa expira após").selectOption({ label: "1 hora sem uso" });
   await expect(page.getByRole("group", { name: /Mapa com o restaurante e o raio de 100 metros/ })).toBeVisible();
   await page.getByRole("button", { name: "Salvar" }).click();
 
   await expect(page.getByRole("status")).toHaveText("Configuração salva.");
-  // O back devolve as faixas no formato completo; a IPv6 vira o começo da rede.
-  await expect(page.getByText("2804:14c:6a:0:0:0:0:0/48")).toBeVisible();
+  // O back devolve as faixas com o tamanho; a IPv6 vira o começo da rede, na forma curta.
+  await expect(page.getByText("2804:14c:6a::/48")).toBeVisible();
   const token = await apiLogin(request, email);
   const saved = await (
     await request.get(`${API_URL}/api/v1/presence-rule`, { headers: { Authorization: `Bearer ${token}` } })
@@ -141,4 +142,5 @@ test("o dono cadastra a rede de onde está, o nome do Wi-Fi e o local", async ({
   expect(saved.networks).toHaveLength(2);
   expect(saved.wifiName).toBe("Sakura Clientes");
   expect(saved.location.radiusMeters).toBe(100);
+  expect(saved.sessionIdleMinutes).toBe(60);
 });

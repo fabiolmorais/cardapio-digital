@@ -9,6 +9,7 @@ import br.com.cardapio.domain.presence.model.PresenceRule;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 
 public class UpdatePresenceRuleService implements UpdatePresenceRuleUseCase {
@@ -30,6 +31,9 @@ public class UpdatePresenceRuleService implements UpdatePresenceRuleUseCase {
         PresenceRule rule = rules.find(command.establishmentId())
                 .orElseGet(() -> PresenceRule.empty(command.establishmentId(), now))
                 .update(networks, command.wifiName(), command.location(), now);
+        if (command.sessionIdleMinutes() != null) {
+            rule = rule.withSessionIdleLimit(Duration.ofMinutes(command.sessionIdleMinutes()), now);
+        }
         rules.save(rule);
         return PresenceSettings.of(rule, command.clientIp());
     }

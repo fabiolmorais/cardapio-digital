@@ -43,12 +43,22 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "unlocked_by")
     private UUID unlockedBy;
 
+    @Column(name = "idle_minutes", nullable = false)
+    private int idleMinutes;
+
+    @Column(name = "blocked_at")
+    private Instant blockedAt;
+
+    @Column(name = "blocked_by")
+    private UUID blockedBy;
+
     protected TableSessionJpaEntity() {
     }
 
     TableSessionJpaEntity(UUID id, UUID establishmentId, UUID tableId, String tokenHash, Instant createdAt,
                           Instant lastSeenAt, Instant expiresAt, Instant endedAt, String presenceMethod,
-                          Instant presenceConfirmedAt, UUID unlockedBy) {
+                          Instant presenceConfirmedAt, UUID unlockedBy, int idleMinutes, Instant blockedAt,
+                          UUID blockedBy) {
         super(establishmentId);
         this.id = id;
         this.tableId = tableId;
@@ -60,6 +70,9 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
         this.presenceMethod = presenceMethod;
         this.presenceConfirmedAt = presenceConfirmedAt;
         this.unlockedBy = unlockedBy;
+        this.idleMinutes = idleMinutes;
+        this.blockedAt = blockedAt;
+        this.blockedBy = blockedBy;
     }
 
     UUID getId() { return id; }
@@ -72,4 +85,7 @@ class TableSessionJpaEntity extends EstablishmentScopedEntity {
     String getPresenceMethod() { return presenceMethod; }
     Instant getPresenceConfirmedAt() { return presenceConfirmedAt; }
     UUID getUnlockedBy() { return unlockedBy; }
+    int getIdleMinutes() { return idleMinutes; }
+    Instant getBlockedAt() { return blockedAt; }
+    UUID getBlockedBy() { return blockedBy; }
 }

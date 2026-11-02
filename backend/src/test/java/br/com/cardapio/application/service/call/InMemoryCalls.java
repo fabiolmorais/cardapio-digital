@@ -12,7 +12,9 @@ import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
+import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -79,5 +81,17 @@ class InMemoryCalls implements CallPort {
     private CallView view(Call call) {
         return new CallView(call, "04", "Salão", call.acceptedBy() == null ? null : names.get(call.acceptedBy()),
                 call.type() == CallType.UNLOCK ? null : PresenceMethod.WIFI);
+    }
+
+    @Override
+    public long countOpenedBySessionAfter(EstablishmentId establishmentId, TableSessionId sessionId, Instant instant) {
+        return saved.values().stream().filter(c -> c.establishmentId().equals(establishmentId)
+                && c.sessionId().equals(sessionId) && c.createdAt().isAfter(instant)).count();
+    }
+
+    @Override
+    public List<Call> findOpenBySession(EstablishmentId establishmentId, TableSessionId sessionId) {
+        return saved.values().stream().filter(c -> c.establishmentId().equals(establishmentId)
+                && c.sessionId().equals(sessionId) && c.isOpen()).toList();
     }
 }

@@ -57,7 +57,8 @@ class PresenceRuleController {
     PresenceRuleResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PresenceRuleRequest body,
                                 HttpServletRequest request) {
         var command = new UpdatePresenceRuleCommand(AuthenticatedUser.from(jwt).establishmentId(), body.networks(),
-                body.wifiName(), body.location() == null ? null : body.location().toGeoFence(), clientIp.of(request));
+                body.wifiName(), body.location() == null ? null : body.location().toGeoFence(), clientIp.of(request),
+                body.sessionIdleMinutes());
         return PresenceRuleResponse.from(updateRule.update(command));
     }
 }

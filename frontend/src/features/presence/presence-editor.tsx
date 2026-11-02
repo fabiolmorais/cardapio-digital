@@ -17,6 +17,8 @@ const MAX_NETWORKS = 10;
 const RADIUS = { min: 25, max: 500, step: 25, default: 100 };
 /** Sem local marcado, o mapa abre no centro de São Paulo, com o aviso para arrastar o pino. */
 const DEFAULT_POINT = { latitude: -23.5505, longitude: -46.6333 };
+/** As opções de validade da sessão da mesa, em minutos (o back aceita de 30 a 360). */
+const IDLE_OPTIONS = [30, 60, 90, 120, 180, 240, 360];
 
 /** O Leaflet só existe no navegador e só nesta tela: carregado à parte, depois do resto. */
 const LocationMap = dynamic(() => import("./location-map"), {
@@ -58,6 +60,7 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
   const [typed, setTyped] = useState("");
   const [wifiName, setWifiName] = useState(rule.wifiName ?? "");
   const [location, setLocation] = useState<PresenceLocation | null>(rule.location ?? null);
+  const [idleMinutes, setIdleMinutes] = useState(rule.sessionIdleMinutes);
   const [notice, setNotice] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -101,7 +104,13 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
   }
 
   const save = useMutation({
-    mutationFn: () => updatePresenceRule({ networks, wifiName: wifiName.trim() || undefined, location: location ?? undefined }),
+    mutationFn: () =>
+      updatePresenceRule({
+        networks,
+        wifiName: wifiName.trim() || undefined,
+        location: location ?? undefined,
+        sessionIdleMinutes: idleMinutes,
+      }),
     onSuccess: (saved) => {
       queryClient.setQueryData(["presence-rule"], saved);
       setNetworks(saved.networks);
@@ -295,6 +304,33 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
               </div>
             </>
           )}
+        </section>
+
+        <section aria-labelledby={`${id}session`} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="flex flex-col gap-1">
+            <h2 id={`${id}session`} className="text-lg font-semibold">
+              {t.session.title}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t.session.text}</p>
+          </div>
+          <Label htmlFor={`${id}idle`} className="text-muted-foreground">
+            {t.session.label}
+          </Label>
+          <select
+            id={`${id}idle`}
+            value={idleMinutes}
+            onChange={(event) => {
+              changed();
+              setIdleMinutes(Number(event.target.value));
+            }}
+            className="h-11 w-full max-w-xs rounded-xl border border-input bg-transparent px-3 text-base focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            {IDLE_OPTIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {t.session.option(minutes)}
+              </option>
+            ))}
+          </select>
         </section>
 
         {hint && (

@@ -3,23 +3,28 @@ package br.com.cardapio.application.service.call;
 import br.com.cardapio.application.port.in.call.RequestCallCommand;
 import br.com.cardapio.application.port.in.call.RequestedCall;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
+import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallNotFoundException;
 import br.com.cardapio.domain.call.exception.CallStateException;
+import br.com.cardapio.domain.call.exception.TooManyCallsException;
+import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
+import br.com.cardapio.domain.shared.event.DomainEvent;
+import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
 import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
-import br.com.cardapio.domain.call.event.CallChanged;
-import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -159,5 +164,40 @@ class TableCallServicesTest {
     void aPhoneAlreadyInTheRoomDoesNotAskForUnlock() {
         assertThatThrownBy(() -> request("celular-04", CallType.UNLOCK, null))
                 .isInstanceOf(CallStateException.class).hasMessage("Sua mesa já está liberada.");
+    }
+
+    @Test
+    void openingAndCancelingWithoutStopHitsTheLimit() {
+        for (int i = 0; i < Call.MAX_NEW_PER_MINUTE; i++) {
+            var call = request("celular-04", CallType.WAITER, null).call();
+            cancel().cancel(QR_04, "celular-04", call.id());
+        }
+
+        assertThatThrownBy(() -> request("celular-04", CallType.WAITER, null))
+                .isInstanceOf(TooManyCallsException.class);
+        // Um minuto depois, pode de novo.
+        clock = Clock.offset(clock, Duration.ofMinutes(1));
+        assertThat(request("celular-04", CallType.WAITER, null).created()).isTrue();
+    }
+
+    @Test
+    void tappingAnOpenCallAgainDoesNotCount() {
+        for (int i = 0; i < 10; i++) {
+            request("celular-04", CallType.WAITER, null);
+        }
+
+        assertThat(calls.saved).hasSize(1);
+    }
+
+    @Test
+    void aBlockedPhoneCallsNothingNotEvenTheUnlock() {
+        sessions.save(sessions.byToken("celular-04").block(UserId.newId(), NOW));
+        sessions.given(sakura, mesa04.id(), "bloqueado-sem-presenca", NOW);
+        sessions.save(sessions.byToken("bloqueado-sem-presenca").block(UserId.newId(), NOW));
+
+        assertThatThrownBy(() -> request("celular-04", CallType.WAITER, null))
+                .isInstanceOf(SessionBlockedException.class);
+        assertThatThrownBy(() -> request("bloqueado-sem-presenca", CallType.UNLOCK, null))
+                .isInstanceOf(SessionBlockedException.class);
     }
 }

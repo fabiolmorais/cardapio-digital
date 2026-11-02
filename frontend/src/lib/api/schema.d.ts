@@ -459,6 +459,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{id}/block-caller": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bloqueia o celular que abriu este chamado (um trote): ele não chama mais nesta visita */
+        post: operations["blockCaller"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{id}/accept": {
         parameters: {
             query?: never;
@@ -1012,6 +1029,12 @@ export interface components {
             wifiName?: string;
             /** @description O local e o raio; vazio para não usar a localização */
             location?: components["schemas"]["PresenceLocation"];
+            /**
+             * Format: int32
+             * @description Quanto tempo sem uso a sessão da mesa aguenta (30 a 360); vazio mantém como está
+             * @example 120
+             */
+            sessionIdleMinutes?: number;
         };
         PresenceRule: {
             /** @description As faixas, sempre com o tamanho ("189.45.212.18/32") */
@@ -1020,6 +1043,11 @@ export interface components {
             location?: components["schemas"]["PresenceLocation"];
             /** @description A rede de onde você está agora, para o botão "Usar o IP desta rede" */
             currentNetwork?: string;
+            /**
+             * Format: int32
+             * @description Quanto tempo sem uso a sessão da mesa aguenta, em minutos
+             */
+            sessionIdleMinutes: number;
         };
         BrandRequest: {
             /** @example Sakura Sushi */
@@ -1224,6 +1252,8 @@ export interface components {
             locationEnabled: boolean;
             /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
             wifiName?: string;
+            /** @description A equipe bloqueou os chamados deste celular */
+            blocked: boolean;
         };
         CallRequest: {
             /** @enum {string} */
@@ -3115,6 +3145,35 @@ export interface operations {
             };
             /** @description Não é um pedido de liberação, ou já foi respondido */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    blockCaller: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bloqueado; os chamados abertos dele foram cancelados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

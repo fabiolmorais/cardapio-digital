@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.call;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
+import br.com.cardapio.application.port.in.call.BlockCallerUseCase;
 import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
 import br.com.cardapio.application.port.in.call.FinishCallUseCase;
 import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -38,13 +40,15 @@ class StaffCallController {
     private final AcceptCallUseCase acceptCall;
     private final FinishCallUseCase finishCall;
     private final DeclineCallUseCase declineCall;
+    private final BlockCallerUseCase blockCaller;
 
     StaffCallController(ListCallQueueUseCase listQueue, AcceptCallUseCase acceptCall, FinishCallUseCase finishCall,
-                        DeclineCallUseCase declineCall) {
+                        DeclineCallUseCase declineCall, BlockCallerUseCase blockCaller) {
         this.listQueue = listQueue;
         this.acceptCall = acceptCall;
         this.finishCall = finishCall;
         this.declineCall = declineCall;
+        this.blockCaller = blockCaller;
     }
 
     @GetMapping
@@ -99,5 +103,18 @@ class StaffCallController {
     StaffCallResponse decline(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return StaffCallResponse.from(declineCall.decline(AuthenticatedUser.from(jwt).establishmentId(),
                 new CallId(id)));
+    }
+
+    @PostMapping("/{id}/block-caller")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "blockCaller",
+            summary = "Bloqueia o celular que abriu este chamado (um trote): ele não chama mais nesta visita")
+    @ApiResponse(responseCode = "204", description = "Bloqueado; os chamados abertos dele foram cancelados")
+    @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    ResponseEntity<Void> blockCaller(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        var user = AuthenticatedUser.from(jwt);
+        blockCaller.block(user.establishmentId(), new CallId(id), user.userId());
+        return ResponseEntity.noContent().build();
     }
 }

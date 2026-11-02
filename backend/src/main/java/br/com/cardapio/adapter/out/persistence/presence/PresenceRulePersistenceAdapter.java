@@ -9,6 +9,7 @@ import br.com.cardapio.domain.presence.model.PresenceRule;
 import br.com.cardapio.domain.presence.model.PresenceRuleId;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -30,7 +31,7 @@ class PresenceRulePersistenceAdapter implements PresenceRulePort {
                 new PresenceRuleId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
                 Arrays.stream(e.getNetworks()).map(IpRange::parse).toList(), e.getWifiName(),
                 e.getLatitude() == null ? null : new GeoFence(e.getLatitude(), e.getLongitude(), e.getRadiusMeters()),
-                e.getUpdatedAt()));
+                Duration.ofMinutes(e.getSessionIdleMinutes()), e.getUpdatedAt()));
     }
 
     @Override
@@ -40,6 +41,7 @@ class PresenceRulePersistenceAdapter implements PresenceRulePort {
         rules.save(new PresenceRuleJpaEntity(r.id().value(), r.establishmentId().value(),
                 r.networks().stream().map(IpRange::toString).toArray(String[]::new), r.wifiName(),
                 location == null ? null : location.latitude(), location == null ? null : location.longitude(),
-                location == null ? null : location.radiusMeters(), r.updatedAt()));
+                location == null ? null : location.radiusMeters(), (int) r.sessionIdleLimit().toMinutes(),
+                r.updatedAt()));
     }
 }

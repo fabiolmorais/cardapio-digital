@@ -6,6 +6,7 @@ import br.com.cardapio.application.port.in.presence.PresenceStatus;
 import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleCommand;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.presence.model.GeoFence;
 import br.com.cardapio.domain.presence.model.GeoPosition;
@@ -63,7 +64,7 @@ class PresenceServicesTest {
 
     private void configure(List<String> networks, GeoFence location) {
         new UpdatePresenceRuleService(rules, clock)
-                .update(new UpdatePresenceRuleCommand(sakura, networks, "Sakura Clientes", location, SALAO));
+                .update(new UpdatePresenceRuleCommand(sakura, networks, "Sakura Clientes", location, SALAO, null));
     }
 
     private PresenceStatus check(String ip, GeoPosition position) {
@@ -117,9 +118,9 @@ class PresenceServicesTest {
 
         PresenceSettings settings = new GetPresenceRuleService(rules, clock).get(sakura, "2804:14c:6a:9::abcd");
 
-        assertThat(settings.networks()).containsExactly("189.45.212.18/32", "2804:14c:6a:0:0:0:0:0/48");
+        assertThat(settings.networks()).containsExactly("189.45.212.18/32", "2804:14c:6a::/48");
         assertThat(settings.location().radiusMeters()).isEqualTo(150);
-        assertThat(settings.currentNetwork()).isEqualTo("2804:14c:6a:9:0:0:0:0/64");
+        assertThat(settings.currentNetwork()).isEqualTo("2804:14c:6a:9::/64");
     }
 
     @Test
@@ -127,5 +128,29 @@ class PresenceServicesTest {
         assertThatThrownBy(() -> configure(List.of("189.45.212.18", "restaurante.com"), null))
                 .isInstanceOf(InvalidValueException.class).hasMessageContaining("restaurante.com");
         assertThat(saved).isEmpty();
+    }
+
+    @Test
+    void theIdleLimitIsKeptWhenTheScreenDoesNotSendIt() {
+        new UpdatePresenceRuleService(rules, clock)
+                .update(new UpdatePresenceRuleCommand(sakura, List.of(), null, null, SALAO, 30));
+        configure(List.of(SALAO), null); // sem a validade: fica a de antes
+
+        assertThat(new GetPresenceRuleService(rules, clock).get(sakura, SALAO).sessionIdleMinutes()).isEqualTo(30);
+        assertThatThrownBy(() -> new UpdatePresenceRuleService(rules, clock)
+                .update(new UpdatePresenceRuleCommand(sakura, List.of(), null, null, SALAO, 10)))
+                .isInstanceOf(InvalidValueException.class);
+    }
+
+    @Test
+    void aBlockedPhoneIsNeverPresent() {
+        configure(List.of(SALAO), null);
+        sessions.save(sessions.byToken("celular").block(UserId.newId(), NOW));
+
+        PresenceStatus status = check(SALAO, null);
+
+        assertThat(status.present()).isFalse();
+        assertThat(status.blocked()).isTrue();
+        assertThat(sessions.byToken("celular").isPresent()).isFalse();
     }
 }

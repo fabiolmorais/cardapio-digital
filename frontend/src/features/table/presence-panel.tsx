@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, LoaderCircle, Lock, MapPin, UserCheck, Wifi } from "lucide-react";
+import { Ban, ChevronRight, LoaderCircle, Lock, MapPin, UserCheck, Wifi } from "lucide-react";
 import type { ReactNode } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cancelCall, requestCall, type useTableCalls } from "./table-calls";
@@ -25,6 +25,18 @@ export function PresencePanel({ token, state }: { token: string; state: TableSta
         <LoaderCircle aria-hidden className="size-4 animate-spin" />
         {t.checking}
       </p>
+    );
+  }
+
+  if (presence.blocked) {
+    return (
+      <section role="alert" className="flex flex-col gap-3 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-5">
+        <span className="flex size-12 items-center justify-center rounded-full bg-red-500/15 text-red-400">
+          <Ban aria-hidden className="size-6" />
+        </span>
+        <h2 className="text-xl font-bold tracking-tight">{t.blockedTitle}</h2>
+        <p className="text-sm text-(--mesa-muted)">{t.blockedText}</p>
+      </section>
     );
   }
 

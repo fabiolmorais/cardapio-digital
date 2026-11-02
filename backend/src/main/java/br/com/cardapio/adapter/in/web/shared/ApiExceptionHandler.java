@@ -1,7 +1,7 @@
 package br.com.cardapio.adapter.in.web.shared;
 
-import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import br.com.cardapio.domain.account.exception.*;
+import br.com.cardapio.domain.call.exception.TooManyCallsException;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
 import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
 import br.com.cardapio.domain.device.exception.TvModeNotAllowedException;
@@ -10,6 +10,8 @@ import br.com.cardapio.domain.shared.exception.ConflictException;
 import br.com.cardapio.domain.shared.exception.DomainException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.exception.NotFoundException;
+import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
+import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +65,17 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({TeamPermissionException.class, PinNotAllowedOnDeviceException.class,
-            TvModeNotAllowedException.class, PresenceRequiredException.class})
+            TvModeNotAllowedException.class, PresenceRequiredException.class, SessionBlockedException.class})
     ProblemDetail handleForbidden(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    /** 429: chamados demais do mesmo celular. O limite é por minuto, então a espera é de um minuto. */
+    @ExceptionHandler(TooManyCallsException.class)
+    ResponseEntity<ProblemDetail> handleTooManyCalls(TooManyCallsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, "60")
+                .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));
     }
 
     /** 429 com o tempo de espera, também no cabeçalho Retry-After (em segundos), que é o padrão do HTTP. */

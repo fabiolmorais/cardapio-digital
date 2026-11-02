@@ -1,30 +1,20 @@
 package br.com.cardapio.config;
 
-import br.com.cardapio.application.service.realtime.WatchTableEventsService;
-import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
-import br.com.cardapio.application.port.out.realtime.EventStreamPort;
-import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
-import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
-import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
-import br.com.cardapio.application.port.out.call.CallPort;
-import br.com.cardapio.application.service.call.FinishCallService;
-import br.com.cardapio.application.service.call.AcceptCallService;
-import br.com.cardapio.application.service.call.ListCallQueueService;
-import br.com.cardapio.application.service.call.CancelCallService;
-import br.com.cardapio.application.service.call.ListTableCallsService;
-import br.com.cardapio.application.service.call.RequestCallService;
-import br.com.cardapio.application.port.in.call.FinishCallUseCase;
-import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
-import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
-import br.com.cardapio.application.port.in.call.CancelCallUseCase;
-import br.com.cardapio.application.port.in.call.ListTableCallsUseCase;
-import br.com.cardapio.application.port.in.call.RequestCallUseCase;
-import br.com.cardapio.application.service.tablesession.StartTableSessionService;
-import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
-import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
-import br.com.cardapio.application.service.menu.GetPublicMenuService;
-import br.com.cardapio.application.port.in.menu.GetPublicMenuUseCase;
 import br.com.cardapio.application.port.in.account.*;
+import br.com.cardapio.application.port.in.brand.GetBrandUseCase;
+import br.com.cardapio.application.port.in.brand.RemoveLogoUseCase;
+import br.com.cardapio.application.port.in.brand.SetLogoUseCase;
+import br.com.cardapio.application.port.in.brand.StartLogoUploadUseCase;
+import br.com.cardapio.application.port.in.brand.UpdateBrandUseCase;
+import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
+import br.com.cardapio.application.port.in.call.BlockCallerUseCase;
+import br.com.cardapio.application.port.in.call.CancelCallUseCase;
+import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
+import br.com.cardapio.application.port.in.call.FinishCallUseCase;
+import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
+import br.com.cardapio.application.port.in.call.ListTableCallsUseCase;
+import br.com.cardapio.application.port.in.call.ListTvCallQueueUseCase;
+import br.com.cardapio.application.port.in.call.RequestCallUseCase;
 import br.com.cardapio.application.port.in.device.ClaimPairingUseCase;
 import br.com.cardapio.application.port.in.device.CurrentDeviceUseCase;
 import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
@@ -41,7 +31,21 @@ import br.com.cardapio.application.port.in.floor.RotateTableTokenUseCase;
 import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
 import br.com.cardapio.application.port.in.floor.ViewPublicTableUseCase;
 import br.com.cardapio.application.port.in.menu.*;
+import br.com.cardapio.application.port.in.menu.AddProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.GetPublicMenuUseCase;
+import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
+import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
+import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
+import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
+import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
+import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
+import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
+import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
+import br.com.cardapio.application.port.in.tablesession.EndExpiredSessionsUseCase;
+import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.DeactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.ListPinMembersUseCase;
@@ -49,21 +53,44 @@ import br.com.cardapio.application.port.in.team.ListTeamUseCase;
 import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
-import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
-import br.com.cardapio.application.port.out.menu.ProductPort;
-import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
-import br.com.cardapio.application.port.out.security.PasswordHasher;
+import br.com.cardapio.application.port.out.brand.BrandPort;
+import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
 import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
+import br.com.cardapio.application.port.out.media.ImageProcessorPort;
+import br.com.cardapio.application.port.out.media.MediaStoragePort;
+import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
+import br.com.cardapio.application.port.out.menu.ProductMediaPort;
+import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
+import br.com.cardapio.application.port.out.presence.PresenceRulePort;
+import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
+import br.com.cardapio.application.port.out.realtime.EventStreamPort;
+import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
+import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
+import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
 import br.com.cardapio.application.service.account.*;
+import br.com.cardapio.application.service.brand.GetBrandService;
+import br.com.cardapio.application.service.brand.RemoveLogoService;
+import br.com.cardapio.application.service.brand.SetLogoService;
+import br.com.cardapio.application.service.brand.StartLogoUploadService;
+import br.com.cardapio.application.service.brand.UpdateBrandService;
+import br.com.cardapio.application.service.call.AcceptCallService;
+import br.com.cardapio.application.service.call.BlockCallerService;
+import br.com.cardapio.application.service.call.CancelCallService;
+import br.com.cardapio.application.service.call.DeclineCallService;
+import br.com.cardapio.application.service.call.FinishCallService;
+import br.com.cardapio.application.service.call.ListCallQueueService;
+import br.com.cardapio.application.service.call.ListTableCallsService;
+import br.com.cardapio.application.service.call.ListTvCallQueueService;
+import br.com.cardapio.application.service.call.RequestCallService;
 import br.com.cardapio.application.service.device.ClaimPairingService;
 import br.com.cardapio.application.service.device.CurrentDeviceService;
 import br.com.cardapio.application.service.device.DeviceAuthenticator;
@@ -82,7 +109,21 @@ import br.com.cardapio.application.service.floor.TableDisplayService;
 import br.com.cardapio.application.service.floor.UpdateTableService;
 import br.com.cardapio.application.service.floor.ViewPublicTableService;
 import br.com.cardapio.application.service.menu.*;
+import br.com.cardapio.application.service.menu.AddProductMediaService;
+import br.com.cardapio.application.service.menu.GetPublicMenuService;
+import br.com.cardapio.application.service.menu.ListProductMediaService;
+import br.com.cardapio.application.service.menu.RemoveProductMediaService;
+import br.com.cardapio.application.service.menu.ReorderProductMediaService;
+import br.com.cardapio.application.service.menu.StartMediaUploadService;
 import br.com.cardapio.application.service.plan.ListPlansService;
+import br.com.cardapio.application.service.presence.CheckPresenceService;
+import br.com.cardapio.application.service.presence.GetPresenceRuleService;
+import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
+import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
+import br.com.cardapio.application.service.realtime.WatchTableEventsService;
+import br.com.cardapio.application.service.realtime.WatchTvEventsService;
+import br.com.cardapio.application.service.tablesession.EndExpiredSessionsService;
+import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
 import br.com.cardapio.application.service.team.DeactivateTeamMemberService;
 import br.com.cardapio.application.service.team.ListPinMembersService;
@@ -90,46 +131,9 @@ import br.com.cardapio.application.service.team.ListTeamService;
 import br.com.cardapio.application.service.team.ReactivateTeamMemberService;
 import br.com.cardapio.application.service.team.UpdateTeamMemberService;
 import org.springframework.beans.factory.annotation.Value;
-import br.com.cardapio.application.port.in.menu.AddProductMediaUseCase;
-import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
-import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
-import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
-import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
-import br.com.cardapio.application.port.out.media.ImageProcessorPort;
-import br.com.cardapio.application.port.out.media.MediaStoragePort;
-import br.com.cardapio.application.port.out.menu.ProductMediaPort;
-import br.com.cardapio.application.service.menu.AddProductMediaService;
-import br.com.cardapio.application.service.menu.ListProductMediaService;
-import br.com.cardapio.application.service.menu.RemoveProductMediaService;
-import br.com.cardapio.application.service.menu.ReorderProductMediaService;
-import br.com.cardapio.application.service.menu.StartMediaUploadService;
-import br.com.cardapio.application.port.out.brand.BrandPort;
-import br.com.cardapio.application.port.in.brand.GetBrandUseCase;
-import br.com.cardapio.application.port.in.brand.RemoveLogoUseCase;
-import br.com.cardapio.application.port.in.brand.SetLogoUseCase;
-import br.com.cardapio.application.port.in.brand.StartLogoUploadUseCase;
-import br.com.cardapio.application.port.in.brand.UpdateBrandUseCase;
-import br.com.cardapio.application.service.brand.GetBrandService;
-import br.com.cardapio.application.service.brand.RemoveLogoService;
-import br.com.cardapio.application.service.brand.SetLogoService;
-import br.com.cardapio.application.service.brand.StartLogoUploadService;
-import br.com.cardapio.application.service.brand.UpdateBrandService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import br.com.cardapio.application.port.in.call.ListTvCallQueueUseCase;
-import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
-import br.com.cardapio.application.service.call.ListTvCallQueueService;
-import br.com.cardapio.application.service.realtime.WatchTvEventsService;
-import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
-import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
-import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
-import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
-import br.com.cardapio.application.port.out.presence.PresenceRulePort;
-import br.com.cardapio.application.service.call.DeclineCallService;
-import br.com.cardapio.application.service.presence.CheckPresenceService;
-import br.com.cardapio.application.service.presence.GetPresenceRuleService;
-import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
 import java.time.Clock;
 import java.time.Duration;
 
@@ -454,8 +458,10 @@ class UseCaseConfig {
     @Bean
     StartTableSessionUseCase startTableSessionUseCase(DiningTablePort diningTablePort,
                                                       TableSessionPort tableSessionPort,
+                                                      PresenceRulePort presenceRulePort,
                                                       RandomTokenGenerator randomTokenGenerator, Clock clock) {
-        return new StartTableSessionService(diningTablePort, tableSessionPort, randomTokenGenerator, clock);
+        return new StartTableSessionService(diningTablePort, tableSessionPort, presenceRulePort,
+                randomTokenGenerator, clock);
     }
 
     // Chamados (Guia 13), que publicam os avisos de tempo real (Guia 14)
@@ -542,5 +548,18 @@ class UseCaseConfig {
     @Bean
     DeclineCallUseCase declineCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
         return new DeclineCallService(callPort, eventPublisherPort, clock);
+    }
+
+    // Fim da trava de presença (Guia 17)
+
+    @Bean
+    BlockCallerUseCase blockCallerUseCase(CallPort callPort, TableSessionPort tableSessionPort,
+                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new BlockCallerService(callPort, tableSessionPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    EndExpiredSessionsUseCase endExpiredSessionsUseCase(TableSessionPort tableSessionPort, Clock clock) {
+        return new EndExpiredSessionsService(tableSessionPort, clock);
     }
 }

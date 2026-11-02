@@ -122,7 +122,7 @@ class PresenceTest {
 
         assertThat(saved).hasStatusOk();
         assertThat(saved).bodyJson().extractingPath("$.networks").asArray()
-                .containsExactly("189.45.212.18/32", "2804:14c:6a:0:0:0:0:0/48");
+                .containsExactly("189.45.212.18/32", "2804:14c:6a::/48");
         assertThat(json(saved, "$.location.radiusMeters")).isEqualTo("100");
         assertThat(json(send("GET", sakura.owner(), RULE, null), "$.currentNetwork")).isEqualTo("127.0.0.1/32");
     }
