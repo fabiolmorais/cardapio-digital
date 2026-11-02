@@ -28,9 +28,3 @@ export const getMenu = cache(async (token: string): Promise<PublicMenu | null> =
   if (response?.status === 404) notFound();
   return data ?? null;
 });
-
-/** Desconto da promoção, em % inteiro (1990 → 1590 dá 20). */
-export function discountPercent(item: MenuItem): number | null {
-  if (item.promoPriceCents == null) return null;
-  return Math.round((1 - item.promoPriceCents / item.priceCents) * 100);
-}

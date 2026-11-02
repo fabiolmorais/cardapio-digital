@@ -2,11 +2,11 @@
 
 import { Search } from "lucide-react";
 import { useDeferredValue, useId, useState } from "react";
-import { messages } from "@/messages/pt-BR";
+import { tablePage } from "@/messages/table.pt-BR";
 import { MenuItemCard } from "./menu-item";
 import type { MenuItem, PublicMenu } from "./table-data";
 
-const t = messages.tablePage.menu;
+const t = tablePage.menu;
 
 /** "Açaí com Granola" → "acai com granola": a busca não liga para acento nem maiúscula. */
 function plain(text: string) {
@@ -58,7 +58,7 @@ export function MenuBrowser({ menu }: { menu: PublicMenu }) {
         </section>
       ) : (
         <>
-          <nav aria-label={messages.tablePage.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+          <nav aria-label={tablePage.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
             {menu.categories.map((c) => (
               <a
                 key={c.id}
