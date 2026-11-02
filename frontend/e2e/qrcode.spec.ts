@@ -35,7 +35,7 @@ test("o QR abre a página da mesa certa, e o QR antigo para de abrir depois da t
   const { establishmentName, headers, table } = await restaurantWithTable(request);
 
   await page.goto(`/m/${table.publicToken}`);
-  await expect(page.getByRole("heading", { name: "Mesa 04" })).toBeVisible();
+  await expect(page.getByText("Mesa 04 · Salão principal")).toBeVisible();
   await expect(page.getByText(establishmentName, { exact: false })).toBeVisible();
 
   const rotated = await (await request.post(`${API_URL}/api/v1/tables/${table.id}/token-rotation`, { headers })).json();
@@ -43,7 +43,7 @@ test("o QR abre a página da mesa certa, e o QR antigo para de abrir depois da t
   await page.goto(`/m/${table.publicToken}`);
   await expect(page.getByRole("heading", { name: "Este QR Code não vale mais" })).toBeVisible();
   await page.goto(`/m/${rotated.publicToken}`);
-  await expect(page.getByRole("heading", { name: "Mesa 04" })).toBeVisible();
+  await expect(page.getByText("Mesa 04 · Salão principal")).toBeVisible();
 });
 
 test("token inventado mostra o aviso de QR inválido", async ({ page }) => {
