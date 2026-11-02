@@ -50,6 +50,12 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
         return media.nextPosition(establishmentId.value(), productId.value());
     }
 
+    @Override
+    public List<ProductMedia> findCovers(EstablishmentId establishmentId) {
+        establishmentFilter.enable(establishmentId);
+        return media.findCovers(establishmentId.value()).stream().map(this::toDomain).toList();
+    }
+
     private ProductMedia toDomain(ProductMediaJpaEntity e) {
         return new ProductMedia(new ProductMediaId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
                 new ProductId(e.getProductId()), MediaType.valueOf(e.getType()), e.getStoragePath(), e.getWidth(),

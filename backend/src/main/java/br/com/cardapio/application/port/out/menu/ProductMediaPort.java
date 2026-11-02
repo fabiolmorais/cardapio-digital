@@ -20,4 +20,7 @@ public interface ProductMediaPort {
 
     /** Posição para uma mídia nova: depois de todas as que o produto já teve. */
     int nextPosition(EstablishmentId establishmentId, ProductId productId);
+
+    /** A capa (a primeira mídia ativa) de cada produto do restaurante, numa consulta só (sem N+1). */
+    List<ProductMedia> findCovers(EstablishmentId establishmentId);
 }

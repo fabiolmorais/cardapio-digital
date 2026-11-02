@@ -1,5 +1,22 @@
 package br.com.cardapio.application.port.in.floor;
 
-/** O que a página pública da mesa mostra por enquanto: de que restaurante e qual mesa. */
-public record PublicTable(String establishmentName, String tableLabel) {
+import br.com.cardapio.domain.brand.model.BrandColor;
+import br.com.cardapio.domain.brand.model.LogoVariant;
+import br.com.cardapio.domain.brand.model.Theme;
+
+import java.util.Map;
+
+/**
+ * O que a página da mesa mostra no topo: o restaurante, com a marca dele, e a mesa.
+ *
+ * @param logoUrls    vazio quando o restaurante usa as iniciais
+ * @param instagram   null quando não informado
+ * @param reviewLink  null quando não informado
+ */
+public record PublicTable(String establishmentName, String tableLabel, String sectorName, BrandColor color,
+                          Theme theme, Map<LogoVariant, String> logoUrls, String instagram, String reviewLink) {
+
+    public PublicTable {
+        logoUrls = Map.copyOf(logoUrls);
+    }
 }

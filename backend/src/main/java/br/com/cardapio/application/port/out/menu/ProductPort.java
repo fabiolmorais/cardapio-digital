@@ -31,4 +31,13 @@ public interface ProductPort {
 
     /** Posição para um produto que chega na categoria: depois de todos os que existem nela. */
     int nextPosition(EstablishmentId establishmentId, MenuCategoryId categoryId);
+
+    /** Quantos produtos ativos o restaurante tem (o teto é Product.MAX_PER_ESTABLISHMENT). */
+    long countActive(EstablishmentId establishmentId);
+
+    /**
+     * Todos os produtos ativos, na ordem do cardápio, numa consulta só: é o que a página da mesa
+     * mostra. São no máximo Product.MAX_PER_ESTABLISHMENT (ADR 0006).
+     */
+    List<Product> findAllActive(EstablishmentId establishmentId);
 }

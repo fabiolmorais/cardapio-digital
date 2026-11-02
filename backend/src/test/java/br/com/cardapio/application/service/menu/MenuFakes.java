@@ -117,4 +117,15 @@ final class MenuFakes implements MenuCategoryPort, ProductPort {
                 .filter(p -> p.establishmentId().equals(establishmentId) && p.categoryId().equals(categoryId))
                 .mapToInt(p -> p.position() + 1).max().orElse(0);
     }
+
+    @Override
+    public long countActive(EstablishmentId establishmentId) {
+        return products.values().stream().filter(p -> p.establishmentId().equals(establishmentId) && p.active()).count();
+    }
+
+    @Override
+    public List<Product> findAllActive(EstablishmentId establishmentId) {
+        // A busca em memória não pagina: devolve tudo, já na ordem do cardápio.
+        return search(establishmentId, null, null, new PageQuery(0, PageQuery.MAX_SIZE)).content();
+    }
 }
