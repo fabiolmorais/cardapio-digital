@@ -5,9 +5,11 @@ import br.com.cardapio.application.port.in.call.RequestCallUseCase;
 import br.com.cardapio.application.port.in.call.RequestedCall;
 import br.com.cardapio.application.port.in.call.TableCall;
 import br.com.cardapio.application.port.out.call.CallPort;
+import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.tablesession.TableVisits;
+import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallType;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +23,15 @@ public class RequestCallService implements RequestCallUseCase {
     private final DiningTablePort tables;
     private final TableSessionPort sessions;
     private final CallPort calls;
+    private final EventPublisherPort events;
     private final Clock clock;
 
-    public RequestCallService(DiningTablePort tables, TableSessionPort sessions, CallPort calls, Clock clock) {
+    public RequestCallService(DiningTablePort tables, TableSessionPort sessions, CallPort calls,
+                              EventPublisherPort events, Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.calls = calls;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -47,6 +52,7 @@ public class RequestCallService implements RequestCallUseCase {
         Call call = Call.open(establishmentId, visit.table().id(), visit.session().id(), command.type(),
                 command.paymentMethod(), now);
         if (calls.insertIfNoneOpen(call)) {
+            events.publish(CallChanged.of(call, now));
             return new RequestedCall(view(call), true);
         }
         // Dois toques ao mesmo tempo: o outro gravou primeiro. Devolve o dele.
@@ -60,9 +66,12 @@ public class RequestCallService implements RequestCallUseCase {
             return open;
         }
         Call changed = open.withPaymentMethod(command.paymentMethod());
+        if (calls.update(changed, open.status())) {
+            events.publish(CallChanged.of(changed, clock.instant()));
+            return changed;
+        }
         // Se o garçom mexeu no chamado no meio do caminho, fica o que está gravado.
-        return calls.update(changed, open.status()) ? changed : calls.find(open.establishmentId(), open.id())
-                .orElse(open);
+        return calls.find(open.establishmentId(), open.id()).orElse(open);
     }
 
     private TableCall view(Call call) {
