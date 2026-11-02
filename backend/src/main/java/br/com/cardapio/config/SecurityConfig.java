@@ -80,6 +80,9 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         // A sessão da mesa (Guia 12): o cliente não tem login. Só esta rota, e não todo POST público.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/session").permitAll()
+                        // Os botões da mesa (Guia 13): também sem login; quem identifica o celular é o cookie da sessão.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/calls").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/calls/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()

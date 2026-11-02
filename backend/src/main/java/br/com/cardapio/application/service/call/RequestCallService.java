@@ -1,0 +1,71 @@
+package br.com.cardapio.application.service.call;
+
+import br.com.cardapio.application.port.in.call.RequestCallCommand;
+import br.com.cardapio.application.port.in.call.RequestCallUseCase;
+import br.com.cardapio.application.port.in.call.RequestedCall;
+import br.com.cardapio.application.port.in.call.TableCall;
+import br.com.cardapio.application.port.out.call.CallPort;
+import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.service.tablesession.TableVisits;
+import br.com.cardapio.domain.call.model.Call;
+import br.com.cardapio.domain.call.model.CallType;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+
+public class RequestCallService implements RequestCallUseCase {
+
+    private final DiningTablePort tables;
+    private final TableSessionPort sessions;
+    private final CallPort calls;
+    private final Clock clock;
+
+    public RequestCallService(DiningTablePort tables, TableSessionPort sessions, CallPort calls, Clock clock) {
+        this.tables = tables;
+        this.sessions = sessions;
+        this.calls = calls;
+        this.clock = clock;
+    }
+
+    @Override
+    @Transactional
+    public RequestedCall request(RequestCallCommand command) {
+        Instant now = clock.instant();
+        TableVisits.Visit visit = TableVisits.require(tables, sessions, command.tableToken(), command.sessionToken(),
+                now);
+        var establishmentId = visit.table().establishmentId();
+
+        // Já há um aberto deste tipo? É ele que volta (no máximo, com a forma de pagamento nova).
+        Optional<Call> open = calls.findOpen(establishmentId, visit.table().id(), command.type());
+        if (open.isPresent()) {
+            return new RequestedCall(view(changePaymentIfNeeded(open.get(), command)), false);
+        }
+
+        Call call = Call.open(establishmentId, visit.table().id(), visit.session().id(), command.type(),
+                command.paymentMethod(), now);
+        if (calls.insertIfNoneOpen(call)) {
+            return new RequestedCall(view(call), true);
+        }
+        // Dois toques ao mesmo tempo: o outro gravou primeiro. Devolve o dele.
+        Call theirs = calls.findOpen(establishmentId, visit.table().id(), command.type()).orElseThrow();
+        return new RequestedCall(view(theirs), false);
+    }
+
+    private Call changePaymentIfNeeded(Call open, RequestCallCommand command) {
+        if (open.type() != CallType.BILL || command.paymentMethod() == null
+                || command.paymentMethod() == open.paymentMethod()) {
+            return open;
+        }
+        Call changed = open.withPaymentMethod(command.paymentMethod());
+        // Se o garçom mexeu no chamado no meio do caminho, fica o que está gravado.
+        return calls.update(changed, open.status()) ? changed : calls.find(open.establishmentId(), open.id())
+                .orElse(open);
+    }
+
+    private TableCall view(Call call) {
+        return TableCall.from(calls.findView(call.establishmentId(), call.id()).orElseThrow());
+    }
+}

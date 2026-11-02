@@ -16,9 +16,9 @@ import java.time.Instant;
  * - Path=/api/v1/public: só vai para a API da página da mesa.
  */
 @Component
-class TableSessionCookie {
+public class TableSessionCookie {
 
-    static final String NAME = "table_session";
+    public static final String NAME = "table_session";
     static final String PATH = "/api/v1/public";
 
     private final boolean secure;

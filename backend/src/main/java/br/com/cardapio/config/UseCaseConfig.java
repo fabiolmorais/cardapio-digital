@@ -1,5 +1,18 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.out.call.CallPort;
+import br.com.cardapio.application.service.call.FinishCallService;
+import br.com.cardapio.application.service.call.AcceptCallService;
+import br.com.cardapio.application.service.call.ListCallQueueService;
+import br.com.cardapio.application.service.call.CancelCallService;
+import br.com.cardapio.application.service.call.ListTableCallsService;
+import br.com.cardapio.application.service.call.RequestCallService;
+import br.com.cardapio.application.port.in.call.FinishCallUseCase;
+import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
+import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
+import br.com.cardapio.application.port.in.call.CancelCallUseCase;
+import br.com.cardapio.application.port.in.call.ListTableCallsUseCase;
+import br.com.cardapio.application.port.in.call.RequestCallUseCase;
 import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
@@ -424,5 +437,40 @@ class UseCaseConfig {
                                                       TableSessionPort tableSessionPort,
                                                       RandomTokenGenerator randomTokenGenerator, Clock clock) {
         return new StartTableSessionService(diningTablePort, tableSessionPort, randomTokenGenerator, clock);
+    }
+
+    // Chamados (Guia 13)
+
+    @Bean
+    RequestCallUseCase requestCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                          CallPort callPort, Clock clock) {
+        return new RequestCallService(diningTablePort, tableSessionPort, callPort, clock);
+    }
+
+    @Bean
+    ListTableCallsUseCase listTableCallsUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                                CallPort callPort, Clock clock) {
+        return new ListTableCallsService(diningTablePort, tableSessionPort, callPort, clock);
+    }
+
+    @Bean
+    CancelCallUseCase cancelCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                        CallPort callPort, Clock clock) {
+        return new CancelCallService(diningTablePort, tableSessionPort, callPort, clock);
+    }
+
+    @Bean
+    ListCallQueueUseCase listCallQueueUseCase(CallPort callPort) {
+        return new ListCallQueueService(callPort);
+    }
+
+    @Bean
+    AcceptCallUseCase acceptCallUseCase(CallPort callPort, Clock clock) {
+        return new AcceptCallService(callPort, clock);
+    }
+
+    @Bean
+    FinishCallUseCase finishCallUseCase(CallPort callPort, Clock clock) {
+        return new FinishCallService(callPort, clock);
     }
 }

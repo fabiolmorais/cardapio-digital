@@ -214,6 +214,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os chamados abertos da mesa (no máximo um de cada tipo) */
+        get: operations["listTableCalls"];
+        put?: never;
+        /** Chama o garçom ou pede a conta */
+        post: operations["requestCall"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -366,6 +384,40 @@ export interface paths {
         put?: never;
         /** O aparelho pergunta se já foi vinculado; se sim, recebe o token no cookie device_token */
         post: operations["claimDevicePairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atendido: o chamado sai da fila */
+        post: operations["finishCall"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Estou indo": o chamado fica com quem aceitou */
+        post: operations["acceptCall"];
         delete?: never;
         options?: never;
         head?: never;
@@ -634,6 +686,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chamados abertos, do mais antigo para o mais novo */
+        get: operations["listCallQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/device": {
         parameters: {
             query?: never;
@@ -663,6 +732,23 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/calls/{callId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancela um chamado aberto da mesa ("já resolvi") */
+        delete: operations["cancelCall"];
         options?: never;
         head?: never;
         patch?: never;
@@ -945,6 +1031,31 @@ export interface components {
              */
             expiresAt: string;
         };
+        CallRequest: {
+            /** @enum {string} */
+            type: "WAITER" | "BILL";
+            /**
+             * @description Só no pedido de conta (BILL)
+             * @enum {string}
+             */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
+        };
+        TableCall: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "WAITER" | "BILL";
+            /** @enum {string} */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
+            /** @enum {string} */
+            status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            acceptedAt?: string;
+            /** @description Só o primeiro nome de quem aceitou */
+            waiterFirstName?: string;
+        };
         AddMediaRequest: {
             /**
              * Format: uuid
@@ -1104,6 +1215,23 @@ export interface components {
              * @example Sakura Sushi
              */
             establishmentName?: string;
+        };
+        StaffCall: {
+            /** Format: uuid */
+            id: string;
+            tableLabel: string;
+            sectorName: string;
+            /** @enum {string} */
+            type: "WAITER" | "BILL";
+            /** @enum {string} */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
+            /** @enum {string} */
+            status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            acceptedAt?: string;
+            acceptedByName?: string;
         };
         EstablishmentAccess: {
             /** Format: uuid */
@@ -1376,6 +1504,17 @@ export interface components {
         };
         PageResponseDevice: {
             content: components["schemas"]["Device"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseStaffCall: {
+            content: components["schemas"]["StaffCall"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -2041,6 +2180,103 @@ export interface operations {
             };
         };
     };
+    listTableCalls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista curta, sem paginação: são no máximo dois */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableCall"][];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    requestCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallRequest"];
+            };
+        };
+        responses: {
+            /** @description Já havia um chamado desse tipo aberto: volta o mesmo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableCall"];
+                };
+            };
+            /** @description Chamado aberto */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableCall"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listProducts: {
         parameters: {
             query?: {
@@ -2497,6 +2733,86 @@ export interface operations {
             };
             /** @description Pedido desconhecido, vencido, segredo errado ou token já entregue */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    finishCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Concluído */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffCall"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Ainda não foi aceito, ou já foi encerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    acceptCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aceito */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffCall"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Outra pessoa aceitou antes, ou o chamado já foi encerrado */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3191,6 +3507,31 @@ export interface operations {
             };
         };
     };
+    listCallQueue: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página da fila */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseStaffCall"];
+                };
+            };
+        };
+    };
     getCurrentDevice: {
         parameters: {
             query?: never;
@@ -3258,6 +3599,56 @@ export interface operations {
             };
             /** @description O aparelho é uma TV */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    cancelCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                callId: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um chamado desta mesa */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O chamado já foi encerrado */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
