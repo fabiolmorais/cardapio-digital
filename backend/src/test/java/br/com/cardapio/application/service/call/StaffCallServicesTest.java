@@ -11,11 +11,15 @@ import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
+import br.com.cardapio.domain.call.event.CallChanged;
+import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,9 +30,19 @@ class StaffCallServicesTest {
     private static final Instant NOW = Instant.parse("2026-11-02T20:00:00Z");
 
     private final InMemoryCalls calls = new InMemoryCalls();
+    /** O que os serviços publicaram para o tempo real. */
+    private final List<DomainEvent> published = new ArrayList<>();
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     private final EstablishmentId sakura = EstablishmentId.newId();
     private final UserId carlos = UserId.newId();
+
+    private AcceptCallService accept() {
+        return new AcceptCallService(calls, published::add, clock);
+    }
+
+    private FinishCallService finish() {
+        return new FinishCallService(calls, published::add, clock);
+    }
 
     private Call given(Instant at) {
         Call call = Call.open(sakura, DiningTableId.newId(), TableSessionId.newId(), CallType.WAITER, null, at);
@@ -53,33 +67,39 @@ class StaffCallServicesTest {
         Call call = given(NOW);
         calls.names.put(carlos, "Carlos Souza");
 
-        StaffCall accepted = new AcceptCallService(calls, clock).accept(sakura, call.id(), carlos);
+        StaffCall accepted = accept().accept(sakura, call.id(), carlos);
 
         assertThat(accepted.status()).isEqualTo(CallStatus.IN_PROGRESS);
         assertThat(accepted.acceptedByName()).isEqualTo("Carlos Souza");
         assertThat(accepted.acceptedAt()).isEqualTo(NOW);
+        assertThat(published).singleElement().isInstanceOfSatisfying(CallChanged.class,
+                event -> assertThat(event.status()).isEqualTo(CallStatus.IN_PROGRESS));
     }
 
     @Test
     void theSecondToAcceptGetsAConflict() {
         Call call = given(NOW);
-        new AcceptCallService(calls, clock).accept(sakura, call.id(), carlos);
+        accept().accept(sakura, call.id(), carlos);
 
-        assertThatThrownBy(() -> new AcceptCallService(calls, clock).accept(sakura, call.id(), UserId.newId()))
+        assertThatThrownBy(() -> accept().accept(sakura, call.id(), UserId.newId()))
                 .isInstanceOf(CallStateException.class).hasMessage("Outra pessoa já aceitou este chamado");
         assertThat(calls.saved.get(call.id()).acceptedBy()).isEqualTo(carlos);
+        assertThat(published).hasSize(1); // só o aceite que valeu
     }
 
     @Test
     void finishingNeedsTheAcceptFirst() {
         Call call = given(NOW);
 
-        assertThatThrownBy(() -> new FinishCallService(calls, clock).finish(sakura, call.id()))
+        assertThatThrownBy(() -> finish().finish(sakura, call.id()))
                 .isInstanceOf(CallStateException.class);
+        assertThat(published).isEmpty();
 
-        new AcceptCallService(calls, clock).accept(sakura, call.id(), carlos);
-        assertThat(new FinishCallService(calls, clock).finish(sakura, call.id()).status())
+        accept().accept(sakura, call.id(), carlos);
+        assertThat(finish().finish(sakura, call.id()).status())
                 .isEqualTo(CallStatus.DONE);
+        assertThat(published.getLast()).isInstanceOfSatisfying(CallChanged.class,
+                event -> assertThat(event.status()).isEqualTo(CallStatus.DONE));
     }
 
     @Test
@@ -87,9 +107,9 @@ class StaffCallServicesTest {
         Call call = given(NOW);
         EstablishmentId other = EstablishmentId.newId();
 
-        assertThatThrownBy(() -> new AcceptCallService(calls, clock).accept(other, call.id(), carlos))
+        assertThatThrownBy(() -> accept().accept(other, call.id(), carlos))
                 .isInstanceOf(CallNotFoundException.class);
-        assertThatThrownBy(() -> new FinishCallService(calls, clock).finish(other, call.id()))
+        assertThatThrownBy(() -> finish().finish(other, call.id()))
                 .isInstanceOf(CallNotFoundException.class);
         assertThat(new ListCallQueueService(calls).list(other, new PageQuery(0, 50)).content()).isEmpty();
     }

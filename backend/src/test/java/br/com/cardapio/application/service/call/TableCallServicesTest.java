@@ -14,11 +14,15 @@ import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredExcepti
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
+import br.com.cardapio.domain.call.event.CallChanged;
+import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +51,8 @@ class TableCallServicesTest {
     };
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryCalls calls = new InMemoryCalls();
+    /** O que os serviços publicaram para o tempo real. */
+    private final List<DomainEvent> published = new ArrayList<>();
     private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     private final EstablishmentId sakura = EstablishmentId.newId();
     private DiningTable mesa04;
@@ -59,8 +65,12 @@ class TableCallServicesTest {
         sessions.save(TableSession.open(sakura, mesa05.id(), TokenHash.of("celular-05"), NOW));
     }
 
+    private CancelCallService cancel() {
+        return new CancelCallService(tables, sessions, calls, published::add, clock);
+    }
+
     private RequestedCall request(String session, CallType type, PaymentMethod method) {
-        return new RequestCallService(tables, sessions, calls, clock)
+        return new RequestCallService(tables, sessions, calls, published::add, clock)
                 .request(new RequestCallCommand(QR_04, session, type, method));
     }
 
@@ -71,6 +81,12 @@ class TableCallServicesTest {
         assertThat(result.created()).isTrue();
         assertThat(result.call().status()).isEqualTo(CallStatus.PENDING);
         assertThat(calls.saved).hasSize(1);
+        // E a equipe fica sabendo: um aviso, com a mesa e o status.
+        assertThat(published).singleElement().isInstanceOfSatisfying(CallChanged.class, event -> {
+            assertThat(event.tableId()).isEqualTo(mesa04.id());
+            assertThat(event.status()).isEqualTo(CallStatus.PENDING);
+            assertThat(event.occurredAt()).isEqualTo(NOW);
+        });
     }
 
     @Test
@@ -81,6 +97,7 @@ class TableCallServicesTest {
         assertThat(again.created()).isFalse();
         assertThat(again.call().id()).isEqualTo(first.call().id());
         assertThat(calls.saved).hasSize(1);
+        assertThat(published).hasSize(1); // o segundo toque não muda nada, então não avisa ninguém
         // A conta é outro tipo: pode estar aberta ao mesmo tempo.
         assertThat(request("celular-04", CallType.BILL, PaymentMethod.PIX).created()).isTrue();
     }
@@ -95,6 +112,7 @@ class TableCallServicesTest {
         assertThat(changed.call().paymentMethod()).isEqualTo(PaymentMethod.CASH);
         assertThat(calls.saved.values()).singleElement()
                 .satisfies(c -> assertThat(c.paymentMethod()).isEqualTo(PaymentMethod.CASH));
+        assertThat(published).hasSize(2); // pedir e trocar a forma de pagamento
     }
 
     @Test
@@ -107,6 +125,7 @@ class TableCallServicesTest {
         assertThatThrownBy(() -> request("celular-04", CallType.WAITER, null))
                 .isInstanceOf(TableSessionRequiredException.class);
         assertThat(calls.saved).isEmpty();
+        assertThat(published).isEmpty();
     }
 
     @Test
@@ -116,9 +135,11 @@ class TableCallServicesTest {
         assertThat(new ListTableCallsService(tables, sessions, calls, clock).list(QR_04, "celular-04"))
                 .extracting(c -> c.id()).containsExactly(call.id());
 
-        new CancelCallService(tables, sessions, calls, clock).cancel(QR_04, "celular-04", call.id());
+        cancel().cancel(QR_04, "celular-04", call.id());
 
         assertThat(calls.saved.get(call.id()).status()).isEqualTo(CallStatus.CANCELED);
+        assertThat(published.getLast()).isInstanceOfSatisfying(CallChanged.class,
+                event -> assertThat(event.status()).isEqualTo(CallStatus.CANCELED));
         assertThat(new ListTableCallsService(tables, sessions, calls, clock).list(QR_04, "celular-04")).isEmpty();
     }
 
@@ -126,7 +147,7 @@ class TableCallServicesTest {
     void anotherTableCannotCancelIt() {
         var call = request("celular-04", CallType.WAITER, null).call();
 
-        assertThatThrownBy(() -> new CancelCallService(tables, sessions, calls, clock)
+        assertThatThrownBy(() -> cancel()
                 .cancel(QR_05, "celular-05", call.id()))
                 .isInstanceOf(CallNotFoundException.class);
         assertThat(calls.saved.get(call.id()).status()).isEqualTo(CallStatus.PENDING);

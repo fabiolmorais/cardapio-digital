@@ -106,7 +106,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
+			<!-- compile, e não runtime: o tempo real (Guia 14) usa a API de notificações do driver (PGConnection). -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

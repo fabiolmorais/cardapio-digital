@@ -1,5 +1,11 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.service.realtime.WatchTableEventsService;
+import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
+import br.com.cardapio.application.port.out.realtime.EventStreamPort;
+import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
+import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
+import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.service.call.FinishCallService;
 import br.com.cardapio.application.service.call.AcceptCallService;
@@ -439,12 +445,12 @@ class UseCaseConfig {
         return new StartTableSessionService(diningTablePort, tableSessionPort, randomTokenGenerator, clock);
     }
 
-    // Chamados (Guia 13)
+    // Chamados (Guia 13), que publicam os avisos de tempo real (Guia 14)
 
     @Bean
     RequestCallUseCase requestCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
-                                          CallPort callPort, Clock clock) {
-        return new RequestCallService(diningTablePort, tableSessionPort, callPort, clock);
+                                          CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new RequestCallService(diningTablePort, tableSessionPort, callPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -455,8 +461,8 @@ class UseCaseConfig {
 
     @Bean
     CancelCallUseCase cancelCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
-                                        CallPort callPort, Clock clock) {
-        return new CancelCallService(diningTablePort, tableSessionPort, callPort, clock);
+                                        CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new CancelCallService(diningTablePort, tableSessionPort, callPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -465,12 +471,26 @@ class UseCaseConfig {
     }
 
     @Bean
-    AcceptCallUseCase acceptCallUseCase(CallPort callPort, Clock clock) {
-        return new AcceptCallService(callPort, clock);
+    AcceptCallUseCase acceptCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new AcceptCallService(callPort, eventPublisherPort, clock);
     }
 
     @Bean
-    FinishCallUseCase finishCallUseCase(CallPort callPort, Clock clock) {
-        return new FinishCallService(callPort, clock);
+    FinishCallUseCase finishCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new FinishCallService(callPort, eventPublisherPort, clock);
+    }
+
+    // Tempo real (Guia 14)
+
+    @Bean
+    WatchStaffEventsUseCase watchStaffEventsUseCase(EventStreamPort eventStreamPort) {
+        return new WatchStaffEventsService(eventStreamPort);
+    }
+
+    @Bean
+    WatchTableEventsUseCase watchTableEventsUseCase(DiningTablePort diningTablePort,
+                                                    TableSessionPort tableSessionPort,
+                                                    EventStreamPort eventStreamPort, Clock clock) {
+        return new WatchTableEventsService(diningTablePort, tableSessionPort, eventStreamPort, clock);
     }
 }
