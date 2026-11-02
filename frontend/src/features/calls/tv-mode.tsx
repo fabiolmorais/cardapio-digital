@@ -180,7 +180,7 @@ function TvBoard({
                     <span className="text-3xl font-semibold">{calls.types[call.type]}</span>
                     <span className="truncate text-2xl text-muted-foreground">
                       {pending
-                        ? [call.paymentMethod && calls.payment[call.paymentMethod], call.sectorName].filter(Boolean).join(" · ")
+                        ? [call.type === "UNLOCK" ? calls.notPresent : call.paymentMethod && calls.payment[call.paymentMethod], call.sectorName].filter(Boolean).join(" · ")
                         : t.taken(call.acceptedByName)}
                     </span>
                   </span>
@@ -216,7 +216,7 @@ function TvBoard({
               </span>
               <span className="text-7xl font-bold tracking-tight">{calls.types[alert.type]}</span>
               <span className="text-3xl opacity-90">
-                {[alert.paymentMethod && calls.payment[alert.paymentMethod], alert.sectorName].filter(Boolean).join(" · ")}
+                {[alert.type === "UNLOCK" ? calls.notPresent : alert.paymentMethod && calls.payment[alert.paymentMethod], alert.sectorName].filter(Boolean).join(" · ")}
               </span>
             </span>
           </section>

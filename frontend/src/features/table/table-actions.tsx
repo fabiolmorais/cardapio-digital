@@ -3,6 +3,7 @@
 import { Bell, Receipt, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { tablePage } from "@/messages/table.pt-BR";
+import { PresencePanel } from "./presence-panel";
 import { requestCall, cancelCall, useTableCalls } from "./table-calls";
 
 const t = tablePage;
@@ -10,11 +11,16 @@ const t = tablePage;
 /**
  * Os dois botões grandes da mesa (desenho Main) e o aviso do chamado aberto: "Chamado enviado"
  * enquanto ninguém aceitou, "Garçom a caminho" depois. Tocar de novo não duplica: o back devolve
- * o mesmo chamado. "Pedir a conta" abre a tela da forma de pagamento.
+ * o mesmo chamado. "Pedir a conta" abre a tela da forma de pagamento. Sem a presença no salão
+ * confirmada, mostra a trava (PresencePanel) no lugar dos botões.
  */
 export function TableActions({ token }: { token: string }) {
-  const { waiter, bill, busy, error, run } = useTableCalls(token);
+  const state = useTableCalls(token);
+  const { waiter, bill, busy, error, run } = state;
   const coming = waiter?.status === "IN_PROGRESS";
+
+  // A trava de presença: enquanto o celular não provou que está no salão, os botões dão lugar a ela.
+  if (!state.present) return <PresencePanel token={token} state={state} />;
 
   return (
     <>

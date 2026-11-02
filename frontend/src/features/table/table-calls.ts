@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { baseUrl } from "@/lib/api/base";
 import type { components } from "@/lib/api/schema";
 import { tablePage } from "@/messages/table.pt-BR";
@@ -8,6 +8,8 @@ import { tablePage } from "@/messages/table.pt-BR";
 export type TableCall = components["schemas"]["TableCall"];
 export type CallRequest = components["schemas"]["CallRequest"];
 export type PaymentMethod = NonNullable<CallRequest["paymentMethod"]>;
+export type Presence = components["schemas"]["Presence"];
+type Position = { latitude: number; longitude: number; accuracyMeters: number };
 
 /** Sem o tempo real (conexão caída), a página volta a perguntar de tempos em tempos. */
 const FALLBACK_REFRESH_MS = 15_000;
@@ -37,7 +39,7 @@ async function send(token: string, path: string, init: RequestInit = {}): Promis
   return response;
 }
 
-const visits = new Map<string, Promise<void>>();
+const visits = new Map<string, Promise<Presence | null>>();
 
 /**
  * Abre (ou renova) a sessão do celular e confere a presença, uma vez por página. Quem chega
@@ -46,7 +48,7 @@ const visits = new Map<string, Promise<void>>();
  *
  * @param fresh abre uma nova mesmo que já haja uma (a sessão venceu: 401)
  */
-export function startVisit(token: string, fresh = false): Promise<void> {
+export function startVisit(token: string, fresh = false): Promise<Presence | null> {
   let visit = visits.get(token);
   if (!visit || fresh) {
     visit = fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
@@ -54,21 +56,42 @@ export function startVisit(token: string, fresh = false): Promise<void> {
       credentials: "include",
     })
       .then(() => checkPresence(token))
-      .catch(() => undefined);
+      .catch(() => null);
     visits.set(token, visit);
   }
   return visit;
 }
 
 /**
- * "Estou no salão?" pela rede (sem pedir nada ao cliente). As telas da trava (localização e
- * liberação pelo garçom) chegam no próximo PR; por enquanto, só a conferência pelo Wi-Fi.
+ * "Estou no salão?": sem a posição, pela rede (sem pedir nada ao cliente); com ela, também pela
+ * localização. Devolve como está a presença, ou null se não deu para perguntar.
  */
-export async function checkPresence(token: string): Promise<void> {
-  await fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/presence`, {
-    method: "POST",
-    credentials: "include",
-  }).catch(() => undefined);
+export async function checkPresence(token: string, position?: Position): Promise<Presence | null> {
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/presence`, {
+      method: "POST",
+      credentials: "include",
+      ...(position && { headers: { "Content-Type": "application/json" }, body: JSON.stringify(position) }),
+    });
+    return response.ok ? ((await response.json()) as Presence) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A posição do celular, pedida ao navegador (ele pergunta ao cliente na primeira vez). */
+function currentPosition(): Promise<Position> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("unsupported"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude, accuracyMeters: coords.accuracy }),
+      reject,
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
+    );
+  });
 }
 
 /** A mensagem do back (Problem Details) ou uma genérica. */
@@ -100,12 +123,22 @@ export async function cancelCall(token: string, id: string): Promise<void> {
 }
 
 /**
- * Os chamados abertos da mesa, atualizados na hora pelo tempo real, e as ações. `run` faz uma ação, mostra o erro, se houver, e atualiza a lista depois.
+ * Os chamados abertos da mesa e a presença no salão, atualizados na hora pelo tempo real, e as
+ * ações. `run` faz uma ação, mostra o erro, se houver, e atualiza a lista depois.
  */
 export function useTableCalls(token: string) {
   const [calls, setCalls] = useState<TableCall[] | null>(null);
+  const [presence, setPresence] = useState<Presence | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const present = presence?.present === true;
+
+  /** Pergunta de novo só enquanto não está confirmada (a liberação pelo garçom chega pelo tempo real). */
+  const refreshPresence = useCallback(async () => {
+    if (present) return;
+    const next = await checkPresence(token);
+    if (next) setPresence(next);
+  }, [token, present]);
 
   const refresh = useCallback(async () => {
     try {
@@ -114,6 +147,22 @@ export function useTableCalls(token: string) {
       // Falha ao atualizar não apaga o que a tela já mostra: tenta de novo na próxima volta.
     }
   }, [token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void startVisit(token).then((first) => {
+      if (first && !cancelled) setPresence(first);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  // O canal chama a versão mais nova (a que sabe se já está presente), sem reabrir a conexão.
+  const onEvent = useRef(refreshPresence);
+  useEffect(() => {
+    onEvent.current = refreshPresence;
+  }, [refreshPresence]);
 
   useEffect(() => {
     let live = false;
@@ -134,6 +183,7 @@ export function useTableCalls(token: string) {
       const update = () => {
         live = true;
         void refresh();
+        void onEvent.current();
       };
       source.addEventListener("ready", update);
       source.addEventListener("call", update);
@@ -165,6 +215,31 @@ export function useTableCalls(token: string) {
     };
   }, [refresh, token]);
 
+  /** "Usar minha localização": pede a posição ao navegador e manda para a conferência. */
+  async function locate() {
+    setBusy("locate");
+    setError(null);
+    try {
+      const next = await checkPresence(token, await currentPosition());
+      if (next) setPresence(next);
+      if (!next?.present) setError(tablePage.presence.outside);
+    } catch (e) {
+      // 1 é "permissão negada" (GeolocationPositionError.PERMISSION_DENIED).
+      setError((e as { code?: number }).code === 1 ? tablePage.presence.denied : tablePage.presence.noLocation);
+    }
+    setBusy(null);
+  }
+
+  /** "Já me conectei ao Wi-Fi": confere a rede de novo. */
+  async function recheck() {
+    setBusy("wifi");
+    setError(null);
+    const next = await checkPresence(token);
+    if (next) setPresence(next);
+    if (!next?.present) setError(tablePage.presence.notOnWifi);
+    setBusy(null);
+  }
+
   async function run(key: string, action: () => Promise<unknown>) {
     setBusy(key);
     setError(null);
@@ -179,6 +254,11 @@ export function useTableCalls(token: string) {
 
   return {
     calls,
+    presence,
+    present,
+    unlock: calls?.find((c) => c.type === "UNLOCK") ?? null,
+    locate,
+    recheck,
     waiter: calls?.find((c) => c.type === "WAITER") ?? null,
     bill: calls?.find((c) => c.type === "BILL") ?? null,
     busy,
