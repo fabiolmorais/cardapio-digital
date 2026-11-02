@@ -34,11 +34,15 @@ async function photo(page: Page, name: string, color: string) {
   return { name, mimeType: "image/jpeg", buffer: Buffer.from(base64, "base64") };
 }
 
+/** Quanto esperar pelo envio de fotos (ver o comentário no teste). */
+const UPLOAD_TIMEOUT = 30_000;
+
 function gallery(page: Page) {
   return page.getByRole("region", { name: "Fotos" }).filter({ visible: true });
 }
 
 test("dono envia, ordena e remove fotos do produto", async ({ page, request }) => {
+  test.setTimeout(60_000);
   const { email, productId } = await productWithoutPhotos(request);
   await loginThroughForm(page, email);
   await page.goto(`/admin/cardapio/produtos/${productId}`);
@@ -47,7 +51,12 @@ test("dono envia, ordena e remove fotos do produto", async ({ page, request }) =
   // Duas fotos de uma vez: vão uma por vez, com progresso, e a primeira vira a capa.
   const fotos = [await photo(page, "vermelha.jpg", "#c0392b"), await photo(page, "azul.jpg", "#2c3e50")];
   await gallery(page).getByLabel("Enviar foto").setInputFiles(fotos);
-  await expect(gallery(page).getByRole("status").filter({ hasText: "2 fotos adicionadas." })).toBeVisible();
+  // Prazo maior só aqui: em desenvolvimento as fotos vão ao R2 de verdade, e o back ainda baixa
+  // cada uma, gera os três tamanhos e envia de volta (perto de 5 s por foto). No CI, com o S3Mock,
+  // leva menos de 1 s.
+  await expect(gallery(page).getByRole("status").filter({ hasText: "2 fotos adicionadas." })).toBeVisible({
+    timeout: UPLOAD_TIMEOUT,
+  });
   const thumbs = gallery(page).getByRole("img");
   await expect(thumbs).toHaveCount(2);
   await expect(thumbs.nth(0)).toHaveAccessibleName("Guioza, foto 1");
