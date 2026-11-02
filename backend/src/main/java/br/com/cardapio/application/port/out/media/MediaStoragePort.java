@@ -1,6 +1,7 @@
 package br.com.cardapio.application.port.out.media;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -23,6 +24,17 @@ public interface MediaStoragePort {
 
     /** Grava um arquivo nosso (os tamanhos gerados), que pode ficar em cache por muito tempo. */
     void store(String path, byte[] content, String contentType);
+
+    /**
+     * Grava vários arquivos de uma vez (os tamanhos de uma foto). Do jeito padrão, abaixo, vai
+     * um por vez; o adaptador do R2 troca por envios ao mesmo tempo, porque cada um leva quase
+     * um segundo esperando a rede, e em fila esse tempo se somava. Se um falhar, lança o erro.
+     *
+     * @param files caminho → conteúdo
+     */
+    default void storeAll(Map<String, byte[]> files, String contentType) {
+        files.forEach((path, content) -> store(path, content, contentType));
+    }
 
     void delete(String path);
 

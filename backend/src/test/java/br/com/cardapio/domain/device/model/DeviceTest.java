@@ -48,6 +48,13 @@ class DeviceTest {
     }
 
     @Test
+    void onlyTheTvShowsTheTvModeWithoutLogin() {
+        assertThat(Device.link(sakura, "TV da cozinha", DeviceType.TV, NOW).showsTvModeWithoutLogin()).isTrue();
+        assertThat(Device.link(sakura, "Celular", DeviceType.WAITER, NOW).showsTvModeWithoutLogin()).isFalse();
+        assertThat(Device.link(sakura, "Tablet", DeviceType.KITCHEN, NOW).showsTvModeWithoutLogin()).isFalse();
+    }
+
+    @Test
     void needsAName() {
         assertThatThrownBy(() -> Device.link(sakura, " ", DeviceType.KITCHEN, NOW))
                 .isInstanceOf(InvalidValueException.class);
