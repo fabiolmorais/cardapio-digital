@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.shared;
 
+import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import br.com.cardapio.domain.account.exception.*;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
 import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
@@ -54,7 +55,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({InvalidCredentialsException.class, AccessRevokedException.class, InvalidSessionException.class,
-            InvalidPinException.class, InvalidDeviceException.class})
+            InvalidPinException.class, InvalidDeviceException.class, TableSessionRequiredException.class})
     ProblemDetail handleUnauthorized(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }

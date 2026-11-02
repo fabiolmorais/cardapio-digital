@@ -1,0 +1,28 @@
+package br.com.cardapio.adapter.in.web.call;
+
+import br.com.cardapio.application.port.in.call.TableCall;
+import br.com.cardapio.domain.call.model.CallStatus;
+import br.com.cardapio.domain.call.model.CallType;
+import br.com.cardapio.domain.call.model.PaymentMethod;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
+@Schema(name = "TableCall")
+record TableCallResponse(
+        @Schema(requiredMode = REQUIRED) UUID id,
+        @Schema(requiredMode = REQUIRED) CallType type,
+        PaymentMethod paymentMethod,
+        @Schema(requiredMode = REQUIRED) CallStatus status,
+        @Schema(requiredMode = REQUIRED) Instant createdAt,
+        Instant acceptedAt,
+        @Schema(description = "Só o primeiro nome de quem aceitou") String waiterFirstName
+) {
+    static TableCallResponse from(TableCall c) {
+        return new TableCallResponse(c.id().value(), c.type(), c.paymentMethod(), c.status(), c.createdAt(),
+                c.acceptedAt(), c.waiterFirstName());
+    }
+}
