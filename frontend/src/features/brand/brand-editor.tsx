@@ -1,14 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
+import { useId, useState, type ChangeEvent, type FormEvent } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { canManageTeam } from "@/features/team/team-rules";
 import { refreshSession } from "@/lib/auth/session";
 import { useSession } from "@/lib/auth/use-session";
-import { initials } from "@/lib/initials";
+import { tableThemeVars } from "@/lib/table-theme";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { fetchBrand, removeLogo, updateBrand, uploadLogo, type Brand, type BrandRequest } from "./brand-api";
@@ -295,7 +296,7 @@ function LogoField({
 
   return (
     <section aria-labelledby={`${inputId}title`} className="flex flex-wrap items-center gap-4">
-      <LogoBadge logo={brand.logo?.large} name={name} color={color} className="size-18 text-2xl" />
+      <BrandLogo logo={brand.logo?.large} name={name} color={color} alt={t.logo.alt(name)} className="size-18 text-2xl" />
       <div className="flex min-w-0 flex-col gap-2">
         <h2 id={`${inputId}title`} className="text-sm font-medium text-muted-foreground">
           {t.logo.title}
@@ -345,45 +346,8 @@ function LogoField({
   );
 }
 
-/** decorative: dentro da prévia, que já tem o próprio rótulo, a logo não é anunciada de novo. */
-function LogoBadge({
-  logo,
-  name,
-  color,
-  className,
-  decorative = false,
-}: {
-  logo?: string;
-  name: string;
-  color: string;
-  className: string;
-  decorative?: boolean;
-}) {
-  if (logo) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- logo já no tamanho certo, vinda do R2
-      <img
-        src={logo}
-        alt={decorative ? "" : t.logo.alt(name)}
-        className={cn("shrink-0 rounded-full object-contain", className)}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden
-      className={cn("flex shrink-0 items-center justify-center rounded-full font-bold text-white", className)}
-      style={{ backgroundColor: color }}
-    >
-      {initials(name)}
-    </span>
-  );
-}
-
 /**
- * Um esboço da página da mesa (Etapa 5) com a marca escolhida. As cores vêm da paleta do back:
- * aqui só entram como variáveis CSS, porque o Tailwind não gera classes para cores que só se
- * conhecem na hora.
+ * Um esboço da página da mesa com a marca escolhida, com as mesmas cores dela (tableThemeVars).
  */
 function PhonePreview({
   name,
@@ -398,30 +362,21 @@ function PhonePreview({
   accent: string;
   logo?: string;
 }) {
-  const dark = theme === "DARK";
-  const colors = {
-    "--phone-bg": dark ? "#0F0D0C" : "#F7F4F0",
-    "--phone-fg": dark ? "#F8F5F1" : "#16130F",
-    "--phone-muted": dark ? "#BDB5AC" : "#5C554E",
-    "--phone-glass": dark ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.85)",
-    "--phone-stroke": dark ? "rgba(255,255,255,.12)" : "rgba(22,19,15,.09)",
-    "--brand": primary,
-    "--brand-text": accent,
-  } as CSSProperties;
+  const colors = tableThemeVars(theme, primary, accent);
 
   return (
     <div
       role="img"
       aria-label={`${t.preview.title}: ${name}`}
       style={colors}
-      className="h-[600px] w-[300px] overflow-hidden rounded-[40px] border-8 border-[#2A2521] bg-(--phone-bg) text-(--phone-fg) shadow-2xl"
+      className="h-[600px] w-[300px] overflow-hidden rounded-[40px] border-8 border-[#2A2521] bg-(--mesa-bg) text-(--mesa-fg) shadow-2xl"
     >
       <div className="flex flex-col gap-4 px-4 py-5">
         <div className="flex items-center gap-2.5">
-          <LogoBadge logo={logo} name={name} color={primary} className="size-9 text-xs" decorative />
+          <BrandLogo logo={logo} name={name} color={primary} alt="" className="size-9 text-xs" />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-semibold">{name || " "}</span>
-            <span className="text-[11px] text-(--phone-muted)">{t.preview.table}</span>
+            <span className="text-[11px] text-(--mesa-muted)">{t.preview.table}</span>
           </span>
         </div>
         <span className="text-[26px] leading-[29px] font-bold tracking-tight">
@@ -433,11 +388,11 @@ function PhonePreview({
           <span className="flex h-24 items-end rounded-[18px] bg-(--brand) p-3 text-[13px] font-semibold text-white">
             {t.preview.callWaiter}
           </span>
-          <span className="flex h-24 items-end rounded-[18px] border border-(--phone-stroke) bg-(--phone-glass) p-3 text-[13px] font-semibold">
+          <span className="flex h-24 items-end rounded-[18px] border border-(--mesa-stroke) bg-(--mesa-glass) p-3 text-[13px] font-semibold">
             {t.preview.askBill}
           </span>
         </div>
-        <span className="flex h-12 items-center justify-center rounded-[14px] border border-(--phone-stroke) bg-(--phone-glass) text-sm font-semibold">
+        <span className="flex h-12 items-center justify-center rounded-[14px] border border-(--mesa-stroke) bg-(--mesa-glass) text-sm font-semibold">
           {t.preview.menu}
         </span>
       </div>
