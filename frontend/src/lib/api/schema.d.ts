@@ -163,6 +163,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tabs/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fecha a comanda depois do pagamento: a mesa fica livre e os celulares saem */
+        post: operations["closeTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tables": {
         parameters: {
             query?: never;
@@ -788,6 +805,40 @@ export interface paths {
         patch: operations["renameMenuCategory"];
         trace?: never;
     };
+    "/api/v1/tabs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uma comanda com todos os pedidos (aberta ou fechada) */
+        get: operations["getTab"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As comandas abertas, com o total e os itens a caminho, da mais antiga à mais nova */
+        get: operations["listOpenTabs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tables/{id}/display": {
         parameters: {
             query?: never;
@@ -1353,6 +1404,69 @@ export interface components {
             /** @description false = desligado do restaurante */
             active: boolean;
         };
+        CloseTabRequest: {
+            /**
+             * @description Como a mesa pagou
+             * @enum {string}
+             */
+            paymentMethod: "PIX" | "CARD" | "CASH";
+        };
+        StaffTab: {
+            /** Format: uuid */
+            id: string;
+            tableLabel: string;
+            sectorName: string;
+            /** @enum {string} */
+            status: "OPEN" | "CLOSING" | "CLOSED";
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            closedAt?: string;
+            /**
+             * Format: int64
+             * @description Aberta: a soma de agora. Fechada: o que foi cobrado
+             */
+            totalCents: number;
+            /**
+             * @description Fechada: como a mesa pagou
+             * @enum {string}
+             */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
+            /**
+             * @description Aberta, com a conta pedida: a forma que a mesa escolheu
+             * @enum {string}
+             */
+            billRequestedWith?: "PIX" | "CARD" | "CASH";
+            orders: components["schemas"]["StaffTabOrder"][];
+        };
+        StaffTabOrder: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            /** @enum {string} */
+            status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
+            /** Format: date-time */
+            createdAt: string;
+            items: components["schemas"]["TableOrderItem"][];
+        };
+        TableOrderItem: {
+            /** Format: uuid */
+            id: string;
+            productName: string;
+            /**
+             * Format: int64
+             * @description O preço copiado na hora do pedido
+             */
+            unitPriceCents: number;
+            /** Format: int32 */
+            quantity: number;
+            note?: string;
+            /** @enum {string} */
+            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+            /** @description Por que foi cancelado */
+            cancelReason?: string;
+        };
         CreateTableRequest: {
             /** @example 04 */
             label: string;
@@ -1502,23 +1616,6 @@ export interface components {
             /** @description Foi este celular que mandou (só ele cancela os itens) */
             mine: boolean;
             items: components["schemas"]["TableOrderItem"][];
-        };
-        TableOrderItem: {
-            /** Format: uuid */
-            id: string;
-            productName: string;
-            /**
-             * Format: int64
-             * @description O preço copiado na hora do pedido
-             */
-            unitPriceCents: number;
-            /** Format: int32 */
-            quantity: number;
-            note?: string;
-            /** @enum {string} */
-            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
-            /** @description Por que foi cancelado */
-            cancelReason?: string;
         };
         CallRequest: {
             /** @enum {string} */
@@ -1799,6 +1896,37 @@ export interface components {
         };
         PageResponseTeamMember: {
             content: components["schemas"]["TeamMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        OpenTab: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tableId: string;
+            tableLabel: string;
+            sectorName: string;
+            /** Format: date-time */
+            openedAt: string;
+            /**
+             * Format: int64
+             * @description A soma dos itens não cancelados até agora
+             */
+            totalCents: number;
+            /**
+             * Format: int32
+             * @description Itens ainda a caminho (na fila, em preparo, prontos)
+             */
+            itemsOnTheWay: number;
+        };
+        PageResponseOpenTab: {
+            content: components["schemas"]["OpenTab"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -2617,6 +2745,50 @@ export interface operations {
             };
             /** @description Não está na equipe deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    closeTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseTabRequest"];
+            };
+        };
+        responses: {
+            /** @description Fechada, com o total cobrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffTab"];
+                };
+            };
+            /** @description Não é uma comanda deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já fechada, ou com itens a caminho (a mensagem diz quais) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4443,6 +4615,62 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A comanda */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffTab"];
+                };
+            };
+            /** @description Não é uma comanda deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listOpenTabs: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Comandas por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página das comandas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseOpenTab"];
                 };
             };
         };

@@ -77,7 +77,11 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
     const deliveries = kitchen.getByRole("region", { name: /Entregas/ });
     await deliveries.getByRole("listitem", { name: "Mesa 04 · 1× Guioza" }).getByRole("button", { name: "Entregue" }).click();
     await expect(deliveries.getByRole("listitem")).toHaveCount(1);
-    await expect(mine.getByText("Entregue")).toBeVisible({ timeout: 3000 });
+    // O entregue sai de "A caminho" (o Sunomono continua, pronto) e fica no histórico.
+    await expect(mine).not.toContainText("Guioza", { timeout: 3000 });
+    await expect(mine).toContainText("Sunomono");
+    await page.getByRole("button", { name: "Histórico" }).click();
+    await expect(mine.getByText("Entregue")).toBeVisible();
   } finally {
     await panel.close();
   }

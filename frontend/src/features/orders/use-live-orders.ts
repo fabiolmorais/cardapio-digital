@@ -12,12 +12,14 @@ const FALLBACK_REFRESH_MS = 15_000;
  * confirmar): busca pela API e busca de novo a cada aviso "order" do canal de tempo real.
  * `onNew` é chamado quando aparece um id que a tela ainda não tinha visto (o som); os que já
  * estavam ao abrir, não. Com `enabled` falso (a sessão ainda voltando, depois de um F5), espera.
+ * `events` diz quais avisos fazem buscar de novo, além do "ready" (as comandas ouvem "tab" também).
  */
 export function useLiveOrders<T extends { id: string }>(
   queryKey: readonly unknown[],
   fetch: () => Promise<T[]>,
   onNew?: () => void,
   enabled = true,
+  events: readonly string[] = ["order"],
 ) {
   const queryClient = useQueryClient();
   const [connected, setConnected] = useState(false);
@@ -29,15 +31,16 @@ export function useLiveOrders<T extends { id: string }>(
     enabled,
   });
   const key = JSON.stringify(queryKey);
+  const names = events.join(",");
 
   useEffect(() => {
     if (!enabled) return;
     return subscribeStaffEvents((event) => {
-      if (event.name === "ready" || event.name === "order") {
+      if (event.name === "ready" || names.split(",").includes(event.name)) {
         void queryClient.invalidateQueries({ queryKey: JSON.parse(key) });
       }
     }, setConnected);
-  }, [queryClient, key, enabled]);
+  }, [queryClient, key, enabled, names]);
 
   const seen = useRef<Set<string> | null>(null);
   const notify = useRef(onNew);

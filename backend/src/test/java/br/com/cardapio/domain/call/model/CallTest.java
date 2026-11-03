@@ -102,4 +102,16 @@ class CallTest {
         assertThatThrownBy(() -> open(CallType.WAITER, null).release(carlos, NOW))
                 .isInstanceOf(CallStateException.class);
     }
+
+    @Test
+    void anOpenCallEndsWithTheTab() {
+        Call pending = open(CallType.BILL, PaymentMethod.PIX).closeWithTab(NOW.plusSeconds(600));
+        Call accepted = open(CallType.WAITER, null).accept(carlos, NOW).closeWithTab(NOW.plusSeconds(600));
+
+        assertThat(pending.status()).isEqualTo(CallStatus.DONE);
+        assertThat(pending.doneAt()).isEqualTo(NOW.plusSeconds(600));
+        assertThat(accepted.status()).isEqualTo(CallStatus.DONE);
+        assertThat(accepted.acceptedBy()).isEqualTo(carlos);
+        assertThatThrownBy(() -> pending.closeWithTab(NOW)).isInstanceOf(CallStateException.class);
+    }
 }

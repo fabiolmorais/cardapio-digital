@@ -43,4 +43,13 @@ interface TableSessionJpaRepository extends JpaRepository<TableSessionJpaEntity,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE TableSessionJpaEntity s SET s.endedAt = s.expiresAt WHERE s.endedAt IS NULL AND s.expiresAt <= :now")
     int endExpired(@Param("now") Instant now);
+
+    /** A comanda fechou: encerra as sessões ainda abertas da mesa, num UPDATE só. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE TableSessionJpaEntity s SET s.endedAt = :now
+             WHERE s.establishmentId = :establishmentId AND s.tableId = :tableId AND s.endedAt IS NULL
+            """)
+    int endTable(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId,
+                 @Param("now") Instant now);
 }

@@ -87,4 +87,18 @@ public final class InMemoryTableSessions implements TableSessionPort {
         }
         return ended;
     }
+
+    @Override
+    public int endTable(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
+        int ended = 0;
+        for (TableSession s : Map.copyOf(saved).values()) {
+            if (s.establishmentId().equals(establishmentId) && s.isFor(tableId) && s.endedAt() == null) {
+                save(new TableSession(s.id(), s.establishmentId(), s.tableId(), s.tokenHash(), s.createdAt(),
+                        s.lastSeenAt(), s.expiresAt(), now, s.presenceMethod(), s.presenceConfirmedAt(),
+                        s.unlockedBy(), s.idleLimit(), s.blockedAt(), s.blockedBy()));
+                ended++;
+            }
+        }
+        return ended;
+    }
 }

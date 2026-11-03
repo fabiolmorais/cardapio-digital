@@ -79,6 +79,13 @@ export const tablePage = {
     keep: "Manter como está",
     cancel: "Cancelar pedido da conta",
     loading: "Carregando…",
+    total: "Total da comanda",
+    onTheWay: (count: number) =>
+      count === 1
+        ? "1 item ainda está a caminho e já está incluído no total."
+        : `${count} itens ainda estão a caminho e já estão incluídos no total.`,
+    seeItems: "Ver todos os itens",
+    noOrders: "Ainda não há pedidos nesta comanda.",
   },
   seeMenu: "Ver o cardápio",
   categories: "Categorias",
@@ -174,5 +181,13 @@ export const tablePage = {
       REJECTED: "Recusado pelo garçom",
     },
     failed: "Não foi possível falar com o restaurante agora. Tente de novo.",
+    views: "Ver",
+    onTheWay: "A caminho",
+    history: "Histórico",
+    nothingOnTheWay: "Nada a caminho: tudo o que foi pedido já chegou à mesa.",
+  },
+  closed: {
+    title: "Conta fechada",
+    text: "Obrigado pela visita! Volte sempre.",
   },
 };

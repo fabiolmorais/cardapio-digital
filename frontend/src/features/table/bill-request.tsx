@@ -2,11 +2,14 @@
 
 import { Banknote, ChevronLeft, CreditCard, QrCode, Receipt, Star } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { PresencePanel } from "./presence-panel";
+import { TabClosed } from "./tab-closed";
 import { cancelCall, requestCall, useTableCalls, type PaymentMethod } from "./table-calls";
+import { listOrders, type TableOrders } from "./table-orders";
 
 const t = tablePage.bill;
 const METHODS: { id: PaymentMethod; icon: ReactNode }[] = [
@@ -16,16 +19,31 @@ const METHODS: { id: PaymentMethod; icon: ReactNode }[] = [
 ];
 
 /**
- * "Pedir a conta" (desenhos Conta e Conta solicitada): a forma de pagamento e o pedido. Com a
- * conta já pedida, mostra quem está vindo e deixa trocar a forma de pagamento ou cancelar.
- * O total da comanda entra aqui quando existirem os pedidos (Etapa 8).
+ * "Pedir a conta" (desenhos Conta e Conta solicitada): o total da comanda, a forma de pagamento e
+ * o pedido. Com a conta já pedida, mostra quem está vindo e deixa trocar a forma de pagamento ou
+ * cancelar. Quando o garçom fecha a comanda, agradece.
  */
 export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: string | null }) {
   const state = useTableCalls(token);
   const { calls, bill, busy, error, run } = state;
   const [chosen, setChosen] = useState<PaymentMethod>("PIX");
   const [changing, setChanging] = useState(false);
+  const [orders, setOrders] = useState<TableOrders | null>(null);
   const home = `/m/${token}`;
+
+  // O total vem dos pedidos da comanda. Busca de novo quando os chamados mudam (pedir, trocar,
+  // o garçom aceitar): é quando o cliente está olhando esta tela.
+  useEffect(() => {
+    let cancelled = false;
+    listOrders(token)
+      .then((found) => {
+        if (!cancelled) setOrders(found);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, calls]);
 
   const header = (
     <header className="flex items-center gap-3">
@@ -43,6 +61,39 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
     <p role="alert" className="text-sm font-medium text-(--brand-text)">
       {error}
     </p>
+  );
+
+  if (state.closed) {
+    return (
+      <>
+        {header}
+        <TabClosed />
+      </>
+    );
+  }
+
+  const onTheWay =
+    orders?.orders
+      .filter((o) => o.status !== "REJECTED")
+      .flatMap((o) => o.items)
+      .filter((i) => ["PENDING", "PREPARING", "READY"].includes(i.status))
+      .reduce((sum, i) => sum + i.quantity, 0) ?? 0;
+  const total = orders && (
+    <section className="flex flex-col gap-2 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
+      <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">{t.total}</span>
+      <span className="text-4xl font-bold tracking-tight">{formatCents(orders.totalCents)}</span>
+      {orders.orders.length === 0 ? (
+        <span className="text-sm text-(--mesa-muted)">{t.noOrders}</span>
+      ) : (
+        <Link
+          href={`/m/${token}/pedidos`}
+          className="w-fit rounded text-sm font-semibold text-(--brand-text) focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+        >
+          {t.seeItems}
+        </Link>
+      )}
+      {onTheWay > 0 && <span className="text-sm text-(--mesa-muted)">{t.onTheWay(onTheWay)}</span>}
+    </section>
   );
 
   if (calls === null) {
@@ -80,6 +131,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
             <p className="text-(--mesa-muted)">{t.requestedText[method]}</p>
           </div>
         </section>
+        {total}
         <section className="flex flex-col gap-3 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
           <div className="flex justify-between gap-3">
             <span className="text-(--mesa-muted)">{t.method}</span>
@@ -131,6 +183,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
   return (
     <>
       {header}
+      {total}
       <fieldset className="flex flex-col gap-2.5">
         <legend className="pb-2.5 text-lg font-semibold">{t.how}</legend>
         {METHODS.map(({ id, icon }) => (

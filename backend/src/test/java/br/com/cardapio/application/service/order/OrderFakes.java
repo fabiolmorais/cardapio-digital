@@ -2,10 +2,12 @@ package br.com.cardapio.application.service.order;
 
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.order.KitchenItemView;
+import br.com.cardapio.application.port.out.order.OpenTabView;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabPort;
+import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.application.port.out.order.WaitingOrderView;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
@@ -219,6 +221,37 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
                 .filter(o -> o.establishmentId().equals(establishmentId)
                         && o.status() == OrderStatus.PENDING_APPROVAL)
                 .map(o -> new WaitingOrderView(o, "?", "?", itemsOf(o.id())))
+                .toList();
+        return new ResultPage<>(found, page.page(), page.size(), found.size());
+    }
+
+    // --- TabPort (Guia 20)
+    @Override
+    public Optional<TabView> findView(EstablishmentId establishmentId, TabId tabId) {
+        return Optional.ofNullable(tabs.get(tabId)).filter(t -> t.establishmentId().equals(establishmentId))
+                .map(t -> new TabView(t, "?", "?"));
+    }
+
+    @Override
+    public boolean close(Tab closed) {
+        Tab current = tabs.get(closed.id());
+        if (current == null || !current.status().isOpen()) {
+            return false;
+        }
+        tabs.put(closed.id(), closed);
+        return true;
+    }
+
+    @Override
+    public ResultPage<OpenTabView> findOpenTabs(EstablishmentId establishmentId, PageQuery page) {
+        List<OpenTabView> found = tabs.values().stream()
+                .filter(t -> t.establishmentId().equals(establishmentId) && t.status().isOpen())
+                .map(t -> {
+                    List<OrderItem> all = findByTab(establishmentId, t.id()).stream()
+                            .flatMap(o -> o.items().stream()).toList();
+                    int onTheWay = (int) all.stream().filter(i -> i.status().isOnTheWay()).count();
+                    return new OpenTabView(t, "?", "?", Tab.totalOf(all), onTheWay);
+                })
                 .toList();
         return new ResultPage<>(found, page.page(), page.size(), found.size());
     }

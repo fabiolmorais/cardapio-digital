@@ -9,7 +9,10 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/** A comanda no banco. A inserção é um INSERT nativo (ON CONFLICT), como a do chamado: a entidade serve para ler. */
+/**
+ * A comanda no banco. A inserção é um INSERT nativo (ON CONFLICT), como a do chamado, e o
+ * fechamento é um UPDATE condicional: a entidade serve para ler.
+ */
 @Entity
 @Table(name = "tab")
 class TabJpaEntity extends EstablishmentScopedEntity {
@@ -32,6 +35,12 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "closed_by")
     private UUID closedBy;
 
+    @Column(name = "total_cents")
+    private Long totalCents;
+
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
     protected TabJpaEntity() {
     }
 
@@ -41,4 +50,6 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     Instant getOpenedAt() { return openedAt; }
     Instant getClosedAt() { return closedAt; }
     UUID getClosedBy() { return closedBy; }
+    Long getTotalCents() { return totalCents; }
+    String getPaymentMethod() { return paymentMethod; }
 }

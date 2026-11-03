@@ -22,11 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** O CallPort na memória, com as duas garantias do banco: um aberto por tipo e o UPDATE condicional. */
-class InMemoryCalls implements CallPort {
+/**
+ * O CallPort na memória, com as duas garantias do banco: um aberto por tipo e o UPDATE condicional.
+ * Público porque o fechamento da comanda (Guia 20) também conclui os chamados da mesa.
+ */
+public class InMemoryCalls implements CallPort {
 
-    final Map<CallId, Call> saved = new LinkedHashMap<>();
-    final Map<UserId, String> names = new HashMap<>();
+    public final Map<CallId, Call> saved = new LinkedHashMap<>();
+    public final Map<UserId, String> names = new HashMap<>();
 
     @Override
     public boolean insertIfNoneOpen(Call call) {

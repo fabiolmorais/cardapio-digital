@@ -1,6 +1,9 @@
 package br.com.cardapio.domain.order.model;
 
-/** A comanda da mesa. "Fechando" e "fechada" entram na Etapa 9 (pedir a conta e fechar). */
+/**
+ * A comanda da mesa. "Fechando" fica reservado: pedir a conta não trava a mesa (ela ainda pode
+ * pedir a sobremesa), então a comanda continua aberta até o garçom fechar.
+ */
 public enum TabStatus {
     OPEN,
     CLOSING,

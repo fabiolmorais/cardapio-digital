@@ -2,6 +2,7 @@ package br.com.cardapio.application.port.in.realtime;
 
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.order.event.OrderChanged;
+import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 
 import java.util.Map;
@@ -29,6 +30,9 @@ public record LiveEvent(String name, Map<String, String> data) {
                     "tableId", c.tableId().value().toString(),
                     "type", c.type().name(),
                     "status", c.status().name())));
+            case TabClosed t -> Optional.of(new LiveEvent("tab", Map.of(
+                    "tabId", t.tabId().value().toString(),
+                    "tableId", t.tableId().value().toString())));
             default -> Optional.empty();
         };
     }
@@ -43,6 +47,7 @@ public record LiveEvent(String name, Map<String, String> data) {
                     "callId", c.callId().value().toString(),
                     "type", c.type().name(),
                     "status", c.status().name())));
+            case TabClosed t -> Optional.of(new LiveEvent("tab", Map.of("tabId", t.tabId().value().toString())));
             default -> Optional.empty();
         };
     }
