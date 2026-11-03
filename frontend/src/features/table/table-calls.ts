@@ -12,8 +12,8 @@ export type PaymentMethod = NonNullable<CallRequest["paymentMethod"]>;
 export type Presence = components["schemas"]["Presence"];
 type Position = { latitude: number; longitude: number; accuracyMeters: number };
 
-/** O canal de tempo real avisa quando um chamado da mesa muda. */
-const CALL_EVENTS = ["call"] as const;
+/** O canal de tempo real avisa quando um chamado da mesa muda, e quando o garçom fecha a conta. */
+const CALL_EVENTS = ["call", "tab"] as const;
 
 /**
  * As chamadas da mesa, com fetch direto (como a sessão): o cliente da API do painel traria junto
@@ -130,6 +130,7 @@ export function useTableCalls(token: string) {
   const [presence, setPresence] = useState<Presence | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [closed, setClosed] = useState(false);
   const present = presence?.present === true;
 
   /**
@@ -161,7 +162,12 @@ export function useTableCalls(token: string) {
 
   // Cada aviso do canal busca os chamados e a presença; a rede de segurança, só os chamados.
   const onUpdate = useCallback(
-    (fromChannel: boolean) => {
+    (fromChannel: boolean, event?: string) => {
+      // A conta fechou: a sessão deste celular acabou, e a tela agradece em vez de buscar de novo.
+      if (event === "tab") {
+        setClosed(true);
+        return;
+      }
       void refresh();
       if (fromChannel) void refreshPresence();
     },
@@ -208,6 +214,7 @@ export function useTableCalls(token: string) {
 
   return {
     calls,
+    closed,
     presence,
     present,
     unlock: calls?.find((c) => c.type === "UNLOCK") ?? null,

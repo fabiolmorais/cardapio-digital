@@ -73,6 +73,9 @@ function Tab({ href, on, icon, children }: { href: string; on: boolean; icon: Re
   return (
     <Link
       href={href}
+      // Sem pré-carregar as outras abas: o código delas viria junto ao abrir a página, e a mesa
+      // tem orçamento de 200 KB de JavaScript. A troca de aba busca na hora (é rápida no 4G).
+      prefetch={false}
       aria-current={on ? "page" : undefined}
       className={cn(
         "flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold text-(--mesa-muted) focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none focus-visible:ring-inset",

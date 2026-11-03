@@ -13,8 +13,8 @@ export type TableOrderItem = components["schemas"]["TableOrderItem"];
 type PlaceOrderRequest = components["schemas"]["PlaceOrderRequest"];
 
 const t = tablePage.orders;
-/** O canal de tempo real avisa quando um pedido da mesa muda. */
-const ORDER_EVENTS = ["order"] as const;
+/** O canal de tempo real avisa quando um pedido da mesa muda, e quando o garçom fecha a conta. */
+const ORDER_EVENTS = ["order", "tab"] as const;
 
 /** A hora do pedido, no relógio do celular (que está no restaurante). */
 export function timeOf(iso: string) {
@@ -49,12 +49,14 @@ export async function cancelOrderItem(token: string, itemId: string): Promise<vo
 
 /**
  * Os pedidos da mesa, atualizados na hora pelo tempo real (a cozinha começou, ficou pronto…), e o
- * cancelamento de um item. `null` enquanto a primeira busca não volta.
+ * cancelamento de um item. `null` enquanto a primeira busca não volta. `closed` fica verdadeiro
+ * quando o garçom fecha a conta.
  */
 export function useTableOrders(token: string) {
   const [data, setData] = useState<TableOrders | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [closed, setClosed] = useState(false);
   const loaded = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -67,7 +69,14 @@ export function useTableOrders(token: string) {
     }
   }, [token]);
 
-  const onUpdate = useCallback(() => void refresh(), [refresh]);
+  const onUpdate = useCallback(
+    (_fromChannel: boolean, event?: string) => {
+      // A conta fechou: a sessão deste celular acabou, e a tela agradece em vez de buscar de novo.
+      if (event === "tab") setClosed(true);
+      else void refresh();
+    },
+    [refresh],
+  );
   useTableChannel(token, ORDER_EVENTS, onUpdate);
 
   async function cancel(itemId: string) {
@@ -82,5 +91,5 @@ export function useTableOrders(token: string) {
     setBusy(null);
   }
 
-  return { data, busy, error, cancel };
+  return { data, busy, error, closed, cancel };
 }

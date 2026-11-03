@@ -129,6 +129,16 @@ public record Call(
                 createdAt, acceptedAt, acceptedBy, doneAt, now);
     }
 
+    /**
+     * A comanda da mesa fechou: o chamado ainda aberto (a conta pedida, um "chamar garçom" que
+     * ficou para trás) termina junto, como atendido.
+     */
+    public Call closeWithTab(Instant now) {
+        requireOpen();
+        return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
+                createdAt, acceptedAt, acceptedBy, now, canceledAt);
+    }
+
     private void requireOpen() {
         if (!isOpen()) {
             throw new CallStateException("Este chamado já foi encerrado");

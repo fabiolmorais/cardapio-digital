@@ -9,6 +9,7 @@ import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { CallQueue } from "@/features/calls/call-queue";
 import { Deliveries, KitchenLink, WaitingOrders } from "@/features/orders/staff-orders";
+import { OpenTabs } from "@/features/tabs/open-tabs";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 
@@ -92,6 +93,7 @@ export function PanelHome() {
           <WaitingOrders />
           <CallQueue role={establishment.role} />
           <Deliveries />
+          <OpenTabs />
           <KitchenLink />
         </>
       )}

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
+import { TabClosed } from "./tab-closed";
 import { timeOf, useTableOrders, type TableOrder, type TableOrderItem } from "./table-orders";
 
 const t = tablePage.orders;
@@ -18,16 +20,29 @@ const BADGE: Record<TableOrderItem["status"], string> = {
   CANCELED: "border-(--mesa-stroke) text-(--mesa-muted)",
 };
 const STEPS: TableOrderItem["status"][] = ["PENDING", "PREPARING", "READY", "DELIVERED"];
+/** O que "A caminho" mostra: o que ainda não chegou, e o cancelado, para o cliente ver o motivo. */
+const ON_THE_WAY_VIEW: TableOrderItem["status"][] = ["PENDING", "PREPARING", "READY", "CANCELED"];
 
 /**
- * "Meus pedidos" (desenho Pedidos a caminho): os pedidos da comanda aberta, de todos os celulares
- * da mesa, com o passo de cada item, o total parcial e o "Cancelar item" (só nos itens deste
- * celular que ainda estão na fila). O tempo real atualiza na hora.
+ * "Meus pedidos" (desenhos Pedidos a caminho e Histórico): os pedidos da comanda aberta, de todos
+ * os celulares da mesa, com o passo de cada item, o total parcial e o "Cancelar item" (só nos itens
+ * deste celular que ainda estão na fila). "A caminho" é o histórico só com o que ainda não chegou
+ * (especificação). O tempo real atualiza na hora; quando o garçom fecha a conta, a tela agradece.
  */
 export function OrdersView({ token, tableLabel }: { token: string; tableLabel: string }) {
-  const { data, busy, error, cancel } = useTableOrders(token);
+  const { data, busy, error, closed, cancel } = useTableOrders(token);
+  const [view, setView] = useState<"onTheWay" | "history">("onTheWay");
   // Do mais novo para o mais antigo: o que acabou de pedir aparece primeiro.
-  const orders = data ? [...data.orders].reverse() : [];
+  const all = data ? [...data.orders].reverse() : [];
+  // "A caminho": só os pedidos com algum item que ainda não chegou (ou cancelado), e só esses itens.
+  const orders =
+    view === "history"
+      ? all
+      : all
+          .map((o) => ({ ...o, items: o.items.filter((i) => ON_THE_WAY_VIEW.includes(i.status)) }))
+          .filter((o) => o.items.length > 0);
+
+  if (closed) return <TabClosed />;
 
   return (
     <>
@@ -35,11 +50,11 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
         <div className="flex flex-col gap-0.5">
           <span className="text-sm text-(--mesa-muted)">
             {tablePage.where(tableLabel, "")}
-            {orders.length > 0 && ` · ${t.open}`}
+            {all.length > 0 && ` · ${t.open}`}
           </span>
           <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
         </div>
-        {data && orders.length > 0 && (
+        {data && all.length > 0 && (
           <span className="flex flex-col text-right text-sm text-(--mesa-muted)">
             {t.partial}
             <span className="text-lg font-bold text-(--mesa-fg)">{formatCents(data.totalCents)}</span>
@@ -53,8 +68,30 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
         </p>
       )}
 
+      {data && all.length > 0 && (
+        <div role="group" aria-label={t.views} className="grid grid-cols-2 gap-1 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) p-1">
+          {(["onTheWay", "history"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+              className={cn(
+                "h-11 rounded-xl text-sm font-semibold text-(--mesa-muted)",
+                focus,
+                view === v && "bg-(--mesa-fg) text-(--mesa-bg)",
+              )}
+            >
+              {t[v]}
+            </button>
+          ))}
+        </div>
+      )}
+
       {data === null ? (
         !error && <p className="text-(--mesa-muted)">{t.loading}</p>
+      ) : all.length > 0 && orders.length === 0 ? (
+        <p className="text-center text-(--mesa-muted)">{t.nothingOnTheWay}</p>
       ) : orders.length === 0 ? (
         <section className="flex flex-col items-center gap-3 pt-10 text-center">
           <p className="text-lg font-semibold">{t.empty}</p>

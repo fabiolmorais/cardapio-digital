@@ -36,4 +36,10 @@ public interface TableSessionPort {
      * todos os restaurantes de uma vez. Devolve quantas encerrou.
      */
     int endExpired(Instant now);
+
+    /**
+     * A comanda da mesa fechou: encerra todas as sessões ainda abertas da mesa. Quem voltar a
+     * escanear começa uma visita nova (e confirma a presença de novo). Devolve quantas.
+     */
+    int endTable(EstablishmentId establishmentId, DiningTableId tableId, Instant now);
 }

@@ -65,4 +65,10 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
     public int endExpired(Instant now) {
         return sessions.endExpired(now);
     }
+
+    @Override
+    public int endTable(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
+        establishmentFilter.enable(establishmentId);
+        return sessions.endTable(establishmentId.value(), tableId.value(), now);
+    }
 }

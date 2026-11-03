@@ -40,8 +40,11 @@ import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
 import br.com.cardapio.application.port.in.order.AdvanceOrderItemUseCase;
 import br.com.cardapio.application.port.in.order.CancelOrderItemByStaffUseCase;
 import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
+import br.com.cardapio.application.port.in.order.CloseTabUseCase;
 import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
+import br.com.cardapio.application.port.in.order.GetTabUseCase;
 import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
+import br.com.cardapio.application.port.in.order.ListOpenTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
 import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
@@ -131,8 +134,11 @@ import br.com.cardapio.application.service.menu.StartMediaUploadService;
 import br.com.cardapio.application.service.order.AdvanceOrderItemService;
 import br.com.cardapio.application.service.order.CancelOrderItemByStaffService;
 import br.com.cardapio.application.service.order.CancelOrderItemService;
+import br.com.cardapio.application.service.order.CloseTabService;
 import br.com.cardapio.application.service.order.GetOrderSettingsService;
+import br.com.cardapio.application.service.order.GetTabService;
 import br.com.cardapio.application.service.order.ListKitchenQueueService;
+import br.com.cardapio.application.service.order.ListOpenTabsService;
 import br.com.cardapio.application.service.order.ListTableOrdersService;
 import br.com.cardapio.application.service.order.ListWaitingOrdersService;
 import br.com.cardapio.application.service.order.PlaceOrderService;
@@ -648,5 +654,24 @@ class UseCaseConfig {
     @Bean
     ReviewOrderUseCase reviewOrderUseCase(OrderPort orderPort, EventPublisherPort eventPublisherPort, Clock clock) {
         return new ReviewOrderService(orderPort, eventPublisherPort, clock);
+    }
+
+    // A comanda e o fechamento da conta (Guia 20)
+
+    @Bean
+    ListOpenTabsUseCase listOpenTabsUseCase(TabPort tabPort) {
+        return new ListOpenTabsService(tabPort);
+    }
+
+    @Bean
+    GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort) {
+        return new GetTabService(tabPort, orderPort, callPort);
+    }
+
+    @Bean
+    CloseTabUseCase closeTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
+                                    TableSessionPort tableSessionPort, EventPublisherPort eventPublisherPort,
+                                    Clock clock) {
+        return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, eventPublisherPort, clock);
     }
 }

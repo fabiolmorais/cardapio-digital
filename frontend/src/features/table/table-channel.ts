@@ -11,14 +11,14 @@ const REOPEN_MS = 3000;
 
 /**
  * O canal de tempo real da mesa (SSE). "ready" ao conectar e os eventos pedidos (`call`, `order`)
- * chamam `onUpdate(true)`: o aviso não traz dados, só o motivo, e a tela busca de novo. A primeira busca
+ * chamam `onUpdate(true, nome do aviso)`: o aviso não traz dados, só o motivo, e a tela busca de novo. A primeira busca
  * fica para logo depois da montagem, e, enquanto o canal não está aberto, uma rede de segurança
  * pergunta de tempos em tempos (essas duas chamam `onUpdate(false)`).
  */
 export function useTableChannel(
   token: string,
   events: readonly string[],
-  onUpdate: (fromChannel: boolean) => void,
+  onUpdate: (fromChannel: boolean, event?: string) => void,
 ) {
   // O canal chama a versão mais nova, sem reabrir a conexão.
   const update = useRef(onUpdate);
@@ -40,9 +40,9 @@ export function useTableChannel(
     const url = `${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/events`;
     function open() {
       source = new EventSource(url, { withCredentials: true });
-      const onEvent = () => {
+      const onEvent = (event: Event) => {
         live = true;
-        update.current(true);
+        update.current(true, event.type);
       };
       for (const name of ["ready", ...names.split(",")]) source.addEventListener(name, onEvent);
       source.onerror = () => {

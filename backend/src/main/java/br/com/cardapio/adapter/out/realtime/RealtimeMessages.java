@@ -7,8 +7,10 @@ import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.event.OrderChanged;
+import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
+import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -44,12 +46,18 @@ class RealtimeMessages {
         static final String KIND = "OrderChanged";
     }
 
+    record TabClosedMessage(String kind, UUID establishmentId, UUID tableId, UUID tabId, Instant occurredAt) {
+        static final String KIND = "TabClosed";
+    }
+
     String toJson(DomainEvent event) {
         Object message = switch (event) {
             case OrderChanged o -> new OrderChangedMessage(OrderChangedMessage.KIND, o.establishmentId().value(),
                     o.tableId().value(), o.orderId().value(), o.status().name(), o.occurredAt());
             case CallChanged c -> new CallChangedMessage(CallChangedMessage.KIND, c.establishmentId().value(),
                     c.tableId().value(), c.callId().value(), c.type().name(), c.status().name(), c.occurredAt());
+            case TabClosed t -> new TabClosedMessage(TabClosedMessage.KIND, t.establishmentId().value(),
+                    t.tableId().value(), t.tabId().value(), t.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
         };
         return json.writeValueAsString(message);
@@ -69,6 +77,11 @@ class RealtimeMessages {
             OrderChangedMessage m = json.treeToValue(node, OrderChangedMessage.class);
             return new OrderChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new OrderId(m.orderId()), OrderStatus.valueOf(m.status()), m.occurredAt());
+        }
+        if (TabClosedMessage.KIND.equals(kind)) {
+            TabClosedMessage m = json.treeToValue(node, TabClosedMessage.class);
+            return new TabClosed(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new TabId(m.tabId()), m.occurredAt());
         }
         throw new IllegalArgumentException("Mensagem de tempo real desconhecida: " + kind);
     }
