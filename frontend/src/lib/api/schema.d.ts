@@ -805,6 +805,23 @@ export interface paths {
         patch: operations["renameMenuCategory"];
         trace?: never;
     };
+    "/api/v1/tabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O histórico: as comandas fechadas no período (dias do restaurante), da mais nova à mais antiga */
+        get: operations["listClosedTabs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tabs/{id}": {
         parameters: {
             query?: never;
@@ -1896,6 +1913,36 @@ export interface components {
         };
         PageResponseTeamMember: {
             content: components["schemas"]["TeamMember"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        ClosedTab: {
+            /** Format: uuid */
+            id: string;
+            tableLabel: string;
+            sectorName: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            closedAt: string;
+            /**
+             * Format: int64
+             * @description O que foi cobrado
+             */
+            totalCents: number;
+            /** @enum {string} */
+            paymentMethod: "PIX" | "CARD" | "CASH";
+            /** @description Quem fechou */
+            closedByName?: string;
+        };
+        PageResponseClosedTab: {
+            content: components["schemas"]["ClosedTab"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4610,6 +4657,52 @@ export interface operations {
             };
             /** @description Já existe uma categoria com esse nome */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listClosedTabs: {
+        parameters: {
+            query: {
+                /**
+                 * @description Primeiro dia (AAAA-MM-DD), no calendário do restaurante
+                 * @example 2026-11-01
+                 */
+                from: string;
+                /**
+                 * @description Último dia (AAAA-MM-DD), incluído
+                 * @example 2026-11-03
+                 */
+                to: string;
+                /** @description Só desta mesa */
+                tableId?: string;
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Comandas por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página do histórico */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseClosedTab"];
+                };
+            };
+            /** @description Período invertido ou maior que um ano */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

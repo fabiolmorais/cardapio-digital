@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Home, LogOut, Palette, QrCode, ShieldCheck, Users } from "lucide-react";
+import { BookOpen, Home, LogOut, Palette, QrCode, Receipt, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
@@ -20,6 +20,7 @@ const NAV = [
   { href: "/admin/marca", label: t.nav.brand, icon: Palette },
   { href: "/admin/presenca", label: t.nav.presence, icon: ShieldCheck },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
+  { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
 ] as const;
 
 /**

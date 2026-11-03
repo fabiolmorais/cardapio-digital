@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -75,4 +76,42 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
              WHERE t.establishmentId = :establishmentId AND t.status IN ('OPEN', 'CLOSING')
             """)
     Page<OpenTabRow> findOpenTabs(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /**
+     * O histórico, em SQL nativo: o "dia" é o do restaurante, e o JPQL não tem o AT TIME ZONE do
+     * Postgres. Por ser nativa, a consulta não passa pelo filtro do Hibernate: o establishment_id
+     * no WHERE é a única barreira, e ele está lá.
+     *
+     * A primeira condição de closed_at é uma margem de um dia em UTC (nenhum fuso passa de 14 h):
+     * com ela, o banco usa o índice tab_closed_idx para chegar perto, e a conversão de fuso só roda
+     * nas linhas que sobraram.
+     */
+    @Query(nativeQuery = true, value = """
+            SELECT t.id AS id, d.label AS tableLabel, s.name AS sectorName, t.opened_at AS openedAt,
+                   t.closed_at AS closedAt, t.total_cents AS totalCents, t.payment_method AS paymentMethod,
+                   u.name AS closedByName
+              FROM tab t
+              JOIN establishment e ON e.id = t.establishment_id
+              JOIN dining_table d ON d.id = t.table_id
+              JOIN sector s ON s.id = d.sector_id
+              LEFT JOIN app_user u ON u.id = t.closed_by
+             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+               AND t.closed_at >= CAST(:from AS DATE) - INTERVAL '1 day'
+               AND t.closed_at < CAST(:to AS DATE) + INTERVAL '2 day'
+               AND (t.closed_at AT TIME ZONE e.time_zone)::date BETWEEN :from AND :to
+               AND (CAST(:tableId AS UUID) IS NULL OR t.table_id = :tableId)
+             ORDER BY t.closed_at DESC, t.id
+            """,
+            countQuery = """
+            SELECT count(*)
+              FROM tab t
+              JOIN establishment e ON e.id = t.establishment_id
+             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+               AND t.closed_at >= CAST(:from AS DATE) - INTERVAL '1 day'
+               AND t.closed_at < CAST(:to AS DATE) + INTERVAL '2 day'
+               AND (t.closed_at AT TIME ZONE e.time_zone)::date BETWEEN :from AND :to
+               AND (CAST(:tableId AS UUID) IS NULL OR t.table_id = :tableId)
+            """)
+    Page<ClosedTabRow> findClosed(@Param("establishmentId") UUID establishmentId, @Param("from") LocalDate from,
+                                  @Param("to") LocalDate to, @Param("tableId") UUID tableId, Pageable pageable);
 }

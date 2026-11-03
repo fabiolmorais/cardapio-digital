@@ -1,6 +1,7 @@
 package br.com.cardapio.application.service.order;
 
 import br.com.cardapio.application.port.out.menu.ProductPort;
+import br.com.cardapio.application.port.out.order.ClosedTabView;
 import br.com.cardapio.application.port.out.order.KitchenItemView;
 import br.com.cardapio.application.port.out.order.OpenTabView;
 import br.com.cardapio.application.port.out.order.OrderPort;
@@ -27,10 +28,12 @@ import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -252,6 +255,24 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
                     int onTheWay = (int) all.stream().filter(i -> i.status().isOnTheWay()).count();
                     return new OpenTabView(t, "?", "?", Tab.totalOf(all), onTheWay);
                 })
+                .toList();
+        return new ResultPage<>(found, page.page(), page.size(), found.size());
+    }
+
+    /** O histórico falso usa o dia em UTC (o fuso do restaurante é conferido no teste de integração). */
+    @Override
+    public ResultPage<ClosedTabView> findClosed(EstablishmentId establishmentId, TabPeriod period,
+                                                DiningTableId tableId, PageQuery page) {
+        List<ClosedTabView> found = tabs.values().stream()
+                .filter(t -> t.establishmentId().equals(establishmentId) && !t.status().isOpen())
+                .filter(t -> tableId == null || t.tableId().equals(tableId))
+                .filter(t -> {
+                    var day = t.closedAt().atZone(ZoneOffset.UTC).toLocalDate();
+                    return !day.isBefore(period.from()) && !day.isAfter(period.to());
+                })
+                .sorted(Comparator.comparing(Tab::closedAt).reversed())
+                .map(t -> new ClosedTabView(t.id(), "?", "?", t.openedAt(), t.closedAt(), t.total(),
+                        t.paymentMethod(), null))
                 .toList();
         return new ResultPage<>(found, page.page(), page.size(), found.size());
     }

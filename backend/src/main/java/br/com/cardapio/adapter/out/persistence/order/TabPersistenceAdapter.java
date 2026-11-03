@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.out.persistence.order;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.order.ClosedTabView;
 import br.com.cardapio.application.port.out.order.OpenTabView;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.TabView;
@@ -12,6 +13,7 @@ import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.order.model.TabStatus;
 import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.data.domain.Page;
@@ -63,6 +65,17 @@ class TabPersistenceAdapter implements TabPort {
         Page<OpenTabRow> rows = tabs.findOpenTabs(establishmentId.value(), PageRequest.of(page.page(), page.size()));
         return new ResultPage<>(rows.map(r -> new OpenTabView(toDomain(r.tab()), r.tableLabel(), r.sectorName(),
                 Money.ofCents(r.totalCents()), r.itemsOnTheWay().intValue())).getContent(), page.page(),
+                page.size(), rows.getTotalElements());
+    }
+
+    @Override
+    public ResultPage<ClosedTabView> findClosed(EstablishmentId establishmentId, TabPeriod period,
+                                                DiningTableId tableId, PageQuery page) {
+        Page<ClosedTabRow> rows = tabs.findClosed(establishmentId.value(), period.from(), period.to(),
+                tableId == null ? null : tableId.value(), PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(r -> new ClosedTabView(new TabId(r.getId()), r.getTableLabel(),
+                r.getSectorName(), r.getOpenedAt(), r.getClosedAt(), Money.ofCents(r.getTotalCents()),
+                PaymentMethod.valueOf(r.getPaymentMethod()), r.getClosedByName())).getContent(), page.page(),
                 page.size(), rows.getTotalElements());
     }
 

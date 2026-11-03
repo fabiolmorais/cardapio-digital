@@ -43,6 +43,7 @@ import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
 import br.com.cardapio.application.port.in.order.CloseTabUseCase;
 import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.order.GetTabUseCase;
+import br.com.cardapio.application.port.in.order.ListClosedTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
 import br.com.cardapio.application.port.in.order.ListOpenTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
@@ -137,6 +138,7 @@ import br.com.cardapio.application.service.order.CancelOrderItemService;
 import br.com.cardapio.application.service.order.CloseTabService;
 import br.com.cardapio.application.service.order.GetOrderSettingsService;
 import br.com.cardapio.application.service.order.GetTabService;
+import br.com.cardapio.application.service.order.ListClosedTabsService;
 import br.com.cardapio.application.service.order.ListKitchenQueueService;
 import br.com.cardapio.application.service.order.ListOpenTabsService;
 import br.com.cardapio.application.service.order.ListTableOrdersService;
@@ -673,5 +675,12 @@ class UseCaseConfig {
                                     TableSessionPort tableSessionPort, EventPublisherPort eventPublisherPort,
                                     Clock clock) {
         return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, eventPublisherPort, clock);
+    }
+
+    // O histórico de comandas (Guia 21)
+
+    @Bean
+    ListClosedTabsUseCase listClosedTabsUseCase(TabPort tabPort) {
+        return new ListClosedTabsService(tabPort);
     }
 }
