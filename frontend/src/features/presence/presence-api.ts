@@ -23,3 +23,18 @@ export async function updatePresenceRule(body: PresenceRuleRequest): Promise<Pre
   if (data) return data;
   throw failure(response, error);
 }
+
+export type OrderSettings = Schemas["OrderSettings"];
+export type OrderSettingsRequest = Schemas["OrderSettingsRequest"];
+
+export async function fetchOrderSettings(): Promise<OrderSettings> {
+  const { data, error, response } = await api.GET("/api/v1/order-settings");
+  if (data) return data;
+  throw failure(response, error);
+}
+
+export async function updateOrderSettings(body: OrderSettingsRequest): Promise<OrderSettings> {
+  const { data, error, response } = await api.PUT("/api/v1/order-settings", { body });
+  if (data) return data;
+  throw failure(response, error);
+}

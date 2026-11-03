@@ -1,9 +1,10 @@
-import { BookOpen, House } from "lucide-react";
+import { BookOpen, ClipboardList, House } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { tableThemeVars } from "@/lib/table-theme";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { CartBar } from "./cart-bar";
 import { StartSession } from "./start-session";
 import type { PublicTable } from "./table-data";
 
@@ -11,7 +12,8 @@ const t = messages.tablePage;
 
 /**
  * A moldura das telas da mesa: as cores da marca (tema escuro ou claro), a sessão do celular e
- * as abas de baixo. Componente do servidor: chega pronto, sem JavaScript próprio.
+ * as abas de baixo, com a barra "Ver pedido" em cima delas quando o carrinho tem algo (no
+ * cardápio e na tela inicial). Componente do servidor: só a barra do carrinho roda no navegador.
  */
 export function TableShell({
   token,
@@ -21,7 +23,7 @@ export function TableShell({
 }: {
   token: string;
   table: PublicTable;
-  current: "home" | "menu";
+  current: "home" | "menu" | "orders" | "cart";
   children: ReactNode;
 }) {
   const brand = table.brand;
@@ -31,18 +33,36 @@ export function TableShell({
       className="flex min-h-dvh flex-1 flex-col bg-(--mesa-bg) text-(--mesa-fg)"
     >
       <StartSession token={token} />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 pt-6 pb-28">{children}</main>
+      {/* Embaixo, espaço para as abas (e para a barra do carrinho, onde ela aparece). */}
+      <main
+        className={cn(
+          "mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 pt-6 pb-28",
+          (current === "home" || current === "menu") && "pb-44",
+        )}
+      >
+        {children}
+      </main>
       <nav
         aria-label={t.nav.label}
-        className="fixed inset-x-0 bottom-0 border-t border-(--mesa-stroke) bg-(--mesa-bg)/95 backdrop-blur"
+        className="fixed inset-x-0 bottom-0"
       >
-        <div className="mx-auto grid max-w-md grid-cols-2">
+        {(current === "home" || current === "menu") && <CartBar token={token} />}
+        <div className="border-t border-(--mesa-stroke) bg-(--mesa-bg)/95 backdrop-blur">
+        <div className="mx-auto grid max-w-md grid-cols-3">
           <Tab href={`/m/${token}`} on={current === "home"} icon={<House aria-hidden className="size-5" />}>
             {t.nav.home}
           </Tab>
           <Tab href={`/m/${token}/cardapio`} on={current === "menu"} icon={<BookOpen aria-hidden className="size-5" />}>
             {t.nav.menu}
           </Tab>
+          <Tab
+            href={`/m/${token}/pedidos`}
+            on={current === "orders"}
+            icon={<ClipboardList aria-hidden className="size-5" />}
+          >
+            {t.nav.orders}
+          </Tab>
+        </div>
         </div>
       </nav>
     </div>

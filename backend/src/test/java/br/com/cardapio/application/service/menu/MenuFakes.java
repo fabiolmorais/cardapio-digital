@@ -128,4 +128,11 @@ final class MenuFakes implements MenuCategoryPort, ProductPort {
         // A busca em memória não pagina: devolve tudo, já na ordem do cardápio.
         return search(establishmentId, null, null, new PageQuery(0, PageQuery.MAX_SIZE)).content();
     }
+
+    @Override
+    public List<Product> findActiveByIds(EstablishmentId establishmentId, Collection<ProductId> ids) {
+        return products.values().stream()
+                .filter(p -> p.establishmentId().equals(establishmentId) && p.active() && ids.contains(p.id()))
+                .toList();
+    }
 }

@@ -58,6 +58,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/order-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As configurações de pedido (os padrões, se nunca mudadas) */
+        get: operations["getOrderSettings"];
+        /** Troca as configurações de pedido */
+        put: operations["updateOrderSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/menu-categories/{id}/product-order": {
         parameters: {
             query?: never;
@@ -243,6 +261,24 @@ export interface paths {
         put?: never;
         /** Confere se o celular está no salão: pela rede e, se vier, pela localização */
         post: operations["checkPresence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os pedidos da comanda aberta da mesa (de todos os celulares) e o total parcial */
+        get: operations["listTableOrders"];
+        put?: never;
+        /** Envia o carrinho: abre a comanda no primeiro pedido da mesa */
+        post: operations["placeOrder"];
         delete?: never;
         options?: never;
         head?: never;
@@ -874,6 +910,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/order-items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** O cliente cancela um item que ele pediu, enquanto está na fila */
+        delete: operations["cancelOrderItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/calls/{callId}": {
         parameters: {
             query?: never;
@@ -1048,6 +1101,32 @@ export interface components {
              * @description Quanto tempo sem uso a sessão da mesa aguenta, em minutos
              */
             sessionIdleMinutes: number;
+        };
+        OrderSettingsRequest: {
+            /** @description Desligado, a mesa só chama o garçom e vê o cardápio */
+            orderingEnabled: boolean;
+            /** @description Todo pedido espera o garçom confirmar */
+            approvalRequired: boolean;
+            /**
+             * Format: int64
+             * @description Acima deste valor (em centavos), o pedido espera o garçom; vazio = sem limite
+             * @example 30000
+             */
+            maxAmountCents?: number;
+            /**
+             * Format: int32
+             * @description Acima desta quantidade de itens, também; vazio = sem limite
+             * @example 10
+             */
+            maxItems?: number;
+        };
+        OrderSettings: {
+            orderingEnabled: boolean;
+            approvalRequired: boolean;
+            /** Format: int64 */
+            maxAmountCents?: number;
+            /** Format: int32 */
+            maxItems?: number;
         };
         BrandRequest: {
             /** @example Sakura Sushi */
@@ -1254,6 +1333,56 @@ export interface components {
             wifiName?: string;
             /** @description A equipe bloqueou os chamados deste celular */
             blocked: boolean;
+        };
+        PlaceOrderLine: {
+            /** Format: uuid */
+            productId: string;
+            /**
+             * Format: int32
+             * @example 2
+             */
+            quantity: number;
+            /**
+             * @description Observação do item
+             * @example sem cebolinha
+             */
+            note?: string;
+        };
+        PlaceOrderRequest: {
+            items: components["schemas"]["PlaceOrderLine"][];
+        };
+        TableOrder: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description O número do pedido no dia
+             */
+            number: number;
+            /** @enum {string} */
+            status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Foi este celular que mandou (só ele cancela os itens) */
+            mine: boolean;
+            items: components["schemas"]["TableOrderItem"][];
+        };
+        TableOrderItem: {
+            /** Format: uuid */
+            id: string;
+            productName: string;
+            /**
+             * Format: int64
+             * @description O preço copiado na hora do pedido
+             */
+            unitPriceCents: number;
+            /** Format: int32 */
+            quantity: number;
+            note?: string;
+            /** @enum {string} */
+            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+            /** @description Por que foi cancelado */
+            cancelReason?: string;
         };
         CallRequest: {
             /** @enum {string} */
@@ -1594,6 +1723,17 @@ export interface components {
             /** @example Salão principal */
             sectorName: string;
             brand: components["schemas"]["PublicBrand"];
+        };
+        TableOrders: {
+            /** @description O restaurante aceita pedido pelo celular */
+            orderingEnabled: boolean;
+            /**
+             * Format: int64
+             * @description A soma dos itens não cancelados da comanda
+             */
+            totalCents: number;
+            /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
+            orders: components["schemas"]["TableOrder"][];
         };
         PublicMenu: {
             categories: components["schemas"]["PublicMenuCategory"][];
@@ -1978,6 +2118,50 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getOrderSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As configurações */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderSettings"];
+                };
+            };
+        };
+    };
+    updateOrderSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Salvas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderSettings"];
                 };
             };
         };
@@ -2503,6 +2687,94 @@ export interface operations {
             };
             /** @description QR inválido, trocado ou mesa desativada */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listTableOrders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A comanda (vazia, se a mesa ainda não pediu) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOrders"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    placeOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Pedido feito (direto para a cozinha ou parado na confirmação) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOrder"];
+                };
+            };
+            /** @description Sem presença confirmada, ou celular bloqueado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Pedido desligado, ou um item esgotou ou saiu do cardápio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Pedidos demais deste celular em pouco tempo */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4147,6 +4419,47 @@ export interface operations {
             };
             /** @description O aparelho é uma TV */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    cancelOrderItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                itemId: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um item desta mesa */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A cozinha já começou, ou o item é de outro celular */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

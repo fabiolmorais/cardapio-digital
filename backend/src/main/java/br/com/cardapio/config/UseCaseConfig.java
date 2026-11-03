@@ -37,6 +37,11 @@ import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
+import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
+import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
+import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
+import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
+import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
 import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
@@ -66,6 +71,9 @@ import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
+import br.com.cardapio.application.port.out.order.OrderPort;
+import br.com.cardapio.application.port.out.order.OrderSettingsPort;
+import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
@@ -115,6 +123,11 @@ import br.com.cardapio.application.service.menu.ListProductMediaService;
 import br.com.cardapio.application.service.menu.RemoveProductMediaService;
 import br.com.cardapio.application.service.menu.ReorderProductMediaService;
 import br.com.cardapio.application.service.menu.StartMediaUploadService;
+import br.com.cardapio.application.service.order.CancelOrderItemService;
+import br.com.cardapio.application.service.order.GetOrderSettingsService;
+import br.com.cardapio.application.service.order.ListTableOrdersService;
+import br.com.cardapio.application.service.order.PlaceOrderService;
+import br.com.cardapio.application.service.order.UpdateOrderSettingsService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.presence.CheckPresenceService;
 import br.com.cardapio.application.service.presence.GetPresenceRuleService;
@@ -561,5 +574,40 @@ class UseCaseConfig {
     @Bean
     EndExpiredSessionsUseCase endExpiredSessionsUseCase(TableSessionPort tableSessionPort, Clock clock) {
         return new EndExpiredSessionsService(tableSessionPort, clock);
+    }
+
+    // Pedido pelo celular (Guia 18)
+
+    @Bean
+    PlaceOrderUseCase placeOrderUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                        OrderSettingsPort orderSettingsPort, ProductPort productPort, TabPort tabPort,
+                                        OrderPort orderPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort, tabPort,
+                orderPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    ListTableOrdersUseCase listTableOrdersUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                                  OrderSettingsPort orderSettingsPort, TabPort tabPort,
+                                                  OrderPort orderPort, Clock clock) {
+        return new ListTableOrdersService(diningTablePort, tableSessionPort, orderSettingsPort, tabPort, orderPort,
+                clock);
+    }
+
+    @Bean
+    CancelOrderItemUseCase cancelOrderItemUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                                  OrderPort orderPort, EventPublisherPort eventPublisherPort,
+                                                  Clock clock) {
+        return new CancelOrderItemService(diningTablePort, tableSessionPort, orderPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    GetOrderSettingsUseCase getOrderSettingsUseCase(OrderSettingsPort orderSettingsPort, Clock clock) {
+        return new GetOrderSettingsService(orderSettingsPort, clock);
+    }
+
+    @Bean
+    UpdateOrderSettingsUseCase updateOrderSettingsUseCase(OrderSettingsPort orderSettingsPort, Clock clock) {
+        return new UpdateOrderSettingsService(orderSettingsPort, clock);
     }
 }

@@ -6,6 +6,9 @@ import br.com.cardapio.domain.call.model.CallId;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.event.OrderChanged;
+import br.com.cardapio.domain.order.model.OrderId;
+import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -36,8 +39,15 @@ class RealtimeMessages {
         static final String KIND = "CallChanged";
     }
 
+    record OrderChangedMessage(String kind, UUID establishmentId, UUID tableId, UUID orderId, String status,
+                               Instant occurredAt) {
+        static final String KIND = "OrderChanged";
+    }
+
     String toJson(DomainEvent event) {
         Object message = switch (event) {
+            case OrderChanged o -> new OrderChangedMessage(OrderChangedMessage.KIND, o.establishmentId().value(),
+                    o.tableId().value(), o.orderId().value(), o.status().name(), o.occurredAt());
             case CallChanged c -> new CallChangedMessage(CallChangedMessage.KIND, c.establishmentId().value(),
                     c.tableId().value(), c.callId().value(), c.type().name(), c.status().name(), c.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
@@ -54,6 +64,11 @@ class RealtimeMessages {
             return new CallChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new CallId(m.callId()), CallType.valueOf(m.type()), CallStatus.valueOf(m.status()),
                     m.occurredAt());
+        }
+        if (OrderChangedMessage.KIND.equals(kind)) {
+            OrderChangedMessage m = json.treeToValue(node, OrderChangedMessage.class);
+            return new OrderChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new OrderId(m.orderId()), OrderStatus.valueOf(m.status()), m.occurredAt());
         }
         throw new IllegalArgumentException("Mensagem de tempo real desconhecida: " + kind);
     }

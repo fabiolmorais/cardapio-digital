@@ -7,6 +7,7 @@ import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductId;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,4 +41,7 @@ public interface ProductPort {
      * mostra. São no máximo Product.MAX_PER_ESTABLISHMENT (ADR 0006).
      */
     List<Product> findAllActive(EstablishmentId establishmentId);
+
+    /** Os produtos ativos destes ids, numa consulta só (o carrinho). Os que não existem ou são de outro restaurante ficam de fora. */
+    List<Product> findActiveByIds(EstablishmentId establishmentId, Collection<ProductId> ids);
 }

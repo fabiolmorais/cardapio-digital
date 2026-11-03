@@ -8,6 +8,9 @@ import br.com.cardapio.domain.call.model.CallId;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.event.OrderChanged;
+import br.com.cardapio.domain.order.model.OrderId;
+import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -92,5 +95,16 @@ class PostgresRealtimeTest {
         transaction.executeWithoutResult(status -> publisher.publish(event()));
 
         assertThat(queue.poll(1, TimeUnit.SECONDS)).isNull();
+    }
+
+    @Test
+    void anOrderEventTravelsTheSameWay() throws Exception {
+        BlockingQueue<DomainEvent> mine = listen(sakura);
+        OrderChanged order = new OrderChanged(sakura, DiningTableId.newId(), OrderId.newId(),
+                OrderStatus.PENDING_APPROVAL, Instant.now().truncatedTo(ChronoUnit.MICROS));
+
+        transaction.executeWithoutResult(status -> publisher.publish(order));
+
+        assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(order);
     }
 }

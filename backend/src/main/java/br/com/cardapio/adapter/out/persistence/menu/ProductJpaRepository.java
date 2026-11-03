@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +37,9 @@ interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UUID> {
                                             Pageable pageable);
 
     Optional<ProductJpaEntity> findByIdAndEstablishmentId(UUID id, UUID establishmentId);
+
+    /** O carrinho: os produtos ativos destes ids, numa consulta só (WHERE id IN (…)). */
+    List<ProductJpaEntity> findByEstablishmentIdAndIdInAndActiveTrue(UUID establishmentId, Collection<UUID> ids);
 
     List<ProductJpaEntity> findByEstablishmentIdAndCategoryIdAndActiveTrueOrderByPositionAscIdAsc(
             UUID establishmentId, UUID categoryId);

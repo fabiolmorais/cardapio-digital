@@ -85,6 +85,9 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/calls/*").permitAll()
                         // A trava de presença (Guia 16): a página da mesa confere se o celular está no salão.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/presence").permitAll()
+                        // O pedido pelo celular (Guia 18): enviar o carrinho e cancelar um item na fila.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/orders").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/order-items/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()
