@@ -5,6 +5,7 @@ import br.com.cardapio.domain.call.exception.TooManyCallsException;
 import br.com.cardapio.domain.device.exception.InvalidDeviceException;
 import br.com.cardapio.domain.device.exception.PinNotAllowedOnDeviceException;
 import br.com.cardapio.domain.device.exception.TvModeNotAllowedException;
+import br.com.cardapio.domain.order.exception.TooManyOrdersException;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.shared.exception.ConflictException;
 import br.com.cardapio.domain.shared.exception.DomainException;
@@ -70,9 +71,9 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    /** 429: chamados demais do mesmo celular. O limite é por minuto, então a espera é de um minuto. */
-    @ExceptionHandler(TooManyCallsException.class)
-    ResponseEntity<ProblemDetail> handleTooManyCalls(TooManyCallsException ex) {
+    /** 429: chamados ou pedidos demais do mesmo celular. O limite é por minuto, então a espera é de um minuto. */
+    @ExceptionHandler({TooManyCallsException.class, TooManyOrdersException.class})
+    ResponseEntity<ProblemDetail> handleTooManyCalls(DomainException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, "60")
                 .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));

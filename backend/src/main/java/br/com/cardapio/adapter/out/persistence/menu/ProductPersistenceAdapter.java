@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -71,6 +72,13 @@ class ProductPersistenceAdapter implements ProductPort {
     public long countActive(EstablishmentId establishmentId) {
         establishmentFilter.enable(establishmentId);
         return products.countByEstablishmentIdAndActiveTrue(establishmentId.value());
+    }
+
+    @Override
+    public List<Product> findActiveByIds(EstablishmentId establishmentId, Collection<ProductId> ids) {
+        establishmentFilter.enable(establishmentId);
+        return products.findByEstablishmentIdAndIdInAndActiveTrue(establishmentId.value(),
+                ids.stream().map(ProductId::value).toList()).stream().map(MenuPersistenceMapper::toDomain).toList();
     }
 
     @Override

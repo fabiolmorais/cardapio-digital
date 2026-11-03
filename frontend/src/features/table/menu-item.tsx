@@ -1,4 +1,5 @@
 import { UtensilsCrossed } from "lucide-react";
+import type { ReactNode } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
@@ -10,9 +11,9 @@ const t = tablePage.menu;
 /**
  * Um produto na lista do cardápio: a foto, o nome, a descrição e o preço (com o "de/por" na
  * promoção). Esgotado aparece em cinza, com "Esgotado hoje". Sem hooks: serve tanto no servidor
- * quanto dentro do navegador do cardápio (componente do cliente).
+ * quanto dentro do navegador do cardápio (componente do cliente), que põe o "Adicionar" em `action`.
  */
-export function MenuItemCard({ item }: { item: MenuItem }) {
+export function MenuItemCard({ item, action }: { item: MenuItem; action?: ReactNode }) {
   const off = discountPercent(item);
   return (
     <article
@@ -47,7 +48,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
           )}
         </span>
         {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
-        <span className="mt-auto pt-1">
+        <span className="mt-auto flex items-end justify-between gap-2 pt-1">
           {!item.available ? (
             <span className="rounded-md border border-(--mesa-stroke) px-2 py-0.5 text-xs font-semibold text-(--mesa-muted)">
               {t.soldOut}
@@ -66,6 +67,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
           ) : (
             <span className="font-bold">{formatCents(item.priceCents)}</span>
           )}
+          {item.available && action}
         </span>
       </div>
     </article>

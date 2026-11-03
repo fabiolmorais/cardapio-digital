@@ -8,9 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { canManageTeam } from "@/features/team/team-rules";
+import { centsToInput, parseCents } from "@/lib/format";
 import { useSession } from "@/lib/auth/use-session";
 import { messages } from "@/messages/pt-BR";
-import { fetchPresenceRule, updatePresenceRule, type PresenceLocation, type PresenceRule } from "./presence-api";
+import { cn } from "cn";
+import {
+  fetchOrderSettings,
+  fetchPresenceRule,
+  updateOrderSettings,
+  updatePresenceRule,
+  type OrderSettings,
+  type PresenceLocation,
+  type PresenceRule,
+} from "./presence-api";
 
 const t = messages.presence;
 const MAX_NETWORKS = 10;
@@ -26,13 +36,17 @@ const LocationMap = dynamic(() => import("./location-map"), {
   loading: () => <div className="h-72 w-full animate-pulse rounded-xl bg-muted" />,
 });
 
-/** Presença e pedidos (desenho 12.6): as redes do salão, o nome do Wi-Fi e o local com o raio. */
+/**
+ * Presença e pedidos (desenho 12.6): as redes do salão, o nome do Wi-Fi, o local com o raio, a
+ * validade da sessão e, ao lado, o pedido pelo celular com a confirmação do garçom e os limites.
+ */
 export function PresenceEditor() {
   const { status, session } = useSession();
   const allowed = status === "authenticated" && canManageTeam(session.establishment.role);
   const rule = useQuery({ queryKey: ["presence-rule"], queryFn: fetchPresenceRule, enabled: allowed });
+  const orders = useQuery({ queryKey: ["order-settings"], queryFn: fetchOrderSettings, enabled: allowed });
 
-  if (status !== "authenticated" || (allowed && rule.isPending)) {
+  if (status !== "authenticated" || (allowed && (rule.isPending || orders.isPending))) {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
   }
   if (!allowed) {
@@ -42,18 +56,18 @@ export function PresenceEditor() {
       </p>
     );
   }
-  if (rule.isError || !rule.data) {
+  if (rule.isError || !rule.data || orders.isError || !orders.data) {
     return (
       <p role="alert" className="px-4 py-6 text-destructive sm:px-7">
         {t.loadError}
       </p>
     );
   }
-  return <PresenceForm rule={rule.data} />;
+  return <PresenceForm rule={rule.data} orders={orders.data} />;
 }
 
 /** O formulário nasce do que o back tem; a resposta do back, ao salvar, vira o cache. */
-function PresenceForm({ rule }: { rule: PresenceRule }) {
+function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSettings }) {
   const queryClient = useQueryClient();
   const id = useId();
   const [networks, setNetworks] = useState<string[]>(rule.networks);
@@ -64,6 +78,10 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [ordering, setOrdering] = useState(orders.orderingEnabled);
+  const [approval, setApproval] = useState(orders.approvalRequired);
+  const [maxAmount, setMaxAmount] = useState(orders.maxAmountCents == null ? "" : centsToInput(orders.maxAmountCents));
+  const [maxItems, setMaxItems] = useState(orders.maxItems == null ? "" : String(orders.maxItems));
 
   const changed = () => setNotice(null);
   const full = networks.length >= MAX_NETWORKS;
@@ -104,16 +122,30 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
   }
 
   const save = useMutation({
-    mutationFn: () =>
-      updatePresenceRule({
+    mutationFn: async () => {
+      // Os limites, conferidos aqui para a mensagem sair clara (o back confere de novo).
+      const amount = parseCents(maxAmount);
+      if (amount !== null && (Number.isNaN(amount) || amount < 100)) throw new Error(t.orders.invalidAmount);
+      const items = maxItems.trim() === "" ? null : Number(maxItems);
+      if (items !== null && (!Number.isInteger(items) || items < 1 || items > 100)) throw new Error(t.orders.invalidItems);
+      const savedRule = await updatePresenceRule({
         networks,
         wifiName: wifiName.trim() || undefined,
         location: location ?? undefined,
         sessionIdleMinutes: idleMinutes,
-      }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["presence-rule"], saved);
-      setNetworks(saved.networks);
+      });
+      const savedOrders = await updateOrderSettings({
+        orderingEnabled: ordering,
+        approvalRequired: approval,
+        maxAmountCents: amount ?? undefined,
+        maxItems: items ?? undefined,
+      });
+      return { savedRule, savedOrders };
+    },
+    onSuccess: ({ savedRule, savedOrders }) => {
+      queryClient.setQueryData(["presence-rule"], savedRule);
+      queryClient.setQueryData(["order-settings"], savedOrders);
+      setNetworks(savedRule.networks);
       setNotice(t.saved);
     },
   });
@@ -333,6 +365,77 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
           </select>
         </section>
 
+        <section aria-labelledby={`${id}orders`} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <h2 id={`${id}orders`} className="text-lg font-semibold">
+            {t.orders.title}
+          </h2>
+          <Toggle
+            checked={ordering}
+            onChange={(value) => {
+              changed();
+              setOrdering(value);
+            }}
+            label={t.orders.enabled}
+            description={t.orders.enabledHint}
+          />
+          <Toggle
+            checked={approval}
+            disabled={!ordering}
+            onChange={(value) => {
+              changed();
+              setApproval(value);
+            }}
+            label={t.orders.approval}
+            description={t.orders.approvalHint}
+          />
+          <div className="flex flex-col gap-1 pt-2">
+            <h3 className="font-semibold">{t.orders.limits}</h3>
+            <p className="text-sm text-muted-foreground">{t.orders.limitsHint}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}amount`} className="text-muted-foreground">
+                {t.orders.maxAmount}
+              </Label>
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-input px-3 dark:bg-input/30 focus-within:ring-3 focus-within:ring-ring/50">
+                <span className="text-sm font-semibold text-muted-foreground">R$</span>
+                <input
+                  id={`${id}amount`}
+                  inputMode="decimal"
+                  value={maxAmount}
+                  disabled={!ordering}
+                  placeholder={t.orders.noLimit}
+                  autoComplete="off"
+                  onChange={(event) => {
+                    changed();
+                    setMaxAmount(event.target.value);
+                  }}
+                  className="h-full min-w-0 flex-1 bg-transparent text-base outline-none disabled:opacity-50"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}items`} className="text-muted-foreground">
+                {t.orders.maxItems}
+              </Label>
+              <Input
+                id={`${id}items`}
+                inputMode="numeric"
+                value={maxItems}
+                disabled={!ordering}
+                placeholder={t.orders.noLimit}
+                autoComplete="off"
+                onChange={(event) => {
+                  changed();
+                  setMaxItems(event.target.value.replace(/\D/g, "").slice(0, 3));
+                }}
+                className="h-11 rounded-xl"
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{t.orders.emptyHint}</p>
+        </section>
+
         {hint && (
           <p role="alert" className="text-sm text-destructive">
             {hint}
@@ -345,5 +448,37 @@ function PresenceForm({ rule }: { rule: PresenceRule }) {
         </p>
       </div>
     </form>
+  );
+}
+
+/** Um interruptor de verdade (checkbox com role="switch"), com o título e a explicação no rótulo. */
+function Toggle({
+  checked,
+  disabled,
+  onChange,
+  label,
+  description,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  description: string;
+}) {
+  return (
+    <label className={cn("flex items-start gap-4", disabled && "opacity-50")}>
+      <span className="flex flex-1 flex-col gap-0.5">
+        <span className="font-medium">{label}</span>
+        <span className="text-sm text-muted-foreground">{description}</span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 size-5 shrink-0 accent-primary"
+      />
+    </label>
   );
 }

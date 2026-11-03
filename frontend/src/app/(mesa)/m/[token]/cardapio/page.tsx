@@ -44,7 +44,7 @@ async function Menu({ params }: Pick<PageProps<"/m/[token]/cardapio">, "params">
       {menu.categories.length === 0 ? (
         <p className="text-(--mesa-muted)">{t.menu.empty}</p>
       ) : (
-        <MenuBrowser menu={menu} />
+        <MenuBrowser token={token} menu={menu} />
       )}
     </TableShell>
   );

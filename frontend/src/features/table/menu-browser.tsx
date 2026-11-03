@@ -1,10 +1,12 @@
 "use client";
 
-import { Search } from "lucide-react";
-import { useDeferredValue, useId, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useDeferredValue, useEffect, useId, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { MenuItemCard } from "./menu-item";
+import { ProductSheet } from "./product-sheet";
 import type { MenuItem, PublicMenu } from "./table-data";
+import { listOrders } from "./table-orders";
 
 const t = tablePage.menu;
 
@@ -16,11 +18,50 @@ function plain(text: string) {
 /**
  * O cardápio com a busca. A busca roda aqui, no celular, sobre o cardápio que já veio com a
  * página: sem ida à rede a cada letra (ADR 0006). As abas são âncoras para as seções.
+ *
+ * Cada produto disponível tem o "Adicionar", que abre o prato com a observação e a quantidade.
+ * Se o restaurante desligou o pedido pelo celular, o botão some (o cardápio continua).
  */
-export function MenuBrowser({ menu }: { menu: PublicMenu }) {
+export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }) {
   const [search, setSearch] = useState("");
   const query = plain(useDeferredValue(search).trim());
   const inputId = useId();
+  const [open, setOpen] = useState<MenuItem | null>(null);
+  const [ordering, setOrdering] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    listOrders(token)
+      .then((orders) => {
+        if (!cancelled) setOrdering(orders.orderingEnabled);
+      })
+      .catch(() => {
+        // Sem resposta, o botão fica: o envio do pedido confere de novo.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const card = (item: MenuItem) => (
+    <MenuItemCard
+      key={item.id}
+      item={item}
+      action={
+        ordering && (
+          <button
+            type="button"
+            onClick={() => setOpen(item)}
+            aria-label={t.addNamed(item.name)}
+            className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-(--brand) px-3.5 text-sm font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none"
+          >
+            <Plus aria-hidden className="size-4" />
+            {t.add}
+          </button>
+        )
+      }
+    />
+  );
 
   const found: MenuItem[] = query
     ? menu.categories.flatMap((c) =>
@@ -52,9 +93,7 @@ export function MenuBrowser({ menu }: { menu: PublicMenu }) {
       {query ? (
         <section aria-live="polite" className="flex flex-col gap-2.5">
           <p className="text-sm text-(--mesa-muted)">{found.length ? t.results(found.length) : t.noResults(search.trim())}</p>
-          {found.map((item) => (
-            <MenuItemCard key={item.id} item={item} />
-          ))}
+          {found.map(card)}
         </section>
       ) : (
         <>
@@ -79,13 +118,12 @@ export function MenuBrowser({ menu }: { menu: PublicMenu }) {
               <h2 id={`${inputId}-${c.id}`} className="pt-1 text-xl font-bold tracking-tight">
                 {c.name}
               </h2>
-              {c.products.map((item) => (
-                <MenuItemCard key={item.id} item={item} />
-              ))}
+              {c.products.map(card)}
             </section>
           ))}
         </>
       )}
+      <ProductSheet token={token} item={open} onClose={() => setOpen(null)} />
     </div>
   );
 }

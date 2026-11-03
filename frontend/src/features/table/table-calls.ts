@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { baseUrl } from "@/lib/api/base";
 import type { components } from "@/lib/api/schema";
 import { tablePage } from "@/messages/table.pt-BR";
+import { useTableChannel } from "./table-channel";
 
 export type TableCall = components["schemas"]["TableCall"];
 export type CallRequest = components["schemas"]["CallRequest"];
@@ -11,10 +12,8 @@ export type PaymentMethod = NonNullable<CallRequest["paymentMethod"]>;
 export type Presence = components["schemas"]["Presence"];
 type Position = { latitude: number; longitude: number; accuracyMeters: number };
 
-/** Sem o tempo real (conexão caída), a página volta a perguntar de tempos em tempos. */
-const FALLBACK_REFRESH_MS = 15_000;
-/** Quanto esperar para abrir o canal de novo quando o servidor o recusa (sessão vencida, por exemplo). */
-const REOPEN_MS = 3000;
+/** O canal de tempo real avisa quando um chamado da mesa muda. */
+const CALL_EVENTS = ["call"] as const;
 
 /**
  * As chamadas da mesa, com fetch direto (como a sessão): o cliente da API do painel traria junto
@@ -24,7 +23,7 @@ const REOPEN_MS = 3000;
  * sessão venceu ou ainda não existe (401), abre uma; se a presença ainda não foi conferida (403),
  * confere (pela rede do salão). Nos dois casos, tenta de novo, uma vez.
  */
-async function send(token: string, path: string, init: RequestInit = {}): Promise<Response> {
+export async function send(token: string, path: string, init: RequestInit = {}): Promise<Response> {
   const base = `${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}`;
   const go = () => fetch(`${base}${path}`, { ...init, credentials: "include" });
   await startVisit(token); // a que a página já começou, se houver: assim não nascem duas sessões
@@ -95,9 +94,9 @@ function currentPosition(): Promise<Position> {
 }
 
 /** A mensagem do back (Problem Details) ou uma genérica. */
-async function failure(response: Response): Promise<Error> {
+export async function failure(response: Response, fallback: string = tablePage.calls.failed): Promise<Error> {
   const body = await response.json().catch(() => null);
-  return new Error(typeof body?.detail === "string" ? body.detail : tablePage.calls.failed);
+  return new Error(typeof body?.detail === "string" ? body.detail : fallback);
 }
 
 export async function listCalls(token: string): Promise<TableCall[]> {
@@ -160,62 +159,15 @@ export function useTableCalls(token: string) {
     };
   }, [token]);
 
-  // O canal chama a versão mais nova (a que sabe se já está presente), sem reabrir a conexão.
-  const onEvent = useRef(refreshPresence);
-  useEffect(() => {
-    onEvent.current = refreshPresence;
-  }, [refreshPresence]);
-
-  useEffect(() => {
-    let live = false;
-    // A primeira busca fica para logo depois da montagem (e não dentro do efeito), como as outras.
-    const first = window.setTimeout(() => void refresh(), 0);
-    // Rede de segurança: enquanto o canal não está aberto, pergunta de tempos em tempos.
-    const fallback = window.setInterval(() => {
-      if (!live && document.visibilityState === "visible") void refresh();
-    }, FALLBACK_REFRESH_MS);
-
-    // O canal de tempo real da mesa (SSE): "ready" ao conectar e "call" quando um chamado dela
-    // muda. Os dois pedem para buscar de novo; o aviso não traz dados, só o motivo.
-    let source: EventSource | null = null;
-    let reopen: number | undefined;
-    const url = `${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/events`;
-    function open() {
-      source = new EventSource(url, { withCredentials: true });
-      const update = () => {
-        live = true;
-        void refresh();
-        void onEvent.current();
-      };
-      source.addEventListener("ready", update);
-      source.addEventListener("call", update);
-      source.onerror = () => {
-        live = false;
-        // Se a conexão só caiu, o navegador reconecta sozinho. Se o servidor recusou (401: a
-        // sessão venceu), ele desiste: aí a página renova a sessão e abre o canal de novo.
-        if (source?.readyState === EventSource.CLOSED) {
-          source = null;
-          reopen = window.setTimeout(async () => {
-            await startVisit(token, true);
-            if (!stopped) open();
-          }, REOPEN_MS);
-        }
-      };
-    }
-    // O canal só abre depois da visita (sessão e presença): sem ela, o servidor recusaria (401).
-    let stopped = false;
-    void startVisit(token).then(() => {
-      if (!stopped) open();
-    });
-
-    return () => {
-      stopped = true;
-      window.clearTimeout(first);
-      window.clearInterval(fallback);
-      window.clearTimeout(reopen);
-      source?.close();
-    };
-  }, [refresh, token]);
+  // Cada aviso do canal busca os chamados e a presença; a rede de segurança, só os chamados.
+  const onUpdate = useCallback(
+    (fromChannel: boolean) => {
+      void refresh();
+      if (fromChannel) void refreshPresence();
+    },
+    [refresh, refreshPresence],
+  );
+  useTableChannel(token, CALL_EVENTS, onUpdate);
 
   /** "Usar minha localização": pede a posição ao navegador e manda para a conferência. */
   async function locate() {
