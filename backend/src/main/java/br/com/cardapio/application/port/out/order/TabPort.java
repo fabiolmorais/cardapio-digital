@@ -6,6 +6,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.order.model.TabPeriod;
 
 import java.util.Optional;
 
@@ -28,4 +29,12 @@ public interface TabPort {
 
     /** As comandas abertas com o total e os itens a caminho, numa consulta para a página. */
     ResultPage<OpenTabView> findOpenTabs(EstablishmentId establishmentId, PageQuery page);
+
+    /**
+     * As comandas fechadas nestes dias, no fuso do restaurante, da mais nova à mais antiga.
+     *
+     * @param tableId só desta mesa; null = todas
+     */
+    ResultPage<ClosedTabView> findClosed(EstablishmentId establishmentId, TabPeriod period, DiningTableId tableId,
+                                         PageQuery page);
 }

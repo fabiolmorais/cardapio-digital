@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, ChevronRight, LogOut, Palette, QrCode, ShieldCheck, Store, Users } from "lucide-react";
+import { BookOpen, ChevronRight, LogOut, Palette, QrCode, Receipt, ShieldCheck, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ const SHORTCUTS = [
   { href: "/admin/equipe", icon: Users, text: t.manage.team },
   { href: "/admin/marca", icon: Palette, text: t.manage.brand },
   { href: "/admin/presenca", icon: ShieldCheck, text: t.manage.presence },
+  { href: "/admin/comandas", icon: Receipt, text: t.manage.tabs },
 ] as const;
 
 async function fetchMe() {

@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.application.port.in.order.ClosedTab;
 import br.com.cardapio.application.port.in.order.OpenTab;
 import br.com.cardapio.application.port.in.order.OrderItemStep;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
@@ -22,6 +23,7 @@ import br.com.cardapio.domain.order.exception.TabStateException;
 import br.com.cardapio.domain.order.model.OrderLine;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.order.model.TabStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,5 +153,30 @@ class TabServicesTest {
                 .isInstanceOf(TabStateException.class).hasMessageContaining("1× Guioza");
         assertThat(fakes.tabs.get(theTab()).status()).isEqualTo(TabStatus.OPEN);
         assertThat(sessions.byToken("ana").endedAt()).isNull();
+    }
+
+    @Test
+    void theHistoryHasTheClosedTabsOfThePeriod() {
+        deliverAll(place("ana", guioza, 2));
+        TabId closed = theTab();
+        close(PaymentMethod.CASH);
+        // A visita seguinte (um celular novo: os da mesa saíram) abre outra comanda, que não entra.
+        sessions.givenPresent(sakura, mesa04.id(), "caio", NOW);
+        place("caio", sunomono, 1);
+        LocalDate today = LocalDate.parse("2026-11-03");
+        ListClosedTabsService history = new ListClosedTabsService(fakes);
+
+        List<ClosedTab> found = history.list(sakura, new TabPeriod(today, today), null, new PageQuery(0, 50))
+                .content();
+
+        assertThat(found).singleElement().satisfies(tab -> {
+            assertThat(tab.id()).isEqualTo(closed);
+            assertThat(tab.total()).isEqualTo(Money.ofCents(2 * 29_90));
+            assertThat(tab.paymentMethod()).isEqualTo(PaymentMethod.CASH);
+        });
+        assertThat(history.list(sakura, new TabPeriod(today.minusDays(7), today.minusDays(1)), null,
+                new PageQuery(0, 50)).content()).isEmpty();
+        assertThat(history.list(EstablishmentId.newId(), new TabPeriod(today, today), null, new PageQuery(0, 50))
+                .content()).isEmpty();
     }
 }
