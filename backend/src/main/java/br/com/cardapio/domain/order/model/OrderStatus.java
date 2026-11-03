@@ -6,6 +6,6 @@ public enum OrderStatus {
     PENDING_APPROVAL,
     /** Foi para a cozinha. */
     SENT,
-    /** O garçom recusou (Guia 19). */
+    /** O garçom recusou: os itens ficam cancelados e nada entra na conta. */
     REJECTED
 }

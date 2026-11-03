@@ -1,17 +1,22 @@
 package br.com.cardapio.application.port.out.order;
 
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.order.model.Order;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
+import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface OrderPort {
 
@@ -36,4 +41,21 @@ public interface OrderPort {
 
     /** Grava a mudança do item SÓ SE ele ainda estiver no status esperado (o UPDATE condicional). */
     boolean updateItem(OrderItem changed, OrderItemStatus expectedStatus);
+
+    /** Grava a mudança do pedido SÓ SE ele ainda estiver no status esperado (dois garçons respondendo juntos). */
+    boolean updateOrder(Order changed, OrderStatus expectedStatus);
+
+    /** Cancela, de uma vez, os itens ainda a caminho de um pedido (o pedido recusado), com o motivo. */
+    void cancelItemsOnTheWay(EstablishmentId establishmentId, OrderId orderId, UserId by, String reason,
+                             Instant now);
+
+    /**
+     * A fila da cozinha: os itens nestes status, dos pedidos que foram para a cozinha (os parados
+     * na confirmação ficam de fora), por ordem de chegada.
+     */
+    ResultPage<KitchenItemView> findQueue(EstablishmentId establishmentId, Set<OrderItemStatus> statuses,
+                                          PageQuery page);
+
+    /** Os pedidos parados na confirmação, com os itens: duas consultas, sem N+1. */
+    ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page);
 }

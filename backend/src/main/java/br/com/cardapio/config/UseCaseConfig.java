@@ -37,10 +37,15 @@ import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
+import br.com.cardapio.application.port.in.order.AdvanceOrderItemUseCase;
+import br.com.cardapio.application.port.in.order.CancelOrderItemByStaffUseCase;
 import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
 import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
+import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
+import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
+import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
@@ -123,10 +128,15 @@ import br.com.cardapio.application.service.menu.ListProductMediaService;
 import br.com.cardapio.application.service.menu.RemoveProductMediaService;
 import br.com.cardapio.application.service.menu.ReorderProductMediaService;
 import br.com.cardapio.application.service.menu.StartMediaUploadService;
+import br.com.cardapio.application.service.order.AdvanceOrderItemService;
+import br.com.cardapio.application.service.order.CancelOrderItemByStaffService;
 import br.com.cardapio.application.service.order.CancelOrderItemService;
 import br.com.cardapio.application.service.order.GetOrderSettingsService;
+import br.com.cardapio.application.service.order.ListKitchenQueueService;
 import br.com.cardapio.application.service.order.ListTableOrdersService;
+import br.com.cardapio.application.service.order.ListWaitingOrdersService;
 import br.com.cardapio.application.service.order.PlaceOrderService;
+import br.com.cardapio.application.service.order.ReviewOrderService;
 import br.com.cardapio.application.service.order.UpdateOrderSettingsService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.presence.CheckPresenceService;
@@ -609,5 +619,34 @@ class UseCaseConfig {
     @Bean
     UpdateOrderSettingsUseCase updateOrderSettingsUseCase(OrderSettingsPort orderSettingsPort, Clock clock) {
         return new UpdateOrderSettingsService(orderSettingsPort, clock);
+    }
+
+    // A cozinha e a confirmação do garçom (Guia 19)
+
+    @Bean
+    ListKitchenQueueUseCase listKitchenQueueUseCase(OrderPort orderPort) {
+        return new ListKitchenQueueService(orderPort);
+    }
+
+    @Bean
+    AdvanceOrderItemUseCase advanceOrderItemUseCase(OrderPort orderPort, EventPublisherPort eventPublisherPort,
+                                                    Clock clock) {
+        return new AdvanceOrderItemService(orderPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    CancelOrderItemByStaffUseCase cancelOrderItemByStaffUseCase(OrderPort orderPort,
+                                                                EventPublisherPort eventPublisherPort, Clock clock) {
+        return new CancelOrderItemByStaffService(orderPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    ListWaitingOrdersUseCase listWaitingOrdersUseCase(OrderPort orderPort) {
+        return new ListWaitingOrdersService(orderPort);
+    }
+
+    @Bean
+    ReviewOrderUseCase reviewOrderUseCase(OrderPort orderPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ReviewOrderService(orderPort, eventPublisherPort, clock);
     }
 }

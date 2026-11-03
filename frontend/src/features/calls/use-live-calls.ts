@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { connectTvEvents } from "@/lib/realtime/device-events";
 import type { ServerEvent } from "@/lib/realtime/sse-parser";
-import { connectStaffEvents } from "@/lib/realtime/staff-events";
+import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { isSoundOn, subscribeToSound } from "./alert-sound";
 import { fetchCallQueue, fetchTvCallQueue, type StaffCall } from "./calls-api";
 
@@ -23,7 +23,7 @@ export type LiveCallsSource = {
 export const staffSource: LiveCallsSource = {
   queryKey: "call-queue",
   fetchQueue: fetchCallQueue,
-  connect: connectStaffEvents,
+  connect: subscribeStaffEvents,
 };
 
 export const tvDeviceSource: LiveCallsSource = {

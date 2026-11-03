@@ -32,11 +32,14 @@ record TableOrderResponse(
             @Schema(requiredMode = REQUIRED) OrderItemStatus status,
             @Schema(description = "Por que foi cancelado") String cancelReason
     ) {
+        static Item from(TableOrder.Item i) {
+            return new Item(i.id().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
+                    i.status(), i.cancelReason());
+        }
     }
 
     static TableOrderResponse from(TableOrder o) {
         return new TableOrderResponse(o.id().value(), o.number(), o.status(), o.createdAt(), o.mine(),
-                o.items().stream().map(i -> new Item(i.id().value(), i.productName(), i.unitPrice().cents(),
-                        i.quantity(), i.note(), i.status(), i.cancelReason())).toList());
+                o.items().stream().map(Item::from).toList());
     }
 }

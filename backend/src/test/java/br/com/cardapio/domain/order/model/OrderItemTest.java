@@ -1,6 +1,7 @@
 package br.com.cardapio.domain.order.model;
 
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductDetails;
@@ -59,5 +60,49 @@ class OrderItemTest {
         assertThatThrownBy(() -> new OrderLine(sunomono.id(), 1, "x".repeat(141)))
                 .isInstanceOf(InvalidValueException.class);
         assertThat(new OrderLine(sunomono.id(), 1, "   ").note()).isNull();
+    }
+
+    @Test
+    void theKitchenAndTheWaiterTakeTheItemToTheTable() {
+        UserId carlos = UserId.newId();
+        OrderItem preparing = item(1, null).start(NOW.plusSeconds(60));
+        OrderItem ready = preparing.markReady(NOW.plusSeconds(600));
+        OrderItem delivered = ready.deliver(carlos, NOW.plusSeconds(660));
+
+        assertThat(preparing.status()).isEqualTo(OrderItemStatus.PREPARING);
+        assertThat(preparing.preparingAt()).isEqualTo(NOW.plusSeconds(60));
+        assertThat(ready.readyAt()).isEqualTo(NOW.plusSeconds(600));
+        assertThat(delivered.status()).isEqualTo(OrderItemStatus.DELIVERED);
+        assertThat(delivered.deliveredBy()).isEqualTo(carlos);
+        assertThat(delivered.deliveredAt()).isEqualTo(NOW.plusSeconds(660));
+        // Os passos não voltam, e o entregue não sai de cena.
+        assertThatThrownBy(() -> ready.start(NOW)).isInstanceOf(OrderItemStateException.class);
+        assertThatThrownBy(() -> delivered.markReady(NOW)).isInstanceOf(OrderItemStateException.class);
+        assertThatThrownBy(() -> delivered.deliver(carlos, NOW)).isInstanceOf(OrderItemStateException.class);
+    }
+
+    @Test
+    void aDrinkCanSkipStraightToReadyOrDelivered() {
+        assertThat(item(1, null).markReady(NOW).status()).isEqualTo(OrderItemStatus.READY);
+        assertThat(item(1, null).markReady(NOW).preparingAt()).isNull();
+        assertThat(item(1, null).deliver(UserId.newId(), NOW).status()).isEqualTo(OrderItemStatus.DELIVERED);
+    }
+
+    @Test
+    void theStaffCancelsWithAReasonTheCustomerSees() {
+        UserId kenji = UserId.newId();
+        OrderItem canceled = item(1, null).start(NOW).cancelByStaff(kenji, "  Acabou o pepino  ", NOW);
+
+        assertThat(canceled.status()).isEqualTo(OrderItemStatus.CANCELED);
+        assertThat(canceled.canceledBy()).isEqualTo(kenji);
+        assertThat(canceled.cancelReason()).isEqualTo("Acabou o pepino");
+        assertThatThrownBy(() -> item(1, null).cancelByStaff(kenji, "  ", NOW))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> item(1, null).cancelByStaff(kenji, "x".repeat(141), NOW))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> canceled.cancelByStaff(kenji, "de novo", NOW))
+                .isInstanceOf(OrderItemStateException.class);
+        assertThatThrownBy(() -> item(1, null).deliver(kenji, NOW).cancelByStaff(kenji, "tarde", NOW))
+                .isInstanceOf(OrderItemStateException.class).hasMessage("Este item já foi entregue");
     }
 }

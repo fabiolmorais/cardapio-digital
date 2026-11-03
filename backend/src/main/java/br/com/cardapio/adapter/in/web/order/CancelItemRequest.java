@@ -1,0 +1,14 @@
+package br.com.cardapio.adapter.in.web.order;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
+@Schema(name = "CancelItemRequest")
+record CancelItemRequest(
+        @Schema(requiredMode = REQUIRED, description = "O motivo, que o cliente vê", example = "Acabou o salmão")
+        @NotBlank @Size(max = 140) String reason
+) {
+}
