@@ -1,13 +1,16 @@
 package br.com.cardapio.application.service.order;
 
 import br.com.cardapio.application.port.out.menu.ProductPort;
+import br.com.cardapio.application.port.out.order.KitchenItemView;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabPort;
+import br.com.cardapio.application.port.out.order.WaitingOrderView;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import br.com.cardapio.domain.menu.model.Product;
@@ -19,6 +22,7 @@ import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
 import br.com.cardapio.domain.order.model.OrderSettings;
+import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.model.Money;
@@ -27,11 +31,13 @@ import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * O cardápio, as configurações, as comandas e os pedidos na memória, para os testes dos serviços
@@ -169,5 +175,51 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
         }
         items.put(changed.id(), changed);
         return true;
+    }
+
+    @Override
+    public boolean updateOrder(Order changed, OrderStatus expectedStatus) {
+        Order current = orders.get(changed.id());
+        if (current == null || current.status() != expectedStatus) {
+            return false;
+        }
+        orders.put(changed.id(), changed);
+        return true;
+    }
+
+    @Override
+    public void cancelItemsOnTheWay(EstablishmentId establishmentId, OrderId orderId, UserId by, String reason,
+                                    Instant now) {
+        for (OrderItem i : itemsOf(orderId)) {
+            if (i.status().isOnTheWay()) {
+                items.put(i.id(), i.cancelByStaff(by, reason, now));
+            }
+        }
+    }
+
+    /** A mesa e o setor não existem aqui: a fila falsa mostra "?" no lugar deles. */
+    @Override
+    public ResultPage<KitchenItemView> findQueue(EstablishmentId establishmentId, Set<OrderItemStatus> statuses,
+                                                 PageQuery page) {
+        List<KitchenItemView> found = items.values().stream()
+                .filter(i -> i.establishmentId().equals(establishmentId) && statuses.contains(i.status()))
+                .filter(i -> orders.get(i.orderId()).status() == OrderStatus.SENT)
+                .sorted(Comparator.comparing(OrderItem::createdAt))
+                .map(i -> {
+                    Order o = orders.get(i.orderId());
+                    return new KitchenItemView(i, o.number(), o.tableId(), "?", "?");
+                })
+                .toList();
+        return new ResultPage<>(found, page.page(), page.size(), found.size());
+    }
+
+    @Override
+    public ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page) {
+        List<WaitingOrderView> found = orders.values().stream()
+                .filter(o -> o.establishmentId().equals(establishmentId)
+                        && o.status() == OrderStatus.PENDING_APPROVAL)
+                .map(o -> new WaitingOrderView(o, "?", "?", itemsOf(o.id())))
+                .toList();
+        return new ResultPage<>(found, page.page(), page.size(), found.size());
     }
 }

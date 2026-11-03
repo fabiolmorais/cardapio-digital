@@ -1,8 +1,12 @@
 package br.com.cardapio.adapter.out.persistence.order;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.order.KitchenItemView;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
+import br.com.cardapio.application.port.out.order.WaitingOrderView;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
@@ -16,12 +20,15 @@ import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -106,6 +113,47 @@ class OrderPersistenceAdapter implements OrderPort {
                 i.status().name(), i.preparingAt(), i.readyAt(), i.deliveredAt(),
                 i.deliveredBy() == null ? null : i.deliveredBy().value(), i.canceledAt(),
                 i.canceledBy() == null ? null : i.canceledBy().value(), i.cancelReason()) == 1;
+    }
+
+    @Override
+    public boolean updateOrder(Order o, OrderStatus expectedStatus) {
+        establishmentFilter.enable(o.establishmentId());
+        return orders.updateIfStatus(o.id().value(), o.establishmentId().value(), expectedStatus.name(),
+                o.status().name(), o.approvedBy() == null ? null : o.approvedBy().value(), o.approvedAt()) == 1;
+    }
+
+    @Override
+    public void cancelItemsOnTheWay(EstablishmentId establishmentId, OrderId orderId, UserId by, String reason,
+                                    Instant now) {
+        establishmentFilter.enable(establishmentId);
+        items.cancelOnTheWay(orderId.value(), establishmentId.value(), by.value(), reason, now);
+    }
+
+    @Override
+    public ResultPage<KitchenItemView> findQueue(EstablishmentId establishmentId, Set<OrderItemStatus> statuses,
+                                                 PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<KitchenItemRow> rows = items.findQueue(establishmentId.value(),
+                statuses.stream().map(Enum::name).toList(), PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(r -> new KitchenItemView(toDomain(r.item()), r.orderNumber(),
+                new DiningTableId(r.tableId()), r.tableLabel(), r.sectorName())).getContent(), page.page(),
+                page.size(), rows.getTotalElements());
+    }
+
+    /** Duas consultas: a página de pedidos (com a mesa), depois os itens de todos eles (IN). */
+    @Override
+    public ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<WaitingOrderRow> rows = orders.findWaitingApproval(establishmentId.value(),
+                PageRequest.of(page.page(), page.size()));
+        Map<UUID, List<OrderItem>> byOrder = rows.isEmpty() ? Map.of()
+                : items.findByEstablishmentIdAndOrderIdInOrderByPositionAsc(establishmentId.value(),
+                        rows.stream().map(r -> r.order().getId()).toList()).stream()
+                .map(OrderPersistenceAdapter::toDomain)
+                .collect(Collectors.groupingBy(i -> i.orderId().value()));
+        return new ResultPage<>(rows.map(r -> new WaitingOrderView(toDomain(r.order()), r.tableLabel(),
+                r.sectorName(), byOrder.getOrDefault(r.order().getId(), List.of()))).getContent(), page.page(),
+                page.size(), rows.getTotalElements());
     }
 
     private static Order toDomain(OrderJpaEntity e) {

@@ -356,6 +356,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recusa: o pedido não vai para a cozinha nem para a conta */
+        post: operations["rejectOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirma: o pedido vai para a cozinha */
+        post: operations["approveOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Em preparo: a cozinha começou */
+        post: operations["startOrderItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pronto: saindo da cozinha (da fila ou do preparo) */
+        post: operations["readyOrderItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Entregue: chegou à mesa */
+        post: operations["deliverOrderItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancela o item, com o motivo que o cliente vê */
+        post: operations["cancelOrderItemByStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/menu-categories": {
         parameters: {
             query?: never;
@@ -783,6 +885,40 @@ export interface paths {
          * @description Público, sem autenticação. Retorna os planos ativos na ordem de exibição. Preços em centavos; campos nulos significam "sob consulta" (preço) ou "ilimitado" (limites).
          */
         get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/awaiting-approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os pedidos esperando a confirmação do garçom, do mais antigo ao mais novo */
+        get: operations["listWaitingOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os itens a caminho dos pedidos que foram para a cozinha, do mais antigo ao mais novo */
+        get: operations["listKitchenQueue"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1470,6 +1606,13 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
         };
+        CancelItemRequest: {
+            /**
+             * @description O motivo, que o cliente vê
+             * @example Acabou o salmão
+             */
+            reason: string;
+        };
         MenuCategoryRequest: {
             /** @example Entradas */
             name: string;
@@ -1855,6 +1998,81 @@ export interface components {
             features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
             /** @enum {string} */
             support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
+        };
+        PageResponseWaitingOrder: {
+            content: components["schemas"]["WaitingOrder"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        WaitingOrder: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description O número do pedido no dia
+             */
+            number: number;
+            tableLabel: string;
+            sectorName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * Format: int64
+             * @description A soma dos itens não cancelados
+             */
+            totalCents: number;
+            items: components["schemas"]["TableOrderItem"][];
+        };
+        KitchenItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orderId: string;
+            /**
+             * Format: int32
+             * @description O número do pedido no dia
+             */
+            orderNumber: number;
+            tableLabel: string;
+            sectorName: string;
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            note?: string;
+            /** @enum {string} */
+            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+            /**
+             * Format: date-time
+             * @description Quando foi pedido
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Quando a cozinha começou
+             */
+            preparingAt?: string;
+            /**
+             * Format: date-time
+             * @description Quando ficou pronto
+             */
+            readyAt?: string;
+        };
+        PageResponseKitchenItem: {
+            content: components["schemas"]["KitchenItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
         PageResponseMenuCategory: {
             content: components["schemas"]["MenuCategory"][];
@@ -3071,6 +3289,247 @@ export interface operations {
             };
         };
     };
+    rejectOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recusado (os itens são cancelados) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um pedido deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está esperando a confirmação */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    approveOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um pedido deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está esperando a confirmação */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startOrderItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Em preparo */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um item deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não está na fila, ou o pedido espera o garçom */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    readyOrderItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pronto */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um item deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já está pronto, entregue ou cancelado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deliverOrderItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entregue */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um item deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já foi entregue ou cancelado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    cancelOrderItemByStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Cancelado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sem motivo, ou motivo longo demais */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um item deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já foi entregue ou cancelado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listMenuCategories: {
         parameters: {
             query?: {
@@ -4192,6 +4651,67 @@ export interface operations {
                 };
             };
             /** @description Parâmetros de paginação inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listWaitingOrders: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Pedidos por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página dos pedidos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseWaitingOrder"];
+                };
+            };
+        };
+    };
+    listKitchenQueue: {
+        parameters: {
+            query?: {
+                /** @description Só estes status (PENDING, PREPARING, READY); sem nada, os três */
+                status?: ("PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED")[];
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página da fila */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseKitchenItem"];
+                };
+            };
+            /** @description Status que não está na fila (entregue, cancelado) */
             400: {
                 headers: {
                     [name: string]: unknown;

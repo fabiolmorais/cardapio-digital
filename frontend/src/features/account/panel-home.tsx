@@ -8,6 +8,7 @@ import { api } from "@/lib/api/client";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { CallQueue } from "@/features/calls/call-queue";
+import { Deliveries, KitchenLink, WaitingOrders } from "@/features/orders/staff-orders";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 
@@ -81,7 +82,19 @@ export function PanelHome() {
           </span>
         </div>
       </section>
-      <CallQueue role={establishment.role} />
+      {establishment.role === "KITCHEN" ? (
+        <>
+          <KitchenLink />
+          <CallQueue role={establishment.role} />
+        </>
+      ) : (
+        <>
+          <WaitingOrders />
+          <CallQueue role={establishment.role} />
+          <Deliveries />
+          <KitchenLink />
+        </>
+      )}
       {canManageTeam(establishment.role) && (
         <nav aria-label={t.shortcuts} className="flex flex-col gap-3">
           {SHORTCUTS.map(({ href, icon: Icon, text }) => (

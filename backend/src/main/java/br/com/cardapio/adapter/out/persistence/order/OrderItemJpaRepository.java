@@ -1,5 +1,7 @@
 package br.com.cardapio.adapter.out.persistence.order;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +39,37 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
                        @Param("deliveredAt") Instant deliveredAt, @Param("deliveredBy") UUID deliveredBy,
                        @Param("canceledAt") Instant canceledAt, @Param("canceledBy") UUID canceledBy,
                        @Param("cancelReason") String cancelReason);
+
+    /** Cancela de uma vez os itens ainda a caminho de um pedido (o pedido recusado pelo garçom). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE OrderItemJpaEntity i
+               SET i.status = 'CANCELED', i.canceledAt = :now, i.canceledBy = :by, i.cancelReason = :reason
+             WHERE i.orderId = :orderId AND i.establishmentId = :establishmentId
+               AND i.status IN ('PENDING', 'PREPARING', 'READY')
+            """)
+    int cancelOnTheWay(@Param("orderId") UUID orderId, @Param("establishmentId") UUID establishmentId,
+                       @Param("by") UUID by, @Param("reason") String reason, @Param("now") Instant now);
+
+    /**
+     * A fila da cozinha: o item com o número do pedido, a mesa e o setor, numa consulta só. Só os
+     * pedidos que foram para a cozinha (SENT); por ordem de chegada e, no mesmo pedido, na do carrinho.
+     */
+    @Query(value = """
+            SELECT new br.com.cardapio.adapter.out.persistence.order.KitchenItemRow(
+                       i, o.number, o.tableId, t.label, s.name)
+              FROM OrderItemJpaEntity i
+              JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN DiningTableJpaEntity t ON t.id = o.tableId
+              JOIN SectorJpaEntity s ON s.id = t.sectorId
+             WHERE i.establishmentId = :establishmentId AND o.status = 'SENT' AND i.status IN :statuses
+             ORDER BY i.createdAt, o.number, i.position
+            """,
+            countQuery = """
+            SELECT count(i) FROM OrderItemJpaEntity i
+              JOIN OrderJpaEntity o ON o.id = i.orderId
+             WHERE i.establishmentId = :establishmentId AND o.status = 'SENT' AND i.status IN :statuses
+            """)
+    Page<KitchenItemRow> findQueue(@Param("establishmentId") UUID establishmentId,
+                                   @Param("statuses") Collection<String> statuses, Pageable pageable);
 }
