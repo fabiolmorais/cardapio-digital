@@ -53,9 +53,10 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
     }
 
     @Override
-    public List<ProductMedia> findCovers(EstablishmentId establishmentId) {
+    public List<ProductMedia> findReadyGalleries(EstablishmentId establishmentId) {
         establishmentFilter.enable(establishmentId);
-        return media.findCovers(establishmentId.value()).stream().map(this::toDomain).toList();
+        return media.findByEstablishmentIdAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
+                establishmentId.value(), MediaStatus.READY.name()).stream().map(this::toDomain).toList();
     }
 
     /** Sem o filtro por restaurante: o aviso do serviço de vídeo não diz de qual restaurante é. */
