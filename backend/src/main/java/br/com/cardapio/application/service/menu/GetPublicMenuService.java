@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
+import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.service.floor.PublicTableLookup;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.model.ImageVariant;
@@ -25,8 +26,9 @@ import java.util.stream.Collectors;
 
 /**
  * Monta o cardápio da página da mesa com três consultas, qualquer que seja o tamanho dele:
- * as categorias, todos os produtos e todas as capas. Juntar em memória é o que evita o N+1
- * (uma consulta de foto por produto, que com 200 produtos seriam 200 idas ao banco).
+ * as categorias, todos os produtos e todas as galerias prontas (de onde sai também a capa).
+ * Juntar em memória é o que evita o N+1 (uma consulta de mídia por produto, que com 200
+ * produtos seriam 200 idas ao banco).
  */
 public class GetPublicMenuService implements GetPublicMenuUseCase {
 
@@ -35,14 +37,16 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
     private final ProductPort products;
     private final ProductMediaPort media;
     private final MediaStoragePort storage;
+    private final VideoHostingPort videos;
 
     public GetPublicMenuService(DiningTablePort tables, MenuCategoryPort categories, ProductPort products,
-                                ProductMediaPort media, MediaStoragePort storage) {
+                                ProductMediaPort media, MediaStoragePort storage, VideoHostingPort videos) {
         this.tables = tables;
         this.categories = categories;
         this.products = products;
         this.media = media;
         this.storage = storage;
+        this.videos = videos;
     }
 
     @Override
@@ -50,11 +54,13 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
     public PublicMenu get(String tableToken) {
         EstablishmentId establishmentId = PublicTableLookup.resolve(tables, tableToken).table().establishmentId();
 
-        Map<ProductId, ProductMedia> covers = media.findCovers(establishmentId).stream()
-                .collect(Collectors.toMap(ProductMedia::productId, Function.identity()));
+        // A consulta já vem em ordem (produto, posição): o groupingBy mantém a ordem de cada galeria.
+        Map<ProductId, List<ProductMedia>> galleries = media.findReadyGalleries(establishmentId).stream()
+                .collect(Collectors.groupingBy(ProductMedia::productId));
         Map<MenuCategoryId, List<PublicMenu.Item>> byCategory = products.findAllActive(establishmentId).stream()
                 .collect(Collectors.groupingBy(Product::categoryId,
-                        Collectors.mapping(p -> item(p, covers.get(p.id())), Collectors.toList())));
+                        Collectors.mapping(p -> item(p, galleries.getOrDefault(p.id(), List.of())),
+                                Collectors.toList())));
 
         List<PublicMenu.Category> visible = categories.findActive(establishmentId).stream()
                 .filter(c -> byCategory.containsKey(c.id()))
@@ -63,12 +69,25 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         return new PublicMenu(visible);
     }
 
-    private PublicMenu.Item item(Product product, ProductMedia cover) {
+    private PublicMenu.Item item(Product product, List<ProductMedia> gallery) {
         ProductDetails d = product.details();
-        Map<ImageVariant, String> photo = cover == null ? Map.of()
-                : Arrays.stream(ImageVariant.values())
-                        .collect(Collectors.toMap(Function.identity(), v -> storage.publicUrl(cover.fileOf(v))));
+        // A capa é a primeira FOTO: a lista do cardápio mostra foto, e não vídeo.
+        Map<ImageVariant, String> cover = gallery.stream().filter(m -> !m.isVideo()).findFirst()
+                .map(this::imageUrls).orElse(Map.of());
         return new PublicMenu.Item(product.id(), d.name(), d.description(), d.price().cents(),
-                d.onSale() ? d.promoPrice().cents() : null, d.featured(), product.available(), photo);
+                d.onSale() ? d.promoPrice().cents() : null, d.featured(), product.available(), cover,
+                gallery.stream().map(this::media).toList());
+    }
+
+    private PublicMenu.Media media(ProductMedia m) {
+        return m.isVideo()
+                ? new PublicMenu.Media(m.type(), m.width(), m.height(), Map.of(), videos.playbackUrl(m.videoId()),
+                        videos.posterUrl(m.videoId()), m.durationSeconds())
+                : new PublicMenu.Media(m.type(), m.width(), m.height(), imageUrls(m), null, null, null);
+    }
+
+    private Map<ImageVariant, String> imageUrls(ProductMedia photo) {
+        return Arrays.stream(ImageVariant.values())
+                .collect(Collectors.toMap(Function.identity(), v -> storage.publicUrl(photo.fileOf(v))));
     }
 }

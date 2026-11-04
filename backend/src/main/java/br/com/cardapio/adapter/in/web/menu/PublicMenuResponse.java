@@ -2,9 +2,11 @@ package br.com.cardapio.adapter.in.web.menu;
 
 import br.com.cardapio.application.port.in.menu.PublicMenu;
 import br.com.cardapio.domain.menu.model.ImageVariant;
+import br.com.cardapio.domain.menu.model.MediaType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
@@ -33,7 +35,27 @@ record PublicMenuResponse(@Schema(requiredMode = REQUIRED) List<Category> catego
             @Schema(description = "null quando não há promoção", example = "1590") Long promoPriceCents,
             @Schema(requiredMode = REQUIRED) boolean featured,
             @Schema(requiredMode = REQUIRED, description = "false: \"Esgotado hoje\" (aparece, mas não pode ser pedido)") boolean available,
-            @Schema(description = "A capa; null quando o produto não tem foto") Photo photo
+            @Schema(description = "A capa (a primeira foto); null quando o produto não tem foto") Photo photo,
+            @Schema(requiredMode = REQUIRED, description = "A galeria pronta, em ordem: fotos e vídeos (o Reels)")
+            List<Media> media
+    ) {
+    }
+
+    @Schema(name = "PublicMenuMedia", description = "Uma foto (image) ou um vídeo (video) da galeria do prato")
+    record Media(
+            @Schema(requiredMode = REQUIRED) MediaType type,
+            @Schema(requiredMode = REQUIRED, description = "Largura, para a tela reservar o espaço") int width,
+            @Schema(requiredMode = REQUIRED) int height,
+            @Schema(description = "Os tamanhos da foto; null no vídeo") Photo image,
+            @Schema(description = "O vídeo; null na foto") Video video
+    ) {
+    }
+
+    @Schema(name = "PublicMenuVideo")
+    record Video(
+            @Schema(requiredMode = REQUIRED, description = "O MP4 para tocar") String url,
+            @Schema(description = "A capa do vídeo, se o serviço gera uma") String poster,
+            @Schema(requiredMode = REQUIRED) int durationSeconds
     ) {
     }
 
@@ -49,10 +71,19 @@ record PublicMenuResponse(@Schema(requiredMode = REQUIRED) List<Category> catego
         return new PublicMenuResponse(menu.categories().stream()
                 .map(c -> new Category(c.id().value(), c.name(), c.products().stream()
                         .map(p -> new Item(p.id().value(), p.name(), p.description(), p.priceCents(),
-                                p.promoPriceCents(), p.featured(), p.available(),
-                                p.photoUrls().isEmpty() ? null : new Photo(p.photoUrls().get(ImageVariant.THUMB),
-                                        p.photoUrls().get(ImageVariant.MEDIUM), p.photoUrls().get(ImageVariant.LARGE))))
+                                p.promoPriceCents(), p.featured(), p.available(), photo(p.photoUrls()),
+                                p.media().stream().map(PublicMenuResponse::media).toList()))
                         .toList()))
                 .toList());
+    }
+
+    private static Media media(PublicMenu.Media m) {
+        return new Media(m.type(), m.width(), m.height(), photo(m.imageUrls()),
+                m.videoUrl() == null ? null : new Video(m.videoUrl(), m.posterUrl(), m.durationSeconds()));
+    }
+
+    private static Photo photo(Map<ImageVariant, String> urls) {
+        return urls.isEmpty() ? null : new Photo(urls.get(ImageVariant.THUMB), urls.get(ImageVariant.MEDIUM),
+                urls.get(ImageVariant.LARGE));
     }
 }

@@ -1,4 +1,5 @@
-import { UtensilsCrossed } from "lucide-react";
+import { Play, UtensilsCrossed } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
@@ -12,8 +13,10 @@ const t = tablePage.menu;
  * Um produto na lista do cardápio: a foto, o nome, a descrição e o preço (com o "de/por" na
  * promoção). Esgotado aparece em cinza, com "Esgotado hoje". Sem hooks: serve tanto no servidor
  * quanto dentro do navegador do cardápio (componente do cliente), que põe o "Adicionar" em `action`.
+ * Com `reelsHref`, a foto abre o Reels do prato (e um selo ▶ avisa quando há vídeo).
  */
-export function MenuItemCard({ item, action }: { item: MenuItem; action?: ReactNode }) {
+export function MenuItemCard({ item, action, reelsHref }: { item: MenuItem; action?: ReactNode; reelsHref?: string }) {
+  const hasVideo = item.media.some((m) => m.type === "VIDEO");
   const off = discountPercent(item);
   return (
     <article
@@ -21,25 +24,59 @@ export function MenuItemCard({ item, action }: { item: MenuItem; action?: ReactN
       aria-disabled={!item.available || undefined}
       className="flex scroll-mt-24 gap-3.5 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-2.5"
     >
-      <span className={cn("size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)", !item.available && "opacity-45 grayscale")}>
-        {item.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
-          <img
-            src={item.photo.thumb}
-            alt=""
-            width={96}
-            height={96}
-            loading="lazy"
-            decoding="async"
-            className="size-full object-cover"
-          />
-        ) : (
-          <span className="flex size-full items-center justify-center text-(--mesa-muted)">
-            <UtensilsCrossed aria-hidden className="size-6" />
-            <span className="sr-only">{t.noPhoto}</span>
+      {reelsHref ? (
+        <Link
+          href={reelsHref}
+          prefetch={false}
+          aria-label={t.openReels(item.name)}
+          className="relative flex shrink-0 rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+        >
+          <span className={cn("size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)", !item.available && "opacity-45 grayscale")}>
+            {item.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
+              <img
+                src={item.photo.thumb}
+                alt=""
+                width={96}
+                height={96}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+              />
+            ) : (
+              <span className="flex size-full items-center justify-center text-(--mesa-muted)">
+                <UtensilsCrossed aria-hidden className="size-6" />
+                <span className="sr-only">{t.noPhoto}</span>
+              </span>
+            )}
           </span>
-        )}
-      </span>
+          {hasVideo && (
+            <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-white">
+              <Play aria-hidden className="size-3.5 fill-current" />
+            </span>
+          )}
+        </Link>
+      ) : (
+        <span className={cn("size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)", !item.available && "opacity-45 grayscale")}>
+          {item.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
+            <img
+              src={item.photo.thumb}
+              alt=""
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center text-(--mesa-muted)">
+              <UtensilsCrossed aria-hidden className="size-6" />
+              <span className="sr-only">{t.noPhoto}</span>
+            </span>
+          )}
+        </span>
+      )}
       <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
         <span className="flex items-center gap-2">
           <h3 className={cn("font-semibold", !item.available && "text-(--mesa-muted)")}>{item.name}</h3>

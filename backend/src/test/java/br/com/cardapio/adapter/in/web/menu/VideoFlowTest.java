@@ -210,4 +210,30 @@ class VideoFlowTest {
                 .hasStatus(HttpStatus.NOT_FOUND);
         assertThat(json(send("GET", sakura.owner(), sakura.media(), null), "$.totalElements")).isEqualTo("1");
     }
+
+    @Test
+    void onlyTheReadyVideoGoesToTheTablesMenu() throws Exception {
+        String sector = json(send("POST", sakura.owner(), "/api/v1/sectors", "{\"name\":\"Salão\"}"), "$.id");
+        String qr = json(send("POST", sakura.owner(), "/api/v1/tables",
+                "{\"label\":\"04\",\"sectorId\":\"%s\"}".formatted(sector)), "$.publicToken");
+        byte[] video = "um vídeo de mentira".getBytes(StandardCharsets.UTF_8);
+        MvcTestResult ready = startVideo(sakura, video.length);
+        String location = tusCreate(ready, video.length).getResponse().getHeader(HttpHeaders.LOCATION);
+        tusPatch(location, 0, video);
+        // O cardápio da mesa lê só o banco: o vídeo fica "pronto" lá quando o serviço avisa.
+        Map<String, String> headers = JsonPath.read(ready.getResponse().getContentAsString(), "$.headers");
+        assertThat(webhook(TestcontainersConfiguration.WEBHOOK_TOKEN, headers.get("VideoId"))).hasStatusOk();
+        startVideo(sakura, 10); // este fica em conversão: o arquivo nunca chega
+
+        MvcTestResult menu = mvc.get().uri("/api/v1/public/tables/" + qr + "/menu").exchange();
+
+        assertThat(menu).hasStatusOk();
+        assertThat(json(menu, "$.categories[0].products[0].media.length()")).isEqualTo("1");
+        assertThat(json(menu, "$.categories[0].products[0].media[0].type")).isEqualTo("VIDEO");
+        assertThat(json(menu, "$.categories[0].products[0].media[0].video.durationSeconds")).isEqualTo("15");
+        assertThat(json(menu, "$.categories[0].products[0].media[0].video.url")).endsWith("/play");
+        // Sem foto, sem capa: a lista do cardápio não mostra vídeo no lugar da foto.
+        assertThat(JsonPath.<Object>read(menu.getResponse().getContentAsString(), "$.categories[0].products[0].photo"))
+                .isNull();
+    }
 }

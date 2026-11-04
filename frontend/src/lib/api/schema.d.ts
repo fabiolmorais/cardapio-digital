@@ -2150,8 +2150,26 @@ export interface components {
             featured: boolean;
             /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
             available: boolean;
-            /** @description A capa; null quando o produto não tem foto */
+            /** @description A capa (a primeira foto); null quando o produto não tem foto */
             photo?: components["schemas"]["PublicMenuPhoto"];
+            /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
+            media: components["schemas"]["PublicMenuMedia"][];
+        };
+        /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
+        PublicMenuMedia: {
+            /** @enum {string} */
+            type: "IMAGE" | "VIDEO";
+            /**
+             * Format: int32
+             * @description Largura, para a tela reservar o espaço
+             */
+            width: number;
+            /** Format: int32 */
+            height: number;
+            /** @description Os tamanhos da foto; null no vídeo */
+            image?: components["schemas"]["PublicMenuPhoto"];
+            /** @description O vídeo; null na foto */
+            video?: components["schemas"]["PublicMenuVideo"];
         };
         PublicMenuPhoto: {
             /** @description Quadrada, 240 px */
@@ -2160,6 +2178,14 @@ export interface components {
             medium: string;
             /** @description Até 1440 px */
             large: string;
+        };
+        PublicMenuVideo: {
+            /** @description O MP4 para tocar */
+            url: string;
+            /** @description A capa do vídeo, se o serviço gera uma */
+            poster?: string;
+            /** Format: int32 */
+            durationSeconds: number;
         };
         SseEmitter: {
             /** Format: int64 */

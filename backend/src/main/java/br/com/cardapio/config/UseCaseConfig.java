@@ -488,9 +488,10 @@ class UseCaseConfig {
     @Bean
     GetPublicMenuUseCase getPublicMenuUseCase(DiningTablePort diningTablePort, MenuCategoryPort menuCategoryPort,
                                               ProductPort productPort, ProductMediaPort productMediaPort,
-                                              MediaStoragePort mediaStoragePort) {
+                                              MediaStoragePort mediaStoragePort,
+                                              VideoHostingPort videoHostingPort) {
         return new GetPublicMenuService(diningTablePort, menuCategoryPort, productPort, productMediaPort,
-                mediaStoragePort);
+                mediaStoragePort, videoHostingPort);
     }
 
     @Bean

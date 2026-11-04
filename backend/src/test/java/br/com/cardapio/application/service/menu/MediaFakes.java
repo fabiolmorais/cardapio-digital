@@ -11,6 +11,7 @@ import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.port.out.video.VideoUploadTicket;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.model.ImageVariant;
+import br.com.cardapio.domain.menu.model.MediaStatus;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
@@ -77,12 +78,13 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
     }
 
     @Override
-    public List<ProductMedia> findCovers(EstablishmentId establishmentId) {
+    public List<ProductMedia> findReadyGalleries(EstablishmentId establishmentId) {
         return media.values().stream()
-                .filter(m -> m.establishmentId().equals(establishmentId) && m.active() && !m.isVideo())
-                .collect(Collectors.groupingBy(ProductMedia::productId,
-                        Collectors.minBy(Comparator.comparingInt(ProductMedia::position))))
-                .values().stream().flatMap(Optional::stream).toList();
+                .filter(m -> m.establishmentId().equals(establishmentId) && m.active()
+                        && m.status() == MediaStatus.READY)
+                .sorted(Comparator.comparing((ProductMedia m) -> m.productId().value())
+                        .thenComparingInt(ProductMedia::position))
+                .toList();
     }
 
     @Override

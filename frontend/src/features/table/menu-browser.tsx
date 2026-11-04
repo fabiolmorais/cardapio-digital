@@ -47,6 +47,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
     <MenuItemCard
       key={item.id}
       item={item}
+      reelsHref={item.media.length > 0 ? `/m/${token}/reels?produto=${encodeURIComponent(item.id)}` : undefined}
       action={
         ordering && (
           <button
