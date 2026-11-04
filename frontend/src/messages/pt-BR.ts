@@ -146,6 +146,7 @@ export const messages = {
       guestLine: (tier: string, quantity: number, price: string) => `${quantity}× ${tier} · ${price}`,
       activateRodizio: "Ativar rodízio",
       adjustGuests: "Ajustar pessoas",
+      rodizioEnds: (time: string) => `Termina às ${time}`,
     },
     rodizio: {
       activateTitle: "Ativar rodízio",
@@ -713,6 +714,9 @@ export const messages = {
       availableText: "Desligue quando acabar: o cliente vê “Esgotado hoje” e não consegue pedir.",
       featuredTitle: "Destaque",
       featuredText: "Aparece em destaque no início do cardápio da mesa.",
+      aLaCarteTitle: "Aparece no cardápio à la carte",
+      aLaCarteText: "Desligue para um produto só do rodízio: ele fica só na aba Rodízio, sem preço.",
+      onlyRodizio: "Só no rodízio",
       save: "Salvar",
       create: "Criar produto",
       saving: "Salvando…",

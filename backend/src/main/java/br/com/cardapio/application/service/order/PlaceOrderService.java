@@ -30,7 +30,11 @@ import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
 import br.com.cardapio.domain.rodizio.exception.ProductNotInRodizioException;
+import br.com.cardapio.domain.rodizio.exception.ProductOnlyInRodizioException;
+import br.com.cardapio.domain.rodizio.model.Rodizio;
+import br.com.cardapio.domain.rodizio.model.RodizioRules;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
+import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
@@ -120,8 +124,15 @@ public class PlaceOrderService implements PlaceOrderUseCase {
             }
         }
 
-        // A rodada só vale com o rodízio ativo na comanda, e só com os produtos incluídos nele.
-        TabRodizio rodizio = command.round() ? requireRodizio(establishmentId, tableId, menu) : null;
+        // A rodada só vale com o rodízio ativo na comanda, só com os produtos incluídos nele e dentro
+        // das regras que o restaurante ligou. O carrinho não leva o que é só do rodízio.
+        TabRodizio rodizio = command.round() ? requireRodizio(establishmentId, tableId, menu, command.lines(), now)
+                : null;
+        if (rodizio == null) {
+            menu.values().stream().filter(p -> !p.details().aLaCarte()).findFirst().ifPresent(p -> {
+                throw new ProductOnlyInRodizioException(p.details().name());
+            });
+        }
         Tab tab = Tabs.openOrCreate(tabs, establishmentId, tableId, now);
         int number = orders.nextNumber(establishmentId, now);
         Money total = rodizio != null ? Money.ZERO : command.lines().stream()
@@ -142,20 +153,24 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     }
 
     /**
-     * O rodízio da comanda aberta, conferindo que cada produto da rodada é incluído nele. Os
-     * produtos vêm do cadastro de agora: se o restaurante tirou um produto do rodízio, ele sai da
-     * rodada também.
+     * O rodízio da comanda aberta, conferindo que cada produto da rodada é incluído nele e que a
+     * rodada respeita as regras. Os produtos e as regras vêm do cadastro de agora: se o restaurante
+     * tirou um produto do rodízio, ele sai da rodada também.
      */
     private TabRodizio requireRodizio(EstablishmentId establishmentId, DiningTableId tableId,
-                                      Map<ProductId, Product> menu) {
-        TabRodizio rodizio = tabs.findOpen(establishmentId, tableId)
-                .flatMap(tab -> tabRodizios.findByTab(establishmentId, tab.id()))
+                                      Map<ProductId, Product> menu, List<OrderLine> lines, Instant now) {
+        Tab tab = tabs.findOpen(establishmentId, tableId).orElseThrow(NoRodizioOnTableException::new);
+        TabRodizio rodizio = tabRodizios.findByTab(establishmentId, tab.id())
                 .orElseThrow(NoRodizioOnTableException::new);
-        Set<ProductId> included = rodizios.find(establishmentId, rodizio.rodizioId())
-                .map(r -> r.productIds()).orElse(Set.of());
+        Rodizio registered = rodizios.find(establishmentId, rodizio.rodizioId()).orElse(null);
+        Set<ProductId> included = registered == null ? Set.of() : registered.productIds();
         menu.values().stream().filter(p -> !included.contains(p.id())).findFirst().ifPresent(p -> {
             throw new ProductNotInRodizioException(p.details().name());
         });
+        RodizioRules rules = registered == null ? RodizioRules.NONE : registered.rules();
+        RodizioRounds.policy(rules, rodizio, orders.findByTab(establishmentId, tab.id())).check(
+                lines.stream().map(l -> new RoundPolicy.Line(menu.get(l.productId()).details().name(),
+                        l.quantity())).toList(), now);
         return rodizio;
     }
 }

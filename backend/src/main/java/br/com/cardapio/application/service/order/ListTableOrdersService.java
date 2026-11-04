@@ -20,7 +20,9 @@ import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
+import br.com.cardapio.domain.rodizio.model.RodizioRules;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
+import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,9 +68,13 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
         Optional<Tab> open = tabs.findOpen(establishmentId, visit.table().id());
         List<OrderWithItems> found = open.map(tab -> orders.findByTab(establishmentId, tab.id())).orElse(List.of());
         TabRodizio rodizio = open.flatMap(tab -> tabRodizios.findByTab(establishmentId, tab.id())).orElse(null);
-        // Os produtos incluídos vêm do cadastro de agora (a aba Rodízio mostra o que dá para pedir).
-        Set<ProductId> included = rodizio == null ? Set.of()
-                : rodizios.find(establishmentId, rodizio.rodizioId()).map(Rodizio::productIds).orElse(Set.of());
+        // Os produtos incluídos e as regras vêm do cadastro de agora (a aba Rodízio mostra o que dá
+        // para pedir, e até quanto).
+        Rodizio registered = rodizio == null ? null : rodizios.find(establishmentId, rodizio.rodizioId()).orElse(null);
+        Set<ProductId> included = registered == null ? Set.of() : registered.productIds();
+        RoundPolicy.Limits limits = rodizio == null ? null
+                : RodizioRounds.policy(registered == null ? RodizioRules.NONE : registered.rules(), rodizio, found)
+                        .limits(now);
         // O total conta o que vai para a conta: nem item cancelado, nem pedido recusado pelo garçom.
         Money total = found.stream()
                 .filter(o -> o.order().status() != OrderStatus.REJECTED)
@@ -77,7 +83,7 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .map(OrderItem::subtotal)
                 .reduce(Money.ZERO, Money::plus)
                 .plus(rodizio == null ? Money.ZERO : rodizio.total());
-        return new TableOrders(enabled, total, rodizio == null ? null : TableRodizio.from(rodizio), included,
+        return new TableOrders(enabled, total, rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
                 found.stream().map(o -> TableOrder.from(o, visit.session().id())).toList());
     }
 }

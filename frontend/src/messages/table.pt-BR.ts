@@ -228,6 +228,15 @@ export const tablePage = {
     sent: "Rodada enviada para a cozinha.",
     empty: "O rodízio ainda não tem produtos. Chame o garçom.",
     item: "Rodízio",
+    room: (n: number) => (n === 0 ? "Espere chegar parte do que está a caminho" : n === 1 ? "Cabe mais 1 item agora" : `Cabem mais ${n} itens agora`),
+    full: "A rodada chegou ao limite",
+    maxPerItem: (n: number) => `Até ${n} de cada item por rodada`,
+    nextRoundAt: (time: string) => `Próxima rodada às ${time}`,
+    endsAt: (time: string) => `Termina às ${time}`,
+    endingSoon: (minutes: number) =>
+      minutes <= 1 ? "Falta 1 minuto para o fim do rodízio." : `Faltam ${minutes} minutos para o fim do rodízio.`,
+    ended: "O tempo do rodízio acabou. Bebidas e sobremesas continuam pelo carrinho.",
+    waiting: "Aguarde para pedir",
     billLine: (name: string, people: number) => `Inclui ${name} · ${people} ${people === 1 ? "pessoa" : "pessoas"}`,
   },
   reels: {

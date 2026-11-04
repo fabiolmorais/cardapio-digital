@@ -3,6 +3,7 @@
 import { Plus, Search } from "lucide-react";
 import { useDeferredValue, useId, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
+import { aLaCarte } from "./carte";
 import { MenuItemCard } from "./menu-item";
 import { ProductSheet } from "./product-sheet";
 import { RodizioRound } from "./rodizio-round";
@@ -38,6 +39,8 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   const included = new Set(orders?.rodizioProductIds ?? []);
   const rodizioItems = menu.categories.flatMap((c) => c.products).filter((p) => included.has(p.id));
   const rounds = orders?.orders.filter((o) => o.items.some((i) => i.rodizio)).length ?? 0;
+  // O cardápio de sempre, sem o que é só do rodízio (que fica na aba Rodízio).
+  const categories = aLaCarte(menu);
 
   const card = (item: MenuItem) => (
     <MenuItemCard
@@ -61,7 +64,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   );
 
   const found: MenuItem[] = query
-    ? menu.categories.flatMap((c) =>
+    ? categories.flatMap((c) =>
         c.products.filter((p) => plain(p.name).includes(query) || plain(p.description).includes(query)),
       )
     : [];
@@ -103,7 +106,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
                 {tablePage.rodizio.tab}
               </a>
             )}
-            {menu.categories.map((c) => (
+            {categories.map((c) => (
               <a
                 key={c.id}
                 href={`#categoria-${c.id}`}
@@ -113,8 +116,16 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               </a>
             ))}
           </nav>
-          {rodizio && <RodizioRound token={token} rodizio={rodizio} items={rodizioItems} rounds={rounds} />}
-          {menu.categories.map((c) => (
+          {rodizio && (
+            <RodizioRound
+              token={token}
+              rodizio={rodizio}
+              items={rodizioItems}
+              rounds={rounds}
+              limits={orders?.rodizioLimits}
+            />
+          )}
+          {categories.map((c) => (
             <section
               key={c.id}
               id={`categoria-${c.id}`}

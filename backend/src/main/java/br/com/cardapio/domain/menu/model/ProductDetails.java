@@ -10,13 +10,15 @@ import java.util.Objects;
  * As regras de preço moram aqui, e valem para criar e para editar.
  *
  * @param promoPrice null quando o produto não está em promoção
+ * @param aLaCarte   aparece no cardápio de sempre; false: é "só do rodízio" (só na aba Rodízio)
  */
 public record ProductDetails(
         String name,
         String description,
         Money price,
         Money promoPrice,
-        boolean featured
+        boolean featured,
+        boolean aLaCarte
 ) {
 
     public static final int NAME_MAX = 80;
@@ -39,6 +41,11 @@ public record ProductDetails(
                 throw new InvalidValueException("O preço promocional precisa ser menor que o preço normal");
             }
         }
+    }
+
+    /** O produto de sempre, que aparece no cardápio à la carte. */
+    public ProductDetails(String name, String description, Money price, Money promoPrice, boolean featured) {
+        this(name, description, price, promoPrice, featured, true);
     }
 
     public boolean onSale() {

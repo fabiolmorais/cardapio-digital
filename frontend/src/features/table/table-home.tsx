@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
+import { aLaCarte } from "./carte";
 import { RodizioEntry } from "./rodizio-entry";
 import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
@@ -16,7 +17,8 @@ const t = messages.tablePage;
  */
 export function TableHome({ token, table, menu }: { token: string; table: PublicTable; menu: PublicMenu | null }) {
   const brand = table.brand;
-  const featured = (menu?.categories ?? []).flatMap((c) => c.products).filter((p) => p.featured && p.available);
+  const categories = menu ? aLaCarte(menu) : [];
+  const featured = categories.flatMap((c) => c.products).filter((p) => p.featured && p.available);
   const menuHref = `/m/${token}/cardapio`;
 
   return (
@@ -49,9 +51,9 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
         <ChevronRight aria-hidden className="size-5" />
       </Link>
 
-      {menu && menu.categories.length > 0 && (
+      {categories.length > 0 && (
         <nav aria-label={t.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
-          {menu.categories.map((c) => (
+          {categories.map((c) => (
             <Link
               key={c.id}
               href={`${menuHref}#categoria-${c.id}`}

@@ -1369,6 +1369,11 @@ export interface components {
             totalCents: number;
             /** Format: date-time */
             startedAt: string;
+            /**
+             * Format: date-time
+             * @description O fim previsto (início + tempo limite); ausente sem tempo limite
+             */
+            endsAt?: string;
         };
         TableRodizioGuest: {
             /** @example Adulto */
@@ -1510,6 +1515,8 @@ export interface components {
             featured: boolean;
             /** @description false: aparece como "Esgotado hoje" */
             available: boolean;
+            /** @description false: só do rodízio (fora do cardápio à la carte). Vazio: true */
+            aLaCarte?: boolean;
         };
         /** @description Produto do cardápio. Preços em centavos */
         Product: {
@@ -1536,6 +1543,8 @@ export interface components {
             available: boolean;
             /** Format: int32 */
             position: number;
+            /** @description false: só do rodízio */
+            aLaCarte: boolean;
         };
         PresenceLocation: {
             /**
@@ -2432,6 +2441,31 @@ export interface components {
             sectorName: string;
             brand: components["schemas"]["PublicBrand"];
         };
+        /** @description Cada campo ausente: a regra está desligada */
+        RodizioLimits: {
+            /**
+             * Format: int32
+             * @description Unidades de cada item numa rodada, para a mesa toda
+             */
+            maxPerItem?: number;
+            /**
+             * Format: int32
+             * @description Quantos itens cabem agora, pelo limite de itens não entregues
+             */
+            room?: number;
+            /**
+             * Format: date-time
+             * @description Quando a próxima rodada libera (o intervalo entre rodadas)
+             */
+            nextRoundAt?: string;
+            /**
+             * Format: date-time
+             * @description O fim do rodízio (o tempo limite)
+             */
+            endsAt?: string;
+            /** @description O aviso de desperdício, para o topo da aba Rodízio */
+            wasteNotice?: string;
+        };
         TableOrders: {
             /** @description O restaurante aceita pedido pelo celular */
             orderingEnabled: boolean;
@@ -2444,6 +2478,8 @@ export interface components {
             rodizio?: components["schemas"]["TableRodizio"];
             /** @description Os produtos incluídos no rodízio (a aba Rodízio) */
             rodizioProductIds: string[];
+            /** @description As regras do rodízio ligadas, em números para a tela; ausente fora do rodízio */
+            rodizioLimits?: components["schemas"]["RodizioLimits"];
             /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
             orders: components["schemas"]["TableOrder"][];
         };
@@ -2478,6 +2514,8 @@ export interface components {
             featured: boolean;
             /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
             available: boolean;
+            /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
+            aLaCarte: boolean;
             /** @description A capa (a primeira foto); null quando o produto não tem foto */
             photo?: components["schemas"]["PublicMenuPhoto"];
             /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */

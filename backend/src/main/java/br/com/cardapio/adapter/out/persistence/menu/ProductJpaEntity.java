@@ -43,11 +43,15 @@ class ProductJpaEntity extends EstablishmentScopedEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(name = "a_la_carte", nullable = false)
+    private boolean aLaCarte;
+
     protected ProductJpaEntity() {
     }
 
     ProductJpaEntity(UUID id, UUID establishmentId, UUID categoryId, String name, String description, long priceCents,
-                     Long promoPriceCents, boolean featured, boolean available, int position, boolean active) {
+                     Long promoPriceCents, boolean featured, boolean available, int position, boolean active,
+                     boolean aLaCarte) {
         super(establishmentId);
         this.id = id;
         this.categoryId = categoryId;
@@ -59,6 +63,7 @@ class ProductJpaEntity extends EstablishmentScopedEntity {
         this.available = available;
         this.position = position;
         this.active = active;
+        this.aLaCarte = aLaCarte;
     }
 
     UUID getId() { return id; }
@@ -71,4 +76,5 @@ class ProductJpaEntity extends EstablishmentScopedEntity {
     boolean isAvailable() { return available; }
     int getPosition() { return position; }
     boolean isActive() { return active; }
+    boolean isALaCarte() { return aLaCarte; }
 }

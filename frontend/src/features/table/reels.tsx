@@ -7,6 +7,7 @@ import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { useCart } from "./cart";
+import { aLaCarte } from "./carte";
 import { currentPriceCents, ProductSheet } from "./product-sheet";
 import type { MenuItem, PublicMenu } from "./table-data";
 import { listOrders } from "./table-orders";
@@ -37,7 +38,8 @@ export function Reels({
   startId: string | null;
   establishmentName: string;
 }) {
-  const items = menu.categories.flatMap((c) => c.products).filter((p) => p.media.length > 0);
+  // O Reels é do cardápio de sempre: o que é só do rodízio não tem preço para mostrar nem para adicionar.
+  const items = aLaCarte(menu).flatMap((c) => c.products).filter((p) => p.media.length > 0);
   const startIndex = Math.max(0, items.findIndex((p) => p.id === startId));
   const [active, setActive] = useState(startIndex);
   const [muted, setMuted] = useState(true);

@@ -25,10 +25,12 @@ record ProductRequest(
         @Schema(description = "Em centavos, menor que o preço. Vazio: sem promoção", example = "2490")
         @Positive @Max(9_999_999) Long promoPriceCents,
         @Schema(requiredMode = REQUIRED) @NotNull Boolean featured,
-        @Schema(requiredMode = REQUIRED, description = "false: aparece como \"Esgotado hoje\"") @NotNull Boolean available
+        @Schema(requiredMode = REQUIRED, description = "false: aparece como \"Esgotado hoje\"") @NotNull Boolean available,
+        @Schema(description = "false: só do rodízio (fora do cardápio à la carte). Vazio: true")
+        Boolean aLaCarte
 ) {
     ProductForm toForm() {
         return new ProductForm(new MenuCategoryId(categoryId), name, description, priceCents, promoPriceCents,
-                featured, available);
+                featured, available, aLaCarte == null || aLaCarte);
     }
 }

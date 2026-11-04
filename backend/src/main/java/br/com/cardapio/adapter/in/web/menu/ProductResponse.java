@@ -17,10 +17,11 @@ record ProductResponse(
         @Schema(description = "null quando não há promoção", example = "2490") Long promoPriceCents,
         @Schema(requiredMode = REQUIRED) boolean featured,
         @Schema(requiredMode = REQUIRED) boolean available,
-        @Schema(requiredMode = REQUIRED) int position
+        @Schema(requiredMode = REQUIRED) int position,
+        @Schema(requiredMode = REQUIRED, description = "false: só do rodízio") boolean aLaCarte
 ) {
     static ProductResponse from(ProductSummary p) {
         return new ProductResponse(p.id().value(), p.categoryId().value(), p.name(), p.description(), p.priceCents(),
-                p.promoPriceCents(), p.featured(), p.available(), p.position());
+                p.promoPriceCents(), p.featured(), p.available(), p.position(), p.aLaCarte());
     }
 }

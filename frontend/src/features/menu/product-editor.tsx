@@ -111,6 +111,7 @@ function ProductForm({
   const [promo, setPromo] = useState(product?.promoPriceCents != null ? centsToInput(product.promoPriceCents) : "");
   const [available, setAvailable] = useState(product?.available ?? true);
   const [featured, setFeatured] = useState(product?.featured ?? false);
+  const [aLaCarte, setALaCarte] = useState(product?.aLaCarte ?? true);
   const [confirming, setConfirming] = useState(false);
   // O Next mantém telas já visitadas escondidas na página: ids fixos se repetiriam, e um
   // rótulo apontaria para o campo da tela escondida. useId dá um id único a cada formulário.
@@ -152,6 +153,7 @@ function ProductForm({
       ...(promoCents !== null ? { promoPriceCents: promoCents } : {}),
       featured,
       available,
+      aLaCarte,
     });
   }
 
@@ -267,6 +269,7 @@ function ProductForm({
 
           <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
           <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
+          <ToggleRow title={t.aLaCarteTitle} text={t.aLaCarteText} checked={aLaCarte} onChange={setALaCarte} />
 
           <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
             {save.error?.message ?? ""}
