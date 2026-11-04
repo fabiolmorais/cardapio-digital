@@ -338,6 +338,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{productId}/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria o vídeo (em conversão, no fim da galeria) e devolve como enviar o arquivo por TUS */
+        post: operations["startVideoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{productId}/media": {
         parameters: {
             query?: never;
@@ -345,7 +362,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** As fotos do produto, na ordem (a primeira é a capa) */
+        /** As fotos e os vídeos do produto, na ordem (a primeira foto é a capa) */
         get: operations["listProductMedia"];
         put?: never;
         /** Passo 2: o arquivo já foi enviado; confere a foto, gera os 3 tamanhos e a põe na galeria */
@@ -1659,6 +1676,33 @@ export interface components {
             /** @description Só o primeiro nome de quem aceitou */
             waiterFirstName?: string;
         };
+        /** @description O vídeo que o navegador vai enviar */
+        VideoUploadRequest: {
+            /** @example video/mp4 */
+            contentType: string;
+            /**
+             * Format: int64
+             * @description Tamanho em bytes (até 200 MB)
+             * @example 48331112
+             */
+            sizeBytes: number;
+        };
+        /** @description Envie o arquivo pelo protocolo TUS no endpoint, com estes cabeçalhos no POST de criação */
+        VideoUpload: {
+            /**
+             * Format: uuid
+             * @description A mídia já criada, em conversão
+             */
+            mediaId: string;
+            /** @description O endereço TUS do serviço de vídeo */
+            endpoint: string;
+            /** @description A autorização do envio deste vídeo */
+            headers: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
+        };
         AddMediaRequest: {
             /**
              * Format: uuid
@@ -1666,25 +1710,34 @@ export interface components {
              */
             uploadId: string;
         };
-        /** @description Foto do produto. A de posição mais baixa é a capa */
         ProductMedia: {
             /** Format: uuid */
             id: string;
-            /** @example IMAGE */
-            type: string;
+            /** @enum {string} */
+            type: "IMAGE" | "VIDEO";
             /** Format: int32 */
             position: number;
             /**
              * Format: int32
-             * @description Largura do tamanho grande, em pixels
+             * @description Largura (da foto grande ou do vídeo); 0 no vídeo em conversão
              */
             width: number;
             /**
              * Format: int32
-             * @description Altura do tamanho grande, em pixels
+             * @description Altura, idem
              */
             height: number;
-            urls: components["schemas"]["ProductMediaUrls"];
+            /**
+             * @description Foto: sempre pronta. Vídeo: em conversão, pronto ou falhou
+             * @enum {string}
+             */
+            status: "PROCESSING" | "READY" | "FAILED";
+            /** @description Os tamanhos da foto; ausente no vídeo */
+            urls?: components["schemas"]["ProductMediaUrls"];
+            /** @description O vídeo pronto, para tocar */
+            video?: components["schemas"]["ProductMediaVideo"];
+            /** @description Por que o vídeo não ficou pronto */
+            failure?: string;
         };
         /** @description Um endereço por tamanho */
         ProductMediaUrls: {
@@ -1694,6 +1747,14 @@ export interface components {
             medium: string;
             /** @description Até 1440 px no maior lado */
             large: string;
+        };
+        ProductMediaVideo: {
+            /** @description O MP4 para tocar */
+            url: string;
+            /** @description A capa do vídeo, se o serviço gera uma */
+            poster?: string;
+            /** Format: int32 */
+            durationSeconds: number;
         };
         /** @description O arquivo que o navegador vai enviar */
         MediaUploadRequest: {
@@ -3380,6 +3441,68 @@ export interface operations {
             };
         };
     };
+    startVideoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description A mídia criada e a autorização do envio */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito (MP4, MOV ou WebM, até 200 MB) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O produto já tem 3 vídeos */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O produto já tem 8 fotos e vídeos */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listProductMedia: {
         parameters: {
             query?: never;
@@ -3391,7 +3514,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Todas as fotos, numa página só (são no máximo 8) */
+            /** @description Toda a galeria, numa página só (são no máximo 8) */
             200: {
                 headers: {
                     [name: string]: unknown;

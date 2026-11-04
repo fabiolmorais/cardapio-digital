@@ -24,11 +24,10 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "storage_path", nullable = false)
     private String storagePath;
 
-    @Column(nullable = false)
-    private int width;
+    /** Null no vídeo ainda em conversão (o domínio usa 0). */
+    private Integer width;
 
-    @Column(nullable = false)
-    private int height;
+    private Integer height;
 
     @Column(nullable = false)
     private int position;
@@ -36,11 +35,23 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(nullable = false)
+    private String status;
+
+    @Column(name = "video_id")
+    private String videoId;
+
+    @Column(name = "duration_seconds")
+    private Integer durationSeconds;
+
+    private String failure;
+
     protected ProductMediaJpaEntity() {
     }
 
-    ProductMediaJpaEntity(UUID id, UUID establishmentId, UUID productId, String type, String storagePath, int width,
-                          int height, int position, boolean active) {
+    ProductMediaJpaEntity(UUID id, UUID establishmentId, UUID productId, String type, String storagePath,
+                          Integer width, Integer height, int position, boolean active, String status, String videoId,
+                          Integer durationSeconds, String failure) {
         super(establishmentId);
         this.id = id;
         this.productId = productId;
@@ -50,14 +61,22 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
         this.height = height;
         this.position = position;
         this.active = active;
+        this.status = status;
+        this.videoId = videoId;
+        this.durationSeconds = durationSeconds;
+        this.failure = failure;
     }
 
     UUID getId() { return id; }
     UUID getProductId() { return productId; }
     String getType() { return type; }
     String getStoragePath() { return storagePath; }
-    int getWidth() { return width; }
-    int getHeight() { return height; }
+    Integer getWidth() { return width; }
+    Integer getHeight() { return height; }
     int getPosition() { return position; }
     boolean isActive() { return active; }
+    String getStatus() { return status; }
+    String getVideoId() { return videoId; }
+    Integer getDurationSeconds() { return durationSeconds; }
+    String getFailure() { return failure; }
 }

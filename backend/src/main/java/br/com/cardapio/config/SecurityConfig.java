@@ -88,6 +88,11 @@ class SecurityConfig {
                         // O pedido pelo celular (Guia 18): enviar o carrinho e cancelar um item na fila.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/orders").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/order-items/*").permitAll()
+                        // O vídeo do prato (Guia 22): o aviso do serviço de vídeo (vale só com o token
+                        // secreto, conferido no controller) e o serviço de vídeo falso do desenvolvimento
+                        // (as rotas só existem com app.video.provider=fake; o envio vale com a assinatura).
+                        .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/video").permitAll()
+                        .requestMatchers("/api/v1/dev/fake-video/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout").permitAll()
@@ -119,11 +124,17 @@ class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(properties.allowedOrigins());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id"));
-        // Content-Disposition: o front lê o nome do arquivo baixado (display da mesa). Sem estar
-        // aqui, o navegador esconde o cabeçalho do JavaScript em respostas de outra origem.
-        config.setExposedHeaders(List.of("X-Request-Id", "Content-Disposition"));
+        config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        // Os cabeçalhos do envio de vídeo pelo protocolo TUS (Guia 22), para o serviço de vídeo
+        // falso, que roda no próprio back. O Bunny de verdade tem o CORS dele.
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id", "Tus-Resumable",
+                "Upload-Length", "Upload-Offset", "Upload-Metadata", "AuthorizationSignature", "AuthorizationExpire",
+                "VideoId", "LibraryId"));
+        // Content-Disposition: o front lê o nome do arquivo baixado (display da mesa). Location e
+        // Upload-Offset: o envio TUS do vídeo. Sem estar aqui, o navegador esconde o cabeçalho do
+        // JavaScript em respostas de outra origem.
+        config.setExposedHeaders(List.of("X-Request-Id", "Content-Disposition", "Location", "Upload-Offset",
+                "Tus-Resumable"));
         config.setAllowCredentials(true);
         config.setMaxAge(Duration.ofHours(1));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

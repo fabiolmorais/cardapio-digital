@@ -16,16 +16,17 @@ interface ProductMediaJpaRepository extends JpaRepository<ProductMediaJpaEntity,
             UUID establishmentId, UUID productId);
 
     /**
-     * A capa de cada produto: a mídia ativa de menor posição. A subconsulta acha a menor posição
-     * do mesmo produto; a consulta de fora pega a mídia que está nela. Uma ida ao banco para o
-     * cardápio inteiro.
+     * A capa de cada produto: a FOTO ativa de menor posição (com o vídeo na galeria, a capa
+     * continua sendo uma foto: é o que a lista do cardápio mostra). A subconsulta acha a menor
+     * posição entre as fotos do mesmo produto; a consulta de fora pega a foto que está nela. Uma
+     * ida ao banco para o cardápio inteiro.
      */
     @Query("""
             SELECT m FROM ProductMediaJpaEntity m
              WHERE m.establishmentId = :establishmentId
-               AND m.active = true
+               AND m.active = true AND m.type = 'IMAGE'
                AND m.position = (SELECT min(m2.position) FROM ProductMediaJpaEntity m2
-                                  WHERE m2.productId = m.productId AND m2.active = true)
+                                  WHERE m2.productId = m.productId AND m2.active = true AND m2.type = 'IMAGE')
             """)
     List<ProductMediaJpaEntity> findCovers(@Param("establishmentId") UUID establishmentId);
 
@@ -34,4 +35,6 @@ interface ProductMediaJpaRepository extends JpaRepository<ProductMediaJpaEntity,
              WHERE m.establishmentId = :establishmentId AND m.productId = :productId
             """)
     int nextPosition(@Param("establishmentId") UUID establishmentId, @Param("productId") UUID productId);
+
+    Optional<ProductMediaJpaEntity> findByVideoId(String videoId);
 }

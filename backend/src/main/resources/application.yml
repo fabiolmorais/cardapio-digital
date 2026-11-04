@@ -91,6 +91,19 @@ app:
     access-key-id: ${STORAGE_ACCESS_KEY_ID:}
     secret-access-key: ${STORAGE_SECRET_ACCESS_KEY:}
     public-url: ${STORAGE_PUBLIC_URL:}
+  # O vídeo do prato (Guia 22). Até a Etapa 15, o serviço de vídeo falso (fake): o próprio back
+  # recebe o envio. Com a conta do Bunny Stream: VIDEO_PROVIDER=bunny e as chaves (ver README).
+  video:
+    provider: ${VIDEO_PROVIDER:fake}
+    # O segredo do aviso do serviço de vídeo (?token= na URL do webhook). Vazio recusa todo aviso.
+    webhook-token: ${VIDEO_WEBHOOK_TOKEN:}
+    bunny:
+      library-id: ${BUNNY_LIBRARY_ID:}
+      api-key: ${BUNNY_API_KEY:}
+      cdn-host: ${BUNNY_CDN_HOST:}
+    fake:
+      # O endereço do back como o navegador o vê (no celular pela rede local, o IP da máquina).
+      public-url: ${FAKE_VIDEO_PUBLIC_URL:http://localhost:8080}
 
 sentry:
   dsn: ${SENTRY_DSN:}

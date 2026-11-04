@@ -37,6 +37,8 @@ import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.RemoveProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.ReorderProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.StartMediaUploadUseCase;
+import br.com.cardapio.application.port.in.menu.StartVideoUploadUseCase;
+import br.com.cardapio.application.port.in.menu.SyncVideoUseCase;
 import br.com.cardapio.application.port.in.order.AdvanceOrderItemUseCase;
 import br.com.cardapio.application.port.in.order.CancelOrderItemByStaffUseCase;
 import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
@@ -93,6 +95,7 @@ import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
+import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.service.account.*;
 import br.com.cardapio.application.service.brand.GetBrandService;
 import br.com.cardapio.application.service.brand.RemoveLogoService;
@@ -132,6 +135,8 @@ import br.com.cardapio.application.service.menu.ListProductMediaService;
 import br.com.cardapio.application.service.menu.RemoveProductMediaService;
 import br.com.cardapio.application.service.menu.ReorderProductMediaService;
 import br.com.cardapio.application.service.menu.StartMediaUploadService;
+import br.com.cardapio.application.service.menu.StartVideoUploadService;
+import br.com.cardapio.application.service.menu.SyncVideoService;
 import br.com.cardapio.application.service.order.AdvanceOrderItemService;
 import br.com.cardapio.application.service.order.CancelOrderItemByStaffService;
 import br.com.cardapio.application.service.order.CancelOrderItemService;
@@ -434,13 +439,15 @@ class UseCaseConfig {
 
     @Bean
     ListProductMediaUseCase listProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
-                                                    MediaStoragePort mediaStoragePort) {
-        return new ListProductMediaService(productPort, productMediaPort, mediaStoragePort);
+                                                    MediaStoragePort mediaStoragePort,
+                                                    VideoHostingPort videoHostingPort) {
+        return new ListProductMediaService(productPort, productMediaPort, mediaStoragePort, videoHostingPort);
     }
 
     @Bean
-    RemoveProductMediaUseCase removeProductMediaUseCase(ProductMediaPort productMediaPort) {
-        return new RemoveProductMediaService(productMediaPort);
+    RemoveProductMediaUseCase removeProductMediaUseCase(ProductMediaPort productMediaPort,
+                                                        VideoHostingPort videoHostingPort) {
+        return new RemoveProductMediaService(productMediaPort, videoHostingPort);
     }
 
     @Bean
@@ -682,5 +689,18 @@ class UseCaseConfig {
     @Bean
     ListClosedTabsUseCase listClosedTabsUseCase(TabPort tabPort) {
         return new ListClosedTabsService(tabPort);
+    }
+
+    // O vídeo do prato (Guia 22)
+
+    @Bean
+    StartVideoUploadUseCase startVideoUploadUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+                                                    VideoHostingPort videoHostingPort) {
+        return new StartVideoUploadService(productPort, productMediaPort, videoHostingPort);
+    }
+
+    @Bean
+    SyncVideoUseCase syncVideoUseCase(ProductMediaPort productMediaPort, VideoHostingPort videoHostingPort) {
+        return new SyncVideoService(productMediaPort, videoHostingPort);
     }
 }

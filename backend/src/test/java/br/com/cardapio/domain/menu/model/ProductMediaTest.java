@@ -43,4 +43,40 @@ class ProductMediaTest {
                 .hasMessage("A foto precisa ter até 8 MB");
         assertThatThrownBy(() -> new PhotoFile("image/png", 0)).isInstanceOf(InvalidValueException.class);
     }
+
+    @Test
+    void aVideoIsBornProcessingAndBecomesReadyWithItsMeasures() {
+        ProductMedia video = ProductMedia.newVideo(sakura, guioza, "bunny-123", 2);
+
+        assertThat(video.type()).isEqualTo(MediaType.VIDEO);
+        assertThat(video.status()).isEqualTo(MediaStatus.PROCESSING);
+        assertThat(video.position()).isEqualTo(2);
+        ProductMedia ready = video.converted(1080, 1920, 42);
+        assertThat(ready.status()).isEqualTo(MediaStatus.READY);
+        assertThat(ready.durationSeconds()).isEqualTo(42);
+        assertThat(ready.width()).isEqualTo(1080);
+        // Só o vídeo em conversão muda de status.
+        assertThatThrownBy(() -> ready.failed("x")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> ProductMedia.newImage(sakura, guioza, 10, 10, 0).failed("x"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void aVideoLongerThanAMinuteIsNotAReels() {
+        ProductMedia tooLong = ProductMedia.newVideo(sakura, guioza, "bunny-123", 0).converted(1080, 1920, 61);
+
+        assertThat(tooLong.status()).isEqualTo(MediaStatus.FAILED);
+        assertThat(tooLong.failure()).isEqualTo("O vídeo tem 61 segundos. Envie um de até 60.");
+        assertThat(ProductMedia.newVideo(sakura, guioza, "b", 0).converted(1080, 1920, 60).status())
+                .isEqualTo(MediaStatus.READY);
+    }
+
+    @Test
+    void onlyMp4MovOrWebmUpTo200Megabytes() {
+        assertThat(new VideoFile("video/quicktime", 200L * 1024 * 1024).sizeBytes()).isEqualTo(200L * 1024 * 1024);
+        assertThatThrownBy(() -> new VideoFile("video/x-msvideo", 1000)).isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> new VideoFile("video/mp4", 200L * 1024 * 1024 + 1))
+                .isInstanceOf(InvalidValueException.class)
+                .hasMessage("O vídeo precisa ter até 200 MB");
+    }
 }

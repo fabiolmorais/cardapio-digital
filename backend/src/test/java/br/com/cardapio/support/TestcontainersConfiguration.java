@@ -33,6 +33,9 @@ public class TestcontainersConfiguration {
                 .waitingFor(Wait.forHttp("/").forPort(9090));
     }
 
+    /** O segredo do aviso do serviço de vídeo nos testes. */
+    public static final String WEBHOOK_TOKEN = "token-do-webhook-de-teste";
+
     @Bean
     DynamicPropertyRegistrar storageProperties(GenericContainer<?> s3MockContainer) {
         return registry -> {
@@ -42,6 +45,15 @@ public class TestcontainersConfiguration {
             registry.add("app.storage.public-url", () -> endpoint + "/" + BUCKET);
             registry.add("app.storage.access-key-id", () -> "teste");
             registry.add("app.storage.secret-access-key", () -> "teste");
+        };
+    }
+
+    /** O vídeo (Guia 22): o serviço falso, e um token conhecido para o teste chamar o webhook. */
+    @Bean
+    DynamicPropertyRegistrar videoProperties() {
+        return registry -> {
+            registry.add("app.video.provider", () -> "fake");
+            registry.add("app.video.webhook-token", () -> WEBHOOK_TOKEN);
         };
     }
 }
