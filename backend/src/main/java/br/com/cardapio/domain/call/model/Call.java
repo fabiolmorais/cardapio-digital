@@ -122,6 +122,20 @@ public record Call(
         }
     }
 
+    /**
+     * A mesa entrou no rodízio: o "Quero o rodízio" termina atendido, por quem ativou (se ninguém
+     * tinha aceitado antes, quem ativou conta como quem aceitou).
+     */
+    public Call resolveWithRodizio(UserId by, Instant now) {
+        if (type != CallType.RODIZIO) {
+            throw new CallStateException("Só o pedido de rodízio termina na ativação");
+        }
+        requireOpen();
+        return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
+                createdAt, acceptedAt != null ? acceptedAt : now, acceptedBy != null ? acceptedBy : by, now,
+                canceledAt);
+    }
+
     /** A mesa desistiu (antes ou depois de alguém aceitar). */
     public Call cancel(Instant now) {
         requireOpen();

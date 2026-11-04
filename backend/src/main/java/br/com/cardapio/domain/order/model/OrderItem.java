@@ -5,6 +5,7 @@ import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.order.exception.OrderItemStateException;
+import br.com.cardapio.domain.rodizio.model.TabRodizioId;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 
@@ -20,6 +21,7 @@ import java.util.Objects;
  *
  * @param canceledBy   quem da equipe cancelou; null se foi o próprio cliente (ou se não foi cancelado)
  * @param cancelReason o motivo, que o cliente vê ("acabou o salmão")
+ * @param tabRodizioId o rodízio da comanda, se o item veio numa rodada (preço zero); senão null
  */
 public record OrderItem(
         OrderItemId id,
@@ -38,7 +40,8 @@ public record OrderItem(
         UserId deliveredBy,
         Instant canceledAt,
         UserId canceledBy,
-        String cancelReason
+        String cancelReason,
+        TabRodizioId tabRodizioId
 ) {
 
     /** O motivo quando quem cancela é o cliente. */
@@ -63,7 +66,23 @@ public record OrderItem(
     public static OrderItem from(OrderId orderId, Product product, OrderLine line, Instant now) {
         return new OrderItem(OrderItemId.newId(), product.establishmentId(), orderId, product.id(),
                 product.details().name(), product.details().currentPrice(), line.quantity(), line.note(),
-                OrderItemStatus.PENDING, now, null, null, null, null, null, null, null);
+                OrderItemStatus.PENDING, now, null, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * O item de uma rodada do rodízio: o nome vem do cardápio, mas o preço é zero, porque o
+     * rodízio é cobrado por pessoa (especificação).
+     */
+    public static OrderItem inRound(OrderId orderId, Product product, OrderLine line, TabRodizioId tabRodizioId,
+                                    Instant now) {
+        return new OrderItem(OrderItemId.newId(), product.establishmentId(), orderId, product.id(),
+                product.details().name(), Money.ZERO, line.quantity(), line.note(), OrderItemStatus.PENDING, now,
+                null, null, null, null, null, null, null, Objects.requireNonNull(tabRodizioId));
+    }
+
+    /** Veio numa rodada do rodízio? */
+    public boolean inRodizio() {
+        return tabRodizioId != null;
     }
 
     /** O preço do item vezes a quantidade. */
@@ -83,7 +102,7 @@ public record OrderItem(
         }
         return new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice, quantity, note,
                 OrderItemStatus.CANCELED, createdAt, preparingAt, readyAt, deliveredAt, deliveredBy, now, null,
-                CANCELED_BY_CUSTOMER);
+                CANCELED_BY_CUSTOMER, tabRodizioId);
     }
 
     /** "Em preparo": a cozinha começou. Só a partir da fila. */
@@ -148,6 +167,7 @@ public record OrderItem(
     private OrderItem with(OrderItemStatus newStatus, Instant preparing, Instant ready, Instant delivered,
                            UserId deliveredByUser, Instant canceled, UserId canceledByUser, String reason) {
         return new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice, quantity, note,
-                newStatus, createdAt, preparing, ready, delivered, deliveredByUser, canceled, canceledByUser, reason);
+                newStatus, createdAt, preparing, ready, delivered, deliveredByUser, canceled, canceledByUser, reason,
+                tabRodizioId);
     }
 }

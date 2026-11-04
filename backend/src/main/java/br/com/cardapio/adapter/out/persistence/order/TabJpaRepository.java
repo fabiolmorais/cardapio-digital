@@ -59,7 +59,10 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.OpenTabRow(t, d.label, s.name,
                        COALESCE(SUM(CASE WHEN i.status <> 'CANCELED' THEN i.unitPriceCents * i.quantity
-                                         ELSE 0 END), 0),
+                                         ELSE 0 END), 0)
+                       + COALESCE((SELECT SUM(g.quantity * g.unitPriceCents)
+                                     FROM TabRodizioJpaEntity r, TabRodizioGuestJpaEntity g
+                                    WHERE r.tabId = t.id AND g.tabRodizioId = r.id), 0),
                        COALESCE(SUM(CASE WHEN i.status IN ('PENDING', 'PREPARING', 'READY') THEN 1
                                          ELSE 0 END), 0))
               FROM TabJpaEntity t

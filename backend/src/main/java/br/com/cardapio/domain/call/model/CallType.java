@@ -7,5 +7,7 @@ public enum CallType {
     /** "Pedir a conta", com a forma de pagamento. */
     BILL,
     /** "Liberar esta mesa": o celular não provou a presença (Wi-Fi e GPS falharam) e pede ao garçom. */
-    UNLOCK
+    UNLOCK,
+    /** "Quero o rodízio": o garçom confirma quantas pessoas e ativa (o chamado termina na ativação). */
+    RODIZIO
 }

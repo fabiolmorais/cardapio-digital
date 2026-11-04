@@ -88,6 +88,9 @@ class SecurityConfig {
                         // O pedido pelo celular (Guia 18): enviar o carrinho e cancelar um item na fila.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/orders").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/public/tables/*/order-items/*").permitAll()
+                        // A rodada do rodízio (Guia 25): como o carrinho, o cliente não tem login; o cookie da
+                        // sessão identifica o celular, e o caso de uso confere a presença e o rodízio da mesa.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/rounds").permitAll()
                         // O vídeo do prato (Guia 22): o aviso do serviço de vídeo (vale só com o token
                         // secreto, conferido no controller) e o serviço de vídeo falso do desenvolvimento
                         // (as rotas só existem com app.video.provider=fake; o envio vale com a assinatura).

@@ -60,8 +60,11 @@ import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
+import br.com.cardapio.application.port.in.rodizio.ActivateRodizioUseCase;
+import br.com.cardapio.application.port.in.rodizio.ChangeRodizioGuestsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
+import br.com.cardapio.application.port.in.rodizio.QuoteRodiziosUseCase;
 import br.com.cardapio.application.port.in.tablesession.EndExpiredSessionsUseCase;
 import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
@@ -71,6 +74,7 @@ import br.com.cardapio.application.port.in.team.ListTeamUseCase;
 import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
+import br.com.cardapio.application.port.out.account.EstablishmentTimeZonePort;
 import br.com.cardapio.application.port.out.brand.BrandPort;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
@@ -92,6 +96,7 @@ import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.realtime.EventStreamPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
@@ -161,8 +166,11 @@ import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
 import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
 import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
+import br.com.cardapio.application.service.rodizio.ActivateRodizioService;
+import br.com.cardapio.application.service.rodizio.ChangeRodizioGuestsService;
 import br.com.cardapio.application.service.rodizio.ListRodiziosService;
 import br.com.cardapio.application.service.rodizio.ManageRodiziosService;
+import br.com.cardapio.application.service.rodizio.QuoteRodiziosService;
 import br.com.cardapio.application.service.tablesession.EndExpiredSessionsService;
 import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
@@ -612,17 +620,19 @@ class UseCaseConfig {
     @Bean
     PlaceOrderUseCase placeOrderUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                         OrderSettingsPort orderSettingsPort, ProductPort productPort, TabPort tabPort,
-                                        OrderPort orderPort, EventPublisherPort eventPublisherPort, Clock clock) {
+                                        OrderPort orderPort, TabRodizioPort tabRodizioPort, RodizioPort rodizioPort,
+                                        EventPublisherPort eventPublisherPort, Clock clock) {
         return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort, tabPort,
-                orderPort, eventPublisherPort, clock);
+                orderPort, tabRodizioPort, rodizioPort, eventPublisherPort, clock);
     }
 
     @Bean
     ListTableOrdersUseCase listTableOrdersUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                                   OrderSettingsPort orderSettingsPort, TabPort tabPort,
-                                                  OrderPort orderPort, Clock clock) {
+                                                  OrderPort orderPort, TabRodizioPort tabRodizioPort,
+                                                  RodizioPort rodizioPort, Clock clock) {
         return new ListTableOrdersService(diningTablePort, tableSessionPort, orderSettingsPort, tabPort, orderPort,
-                clock);
+                tabRodizioPort, rodizioPort, clock);
     }
 
     @Bean
@@ -679,15 +689,17 @@ class UseCaseConfig {
     }
 
     @Bean
-    GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort) {
-        return new GetTabService(tabPort, orderPort, callPort);
+    GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
+                                TabRodizioPort tabRodizioPort) {
+        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort);
     }
 
     @Bean
     CloseTabUseCase closeTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
-                                    TableSessionPort tableSessionPort, EventPublisherPort eventPublisherPort,
-                                    Clock clock) {
-        return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, eventPublisherPort, clock);
+                                    TableSessionPort tableSessionPort, TabRodizioPort tabRodizioPort,
+                                    EventPublisherPort eventPublisherPort, Clock clock) {
+        return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, tabRodizioPort,
+                eventPublisherPort, clock);
     }
 
     // O histórico de comandas (Guia 21)
@@ -720,5 +732,30 @@ class UseCaseConfig {
     @Bean
     ManageRodiziosUseCase manageRodiziosUseCase(RodizioPort rodizioPort, ProductPort productPort, Clock clock) {
         return new ManageRodiziosService(rodizioPort, productPort, clock);
+    }
+
+    // O rodízio na mesa (Guia 25)
+
+    @Bean
+    QuoteRodiziosUseCase quoteRodiziosUseCase(RodizioPort rodizioPort, EstablishmentTimeZonePort timeZonePort,
+                                              DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                              Clock clock) {
+        return new QuoteRodiziosService(rodizioPort, timeZonePort, diningTablePort, tableSessionPort, clock);
+    }
+
+    @Bean
+    ActivateRodizioUseCase activateRodizioUseCase(DiningTablePort diningTablePort, RodizioPort rodizioPort,
+                                                  EstablishmentTimeZonePort timeZonePort, TabPort tabPort,
+                                                  TabRodizioPort tabRodizioPort, CallPort callPort,
+                                                  EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ActivateRodizioService(diningTablePort, rodizioPort, timeZonePort, tabPort, tabRodizioPort,
+                callPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    ChangeRodizioGuestsUseCase changeRodizioGuestsUseCase(DiningTablePort diningTablePort, TabPort tabPort,
+                                                          TabRodizioPort tabRodizioPort,
+                                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ChangeRodizioGuestsService(diningTablePort, tabPort, tabRodizioPort, eventPublisherPort, clock);
     }
 }

@@ -24,6 +24,7 @@ import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
+import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,7 @@ class KitchenServicesTest {
     private static final PageQuery PAGE = new PageQuery(0, 50);
 
     private final OrderFakes fakes = new OrderFakes();
+    private final InMemoryRodizios rodizios = new InMemoryRodizios();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final List<DomainEvent> published = new ArrayList<>();
@@ -70,7 +72,8 @@ class KitchenServicesTest {
     /** Um pedido da Ana, um minuto depois do anterior (a fila é por ordem de chegada). */
     private TableOrder place(OrderLine... lines) {
         clock = Clock.offset(clock, Duration.ofMinutes(1));
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, published::add, clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
+                clock)
                 .place(new PlaceOrderCommand(QR_04, "ana", List.of(lines)));
     }
 
@@ -190,7 +193,7 @@ class KitchenServicesTest {
             assertThat(i.status()).isEqualTo(OrderItemStatus.CANCELED);
             assertThat(i.cancelReason()).isEqualTo(OrderItem.REJECTED_BY_STAFF);
         });
-        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, clock).list(QR_04, "ana")
+        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock).list(QR_04, "ana")
                 .total()).isEqualTo(Money.ZERO);
         assertThatThrownBy(() -> review().reject(EstablishmentId.newId(), order.id(), carlos))
                 .isInstanceOf(OrderNotFoundException.class);

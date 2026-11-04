@@ -13,8 +13,11 @@ export type TableOrderItem = components["schemas"]["TableOrderItem"];
 type PlaceOrderRequest = components["schemas"]["PlaceOrderRequest"];
 
 const t = tablePage.orders;
-/** O canal de tempo real avisa quando um pedido da mesa muda, e quando o garçom fecha a conta. */
-const ORDER_EVENTS = ["order", "tab"] as const;
+/**
+ * O canal de tempo real avisa quando um pedido da mesa muda, quando o garçom ativa o rodízio (ou
+ * ajusta as pessoas) e quando fecha a conta.
+ */
+const ORDER_EVENTS = ["order", "rodizio", "tab"] as const;
 
 /** A hora do pedido, no relógio do celular (que está no restaurante). */
 export function timeOf(iso: string) {
@@ -28,18 +31,35 @@ export async function listOrders(token: string): Promise<TableOrders> {
   return response.json();
 }
 
-/** Envia o carrinho: só o produto, a quantidade e a observação (o back copia o nome e o preço). */
-export async function placeOrder(token: string, lines: CartLine[]): Promise<TableOrder> {
+/**
+ * Envia o carrinho (`/orders`) ou uma rodada do rodízio (`/rounds`): só o produto, a quantidade e a
+ * observação. O back copia o nome e o preço (zero, na rodada).
+ */
+export async function placeOrder(
+  token: string,
+  lines: Pick<CartLine, "productId" | "quantity" | "note">[],
+  path: "/orders" | "/rounds" = "/orders"): Promise<TableOrder> {
   const body: PlaceOrderRequest = {
     items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, note: l.note || undefined })),
   };
-  const response = await send(token, "/orders", {
+  const response = await send(token, path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!response.ok) throw await failure(response, t.failed);
   return response.json();
+}
+
+export type RodizioQuote = components["schemas"]["RodizioQuote"];
+
+/** "Escolha o rodízio": os rodízios à la minute, com o preço por pessoa de agora. */
+export async function listRodizios(token: string): Promise<RodizioQuote[]> {
+  const response = await send(token, "/rodizios");
+  if (!response.ok) throw await failure(response, t.failed);
+  const page: { content: RodizioQuote[] } = await response.json();
+  // O de passagem já se cadastra, mas só funciona na mesa numa próxima versão.
+  return page.content.filter((r) => r.type === "A_LA_MINUTE");
 }
 
 export async function cancelOrderItem(token: string, itemId: string): Promise<void> {

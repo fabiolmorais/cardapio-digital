@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useDeferredValue, useEffect, useId, useState } from "react";
+import { useDeferredValue, useId, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { MenuItemCard } from "./menu-item";
 import { ProductSheet } from "./product-sheet";
+import { RodizioRound } from "./rodizio-round";
 import type { MenuItem, PublicMenu } from "./table-data";
-import { listOrders } from "./table-orders";
+import { useTableOrders } from "./table-orders";
 
 const t = tablePage.menu;
 
@@ -21,27 +22,22 @@ function plain(text: string) {
  *
  * Cada produto disponível tem o "Adicionar", que abre o prato com a observação e a quantidade.
  * Se o restaurante desligou o pedido pelo celular, o botão some (o cardápio continua).
+ *
+ * Com o rodízio ativo na mesa, a aba Rodízio vem antes de tudo, com os produtos incluídos sem
+ * preço e as rodadas. O estado vem dos pedidos da mesa, e o tempo real avisa quando o garçom ativa.
  */
 export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }) {
   const [search, setSearch] = useState("");
   const query = plain(useDeferredValue(search).trim());
   const inputId = useId();
   const [open, setOpen] = useState<MenuItem | null>(null);
-  const [ordering, setOrdering] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    listOrders(token)
-      .then((orders) => {
-        if (!cancelled) setOrdering(orders.orderingEnabled);
-      })
-      .catch(() => {
-        // Sem resposta, o botão fica: o envio do pedido confere de novo.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+  // Sem resposta, os botões ficam: o envio do pedido confere de novo.
+  const { data: orders } = useTableOrders(token);
+  const ordering = orders?.orderingEnabled ?? true;
+  const rodizio = ordering ? orders?.rodizio : undefined;
+  const included = new Set(orders?.rodizioProductIds ?? []);
+  const rodizioItems = menu.categories.flatMap((c) => c.products).filter((p) => included.has(p.id));
+  const rounds = orders?.orders.filter((o) => o.items.some((i) => i.rodizio)).length ?? 0;
 
   const card = (item: MenuItem) => (
     <MenuItemCard
@@ -99,6 +95,14 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
       ) : (
         <>
           <nav aria-label={tablePage.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+            {rodizio && (
+              <a
+                href="#rodizio"
+                className="flex h-10 shrink-0 items-center rounded-full bg-(--brand) px-4 text-sm font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:outline-none"
+              >
+                {tablePage.rodizio.tab}
+              </a>
+            )}
             {menu.categories.map((c) => (
               <a
                 key={c.id}
@@ -109,6 +113,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               </a>
             ))}
           </nav>
+          {rodizio && <RodizioRound token={token} rodizio={rodizio} items={rodizioItems} rounds={rounds} />}
           {menu.categories.map((c) => (
             <section
               key={c.id}

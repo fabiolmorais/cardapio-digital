@@ -24,13 +24,16 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
         items = List.copyOf(items);
     }
 
-    /** @param cancelReason o motivo, quando cancelado ("acabou o salmão") */
+    /**
+     * @param cancelReason o motivo, quando cancelado ("acabou o salmão")
+     * @param rodizio      veio numa rodada do rodízio (a tela mostra "Rodízio" em vez de R$ 0,00)
+     */
     public record Item(OrderItemId id, String productName, Money unitPrice, int quantity, String note,
-                       OrderItemStatus status, String cancelReason) {
+                       OrderItemStatus status, String cancelReason, boolean rodizio) {
 
         static Item from(OrderItem i) {
             return new Item(i.id(), i.productName(), i.unitPrice(), i.quantity(), i.note(), i.status(),
-                    i.cancelReason());
+                    i.cancelReason(), i.inRodizio());
         }
     }
 

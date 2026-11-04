@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
+import { RodizioEntry } from "./rodizio-entry";
 import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
 import type { PublicMenu, PublicTable } from "./table-data";
@@ -38,6 +39,7 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
       </section>
 
       <TableActions token={token} />
+      <RodizioEntry token={token} />
 
       <Link
         href={menuHref}

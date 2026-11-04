@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.order;
 
+import br.com.cardapio.adapter.in.web.rodizio.TableRodizioResponse;
 import br.com.cardapio.application.port.in.order.StaffTab;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.order.model.OrderStatus;
@@ -15,6 +16,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(name = "StaffTab")
 record StaffTabResponse(
         @Schema(requiredMode = REQUIRED) UUID id,
+        @Schema(requiredMode = REQUIRED, description = "A mesa (para ativar o rodízio ou ajustar as pessoas)")
+        UUID tableId,
         @Schema(requiredMode = REQUIRED) String tableLabel,
         @Schema(requiredMode = REQUIRED) String sectorName,
         @Schema(requiredMode = REQUIRED) TabStatus status,
@@ -25,6 +28,8 @@ record StaffTabResponse(
         @Schema(description = "Fechada: como a mesa pagou") PaymentMethod paymentMethod,
         @Schema(description = "Aberta, com a conta pedida: a forma que a mesa escolheu")
         PaymentMethod billRequestedWith,
+        @Schema(description = "O rodízio da comanda (já somado no total); ausente se não houve")
+        TableRodizioResponse rodizio,
         @Schema(requiredMode = REQUIRED) List<Order> orders
 ) {
 
@@ -39,8 +44,9 @@ record StaffTabResponse(
     }
 
     static StaffTabResponse from(StaffTab t) {
-        return new StaffTabResponse(t.id().value(), t.tableLabel(), t.sectorName(), t.status(), t.openedAt(),
-                t.closedAt(), t.total().cents(), t.paymentMethod(), t.billRequestedWith(),
+        return new StaffTabResponse(t.id().value(), t.tableId().value(), t.tableLabel(), t.sectorName(), t.status(),
+                t.openedAt(), t.closedAt(), t.total().cents(), t.paymentMethod(), t.billRequestedWith(),
+                t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.orders().stream().map(o -> new Order(o.id().value(), o.number(), o.status(), o.createdAt(),
                         o.items().stream().map(TableOrderResponse.Item::from).toList())).toList());
     }
