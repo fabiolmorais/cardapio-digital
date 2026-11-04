@@ -23,4 +23,10 @@ public interface ProductMediaPort {
 
     /** A capa (a primeira mídia ativa) de cada produto do restaurante, numa consulta só (sem N+1). */
     List<ProductMedia> findCovers(EstablishmentId establishmentId);
+
+    /**
+     * A mídia deste vídeo, de qualquer restaurante: o aviso do serviço de vídeo chega só com o id
+     * dele. Quem chama é o webhook, protegido por um token secreto.
+     */
+    Optional<ProductMedia> findByVideoId(String videoId);
 }

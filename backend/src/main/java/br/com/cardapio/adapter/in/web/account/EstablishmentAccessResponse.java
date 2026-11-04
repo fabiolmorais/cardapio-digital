@@ -13,13 +13,15 @@ record EstablishmentAccessResponse(
         @Schema(requiredMode = REQUIRED) UUID id,
         @Schema(requiredMode = REQUIRED, example = "Sakura Sushi") String name,
         @Schema(requiredMode = REQUIRED, example = "sakura-sushi") String slug,
+        @Schema(requiredMode = REQUIRED, description = "O fuso do restaurante: os dias (\"hoje\", \"ontem\") são os dele",
+                example = "America/Sao_Paulo") String timeZone,
         @Schema(requiredMode = REQUIRED) RoleDto role
 ) {
 
     enum RoleDto { OWNER, MANAGER, STAFF, KITCHEN }
 
     static EstablishmentAccessResponse from(EstablishmentAccess a) {
-        return new EstablishmentAccessResponse(a.establishmentId().value(), a.name(), a.slug(),
+        return new EstablishmentAccessResponse(a.establishmentId().value(), a.name(), a.slug(), a.timeZone(),
                 RoleDto.valueOf(a.role().name()));
     }
 }

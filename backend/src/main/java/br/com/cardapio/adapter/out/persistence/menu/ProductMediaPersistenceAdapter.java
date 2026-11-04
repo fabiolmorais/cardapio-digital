@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.out.persistence.menu;
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.menu.model.MediaStatus;
 import br.com.cardapio.domain.menu.model.MediaType;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
@@ -27,7 +28,8 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
     public void save(ProductMedia m) {
         establishmentFilter.enable(m.establishmentId());
         media.save(new ProductMediaJpaEntity(m.id().value(), m.establishmentId().value(), m.productId().value(),
-                m.type().name(), m.storagePath(), m.width(), m.height(), m.position(), m.active()));
+                m.type().name(), m.storagePath(), m.width() > 0 ? m.width() : null, m.height() > 0 ? m.height() : null,
+                m.position(), m.active(), m.status().name(), m.videoId(), m.durationSeconds(), m.failure()));
     }
 
     @Override
@@ -56,9 +58,17 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
         return media.findCovers(establishmentId.value()).stream().map(this::toDomain).toList();
     }
 
+    /** Sem o filtro por restaurante: o aviso do serviço de vídeo não diz de qual restaurante é. */
+    @Override
+    public Optional<ProductMedia> findByVideoId(String videoId) {
+        return media.findByVideoId(videoId).map(this::toDomain);
+    }
+
     private ProductMedia toDomain(ProductMediaJpaEntity e) {
         return new ProductMedia(new ProductMediaId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
-                new ProductId(e.getProductId()), MediaType.valueOf(e.getType()), e.getStoragePath(), e.getWidth(),
-                e.getHeight(), e.getPosition(), e.isActive());
+                new ProductId(e.getProductId()), MediaType.valueOf(e.getType()), e.getStoragePath(),
+                e.getWidth() == null ? 0 : e.getWidth(), e.getHeight() == null ? 0 : e.getHeight(), e.getPosition(),
+                e.isActive(), MediaStatus.valueOf(e.getStatus()), e.getVideoId(), e.getDurationSeconds(),
+                e.getFailure());
     }
 }

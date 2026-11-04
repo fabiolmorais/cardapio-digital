@@ -10,6 +10,7 @@ final class Accesses {
     }
 
     static EstablishmentAccess from(ActiveMembership m) {
-        return new EstablishmentAccess(m.establishmentId(), m.establishmentName(), m.establishmentSlug(), m.role());
+        return new EstablishmentAccess(m.establishmentId(), m.establishmentName(), m.establishmentSlug(),
+                m.establishmentTimeZone(), m.role());
     }
 }

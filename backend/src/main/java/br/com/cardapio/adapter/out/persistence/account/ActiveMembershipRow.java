@@ -16,5 +16,7 @@ public interface ActiveMembershipRow {
 
     String getEstablishmentSlug();
 
+    String getEstablishmentTimeZone();
+
     String getRole();
 }

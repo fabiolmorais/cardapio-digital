@@ -1,6 +1,7 @@
 import { api, type Schemas } from "@/lib/api/client";
 import { sendToStorage } from "@/lib/api/direct-upload";
 import { messages } from "@/messages/pt-BR";
+import { tusUpload } from "./tus-upload";
 
 export type MenuCategory = Schemas["MenuCategory"];
 export type Product = Schemas["Product"];
@@ -145,6 +146,33 @@ export async function uploadProductPhoto(
   const upload = await startMediaUpload(productId, file);
   await sendToStorage(upload, file, onProgress); // passo 2: direto no R2
   return addProductMedia(productId, upload.uploadId);
+}
+
+// Vídeo do produto (Guia 22). O arquivo vai direto do navegador para o serviço de vídeo, por TUS.
+
+type VideoUpload = Schemas["VideoUpload"];
+
+/** O back cria o vídeo (em conversão, no fim da galeria) e devolve a autorização do envio. */
+async function startVideoUpload(productId: string, file: File): Promise<VideoUpload> {
+  const { data, error, response } = await api.POST("/api/v1/products/{productId}/videos", {
+    params: { path: { productId } },
+    body: { contentType: file.type, sizeBytes: file.size },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/**
+ * Os dois passos de um vídeo. Depois deles, o serviço de vídeo ainda converte: a galeria mostra
+ * "convertendo" até ficar pronto.
+ */
+export async function uploadProductVideo(
+  productId: string,
+  file: File,
+  onProgress: (fraction: number) => void,
+): Promise<void> {
+  const upload = await startVideoUpload(productId, file);
+  await tusUpload(upload, file, onProgress);
 }
 
 export async function removeProductMedia(productId: string, mediaId: string): Promise<void> {

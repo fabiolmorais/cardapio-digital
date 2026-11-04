@@ -19,6 +19,7 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
                     e.id as establishmentId,
                     e.name as establishmentName,
                     e.slug as establishmentSlug,
+                    e.timeZone as establishmentTimeZone,
                     m.role as role
             FROM MembershipJpaEntity m, EstablishmentJpaEntity e
             WHERE e.id = m.establishmentId
