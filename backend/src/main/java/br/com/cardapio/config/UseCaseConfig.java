@@ -60,6 +60,8 @@ import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
+import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
+import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
 import br.com.cardapio.application.port.in.tablesession.EndExpiredSessionsUseCase;
 import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
@@ -89,6 +91,7 @@ import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.realtime.EventStreamPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
@@ -158,6 +161,8 @@ import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
 import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
 import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
+import br.com.cardapio.application.service.rodizio.ListRodiziosService;
+import br.com.cardapio.application.service.rodizio.ManageRodiziosService;
 import br.com.cardapio.application.service.tablesession.EndExpiredSessionsService;
 import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
@@ -703,5 +708,17 @@ class UseCaseConfig {
     @Bean
     SyncVideoUseCase syncVideoUseCase(ProductMediaPort productMediaPort, VideoHostingPort videoHostingPort) {
         return new SyncVideoService(productMediaPort, videoHostingPort);
+    }
+
+    // O cadastro do rodízio (Guia 24)
+
+    @Bean
+    ListRodiziosUseCase listRodiziosUseCase(RodizioPort rodizioPort) {
+        return new ListRodiziosService(rodizioPort);
+    }
+
+    @Bean
+    ManageRodiziosUseCase manageRodiziosUseCase(RodizioPort rodizioPort, ProductPort productPort, Clock clock) {
+        return new ManageRodiziosService(rodizioPort, productPort, clock);
     }
 }

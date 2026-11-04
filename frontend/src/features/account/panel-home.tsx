@@ -1,7 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, ChevronRight, LogOut, Palette, QrCode, Receipt, ShieldCheck, Store, Users } from "lucide-react";
+import {
+  BookOpen,
+  ChevronRight,
+  LogOut,
+  Palette,
+  QrCode,
+  Receipt,
+  ShieldCheck,
+  Store,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
@@ -18,6 +29,7 @@ const t = messages.panel;
 const SHORTCUTS = [
   { href: "/admin/mesas", icon: QrCode, text: t.manage.floor },
   { href: "/admin/cardapio", icon: BookOpen, text: t.manage.menu },
+  { href: "/admin/rodizios", icon: UtensilsCrossed, text: t.manage.rodizios },
   { href: "/admin/equipe", icon: Users, text: t.manage.team },
   { href: "/admin/marca", icon: Palette, text: t.manage.brand },
   { href: "/admin/presenca", icon: ShieldCheck, text: t.manage.presence },
