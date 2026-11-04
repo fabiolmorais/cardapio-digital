@@ -20,30 +20,39 @@ const pay = messages.panel.calls.payment;
 type Preset = keyof typeof t.presets;
 const PRESETS: Preset[] = ["today", "yesterday", "week", "month", "custom"];
 
-/** "2026-11-03" de uma data, no calendário deste aparelho (que está no restaurante). */
-export function isoDay(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function daysAgo(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return isoDay(date);
+/**
+ * O dia (AAAA-MM-DD) de `days` dias atrás, no calendário do RESTAURANTE, e não no do aparelho:
+ * às 22h de São Paulo já é amanhã em UTC, e o "hoje" do histórico é o do restaurante (o back filtra
+ * pelos dias dele). O "en-CA" escreve a data no formato AAAA-MM-DD.
+ */
+export function daysAgo(days: number, timeZone: string) {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date());
+  const date = new Date(`${today}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
 }
 
 /** O período de cada atalho: hoje, ontem, os últimos 7 e os últimos 30 dias (hoje incluído). */
-function periodOf(preset: Exclude<Preset, "custom">) {
+function periodOf(preset: Exclude<Preset, "custom">, timeZone: string) {
+  const ago = (days: number) => daysAgo(days, timeZone);
   return {
-    today: { from: daysAgo(0), to: daysAgo(0) },
-    yesterday: { from: daysAgo(1), to: daysAgo(1) },
-    week: { from: daysAgo(6), to: daysAgo(0) },
-    month: { from: daysAgo(29), to: daysAgo(0) },
+    today: { from: ago(0), to: ago(0) },
+    yesterday: { from: ago(1), to: ago(1) },
+    week: { from: ago(6), to: ago(0) },
+    month: { from: ago(29), to: ago(0) },
   }[preset];
 }
 
-export function dateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+/** Dia e hora no relógio do restaurante. */
+export function dateTime(iso: string, timeZone: string) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    timeZone,
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** O histórico de comandas (gestão): o período, o filtro por mesa e a lista paginada. */
@@ -57,16 +66,16 @@ export function TabHistory() {
       </p>
     );
   }
-  return <History />;
+  return <History timeZone={session.establishment.timeZone} />;
 }
 
-function History() {
+function History({ timeZone }: { timeZone: string }) {
   const id = useId();
   const [preset, setPreset] = useState<Preset>("today");
-  const [custom, setCustom] = useState(() => periodOf("week"));
+  const [custom, setCustom] = useState(() => periodOf("week", timeZone));
   const [tableId, setTableId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const period = preset === "custom" ? custom : periodOf(preset);
+  const period = preset === "custom" ? custom : periodOf(preset, timeZone);
   const valid = Boolean(period.from && period.to && period.from <= period.to);
 
   const tables = useQuery({ queryKey: ["tables"], queryFn: fetchTables });
@@ -185,16 +194,16 @@ function History() {
                 <li key={tab.id}>
                   <Link
                     href={`/admin/comandas/${tab.id}`}
-                    aria-label={t.open(tab.tableLabel, dateTime(tab.closedAt))}
+                    aria-label={t.open(tab.tableLabel, dateTime(tab.closedAt, timeZone))}
                     className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none focus-visible:ring-inset sm:grid-cols-[1.4fr_1fr_1fr_1fr_auto]"
                   >
                     <span className="flex min-w-0 flex-col">
                       <span className="font-semibold">{t.tableLabel(tab.tableLabel, tab.sectorName)}</span>
                       <span className="text-sm text-muted-foreground sm:hidden">
-                        {dateTime(tab.closedAt)} · {pay[tab.paymentMethod]}
+                        {dateTime(tab.closedAt, timeZone)} · {pay[tab.paymentMethod]}
                       </span>
                     </span>
-                    <span className="hidden text-sm text-muted-foreground sm:block">{dateTime(tab.closedAt)}</span>
+                    <span className="hidden text-sm text-muted-foreground sm:block">{dateTime(tab.closedAt, timeZone)}</span>
                     <span className="hidden text-sm sm:block">{pay[tab.paymentMethod]}</span>
                     <span className="font-mono font-semibold tabular-nums">{formatCents(tab.totalCents)}</span>
                     <ChevronRight aria-hidden className="size-5 text-muted-foreground" />

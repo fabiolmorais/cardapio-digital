@@ -49,7 +49,7 @@ final class AccountPersistenceMapper {
     static ActiveMembership toDomain(ActiveMembershipRow row) {
         return new ActiveMembership(new MembershipId(row.getMembershipId()),
                 new EstablishmentId(row.getEstablishmentId()), row.getEstablishmentName(),
-                row.getEstablishmentSlug(), Role.valueOf(row.getRole()));
+                row.getEstablishmentSlug(), row.getEstablishmentTimeZone(), Role.valueOf(row.getRole()));
     }
 
     static PinLockoutJpaEntity toEntity(PinLockout l) {

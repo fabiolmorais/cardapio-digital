@@ -8,6 +8,7 @@ public record EstablishmentAccess(
         EstablishmentId establishmentId,
         String name,
         String slug,
+        String timeZone,
         Role role
 ) {
 }

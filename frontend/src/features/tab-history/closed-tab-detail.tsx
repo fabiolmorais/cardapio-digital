@@ -15,8 +15,8 @@ const t = messages.tabHistory.detail;
 const pay = messages.panel.calls.payment;
 const status = messages.tablePage.orders.status;
 
-function time(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function time(iso: string, timeZone: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", { timeZone, hour: "2-digit", minute: "2-digit" });
 }
 
 /** Uma comanda do histórico: quando abriu e fechou, como pagou, os pedidos com os itens e o total. */
@@ -59,6 +59,8 @@ export function ClosedTabDetail({ id }: { id: string }) {
   }
 
   const data = tab.data;
+  // As horas no relógio do restaurante, como no histórico.
+  const timeZone = session.session.establishment.timeZone;
   return (
     <div className="flex max-w-2xl flex-col gap-5 px-4 py-6 sm:px-7">
       {back}
@@ -72,12 +74,12 @@ export function ClosedTabDetail({ id }: { id: string }) {
       <dl className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-card p-5 sm:grid-cols-3">
         <div className="flex flex-col gap-0.5">
           <dt className="text-sm text-muted-foreground">{t.opened}</dt>
-          <dd className="font-semibold">{dateTime(data.openedAt)}</dd>
+          <dd className="font-semibold">{dateTime(data.openedAt, timeZone)}</dd>
         </div>
         {data.closedAt && (
           <div className="flex flex-col gap-0.5">
             <dt className="text-sm text-muted-foreground">{t.closed}</dt>
-            <dd className="font-semibold">{dateTime(data.closedAt)}</dd>
+            <dd className="font-semibold">{dateTime(data.closedAt, timeZone)}</dd>
           </div>
         )}
         {data.paymentMethod && (
@@ -92,7 +94,7 @@ export function ClosedTabDetail({ id }: { id: string }) {
         {data.orders.map((order) => (
           <div key={order.id} className="flex flex-col gap-1.5">
             <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {t.order(order.number, time(order.createdAt))}
+              {t.order(order.number, time(order.createdAt, timeZone))}
             </h2>
             <ul className="flex flex-col gap-1.5">
               {order.items.map((item) => {

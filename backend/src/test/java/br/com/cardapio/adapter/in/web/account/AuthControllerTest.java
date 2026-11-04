@@ -81,6 +81,8 @@ class AuthControllerTest {
         assertThat(login).hasStatusOk();
         assertThat(login).bodyJson().extractingPath("$.tokenType").isEqualTo("Bearer");
         assertThat(login).bodyJson().extractingPath("$.establishment.role").isEqualTo("OWNER");
+        // O fuso do restaurante: as telas calculam "hoje" e "ontem" nele, e não no do aparelho.
+        assertThat(login).bodyJson().extractingPath("$.establishment.timeZone").isEqualTo("America/Sao_Paulo");
 
         MvcTestResult me = mvc.get().uri("/api/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + json(login, "$.accessToken")).exchange();

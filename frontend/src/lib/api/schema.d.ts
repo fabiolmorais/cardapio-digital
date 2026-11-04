@@ -1916,6 +1916,11 @@ export interface components {
             name: string;
             /** @example sakura-sushi */
             slug: string;
+            /**
+             * @description O fuso do restaurante: os dias ("hoje", "ontem") são os dele
+             * @example America/Sao_Paulo
+             */
+            timeZone: string;
             /** @enum {string} */
             role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
         };

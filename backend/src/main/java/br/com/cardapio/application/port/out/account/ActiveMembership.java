@@ -13,6 +13,7 @@ public record ActiveMembership(
         EstablishmentId establishmentId,
         String establishmentName,
         String establishmentSlug,
+        String establishmentTimeZone,
         Role role
 ) {
 }
