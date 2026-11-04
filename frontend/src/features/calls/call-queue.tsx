@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
@@ -48,6 +49,7 @@ export function CallQueue({ role }: { role: Role }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [blocking, setBlocking] = useState<StaffCall | null>(null);
+  const [activating, setActivating] = useState<RodizioTarget | null>(null);
   const canAct = role !== "KITCHEN";
 
   async function act(id: string, action: (id: string) => Promise<StaffCall>) {
@@ -123,6 +125,17 @@ export function CallQueue({ role }: { role: Role }) {
             const level = waited >= LATE_AFTER_S ? "late" : waited >= WARN_AFTER_S ? "warn" : "ok";
             const title = `${t.types[call.type]} · ${t.table} ${call.tableLabel}`;
             const unlock = call.type === "UNLOCK";
+            // "Quero o rodízio" se resolve ativando: o chamado termina sozinho na ativação.
+            const rodizio = call.type === "RODIZIO";
+            const activate = rodizio && canAct && (
+              <Button
+                className="h-11"
+                disabled={busy !== null}
+                onClick={() => setActivating({ tableId: call.tableId, tableLabel: call.tableLabel })}
+              >
+                {t.activateRodizio}
+              </Button>
+            );
             // O pedido de liberação é justamente de quem não provou a presença; os outros dizem como provaram.
             const detail = [
               unlock ? t.notPresent : call.paymentMethod && t.payment[call.paymentMethod],
@@ -162,9 +175,17 @@ export function CallQueue({ role }: { role: Role }) {
                   </span>
                 </div>
                 {call.status === "PENDING" && canAct && !unlock && (
-                  <Button className="h-11" disabled={busy !== null} onClick={() => act(call.id, acceptCall)}>
-                    {busy === call.id ? t.accepting : t.accept}
-                  </Button>
+                  <div className="flex gap-2 *:flex-1">
+                    {activate}
+                    <Button
+                      variant={rodizio ? "outline" : "default"}
+                      className="h-11"
+                      disabled={busy !== null}
+                      onClick={() => act(call.id, acceptCall)}
+                    >
+                      {busy === call.id ? t.accepting : t.accept}
+                    </Button>
+                  </div>
                 )}
                 {call.status === "PENDING" && canAct && unlock && (
                   <div className="flex gap-2">
@@ -186,6 +207,7 @@ export function CallQueue({ role }: { role: Role }) {
                     <span className="mr-auto rounded-full bg-muted px-3 py-1 text-sm font-medium">
                       {t.inProgress(call.acceptedByName)}
                     </span>
+                    {activate}
                     {canAct && (
                       <Button
                         variant="outline"
@@ -215,6 +237,7 @@ export function CallQueue({ role }: { role: Role }) {
         </ul>
       )}
 
+      <RodizioDialog target={activating} onClose={() => setActivating(null)} />
       <ConfirmDialog
         open={blocking !== null}
         onOpenChange={(open) => !open && setBlocking(null)}

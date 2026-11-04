@@ -11,6 +11,7 @@ import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -50,6 +51,10 @@ class RealtimeMessages {
         static final String KIND = "TabClosed";
     }
 
+    record RodizioChangedMessage(String kind, UUID establishmentId, UUID tableId, UUID tabId, Instant occurredAt) {
+        static final String KIND = "RodizioChanged";
+    }
+
     String toJson(DomainEvent event) {
         Object message = switch (event) {
             case OrderChanged o -> new OrderChangedMessage(OrderChangedMessage.KIND, o.establishmentId().value(),
@@ -58,6 +63,8 @@ class RealtimeMessages {
                     c.tableId().value(), c.callId().value(), c.type().name(), c.status().name(), c.occurredAt());
             case TabClosed t -> new TabClosedMessage(TabClosedMessage.KIND, t.establishmentId().value(),
                     t.tableId().value(), t.tabId().value(), t.occurredAt());
+            case RodizioChanged r -> new RodizioChangedMessage(RodizioChangedMessage.KIND, r.establishmentId().value(),
+                    r.tableId().value(), r.tabId().value(), r.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
         };
         return json.writeValueAsString(message);
@@ -81,6 +88,11 @@ class RealtimeMessages {
         if (TabClosedMessage.KIND.equals(kind)) {
             TabClosedMessage m = json.treeToValue(node, TabClosedMessage.class);
             return new TabClosed(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new TabId(m.tabId()), m.occurredAt());
+        }
+        if (RodizioChangedMessage.KIND.equals(kind)) {
+            RodizioChangedMessage m = json.treeToValue(node, RodizioChangedMessage.class);
+            return new RodizioChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new TabId(m.tabId()), m.occurredAt());
         }
         throw new IllegalArgumentException("Mensagem de tempo real desconhecida: " + kind);

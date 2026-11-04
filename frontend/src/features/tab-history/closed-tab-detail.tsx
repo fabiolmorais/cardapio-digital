@@ -13,6 +13,7 @@ import { dateTime } from "./tab-history";
 
 const t = messages.tabHistory.detail;
 const pay = messages.panel.calls.payment;
+const tabText = messages.panel.tab;
 const status = messages.tablePage.orders.status;
 
 function time(iso: string, timeZone: string) {
@@ -91,6 +92,21 @@ export function ClosedTabDetail({ id }: { id: string }) {
       </dl>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+        {data.rodizio && (
+          <div className="flex flex-col gap-1 border-b border-border pb-3">
+            <span className="flex items-baseline justify-between gap-3 font-semibold">
+              {tabText.rodizio(data.rodizio.name, data.rodizio.people)}
+              <span className="font-mono tabular-nums">{formatCents(data.rodizio.totalCents)}</span>
+            </span>
+            {data.rodizio.guests
+              .filter((g) => g.quantity > 0)
+              .map((g) => (
+                <span key={g.tierName} className="text-sm text-muted-foreground">
+                  {tabText.guestLine(g.tierName, g.quantity, formatCents(g.unitPriceCents))}
+                </span>
+              ))}
+          </div>
+        )}
         {data.orders.map((order) => (
           <div key={order.id} className="flex flex-col gap-1.5">
             <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -106,7 +122,7 @@ export function ClosedTabDetail({ id }: { id: string }) {
                     </span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{status[item.status]}</span>
                     <span className="w-20 text-right font-mono tabular-nums">
-                      {canceled ? "" : formatCents(item.unitPriceCents * item.quantity)}
+                      {canceled ? "" : item.rodizio ? tabText.rodizioItem : formatCents(item.unitPriceCents * item.quantity)}
                     </span>
                     {canceled && item.cancelReason && (
                       <span className="w-full text-xs text-muted-foreground">{item.cancelReason}</span>

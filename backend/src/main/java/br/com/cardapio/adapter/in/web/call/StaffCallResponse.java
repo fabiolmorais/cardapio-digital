@@ -15,6 +15,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(name = "StaffCall")
 record StaffCallResponse(
         @Schema(requiredMode = REQUIRED) UUID id,
+        @Schema(requiredMode = REQUIRED, description = "A mesa (para ativar o rodízio a partir do chamado)")
+        UUID tableId,
         @Schema(requiredMode = REQUIRED) String tableLabel,
         @Schema(requiredMode = REQUIRED) String sectorName,
         @Schema(requiredMode = REQUIRED) CallType type,
@@ -27,7 +29,7 @@ record StaffCallResponse(
         PresenceMethod presenceMethod
 ) {
     static StaffCallResponse from(StaffCall c) {
-        return new StaffCallResponse(c.id().value(), c.tableLabel(), c.sectorName(), c.type(), c.paymentMethod(),
-                c.status(), c.createdAt(), c.acceptedAt(), c.acceptedByName(), c.presenceMethod());
+        return new StaffCallResponse(c.id().value(), c.tableId().value(), c.tableLabel(), c.sectorName(), c.type(),
+                c.paymentMethod(), c.status(), c.createdAt(), c.acceptedAt(), c.acceptedByName(), c.presenceMethod());
     }
 }

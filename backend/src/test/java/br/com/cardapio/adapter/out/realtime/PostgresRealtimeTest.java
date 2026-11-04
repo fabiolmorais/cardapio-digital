@@ -13,6 +13,7 @@ import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -119,5 +120,16 @@ class PostgresRealtimeTest {
         transaction.executeWithoutResult(status -> publisher.publish(closed));
 
         assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(closed);
+    }
+
+    @Test
+    void aRodizioChangeTravelsTheSameWay() throws Exception {
+        BlockingQueue<DomainEvent> mine = listen(sakura);
+        RodizioChanged changed = new RodizioChanged(sakura, DiningTableId.newId(), TabId.newId(),
+                Instant.now().truncatedTo(ChronoUnit.MICROS));
+
+        transaction.executeWithoutResult(status -> publisher.publish(changed));
+
+        assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(changed);
     }
 }

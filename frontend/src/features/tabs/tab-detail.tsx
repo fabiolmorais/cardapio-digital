@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { formatCents } from "@/lib/format";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
+import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { clock } from "./open-tabs";
@@ -38,7 +39,7 @@ function Detail({ id }: { id: string }) {
     () =>
       subscribeStaffEvents(
         (event) => {
-          if (["ready", "order", "call", "tab"].includes(event.name)) {
+          if (["ready", "order", "call", "tab", "rodizio"].includes(event.name)) {
             void queryClient.invalidateQueries({ queryKey: ["tab", id] });
           }
         },
@@ -61,6 +62,7 @@ function Detail({ id }: { id: string }) {
 function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) => void }) {
   const queryClient = useQueryClient();
   const [method, setMethod] = useState<PaymentMethod>(tab.billRequestedWith ?? "PIX");
+  const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
   const close = useMutation({
     mutationFn: () => closeTab(tab.id, method),
     onSuccess: (closed) => {
@@ -124,6 +126,43 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
         </span>
       )}
 
+      {tab.rodizio ? (
+        <section
+          aria-label={t.rodizio(tab.rodizio.name, tab.rodizio.people)}
+          className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold">{t.rodizio(tab.rodizio.name, tab.rodizio.people)}</h2>
+            <span className="font-mono font-bold tabular-nums">{formatCents(tab.rodizio.totalCents)}</span>
+          </div>
+          <ul className="flex flex-col gap-0.5 text-sm text-muted-foreground">
+            {tab.rodizio.guests
+              .filter((g) => g.quantity > 0)
+              .map((g) => (
+                <li key={g.tierName}>{t.guestLine(g.tierName, g.quantity, formatCents(g.unitPriceCents))}</li>
+              ))}
+          </ul>
+          <Button
+            variant="outline"
+            className="h-11 self-start"
+            onClick={() =>
+              setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel, current: tab.rodizio })
+            }
+          >
+            {t.adjustGuests}
+          </Button>
+        </section>
+      ) : (
+        <Button
+          variant="outline"
+          className="h-11 self-start"
+          onClick={() => setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel })}
+        >
+          {t.activateRodizio}
+        </Button>
+      )}
+      <RodizioDialog target={rodizioTarget} onClose={() => setRodizioTarget(null)} />
+
       <section aria-label={t.items} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
         {tab.orders.map((order) => (
           <div key={order.id} className="flex flex-col gap-1.5">
@@ -141,7 +180,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
                     </span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{ts[item.status]}</span>
                     <span className="w-20 text-right font-mono tabular-nums">
-                      {canceled ? "" : formatCents(item.unitPriceCents * item.quantity)}
+                      {canceled ? "" : item.rodizio ? t.rodizioItem : formatCents(item.unitPriceCents * item.quantity)}
                     </span>
                   </li>
                 );

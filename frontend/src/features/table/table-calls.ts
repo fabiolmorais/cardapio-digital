@@ -222,6 +222,7 @@ export function useTableCalls(token: string) {
     recheck,
     waiter: calls?.find((c) => c.type === "WAITER") ?? null,
     bill: calls?.find((c) => c.type === "BILL") ?? null,
+    rodizio: calls?.find((c) => c.type === "RODIZIO") ?? null,
     busy,
     error,
     run,

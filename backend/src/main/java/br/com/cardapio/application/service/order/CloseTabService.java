@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
+import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
@@ -20,6 +21,8 @@ import br.com.cardapio.domain.order.exception.TabNotFoundException;
 import br.com.cardapio.domain.order.exception.TabStateException;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rodizio.model.TabRodizio;
+import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -32,15 +35,17 @@ public class CloseTabService implements CloseTabUseCase {
     private final OrderPort orders;
     private final CallPort calls;
     private final TableSessionPort sessions;
+    private final TabRodizioPort tabRodizios;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public CloseTabService(TabPort tabs, OrderPort orders, CallPort calls, TableSessionPort sessions,
-                           EventPublisherPort events, Clock clock) {
+                           TabRodizioPort tabRodizios, EventPublisherPort events, Clock clock) {
         this.tabs = tabs;
         this.orders = orders;
         this.calls = calls;
         this.sessions = sessions;
+        this.tabRodizios = tabRodizios;
         this.events = events;
         this.clock = clock;
     }
@@ -56,8 +61,10 @@ public class CloseTabService implements CloseTabUseCase {
         TabView view = tabs.findView(establishmentId, tabId).orElseThrow(TabNotFoundException::new);
         List<OrderWithItems> found = orders.findByTab(establishmentId, tabId);
         Instant now = clock.instant();
-        Tab closed = view.tab().close(by, paymentMethod,
-                found.stream().flatMap(o -> o.items().stream()).toList(), now);
+        // A conta é pessoas × preço do rodízio (se houve) mais os itens à parte.
+        TabRodizio rodizio = tabRodizios.findByTab(establishmentId, tabId).orElse(null);
+        Tab closed = view.tab().close(by, paymentMethod, found.stream().flatMap(o -> o.items().stream()).toList(),
+                rodizio == null ? Money.ZERO : rodizio.total(), now);
         // Dois garçons fechando juntos, ou um item que chegou entre a leitura e a gravação: o UPDATE
         // condicional (só se ainda estiver aberta) deixa valer um só.
         if (!tabs.close(closed)) {
@@ -72,6 +79,6 @@ public class CloseTabService implements CloseTabUseCase {
             }
         }
         events.publish(new TabClosed(establishmentId, closed.tableId(), closed.id(), now));
-        return StaffTab.from(new TabView(closed, view.tableLabel(), view.sectorName()), found, null);
+        return StaffTab.from(new TabView(closed, view.tableLabel(), view.sectorName()), found, null, rodizio);
     }
 }

@@ -82,6 +82,12 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
     <section className="flex flex-col gap-2 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
       <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">{t.total}</span>
       <span className="text-4xl font-bold tracking-tight">{formatCents(orders.totalCents)}</span>
+      {orders.rodizio && (
+        <span className="text-sm text-(--mesa-muted)">
+          {tablePage.rodizio.billLine(orders.rodizio.name, orders.rodizio.people)} ·{" "}
+          {formatCents(orders.rodizio.totalCents)}
+        </span>
+      )}
       {orders.orders.length === 0 ? (
         <span className="text-sm text-(--mesa-muted)">{t.noOrders}</span>
       ) : (

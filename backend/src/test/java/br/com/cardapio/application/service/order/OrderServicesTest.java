@@ -22,6 +22,7 @@ import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
+import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,7 @@ class OrderServicesTest {
     private static final String QR_05 = "qr-da-mesa-05-00000000000";
 
     private final OrderFakes fakes = new OrderFakes();
+    private final InMemoryRodizios rodizios = new InMemoryRodizios();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final List<DomainEvent> published = new ArrayList<>();
@@ -67,7 +69,8 @@ class OrderServicesTest {
     }
 
     private TableOrder place(String qr, String phone, OrderLine... lines) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, published::add, clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
+                clock)
                 .place(new PlaceOrderCommand(qr, phone, List.of(lines)));
     }
 
@@ -76,7 +79,7 @@ class OrderServicesTest {
     }
 
     private TableOrders list(String phone) {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, clock).list(QR_04, phone);
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock).list(QR_04, phone);
     }
 
     private OrderLine line(Product product, int quantity) {

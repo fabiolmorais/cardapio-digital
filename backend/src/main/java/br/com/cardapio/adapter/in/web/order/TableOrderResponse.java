@@ -30,11 +30,12 @@ record TableOrderResponse(
             @Schema(requiredMode = REQUIRED) int quantity,
             String note,
             @Schema(requiredMode = REQUIRED) OrderItemStatus status,
-            @Schema(description = "Por que foi cancelado") String cancelReason
+            @Schema(description = "Por que foi cancelado") String cancelReason,
+            @Schema(requiredMode = REQUIRED, description = "Veio numa rodada do rodízio (preço zero)") boolean rodizio
     ) {
         static Item from(TableOrder.Item i) {
             return new Item(i.id().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
-                    i.status(), i.cancelReason());
+                    i.status(), i.cancelReason(), i.rodizio());
         }
     }
 

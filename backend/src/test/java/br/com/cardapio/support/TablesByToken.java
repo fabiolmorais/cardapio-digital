@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * As mesas só pelo token do QR, para os testes das telas públicas (cardápio e sessão), que
+ * As mesas pelo token do QR (e pelo id), para os testes das telas públicas e do rodízio, que
  * não precisam do resto do salão. O que elas não usam lança UnsupportedOperationException.
  */
 public final class TablesByToken implements DiningTablePort {
@@ -41,7 +41,9 @@ public final class TablesByToken implements DiningTablePort {
 
     @Override
     public Optional<DiningTable> find(EstablishmentId establishmentId, DiningTableId id) {
-        throw new UnsupportedOperationException();
+        return tables.values().stream()
+                .filter(t -> t.id().equals(id) && t.establishmentId().equals(establishmentId))
+                .findFirst();
     }
 
     @Override

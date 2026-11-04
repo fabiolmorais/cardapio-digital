@@ -63,11 +63,15 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "cancel_reason")
     private String cancelReason;
 
+    @Column(name = "tab_rodizio_id")
+    private UUID tabRodizioId;
+
     protected OrderItemJpaEntity() {
     }
 
     OrderItemJpaEntity(UUID id, UUID establishmentId, UUID orderId, int position, UUID productId, String productName,
-                       long unitPriceCents, int quantity, String note, String status, Instant createdAt) {
+                       long unitPriceCents, int quantity, String note, String status, Instant createdAt,
+                       UUID tabRodizioId) {
         super(establishmentId);
         this.id = id;
         this.orderId = orderId;
@@ -79,6 +83,7 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
         this.note = note;
         this.status = status;
         this.createdAt = createdAt;
+        this.tabRodizioId = tabRodizioId;
     }
 
     UUID getId() { return id; }
@@ -97,4 +102,5 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     Instant getCanceledAt() { return canceledAt; }
     UUID getCanceledBy() { return canceledBy; }
     String getCancelReason() { return cancelReason; }
+    UUID getTabRodizioId() { return tabRodizioId; }
 }

@@ -15,7 +15,18 @@ const t = tablePage.menu;
  * quanto dentro do navegador do cardápio (componente do cliente), que põe o "Adicionar" em `action`.
  * Com `reelsHref`, a foto abre o Reels do prato (e um selo ▶ avisa quando há vídeo).
  */
-export function MenuItemCard({ item, action, reelsHref }: { item: MenuItem; action?: ReactNode; reelsHref?: string }) {
+export function MenuItemCard({
+  item,
+  action,
+  reelsHref,
+  price,
+}: {
+  item: MenuItem;
+  action?: ReactNode;
+  reelsHref?: string;
+  /** No lugar do preço (a aba Rodízio não mostra preço). */
+  price?: ReactNode;
+}) {
   const hasVideo = item.media.some((m) => m.type === "VIDEO");
   const off = discountPercent(item);
   return (
@@ -80,13 +91,15 @@ export function MenuItemCard({ item, action, reelsHref }: { item: MenuItem; acti
       <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
         <span className="flex items-center gap-2">
           <h3 className={cn("font-semibold", !item.available && "text-(--mesa-muted)")}>{item.name}</h3>
-          {item.available && off !== null && (
+          {item.available && off !== null && price === undefined && (
             <span className="rounded-md bg-(--brand) px-1.5 py-0.5 text-[11px] font-bold text-white">{t.off(off)}</span>
           )}
         </span>
         {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
         <span className="mt-auto flex items-end justify-between gap-2 pt-1">
-          {!item.available ? (
+          {item.available && price !== undefined ? (
+            price
+          ) : !item.available ? (
             <span className="rounded-md border border-(--mesa-stroke) px-2 py-0.5 text-xs font-semibold text-(--mesa-muted)">
               {t.soldOut}
             </span>

@@ -18,6 +18,7 @@ import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rodizio.model.TabRodizioId;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import org.springframework.data.domain.Page;
@@ -63,7 +64,7 @@ class OrderPersistenceAdapter implements OrderPort {
             OrderItem i = orderItems.get(position);
             return new OrderItemJpaEntity(i.id().value(), i.establishmentId().value(), i.orderId().value(), position,
                     i.productId().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
-                    i.status().name(), i.createdAt());
+                    i.status().name(), i.createdAt(), i.tabRodizioId() == null ? null : i.tabRodizioId().value());
         }).toList());
     }
 
@@ -170,6 +171,6 @@ class OrderPersistenceAdapter implements OrderPort {
                 OrderItemStatus.valueOf(e.getStatus()), e.getCreatedAt(), e.getPreparingAt(), e.getReadyAt(),
                 e.getDeliveredAt(), e.getDeliveredBy() == null ? null : new UserId(e.getDeliveredBy()),
                 e.getCanceledAt(), e.getCanceledBy() == null ? null : new UserId(e.getCanceledBy()),
-                e.getCancelReason());
+                e.getCancelReason(), e.getTabRodizioId() == null ? null : new TabRodizioId(e.getTabRodizioId()));
     }
 }

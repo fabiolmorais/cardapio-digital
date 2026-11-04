@@ -55,13 +55,19 @@ public record Tab(
                 .reduce(Money.ZERO, Money::plus);
     }
 
+    /** Fecha a comanda de uma mesa sem rodízio. */
+    public Tab close(UserId by, PaymentMethod method, List<OrderItem> items, Instant now) {
+        return close(by, method, items, Money.ZERO, now);
+    }
+
     /**
      * O garçom fecha, depois do pagamento. Não fecha com item ainda a caminho (na fila, em preparo
      * ou pronto): cobraria o que a mesa não recebeu. O garçom entrega ou cancela antes.
      *
-     * @param items todos os itens da comanda
+     * @param items   todos os itens da comanda
+     * @param rodizio o que o rodízio soma (pessoas × preço); zero se a mesa não está no rodízio
      */
-    public Tab close(UserId by, PaymentMethod method, List<OrderItem> items, Instant now) {
+    public Tab close(UserId by, PaymentMethod method, List<OrderItem> items, Money rodizio, Instant now) {
         Objects.requireNonNull(by);
         Objects.requireNonNull(method);
         if (!status.isOpen()) {
@@ -75,6 +81,7 @@ public record Tab(
             throw new TabStateException("Ainda há itens a caminho: " + String.join(", ", onTheWay)
                     + ". Entregue ou cancele antes de fechar.");
         }
-        return new Tab(id, establishmentId, tableId, TabStatus.CLOSED, openedAt, now, by, totalOf(items), method);
+        return new Tab(id, establishmentId, tableId, TabStatus.CLOSED, openedAt, now, by,
+                totalOf(items).plus(rodizio), method);
     }
 }

@@ -70,6 +70,25 @@ class PublicOrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(TableOrderResponse.from(order));
     }
 
+    @PostMapping("/rounds")
+    @Operation(operationId = "sendRound",
+            summary = "Envia uma rodada do rodízio: os itens incluídos vão para a cozinha a preço zero")
+    @ApiResponse(responseCode = "201", description = "Rodada enviada (direto para a cozinha ou parada na confirmação)")
+    @ApiResponse(responseCode = "403", description = "Sem presença confirmada, ou celular bloqueado",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "A mesa não está no rodízio, ou um item não faz parte dele, "
+            + "esgotou ou saiu do cardápio",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "429", description = "Pedidos demais deste celular em pouco tempo",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    ResponseEntity<TableOrderResponse> sendRound(@PathVariable String token,
+                                                 @CookieValue(name = TableSessionCookie.NAME, required = false)
+                                                 String session,
+                                                 @Valid @RequestBody PlaceOrderRequest body) {
+        var order = placeOrder.place(new PlaceOrderCommand(token, session, body.toLines(), true));
+        return ResponseEntity.status(HttpStatus.CREATED).body(TableOrderResponse.from(order));
+    }
+
     @DeleteMapping("/order-items/{itemId}")
     @Operation(operationId = "cancelOrderItem",
             summary = "O cliente cancela um item que ele pediu, enquanto está na fila")

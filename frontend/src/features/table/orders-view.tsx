@@ -68,6 +68,13 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
         </p>
       )}
 
+      {data?.rodizio && (
+        <p className="flex items-center justify-between gap-3 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) px-4 py-3 text-sm">
+          <span className="font-semibold">{tablePage.rodizio.banner(data.rodizio.name, data.rodizio.people)}</span>
+          <span className="font-bold">{formatCents(data.rodizio.totalCents)}</span>
+        </p>
+      )}
+
       {data && all.length > 0 && (
         <div role="group" aria-label={t.views} className="grid grid-cols-2 gap-1 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) p-1">
           {(["onTheWay", "history"] as const).map((v) => (
@@ -141,6 +148,11 @@ function Order({ order, busy, onCancel }: { order: TableOrder; busy: string | nu
                   <span className="font-semibold">
                     {item.quantity}× {item.productName}
                   </span>
+                  {item.rodizio && (
+                    <span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">
+                      {tablePage.rodizio.item}
+                    </span>
+                  )}
                   {item.note && <span className="text-sm text-(--mesa-muted)">{item.note}</span>}
                 </span>
                 {!waiting && !rejected && (

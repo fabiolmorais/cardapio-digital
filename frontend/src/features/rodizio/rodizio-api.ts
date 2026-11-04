@@ -41,6 +41,37 @@ export async function deactivateRodizio(id: string): Promise<void> {
   if (!response.ok) throw failure(response, error);
 }
 
+export type RodizioQuote = Schemas["RodizioQuote"];
+export type TableRodizio = Schemas["TableRodizio"];
+export type GuestCount = { tierName: string; quantity: number };
+
+/** Os rodízios à la minute com o preço de agora (o de passagem só funciona na mesa na Etapa 12). */
+export async function fetchQuotes(): Promise<RodizioQuote[]> {
+  const { data, error, response } = await api.GET("/api/v1/rodizio-quotes", {
+    params: { query: { page: 0, size: 20 } },
+  });
+  if (data) return data.content.filter((r) => r.type === "A_LA_MINUTE");
+  throw failure(response, error);
+}
+
+export async function activateRodizio(tableId: string, rodizioId: string, guests: GuestCount[]): Promise<TableRodizio> {
+  const { data, error, response } = await api.POST("/api/v1/tables/{tableId}/rodizio", {
+    params: { path: { tableId } },
+    body: { rodizioId, guests },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+export async function changeGuests(tableId: string, guests: GuestCount[]): Promise<TableRodizio> {
+  const { data, error, response } = await api.PUT("/api/v1/tables/{tableId}/rodizio/guests", {
+    params: { path: { tableId } },
+    body: { guests },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
 export type MenuProduct = { id: string; name: string; categoryId: string };
 
 /** Todos os produtos ativos do cardápio, de página em página (100 por vez), para escolher os incluídos. */

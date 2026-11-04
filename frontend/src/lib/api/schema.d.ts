@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/tables/{tableId}/rodizio/guests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Ajusta as pessoas do rodízio da mesa (até a conta) */
+        put: operations["changeRodizioGuests"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rodizios/{id}": {
         parameters: {
             query?: never;
@@ -217,6 +234,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tables/{tableId}/rodizio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ativa o rodízio na mesa com as pessoas por faixa (abre a comanda, se preciso) */
+        post: operations["activateRodizio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tables/{id}/token-rotation": {
         parameters: {
             query?: never;
@@ -298,6 +332,23 @@ export interface paths {
         put?: never;
         /** Abre a sessão deste celular na mesa (ou renova a que ele já tem), no cookie table_session */
         post: operations["startTableSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/rounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envia uma rodada do rodízio: os itens incluídos vão para a cozinha a preço zero */
+        post: operations["sendRound"];
         delete?: never;
         options?: never;
         head?: never;
@@ -944,6 +995,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rodizio-quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os rodízios ativos com o preço de cada faixa agora */
+        get: operations["quoteRodizios"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}": {
         parameters: {
             query?: never;
@@ -953,6 +1021,23 @@ export interface paths {
         };
         /** A mesa do QR Code: restaurante (com a marca), número e setor */
         get: operations["getPublicTable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/rodizios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os rodízios do restaurante, com o preço de agora */
+        get: operations["listTableRodizios"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1240,6 +1325,62 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RodizioGuestCount: {
+            /** @example Adulto */
+            tierName: string;
+            /**
+             * Format: int32
+             * @example 4
+             */
+            quantity: number;
+        };
+        RodizioGuestsRequest: {
+            guests: components["schemas"]["RodizioGuestCount"][];
+        };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        TableRodizio: {
+            /** Format: uuid */
+            rodizioId: string;
+            /** @example Rodízio Japonês */
+            name: string;
+            /** @description Todas as faixas, mesmo as com 0 pessoas */
+            guests: components["schemas"]["TableRodizioGuest"][];
+            /**
+             * Format: int32
+             * @description Pessoas no rodízio, somando as faixas
+             */
+            people: number;
+            /**
+             * Format: int64
+             * @description Pessoas × preço: o que o rodízio soma na conta
+             */
+            totalCents: number;
+            /** Format: date-time */
+            startedAt: string;
+        };
+        TableRodizioGuest: {
+            /** @example Adulto */
+            tierName: string;
+            /** Format: int32 */
+            quantity: number;
+            /**
+             * Format: int64
+             * @description O preço copiado na ativação
+             */
+            unitPriceCents: number;
+        };
         RodizioRequest: {
             /** @example Rodízio Japonês */
             name: string;
@@ -1305,19 +1446,6 @@ export interface components {
             defaultPriceCents: number;
             /** @description Os preços especiais por dia e horário */
             prices: components["schemas"]["RodizioSpecialPriceRequest"][];
-        };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
         };
         Rodizio: {
             /** Format: uuid */
@@ -1588,6 +1716,11 @@ export interface components {
         StaffTab: {
             /** Format: uuid */
             id: string;
+            /**
+             * Format: uuid
+             * @description A mesa (para ativar o rodízio ou ajustar as pessoas)
+             */
+            tableId: string;
             tableLabel: string;
             sectorName: string;
             /** @enum {string} */
@@ -1611,6 +1744,8 @@ export interface components {
              * @enum {string}
              */
             billRequestedWith?: "PIX" | "CARD" | "CASH";
+            /** @description O rodízio da comanda (já somado no total); ausente se não houve */
+            rodizio?: components["schemas"]["TableRodizio"];
             orders: components["schemas"]["StaffTabOrder"][];
         };
         StaffTabOrder: {
@@ -1640,6 +1775,8 @@ export interface components {
             status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
             /** @description Por que foi cancelado */
             cancelReason?: string;
+            /** @description Veio numa rodada do rodízio (preço zero) */
+            rodizio: boolean;
         };
         CreateTableRequest: {
             /** @example 04 */
@@ -1663,6 +1800,11 @@ export interface components {
              */
             tokenIssuedAt: string;
             active: boolean;
+        };
+        ActivateRodizioRequest: {
+            /** Format: uuid */
+            rodizioId: string;
+            guests: components["schemas"]["RodizioGuestCount"][];
         };
         /** @description Cadastro self-service do restaurante */
         SignupRequest: {
@@ -1725,39 +1867,6 @@ export interface components {
              */
             expiresAt: string;
         };
-        PresenceCheckRequest: {
-            /**
-             * Format: double
-             * @example -23.5577
-             */
-            latitude?: number;
-            /**
-             * Format: double
-             * @example -46.6353
-             */
-            longitude?: number;
-            /**
-             * Format: double
-             * @description Precisão informada pelo navegador, em metros
-             * @example 25
-             */
-            accuracyMeters?: number;
-        };
-        Presence: {
-            /** @description Pode chamar o garçom e pedir a conta */
-            present: boolean;
-            /**
-             * @description Como a presença foi provada; vazio enquanto não foi
-             * @enum {string}
-             */
-            method?: "WIFI" | "GPS" | "STAFF";
-            /** @description O restaurante marcou o local: vale oferecer a localização */
-            locationEnabled: boolean;
-            /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
-            wifiName?: string;
-            /** @description A equipe bloqueou os chamados deste celular */
-            blocked: boolean;
-        };
         PlaceOrderLine: {
             /** Format: uuid */
             productId: string;
@@ -1791,9 +1900,42 @@ export interface components {
             mine: boolean;
             items: components["schemas"]["TableOrderItem"][];
         };
+        PresenceCheckRequest: {
+            /**
+             * Format: double
+             * @example -23.5577
+             */
+            latitude?: number;
+            /**
+             * Format: double
+             * @example -46.6353
+             */
+            longitude?: number;
+            /**
+             * Format: double
+             * @description Precisão informada pelo navegador, em metros
+             * @example 25
+             */
+            accuracyMeters?: number;
+        };
+        Presence: {
+            /** @description Pode chamar o garçom e pedir a conta */
+            present: boolean;
+            /**
+             * @description Como a presença foi provada; vazio enquanto não foi
+             * @enum {string}
+             */
+            method?: "WIFI" | "GPS" | "STAFF";
+            /** @description O restaurante marcou o local: vale oferecer a localização */
+            locationEnabled: boolean;
+            /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
+            wifiName?: string;
+            /** @description A equipe bloqueou os chamados deste celular */
+            blocked: boolean;
+        };
         CallRequest: {
             /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK";
+            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
             /**
              * @description Só no pedido de conta (BILL)
              * @enum {string}
@@ -1804,7 +1946,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK";
+            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
             /** @enum {string} */
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @enum {string} */
@@ -2030,10 +2172,15 @@ export interface components {
         StaffCall: {
             /** Format: uuid */
             id: string;
+            /**
+             * Format: uuid
+             * @description A mesa (para ativar o rodízio a partir do chamado)
+             */
+            tableId: string;
             tableLabel: string;
             sectorName: string;
             /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK";
+            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
             /** @enum {string} */
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @enum {string} */
@@ -2222,6 +2369,32 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseRodizioQuote: {
+            content: components["schemas"]["RodizioQuote"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Um rodízio com o preço de cada faixa agora, no relógio do restaurante */
+        RodizioQuote: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            type: "A_LA_MINUTE" | "PASSAGEM";
+            description: string;
+            tiers: components["schemas"]["RodizioQuoteTier"][];
+        };
+        RodizioQuoteTier: {
+            name: string;
+            /** Format: int64 */
+            priceCents: number;
+        };
         /** @description A aparência da página: só os tons da cor escolhida */
         PublicBrand: {
             /** @enum {string} */
@@ -2264,9 +2437,13 @@ export interface components {
             orderingEnabled: boolean;
             /**
              * Format: int64
-             * @description A soma dos itens não cancelados da comanda
+             * @description Os itens não cancelados mais o rodízio (pessoas × preço)
              */
             totalCents: number;
+            /** @description O rodízio da mesa; ausente se ela não está no rodízio */
+            rodizio?: components["schemas"]["TableRodizio"];
+            /** @description Os produtos incluídos no rodízio (a aba Rodízio) */
+            rodizioProductIds: string[];
             /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
             orders: components["schemas"]["TableOrder"][];
         };
@@ -2568,6 +2745,59 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    changeRodizioGuests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tableId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RodizioGuestsRequest"];
+            };
+        };
+        responses: {
+            /** @description Ajustado: os preços continuam os da ativação */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableRodizio"];
+                };
+            };
+            /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Mesa que não é deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa não está no rodízio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getRodizio: {
         parameters: {
             query?: never;
@@ -3279,6 +3509,68 @@ export interface operations {
             };
         };
     };
+    activateRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tableId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivateRodizioRequest"];
+            };
+        };
+        responses: {
+            /** @description Ativado: o preço de agora foi copiado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableRodizio"];
+                };
+            };
+            /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Mesa ou rodízio que não é deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa já está num rodízio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Rodízio de passagem (ainda não funciona na mesa) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     rotateTableToken: {
         parameters: {
             query?: never;
@@ -3510,6 +3802,61 @@ export interface operations {
             };
             /** @description QR inválido, trocado ou mesa desativada */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    sendRound: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Rodada enviada (direto para a cozinha ou parada na confirmação) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOrder"];
+                };
+            };
+            /** @description Sem presença confirmada, ou celular bloqueado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa não está no rodízio, ou um item não faz parte dele, esgotou ou saiu do cardápio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Pedidos demais deste celular em pouco tempo */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5338,6 +5685,31 @@ export interface operations {
             };
         };
     };
+    quoteRodizios: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Rodízios por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página dos rodízios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
     getPublicTable: {
         parameters: {
             query?: never;
@@ -5360,6 +5732,44 @@ export interface operations {
             };
             /** @description QR inválido, trocado ou mesa desativada */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listTableRodizios: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Rodízios por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página dos rodízios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

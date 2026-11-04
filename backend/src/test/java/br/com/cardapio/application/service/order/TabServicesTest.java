@@ -27,6 +27,7 @@ import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.order.model.TabStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
+import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,7 @@ class TabServicesTest {
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
 
     private final OrderFakes fakes = new OrderFakes();
+    private final InMemoryRodizios rodizios = new InMemoryRodizios();
     private final InMemoryCalls calls = new InMemoryCalls();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
@@ -70,7 +72,8 @@ class TabServicesTest {
     }
 
     private TableOrder place(String phone, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, published::add, clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
+                clock)
                 .place(new PlaceOrderCommand(QR_04, phone, List.of(new OrderLine(product.id(), quantity, null))));
     }
 
@@ -84,7 +87,7 @@ class TabServicesTest {
     }
 
     private StaffTab close(PaymentMethod method) {
-        return new CloseTabService(fakes, fakes, calls, sessions, published::add, clock)
+        return new CloseTabService(fakes, fakes, calls, sessions, rodizios, published::add, clock)
                 .close(sakura, theTab(), carlos, method);
     }
 
@@ -110,13 +113,13 @@ class TabServicesTest {
         calls.insertIfNoneOpen(Call.open(sakura, mesa04.id(), sessions.byToken("ana").id(), CallType.BILL,
                 PaymentMethod.CARD, NOW));
 
-        StaffTab tab = new GetTabService(fakes, fakes, calls).get(sakura, theTab());
+        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios).get(sakura, theTab());
 
         assertThat(tab.orders()).hasSize(2);
         assertThat(tab.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(tab.billRequestedWith()).isEqualTo(PaymentMethod.CARD);
         assertThat(tab.status()).isEqualTo(TabStatus.OPEN);
-        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls).get(EstablishmentId.newId(), theTab()))
+        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios).get(EstablishmentId.newId(), theTab()))
                 .isInstanceOf(TabNotFoundException.class);
     }
 
