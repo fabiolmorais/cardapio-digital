@@ -4,6 +4,25 @@
  */
 
 export interface paths {
+    "/api/v1/rodizios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Um rodízio, com as faixas, os preços e os produtos */
+        get: operations["getRodizio"];
+        /** Troca o rodízio inteiro (faixas, preços, produtos, regras) */
+        put: operations["updateRodizio"];
+        post?: never;
+        /** Desativa o rodízio (o cadastro fica) */
+        delete: operations["deactivateRodizio"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{productId}/media-order": {
         parameters: {
             query?: never;
@@ -244,6 +263,24 @@ export interface paths {
         put?: never;
         /** Cria um setor (entra no fim da lista) */
         post: operations["createSector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rodizios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os rodízios ativos, por nome */
+        get: operations["listRodizios"];
+        put?: never;
+        /** Cria um rodízio */
+        post: operations["createRodizio"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1203,9 +1240,71 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Todos os itens da lista, na ordem nova */
-        ReorderRequest: {
-            ids: string[];
+        RodizioRequest: {
+            /** @example Rodízio Japonês */
+            name: string;
+            /** @enum {string} */
+            type: "A_LA_MINUTE" | "PASSAGEM";
+            /** @description O que está incluído, para o cliente */
+            description?: string;
+            rules: components["schemas"]["RodizioRules"];
+            tiers: components["schemas"]["RodizioTierRequest"][];
+            /** @description Os produtos incluídos */
+            productIds: string[];
+        };
+        /** @description As regras opcionais: vazias, não valem (o padrão) */
+        RodizioRules: {
+            /**
+             * Format: int32
+             * @description Unidades de cada item numa rodada, por pessoa
+             */
+            maxPerItemPerRound?: number;
+            /**
+             * Format: int32
+             * @description Itens não entregues por pessoa antes de outra rodada
+             */
+            maxPendingPerGuest?: number;
+            /**
+             * Format: int32
+             * @description Minutos entre uma rodada e a seguinte
+             */
+            minRoundIntervalMinutes?: number;
+            /**
+             * Format: int32
+             * @description Duração do rodízio, em minutos
+             */
+            timeLimitMinutes?: number;
+            /** @description O aviso de taxa de desperdício */
+            wasteNotice?: string;
+        };
+        RodizioSpecialPriceRequest: {
+            /**
+             * @example [
+             *       "FRIDAY",
+             *       "SATURDAY"
+             *     ]
+             */
+            days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
+            /** @example 18:00 */
+            startsAt: string;
+            /** @example 23:59 */
+            endsAt: string;
+            /**
+             * Format: int64
+             * @example 14990
+             */
+            priceCents: number;
+        };
+        RodizioTierRequest: {
+            /** @example Adulto */
+            name: string;
+            /**
+             * Format: int64
+             * @example 12990
+             */
+            defaultPriceCents: number;
+            /** @description Os preços especiais por dia e horário */
+            prices: components["schemas"]["RodizioSpecialPriceRequest"][];
         };
         ProblemDetail: {
             /** Format: uri */
@@ -1219,6 +1318,47 @@ export interface components {
             properties?: {
                 [key: string]: unknown;
             };
+        };
+        Rodizio: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            type: "A_LA_MINUTE" | "PASSAGEM";
+            description: string;
+            rules: components["schemas"]["RodizioRulesView"];
+            tiers: components["schemas"]["RodizioTier"][];
+            productIds: string[];
+        };
+        RodizioRulesView: {
+            /** Format: int32 */
+            maxPerItemPerRound?: number;
+            /** Format: int32 */
+            maxPendingPerGuest?: number;
+            /** Format: int32 */
+            minRoundIntervalMinutes?: number;
+            /** Format: int32 */
+            timeLimitMinutes?: number;
+            wasteNotice?: string;
+        };
+        RodizioSpecialPrice: {
+            days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
+            /** @example 18:00 */
+            startsAt: string;
+            /** @example 23:59 */
+            endsAt: string;
+            /** Format: int64 */
+            priceCents: number;
+        };
+        RodizioTier: {
+            name: string;
+            /** Format: int64 */
+            defaultPriceCents: number;
+            prices: components["schemas"]["RodizioSpecialPrice"][];
+        };
+        /** @description Todos os itens da lista, na ordem nova */
+        ReorderRequest: {
+            ids: string[];
         };
         ProductRequest: {
             /** Format: uuid */
@@ -2071,6 +2211,17 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseRodizio: {
+            content: components["schemas"]["Rodizio"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         /** @description A aparência da página: só os tons da cor escolhida */
         PublicBrand: {
             /** @enum {string} */
@@ -2417,6 +2568,119 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O rodízio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Não é um rodízio ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RodizioRequest"];
+            };
+        };
+        responses: {
+            /** @description Salvo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Campo inválido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um rodízio ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe outro rodízio com este nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desativado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um rodízio deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     reorderProductMedia: {
         parameters: {
             query?: never;
@@ -3137,6 +3401,82 @@ export interface operations {
             };
             /** @description Já existe um setor com esse nome */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listRodizios: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Rodízios por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página dos rodízios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseRodizio"];
+                };
+            };
+        };
+    };
+    createRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RodizioRequest"];
+            };
+        };
+        responses: {
+            /** @description Criado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Campo inválido, preços especiais que se sobrepõem, ou produto que não é do cardápio */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe um rodízio com este nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O restaurante já tem 10 rodízios ativos */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
