@@ -30,7 +30,9 @@ export async function loginThroughForm(page: Page, email: string) {
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha").fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/painel$/);
+  // O servidor de desenvolvimento compila o painel na primeira visita: com a suíte inteira em
+  // paralelo, isso passa dos 5 segundos de espera padrão.
+  await expect(page).toHaveURL(/\/painel$/, { timeout: 15_000 });
   await expect(panelGreeting(page)).toBeVisible();
 }
 
