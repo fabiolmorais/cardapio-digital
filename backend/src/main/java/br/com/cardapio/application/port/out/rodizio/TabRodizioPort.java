@@ -1,5 +1,7 @@
 package br.com.cardapio.application.port.out.rodizio;
 
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
@@ -18,4 +20,10 @@ public interface TabRodizioPort {
 
     /** Grava as pessoas novas (o resto do rodízio da comanda não muda). */
     void updateGuests(TabRodizio tabRodizio);
+
+    /** Grava a cor do cartão e a hora da virada. */
+    void updateStatus(TabRodizio tabRodizio);
+
+    /** As mesas com a comanda aberta no rodízio de passagem: as pausadas primeiro, depois pela mesa. */
+    ResultPage<PassagemTableView> findOpenPassagem(EstablishmentId establishmentId, PageQuery page);
 }

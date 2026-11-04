@@ -242,7 +242,7 @@ class RodizioTableFlowTest {
     }
 
     @Test
-    void theWrongDataTheWrongRoleAndThePassagemRodizio() throws Exception {
+    void theWrongDataTheWrongRoleAndBothTypesInTheQuotes() throws Exception {
         assertThat(activate(sakura.waiter(), sakura, sakura.rodizio(), 0, 0)).hasStatus(HttpStatus.BAD_REQUEST);
         assertThat(send("POST", sakura.waiter(), "/api/v1/tables/" + sakura.tableId() + "/rodizio",
                 "{\"rodizioId\":\"%s\",\"guests\":[]}".formatted(sakura.rodizio()))).hasStatus(HttpStatus.BAD_REQUEST);
@@ -256,9 +256,8 @@ class RodizioTableFlowTest {
                 {"name":"Churrasco","type":"PASSAGEM","rules":{},
                  "tiers":[{"name":"Adulto","defaultPriceCents":15990,"prices":[]}],"productIds":[]}
                 """), "$.id");
-        MvcTestResult notYet = activate(sakura.waiter(), sakura, passagem, 2, 0);
-        assertThat(notYet).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
-        assertThat(json(notYet, "$.detail")).contains("passagem");
+        assertThat(passagem).isNotBlank();
+        // O garçom vê os dois tipos (o de passagem funciona na mesa desde o Guia 27).
         assertThat(list(send("GET", sakura.waiter(), "/api/v1/rodizio-quotes", null), "$.content[*].type"))
                 .containsExactly("PASSAGEM", "A_LA_MINUTE");
     }

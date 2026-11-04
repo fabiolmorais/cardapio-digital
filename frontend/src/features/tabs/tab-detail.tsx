@@ -138,6 +138,16 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           {tab.rodizio.endsAt && (
             <span className="text-sm font-medium">{t.rodizioEnds(clock(tab.rodizio.endsAt))}</span>
           )}
+          {tab.rodizio.type === "PASSAGEM" && (
+            <span
+              className={cn(
+                "w-fit rounded-full px-3 py-1 text-sm font-semibold text-white",
+                tab.rodizio.status === "PAUSED" ? "bg-[#B91C1C]" : "bg-[#15803D]",
+              )}
+            >
+              {messages.tablePage.rodizio.card.short[tab.rodizio.status]}
+            </span>
+          )}
           <ul className="flex flex-col gap-0.5 text-sm text-muted-foreground">
             {tab.rodizio.guests
               .filter((g) => g.quantity > 0)

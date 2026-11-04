@@ -62,9 +62,11 @@ import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.ChangeRodizioGuestsUseCase;
+import br.com.cardapio.application.port.in.rodizio.ListPassagemTablesUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.QuoteRodiziosUseCase;
+import br.com.cardapio.application.port.in.rodizio.TurnRodizioCardUseCase;
 import br.com.cardapio.application.port.in.tablesession.EndExpiredSessionsUseCase;
 import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
 import br.com.cardapio.application.port.in.team.AddTeamMemberUseCase;
@@ -168,9 +170,11 @@ import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
 import br.com.cardapio.application.service.rodizio.ActivateRodizioService;
 import br.com.cardapio.application.service.rodizio.ChangeRodizioGuestsService;
+import br.com.cardapio.application.service.rodizio.ListPassagemTablesService;
 import br.com.cardapio.application.service.rodizio.ListRodiziosService;
 import br.com.cardapio.application.service.rodizio.ManageRodiziosService;
 import br.com.cardapio.application.service.rodizio.QuoteRodiziosService;
+import br.com.cardapio.application.service.rodizio.TurnRodizioCardService;
 import br.com.cardapio.application.service.tablesession.EndExpiredSessionsService;
 import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
@@ -757,5 +761,20 @@ class UseCaseConfig {
                                                           TabRodizioPort tabRodizioPort,
                                                           EventPublisherPort eventPublisherPort, Clock clock) {
         return new ChangeRodizioGuestsService(diningTablePort, tabPort, tabRodizioPort, eventPublisherPort, clock);
+    }
+
+    // O rodízio de passagem: o cartão e os passadores (Guia 27)
+
+    @Bean
+    TurnRodizioCardUseCase turnRodizioCardUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                                  TabPort tabPort, TabRodizioPort tabRodizioPort,
+                                                  EventPublisherPort eventPublisherPort, Clock clock) {
+        return new TurnRodizioCardService(diningTablePort, tableSessionPort, tabPort, tabRodizioPort,
+                eventPublisherPort, clock);
+    }
+
+    @Bean
+    ListPassagemTablesUseCase listPassagemTablesUseCase(TabRodizioPort tabRodizioPort) {
+        return new ListPassagemTablesService(tabRodizioPort);
     }
 }

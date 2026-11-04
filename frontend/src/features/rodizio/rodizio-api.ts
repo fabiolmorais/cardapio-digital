@@ -45,12 +45,12 @@ export type RodizioQuote = Schemas["RodizioQuote"];
 export type TableRodizio = Schemas["TableRodizio"];
 export type GuestCount = { tierName: string; quantity: number };
 
-/** Os rodízios à la minute com o preço de agora (o de passagem só funciona na mesa na Etapa 12). */
+/** Os rodízios com o preço de agora (à la minute e de passagem). */
 export async function fetchQuotes(): Promise<RodizioQuote[]> {
   const { data, error, response } = await api.GET("/api/v1/rodizio-quotes", {
     params: { query: { page: 0, size: 20 } },
   });
-  if (data) return data.content.filter((r) => r.type === "A_LA_MINUTE");
+  if (data) return data.content;
   throw failure(response, error);
 }
 
@@ -69,6 +69,17 @@ export async function changeGuests(tableId: string, guests: GuestCount[]): Promi
     body: { guests },
   });
   if (data) return data;
+  throw failure(response, error);
+}
+
+export type PassagemTable = Schemas["PassagemTable"];
+
+/** As mesas do rodízio de passagem, as de cartão vermelho primeiro (uma página basta para o salão). */
+export async function fetchPassagemTables(): Promise<PassagemTable[]> {
+  const { data, error, response } = await api.GET("/api/v1/passagem-tables", {
+    params: { query: { page: 0, size: 100 } },
+  });
+  if (data) return data.content;
   throw failure(response, error);
 }
 

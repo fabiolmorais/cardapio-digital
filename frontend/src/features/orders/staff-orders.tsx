@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ChefHat, ChevronRight } from "lucide-react";
+import { ChefHat, ChevronRight, Flame } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -30,6 +30,25 @@ export function KitchenLink() {
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-lg font-semibold">{t.kitchen.open}</span>
         <span className="text-sm text-muted-foreground">{t.kitchen.openHint}</span>
+      </span>
+      <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
+    </Link>
+  );
+}
+
+/** O atalho para a tela dos passadores (rodízio de passagem). */
+export function PassagemLink() {
+  return (
+    <Link
+      href="/painel/passadores"
+      className="flex min-h-16 items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-brand-text">
+        <Flame aria-hidden className="size-6" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-lg font-semibold">{messages.panel.passagem.open}</span>
+        <span className="text-sm text-muted-foreground">{messages.panel.passagem.openHint}</span>
       </span>
       <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
     </Link>

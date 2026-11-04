@@ -3,7 +3,7 @@ package br.com.cardapio.domain.rodizio.model;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.order.model.TabId;
-import br.com.cardapio.domain.rodizio.exception.RodizioNotServedException;
+import br.com.cardapio.domain.rodizio.exception.RodizioCardException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 
@@ -23,6 +23,9 @@ import java.util.Objects;
  * @param guests      todas as faixas do rodízio, na ordem do cadastro, mesmo as com 0 pessoas: assim
  *                    o garçom pode pôr uma criança depois, e o preço dela já está copiado
  * @param endsAt      o fim previsto (início + tempo limite), calculado na ativação; null sem tempo limite
+ * @param type        o tipo do rodízio, copiado na ativação
+ * @param status      o cartão verde (SERVING) ou vermelho (PAUSED); no à la minute, sempre SERVING
+ * @param statusChangedAt a última virada do cartão (na ativação, o início)
  */
 public record TabRodizio(
         TabRodizioId id,
@@ -33,7 +36,10 @@ public record TabRodizio(
         List<GuestTier> guests,
         UserId activatedBy,
         Instant startedAt,
-        Instant endsAt
+        Instant endsAt,
+        RodizioType type,
+        TabRodizioStatus status,
+        Instant statusChangedAt
 ) {
 
     public TabRodizio {
@@ -44,6 +50,9 @@ public record TabRodizio(
         Objects.requireNonNull(rodizioName);
         Objects.requireNonNull(activatedBy);
         Objects.requireNonNull(startedAt);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(status);
+        Objects.requireNonNull(statusChangedAt);
         if (endsAt != null && !endsAt.isAfter(startedAt)) {
             throw new IllegalArgumentException("O fim do rodízio precisa ser depois do início");
         }
@@ -64,9 +73,6 @@ public record TabRodizio(
         if (!rodizio.active()) {
             throw new InvalidValueException("Este rodízio foi desativado. Atualize a tela.");
         }
-        if (rodizio.type() != RodizioType.A_LA_MINUTE) {
-            throw new RodizioNotServedException();
-        }
         requireKnownTiers(rodizio.tiers().stream().map(PriceTier::name).toList(), counts);
         List<GuestTier> guests = rodizio.tiers().stream()
                 .map(t -> new GuestTier(t.name(), counts.getOrDefault(t.name(), 0),
@@ -74,7 +80,8 @@ public record TabRodizio(
                 .toList();
         Integer limit = rodizio.rules().timeLimitMinutes();
         return new TabRodizio(TabRodizioId.newId(), rodizio.establishmentId(), tabId, rodizio.id(), rodizio.name(),
-                guests, by, now, limit == null ? null : now.plus(Duration.ofMinutes(limit)));
+                guests, by, now, limit == null ? null : now.plus(Duration.ofMinutes(limit)), rodizio.type(),
+                TabRodizioStatus.SERVING, now);
     }
 
     /** Chegou ou saiu alguém: muda as quantidades. Os preços continuam os copiados na ativação. */
@@ -82,7 +89,23 @@ public record TabRodizio(
         requireKnownTiers(guests.stream().map(GuestTier::tierName).toList(), counts);
         return new TabRodizio(id, establishmentId, tabId, rodizioId, rodizioName,
                 guests.stream().map(g -> g.withQuantity(counts.getOrDefault(g.tierName(), 0))).toList(),
-                activatedBy, startedAt, endsAt);
+                activatedBy, startedAt, endsAt, type, status, statusChangedAt);
+    }
+
+    /**
+     * A mesa vira o cartão (verde: pode servir; vermelho: pausa). Só no rodízio de passagem. Virar
+     * para a cor em que já está não muda nada (nem a hora): dois toques não "renovam" a pausa.
+     */
+    public TabRodizio turnCard(TabRodizioStatus newStatus, Instant now) {
+        Objects.requireNonNull(newStatus);
+        if (type != RodizioType.PASSAGEM) {
+            throw new RodizioCardException();
+        }
+        if (newStatus == status) {
+            return this;
+        }
+        return new TabRodizio(id, establishmentId, tabId, rodizioId, rodizioName, guests, activatedBy, startedAt,
+                endsAt, type, newStatus, now);
     }
 
     /** Quantas pessoas estão no rodízio, somando as faixas. */

@@ -148,6 +148,23 @@ export const messages = {
       adjustGuests: "Ajustar pessoas",
       rodizioEnds: (time: string) => `Termina às ${time}`,
     },
+    passagem: {
+      title: "Passadores",
+      subtitle: "As mesas do rodízio de passagem: vermelho é pausa",
+      open: "Abrir a tela dos passadores",
+      openHint: "As mesas do churrasco e a cor de cada cartão, ao vivo.",
+      back: "Voltar ao painel",
+      loading: "Carregando as mesas…",
+      loadError: "Não foi possível carregar as mesas. Tentando de novo…",
+      empty: "Nenhuma mesa no rodízio de passagem agora.",
+      table: (label: string) => `Mesa ${label}`,
+      people: (n: number) => (n === 1 ? "1 pessoa" : `${n} pessoas`),
+      serving: "Pode servir",
+      paused: "Pausada",
+      since: (time: string) => `há ${time}`,
+      count: (paused: number, total: number) =>
+        `${total} ${total === 1 ? "mesa" : "mesas"} · ${paused} ${paused === 1 ? "pausada" : "pausadas"}`,
+    },
     rodizio: {
       activateTitle: "Ativar rodízio",
       adjustTitle: "Ajustar pessoas",
@@ -165,7 +182,7 @@ export const messages = {
       save: "Salvar",
       saving: "Salvando…",
       loading: "Carregando os rodízios…",
-      none: "Nenhum rodízio à la minute ativo. Cadastre um em Gestão › Rodízios.",
+      none: "Nenhum rodízio ativo. Cadastre um em Gestão › Rodízios.",
       noPeople: "Conte pelo menos 1 pessoa.",
     },
     kitchen: {

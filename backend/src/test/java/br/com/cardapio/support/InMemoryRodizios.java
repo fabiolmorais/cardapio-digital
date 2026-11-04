@@ -1,5 +1,6 @@
 package br.com.cardapio.support;
 
+import br.com.cardapio.application.port.out.rodizio.PassagemTableView;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -65,5 +66,16 @@ public final class InMemoryRodizios implements RodizioPort, TabRodizioPort {
     @Override
     public void updateGuests(TabRodizio tabRodizio) {
         byTab.put(tabRodizio.tabId(), tabRodizio);
+    }
+
+    @Override
+    public void updateStatus(TabRodizio tabRodizio) {
+        byTab.put(tabRodizio.tabId(), tabRodizio);
+    }
+
+    /** A tela dos passadores junta a mesa e o setor: quem confere é o teste de integração. */
+    @Override
+    public ResultPage<PassagemTableView> findOpenPassagem(EstablishmentId establishmentId, PageQuery page) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -91,6 +91,8 @@ class SecurityConfig {
                         // A rodada do rodízio (Guia 25): como o carrinho, o cliente não tem login; o cookie da
                         // sessão identifica o celular, e o caso de uso confere a presença e o rodízio da mesa.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/rounds").permitAll()
+                        // O cartão verde/vermelho do rodízio de passagem (Guia 27): o mesmo caso da rodada.
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/public/tables/*/rodizio/card").permitAll()
                         // O vídeo do prato (Guia 22): o aviso do serviço de vídeo (vale só com o token
                         // secreto, conferido no controller) e o serviço de vídeo falso do desenvolvimento
                         // (as rotas só existem com app.video.provider=fake; o envio vale com a assinatura).

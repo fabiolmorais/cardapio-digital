@@ -31,8 +31,10 @@ import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
 import br.com.cardapio.domain.rodizio.exception.ProductNotInRodizioException;
 import br.com.cardapio.domain.rodizio.exception.ProductOnlyInRodizioException;
+import br.com.cardapio.domain.rodizio.exception.RoundNotAllowedException;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
 import br.com.cardapio.domain.rodizio.model.RodizioRules;
+import br.com.cardapio.domain.rodizio.model.RodizioType;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
@@ -162,6 +164,9 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         Tab tab = tabs.findOpen(establishmentId, tableId).orElseThrow(NoRodizioOnTableException::new);
         TabRodizio rodizio = tabRodizios.findByTab(establishmentId, tab.id())
                 .orElseThrow(NoRodizioOnTableException::new);
+        if (rodizio.type() == RodizioType.PASSAGEM) {
+            throw new RoundNotAllowedException("No rodízio de passagem, os passadores servem na mesa.");
+        }
         Rodizio registered = rodizios.find(establishmentId, rodizio.rodizioId()).orElse(null);
         Set<ProductId> included = registered == null ? Set.of() : registered.productIds();
         menu.values().stream().filter(p -> !included.contains(p.id())).findFirst().ifPresent(p -> {
