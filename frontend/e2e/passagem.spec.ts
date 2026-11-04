@@ -78,3 +78,57 @@ test("a mesa entra no passagem, vira o cartão, e os passadores veem a cor na ho
   await expect(mesa).toHaveAccessibleName("Mesa 04 · Pode servir");
   await owner.close();
 });
+
+/** A mesma churrascaria com a Picanha (só do rodízio) e o rodízio já ativado na mesa 04, para 2 pessoas. */
+async function churrascariaServing(request: APIRequestContext) {
+  const { email } = await createAccount(request);
+  const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
+  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
+  const sector = await post("/api/v1/sectors", { name: "Salão principal" });
+  const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
+  const category = await post("/api/v1/menu-categories", { name: "Carnes" });
+  const picanha = await post("/api/v1/products", {
+    categoryId: category.id,
+    name: "Picanha",
+    priceCents: 0,
+    featured: false,
+    available: true,
+    aLaCarte: false,
+  });
+  const churrasco = await post("/api/v1/rodizios", {
+    name: "Churrasco",
+    type: "PASSAGEM",
+    rules: {},
+    tiers: [{ name: "Adulto", defaultPriceCents: 15990, prices: [] }],
+    productIds: [picanha.id],
+  });
+  const activated = await request.post(`${API_URL}/api/v1/tables/${table.id}/rodizio`, {
+    headers,
+    data: { rodizioId: churrasco.id, guests: [{ tierName: "Adulto", quantity: 2 }] },
+  });
+  expect(activated.status()).toBe(201);
+  return { qr: table.publicToken as string, email };
+}
+
+test("a mesa pede uma picanha mal passada, e o passador entrega", async ({ page, request, browser }) => {
+  const { qr, email } = await churrascariaServing(request);
+
+  await page.goto(`/m/${qr}/cardapio`);
+  const picanha = page.getByRole("group", { name: "Picanha", exact: true });
+  await picanha.getByRole("button", { name: "Pedir Picanha" }).click();
+  await picanha.getByRole("button", { name: "Mal passada" }).click();
+  await expect(picanha).toContainText("A caminho");
+  await expect(picanha).toContainText("Mal passada");
+
+  const owner = await ownerPanel(browser, email);
+  await owner.page.goto("/painel/passadores");
+  const cut = owner.page.getByRole("listitem", { name: "Mesa 04 · Picanha" });
+  await expect(cut).toContainText("Mal passada");
+  await cut.getByRole("button", { name: "Entregue" }).click();
+  await expect(owner.page.getByText("Nenhum corte pedido agora.")).toBeVisible();
+
+  // Entregue: a mesa pode pedir de novo.
+  await expect(picanha.getByRole("button", { name: "Pedir Picanha" })).toBeVisible();
+  await owner.close();
+});

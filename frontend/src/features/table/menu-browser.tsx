@@ -6,6 +6,7 @@ import { tablePage } from "@/messages/table.pt-BR";
 import { aLaCarte } from "./carte";
 import { MenuItemCard } from "./menu-item";
 import { PassagemCard } from "./passagem-card";
+import { PassagemCuts } from "./passagem-cuts";
 import { ProductSheet } from "./product-sheet";
 import { RodizioRound } from "./rodizio-round";
 import type { MenuItem, PublicMenu } from "./table-data";
@@ -117,7 +118,12 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               </a>
             ))}
           </nav>
-          {rodizio?.type === "PASSAGEM" && <PassagemCard token={token} rodizio={rodizio} />}
+          {rodizio?.type === "PASSAGEM" && (
+            <>
+              <PassagemCard token={token} rodizio={rodizio} />
+              <PassagemCuts token={token} items={rodizioItems} orders={orders?.orders ?? []} />
+            </>
+          )}
           {rodizio?.type === "A_LA_MINUTE" && (
             <RodizioRound
               token={token}

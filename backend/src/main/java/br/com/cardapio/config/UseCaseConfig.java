@@ -62,6 +62,7 @@ import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.ChangeRodizioGuestsUseCase;
+import br.com.cardapio.application.port.in.rodizio.ListPassagemRequestsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListPassagemTablesUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
@@ -170,6 +171,7 @@ import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
 import br.com.cardapio.application.service.rodizio.ActivateRodizioService;
 import br.com.cardapio.application.service.rodizio.ChangeRodizioGuestsService;
+import br.com.cardapio.application.service.rodizio.ListPassagemRequestsService;
 import br.com.cardapio.application.service.rodizio.ListPassagemTablesService;
 import br.com.cardapio.application.service.rodizio.ListRodiziosService;
 import br.com.cardapio.application.service.rodizio.ManageRodiziosService;
@@ -776,5 +778,12 @@ class UseCaseConfig {
     @Bean
     ListPassagemTablesUseCase listPassagemTablesUseCase(TabRodizioPort tabRodizioPort) {
         return new ListPassagemTablesService(tabRodizioPort);
+    }
+
+    // O pedido de corte do rodízio de passagem (Guia 28)
+
+    @Bean
+    ListPassagemRequestsUseCase listPassagemRequestsUseCase(OrderPort orderPort) {
+        return new ListPassagemRequestsService(orderPort);
     }
 }

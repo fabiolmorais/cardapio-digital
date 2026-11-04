@@ -141,6 +141,16 @@ class OrderPersistenceAdapter implements OrderPort {
                 page.size(), rows.getTotalElements());
     }
 
+    @Override
+    public ResultPage<KitchenItemView> findPassagemQueue(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<KitchenItemRow> rows = items.findPassagemQueue(establishmentId.value(),
+                PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(r -> new KitchenItemView(toDomain(r.item()), r.orderNumber(),
+                new DiningTableId(r.tableId()), r.tableLabel(), r.sectorName())).getContent(), page.page(),
+                page.size(), rows.getTotalElements());
+    }
+
     /** Duas consultas: a página de pedidos (com a mesa), depois os itens de todos eles (IN). */
     @Override
     public ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page) {

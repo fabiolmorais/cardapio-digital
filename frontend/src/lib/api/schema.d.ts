@@ -1134,6 +1134,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/passagem-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os cortes pedidos no rodízio de passagem, ainda a caminho, do mais antigo ao mais novo */
+        get: operations["listPassagemRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/awaiting-approval": {
         parameters: {
             query?: never;
@@ -2717,6 +2734,42 @@ export interface components {
              * @description A última virada do cartão
              */
             statusChangedAt: string;
+        };
+        PageResponsePassagemRequest: {
+            content: components["schemas"]["PassagemRequest"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Um corte pedido pela mesa, para o passador levar */
+        PassagemRequest: {
+            /**
+             * Format: uuid
+             * @description O item do pedido (o passador entrega ou cancela por ele)
+             */
+            id: string;
+            /** @example 04 */
+            tableLabel: string;
+            sectorName: string;
+            /** @example Picanha */
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            /**
+             * @description O ponto, ou outra observação da mesa
+             * @example Mal passada
+             */
+            note?: string;
+            /**
+             * Format: date-time
+             * @description Quando foi pedido
+             */
+            createdAt: string;
         };
         PageResponseWaitingOrder: {
             content: components["schemas"]["WaitingOrder"][];
@@ -6077,6 +6130,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponsePassagemTable"];
+                };
+            };
+        };
+    };
+    listPassagemRequests: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Cortes por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página dos cortes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponsePassagemRequest"];
                 };
             };
         };

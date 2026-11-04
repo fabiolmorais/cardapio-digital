@@ -15,7 +15,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { cancelItem, type KitchenItem } from "./orders-api";
+import { cancelItem } from "./orders-api";
+
+/** O que o diálogo precisa de um item: serve à fila da cozinha e à dos cortes do passagem (sem número). */
+export type CancelableItem = { id: string; tableLabel: string; productName: string; quantity: number; orderNumber?: number };
 
 const t = messages.panel.cancelItem;
 const OTHER = -1;
@@ -29,7 +32,7 @@ export function CancelItemDialog({
   onClose,
   onDone,
 }: {
-  items: KitchenItem[] | null;
+  items: CancelableItem[] | null;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -42,7 +45,7 @@ export function CancelItemDialog({
   );
 }
 
-function Body({ items, onDone }: { items: KitchenItem[]; onDone: () => void }) {
+function Body({ items, onDone }: { items: CancelableItem[]; onDone: () => void }) {
   const id = useId();
   const [itemId, setItemId] = useState(items[0].id);
   const [choice, setChoice] = useState(0);

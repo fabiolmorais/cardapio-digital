@@ -15,7 +15,6 @@ import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
 import br.com.cardapio.domain.rodizio.exception.RodizioCardException;
-import br.com.cardapio.domain.rodizio.exception.RoundNotAllowedException;
 import br.com.cardapio.domain.rodizio.model.PriceTier;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
 import br.com.cardapio.domain.rodizio.model.RodizioRules;
@@ -97,14 +96,19 @@ class PassagemServicesTest {
     }
 
     @Test
-    void inThePassagemThePassersServeSoThereIsNoRound() {
+    void theCutRequestIsARoundAtZeroWithThePoint() {
         rodizio(RodizioType.PASSAGEM);
 
-        assertThatThrownBy(() -> new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios,
-                rodizios, published::add, clock).place(new PlaceOrderCommand(QR_04, "ana",
-                List.of(new OrderLine(picanha.id(), 1, null)), true)))
-                .isInstanceOf(RoundNotAllowedException.class)
-                .hasMessage("No rodízio de passagem, os passadores servem na mesa.");
+        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios,
+                published::add, clock).place(new PlaceOrderCommand(QR_04, "ana",
+                List.of(new OrderLine(picanha.id(), 1, "Mal passada")), true));
+
+        assertThat(cut.items()).singleElement().satisfies(item -> {
+            assertThat(item.productName()).isEqualTo("Picanha");
+            assertThat(item.note()).isEqualTo("Mal passada");
+            assertThat(item.unitPrice()).isEqualTo(Money.ZERO);
+            assertThat(item.rodizio()).isTrue();
+        });
     }
 
     @Test

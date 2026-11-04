@@ -83,6 +83,17 @@ export async function fetchPassagemTables(): Promise<PassagemTable[]> {
   throw failure(response, error);
 }
 
+export type PassagemRequest = Schemas["PassagemRequest"];
+
+/** Os cortes pedidos no rodízio de passagem, ainda a caminho, do mais antigo ao mais novo. */
+export async function fetchPassagemRequests(): Promise<PassagemRequest[]> {
+  const { data, error, response } = await api.GET("/api/v1/passagem-requests", {
+    params: { query: { page: 0, size: 100 } },
+  });
+  if (data) return data.content;
+  throw failure(response, error);
+}
+
 export type MenuProduct = { id: string; name: string; categoryId: string };
 
 /** Todos os produtos ativos do cardápio, de página em página (100 por vez), para escolher os incluídos. */

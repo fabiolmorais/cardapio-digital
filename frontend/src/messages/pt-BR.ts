@@ -162,6 +162,13 @@ export const messages = {
       serving: "Pode servir",
       paused: "Pausada",
       since: (time: string) => `há ${time}`,
+      cutsTitle: "Cortes pedidos",
+      cutsEmpty: "Nenhum corte pedido agora.",
+      cut: (table: string, name: string) => `Mesa ${table} · ${name}`,
+      deliver: "Entregue",
+      delivering: "Entregando…",
+      cancel: "Cancelar",
+      tablesTitle: "Mesas",
       count: (paused: number, total: number) =>
         `${total} ${total === 1 ? "mesa" : "mesas"} · ${paused} ${paused === 1 ? "pausada" : "pausadas"}`,
     },
@@ -209,7 +216,8 @@ export const messages = {
     },
     cancelItem: {
       title: "Cancelar item",
-      subtitle: (table: string, number: number) => `Mesa ${table} · Pedido nº ${number} · o cliente vê o motivo na hora`,
+      subtitle: (table: string, number?: number) =>
+        `Mesa ${table}${number === undefined ? "" : ` · Pedido nº ${number}`} · o cliente vê o motivo na hora`,
       which: "Qual item?",
       reason: "Motivo",
       reasons: ["Acabou um ingrediente", "Pedido em dobro", "A mesa desistiu"],
