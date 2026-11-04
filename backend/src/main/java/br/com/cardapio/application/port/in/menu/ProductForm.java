@@ -18,16 +18,23 @@ public record ProductForm(
         long priceCents,
         Long promoPriceCents,
         boolean featured,
-        boolean available
+        boolean available,
+        boolean aLaCarte
 ) {
 
     public ProductForm {
         Objects.requireNonNull(categoryId);
     }
 
+    /** O produto de sempre, que aparece no cardápio à la carte. */
+    public ProductForm(MenuCategoryId categoryId, String name, String description, long priceCents,
+                       Long promoPriceCents, boolean featured, boolean available) {
+        this(categoryId, name, description, priceCents, promoPriceCents, featured, available, true);
+    }
+
     /** Monta (e valida) a parte do formulário que o domínio chama de detalhes. */
     public ProductDetails details() {
         return new ProductDetails(name, description, Money.ofCents(priceCents),
-                promoPriceCents == null ? null : Money.ofCents(promoPriceCents), featured);
+                promoPriceCents == null ? null : Money.ofCents(promoPriceCents), featured, aLaCarte);
     }
 }

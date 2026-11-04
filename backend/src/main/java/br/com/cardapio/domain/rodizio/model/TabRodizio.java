@@ -7,6 +7,7 @@ import br.com.cardapio.domain.rodizio.exception.RodizioNotServedException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import java.util.Objects;
  * @param rodizioName o nome copiado na ativação
  * @param guests      todas as faixas do rodízio, na ordem do cadastro, mesmo as com 0 pessoas: assim
  *                    o garçom pode pôr uma criança depois, e o preço dela já está copiado
+ * @param endsAt      o fim previsto (início + tempo limite), calculado na ativação; null sem tempo limite
  */
 public record TabRodizio(
         TabRodizioId id,
@@ -30,7 +32,8 @@ public record TabRodizio(
         String rodizioName,
         List<GuestTier> guests,
         UserId activatedBy,
-        Instant startedAt
+        Instant startedAt,
+        Instant endsAt
 ) {
 
     public TabRodizio {
@@ -41,6 +44,9 @@ public record TabRodizio(
         Objects.requireNonNull(rodizioName);
         Objects.requireNonNull(activatedBy);
         Objects.requireNonNull(startedAt);
+        if (endsAt != null && !endsAt.isAfter(startedAt)) {
+            throw new IllegalArgumentException("O fim do rodízio precisa ser depois do início");
+        }
         guests = List.copyOf(guests);
         if (guests.stream().mapToInt(GuestTier::quantity).sum() < 1) {
             throw new InvalidValueException("O rodízio precisa de pelo menos 1 pessoa.");
@@ -66,8 +72,9 @@ public record TabRodizio(
                 .map(t -> new GuestTier(t.name(), counts.getOrDefault(t.name(), 0),
                         t.priceAt(localTime.getDayOfWeek(), localTime.toLocalTime())))
                 .toList();
+        Integer limit = rodizio.rules().timeLimitMinutes();
         return new TabRodizio(TabRodizioId.newId(), rodizio.establishmentId(), tabId, rodizio.id(), rodizio.name(),
-                guests, by, now);
+                guests, by, now, limit == null ? null : now.plus(Duration.ofMinutes(limit)));
     }
 
     /** Chegou ou saiu alguém: muda as quantidades. Os preços continuam os copiados na ativação. */
@@ -75,7 +82,7 @@ public record TabRodizio(
         requireKnownTiers(guests.stream().map(GuestTier::tierName).toList(), counts);
         return new TabRodizio(id, establishmentId, tabId, rodizioId, rodizioName,
                 guests.stream().map(g -> g.withQuantity(counts.getOrDefault(g.tierName(), 0))).toList(),
-                activatedBy, startedAt);
+                activatedBy, startedAt, endsAt);
     }
 
     /** Quantas pessoas estão no rodízio, somando as faixas. */

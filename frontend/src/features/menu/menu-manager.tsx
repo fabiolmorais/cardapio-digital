@@ -420,10 +420,11 @@ function ProductTable({
                   className="flex min-h-11 flex-col justify-center gap-0.5 rounded-lg px-2 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
                   <span className="font-medium">{product.name}</span>
-                  {product.featured && (
-                    <Badge variant="secondary" className="mt-0.5">
-                      {t.featured}
-                    </Badge>
+                  {(product.featured || !product.aLaCarte) && (
+                    <span className="mt-0.5 flex flex-wrap gap-1">
+                      {product.featured && <Badge variant="secondary">{t.featured}</Badge>}
+                      {!product.aLaCarte && <Badge variant="outline">{messages.menu.product.onlyRodizio}</Badge>}
+                    </span>
                   )}
                 </Link>
               </td>

@@ -13,13 +13,14 @@ public record ProductSummary(
         Long promoPriceCents,
         boolean featured,
         boolean available,
-        int position
+        int position,
+        boolean aLaCarte
 ) {
 
     public static ProductSummary from(Product product) {
         var details = product.details();
         return new ProductSummary(product.id(), product.categoryId(), details.name(), details.description(),
                 details.price().cents(), details.onSale() ? details.promoPrice().cents() : null,
-                details.featured(), product.available(), product.position());
+                details.featured(), product.available(), product.position(), details.aLaCarte());
     }
 }

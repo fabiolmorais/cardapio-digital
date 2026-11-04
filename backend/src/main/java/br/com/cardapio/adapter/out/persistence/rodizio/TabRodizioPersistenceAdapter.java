@@ -37,7 +37,7 @@ class TabRodizioPersistenceAdapter implements TabRodizioPort {
         UUID id = r.id().value();
         UUID establishment = r.establishmentId().value();
         if (rodizios.insertIfNone(id, establishment, r.tabId().value(), r.rodizioId().value(), r.rodizioName(),
-                r.activatedBy().value(), r.startedAt()) == 0) {
+                r.activatedBy().value(), r.startedAt(), r.endsAt()) == 0) {
             return false;
         }
         List<TabRodizioGuestJpaEntity> rows = new ArrayList<>();
@@ -60,7 +60,7 @@ class TabRodizioPersistenceAdapter implements TabRodizioPort {
                                 .map(g -> new GuestTier(g.getTierName(), g.getQuantity(),
                                         Money.ofCents(g.getUnitPriceCents())))
                                 .toList(),
-                        new UserId(e.getActivatedBy()), e.getStartedAt()));
+                        new UserId(e.getActivatedBy()), e.getStartedAt(), e.getEndsAt()));
     }
 
     @Override

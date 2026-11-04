@@ -18,7 +18,8 @@ public record TableRodizioResponse(
         @Schema(requiredMode = REQUIRED, description = "Pessoas no rodízio, somando as faixas") int people,
         @Schema(requiredMode = REQUIRED, description = "Pessoas × preço: o que o rodízio soma na conta")
         long totalCents,
-        @Schema(requiredMode = REQUIRED) Instant startedAt
+        @Schema(requiredMode = REQUIRED) Instant startedAt,
+        @Schema(description = "O fim previsto (início + tempo limite); ausente sem tempo limite") Instant endsAt
 ) {
 
     @Schema(name = "TableRodizioGuest")
@@ -32,6 +33,6 @@ public record TableRodizioResponse(
     public static TableRodizioResponse from(TableRodizio r) {
         return new TableRodizioResponse(r.rodizioId().value(), r.name(),
                 r.guests().stream().map(g -> new Guest(g.tierName(), g.quantity(), g.unitPrice().cents())).toList(),
-                r.people(), r.total().cents(), r.startedAt());
+                r.people(), r.total().cents(), r.startedAt(), r.endsAt());
     }
 }

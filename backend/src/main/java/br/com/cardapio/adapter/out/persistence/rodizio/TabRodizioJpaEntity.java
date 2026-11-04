@@ -31,6 +31,9 @@ class TabRodizioJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
+    @Column(name = "ends_at")
+    private Instant endsAt;
+
     protected TabRodizioJpaEntity() {
     }
 
@@ -40,4 +43,5 @@ class TabRodizioJpaEntity extends EstablishmentScopedEntity {
     String getRodizioName() { return rodizioName; }
     UUID getActivatedBy() { return activatedBy; }
     Instant getStartedAt() { return startedAt; }
+    Instant getEndsAt() { return endsAt; }
 }

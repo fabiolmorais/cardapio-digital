@@ -30,8 +30,9 @@ public record PublicMenu(List<Category> categories) {
      * @param photoUrls       os tamanhos da capa (a primeira foto); vazio quando o produto não tem foto
      * @param media           a galeria pronta, em ordem: fotos e vídeos (o Reels do prato)
      */
+    /** @param aLaCarte false: só do rodízio (a mesa mostra só na aba Rodízio) */
     public record Item(ProductId id, String name, String description, long priceCents, Long promoPriceCents,
-                       boolean featured, boolean available, Map<ImageVariant, String> photoUrls,
+                       boolean featured, boolean available, boolean aLaCarte, Map<ImageVariant, String> photoUrls,
                        List<Media> media) {
 
         public Item {

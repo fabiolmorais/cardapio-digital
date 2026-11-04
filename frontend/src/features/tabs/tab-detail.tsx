@@ -135,6 +135,9 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
             <h2 className="font-semibold">{t.rodizio(tab.rodizio.name, tab.rodizio.people)}</h2>
             <span className="font-mono font-bold tabular-nums">{formatCents(tab.rodizio.totalCents)}</span>
           </div>
+          {tab.rodizio.endsAt && (
+            <span className="text-sm font-medium">{t.rodizioEnds(clock(tab.rodizio.endsAt))}</span>
+          )}
           <ul className="flex flex-col gap-0.5 text-sm text-muted-foreground">
             {tab.rodizio.guests
               .filter((g) => g.quantity > 0)
