@@ -1,15 +1,23 @@
 package br.com.cardapio.adapter.out.persistence.rodizio;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.rodizio.PassagemTableView;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
+import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.rodizio.model.GuestTier;
 import br.com.cardapio.domain.rodizio.model.RodizioId;
+import br.com.cardapio.domain.rodizio.model.RodizioType;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 import br.com.cardapio.domain.rodizio.model.TabRodizioId;
+import br.com.cardapio.domain.rodizio.model.TabRodizioStatus;
 import br.com.cardapio.domain.shared.model.Money;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -37,7 +45,8 @@ class TabRodizioPersistenceAdapter implements TabRodizioPort {
         UUID id = r.id().value();
         UUID establishment = r.establishmentId().value();
         if (rodizios.insertIfNone(id, establishment, r.tabId().value(), r.rodizioId().value(), r.rodizioName(),
-                r.activatedBy().value(), r.startedAt(), r.endsAt()) == 0) {
+                r.activatedBy().value(), r.startedAt(), r.endsAt(), r.type().name(), r.status().name(),
+                r.statusChangedAt()) == 0) {
             return false;
         }
         List<TabRodizioGuestJpaEntity> rows = new ArrayList<>();
@@ -60,7 +69,27 @@ class TabRodizioPersistenceAdapter implements TabRodizioPort {
                                 .map(g -> new GuestTier(g.getTierName(), g.getQuantity(),
                                         Money.ofCents(g.getUnitPriceCents())))
                                 .toList(),
-                        new UserId(e.getActivatedBy()), e.getStartedAt(), e.getEndsAt()));
+                        new UserId(e.getActivatedBy()), e.getStartedAt(), e.getEndsAt(),
+                        RodizioType.valueOf(e.getRodizioType()), TabRodizioStatus.valueOf(e.getStatus()),
+                        e.getStatusChangedAt()));
+    }
+
+    @Override
+    public void updateStatus(TabRodizio r) {
+        establishmentFilter.enable(r.establishmentId());
+        rodizios.updateStatus(r.id().value(), r.establishmentId().value(), r.status().name(), r.statusChangedAt());
+    }
+
+    @Override
+    public ResultPage<PassagemTableView> findOpenPassagem(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<PassagemTableRow> found = rodizios.findOpenPassagem(establishmentId.value(),
+                PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(found.getContent().stream()
+                .map(row -> new PassagemTableView(new DiningTableId(row.tableId()), row.tableLabel(), row.sectorName(),
+                        row.rodizioName(), row.people() == null ? 0 : row.people().intValue(),
+                        TabRodizioStatus.valueOf(row.status()), row.statusChangedAt()))
+                .toList(), page.page(), page.size(), found.getTotalElements());
     }
 
     @Override

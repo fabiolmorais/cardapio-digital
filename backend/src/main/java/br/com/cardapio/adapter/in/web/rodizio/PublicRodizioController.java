@@ -3,6 +3,7 @@ package br.com.cardapio.adapter.in.web.rodizio;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.adapter.in.web.tablesession.TableSessionCookie;
 import br.com.cardapio.application.port.in.rodizio.QuoteRodiziosUseCase;
+import br.com.cardapio.application.port.in.rodizio.TurnRodizioCardUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ProblemDetail;
@@ -24,9 +26,25 @@ import org.springframework.web.bind.annotation.*;
 class PublicRodizioController {
 
     private final QuoteRodiziosUseCase quotes;
+    private final TurnRodizioCardUseCase turnCard;
 
-    PublicRodizioController(QuoteRodiziosUseCase quotes) {
+    PublicRodizioController(QuoteRodiziosUseCase quotes, TurnRodizioCardUseCase turnCard) {
         this.quotes = quotes;
+        this.turnCard = turnCard;
+    }
+
+    @PutMapping("/rodizio/card")
+    @Operation(operationId = "turnRodizioCard",
+            summary = "Vira o cartão do rodízio de passagem: verde (pode servir) ou vermelho (pausa)")
+    @ApiResponse(responseCode = "200", description = "O rodízio da mesa, com a cor nova")
+    @ApiResponse(responseCode = "403", description = "Sem presença confirmada, ou celular bloqueado",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "A mesa não está num rodízio de passagem",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    TableRodizioResponse turnCard(@PathVariable String token,
+                                  @CookieValue(name = TableSessionCookie.NAME, required = false) String session,
+                                  @Valid @RequestBody CardRequest request) {
+        return TableRodizioResponse.from(turnCard.turn(token, session, request.status()));
     }
 
     @GetMapping("/rodizios")

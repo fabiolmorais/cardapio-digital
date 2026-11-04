@@ -41,11 +41,8 @@ async function Menu({ params }: Pick<PageProps<"/m/[token]/cardapio">, "params">
         </span>
         <h1 className="text-3xl font-bold tracking-tight">{t.menu.title}</h1>
       </header>
-      {menu.categories.length === 0 ? (
-        <p className="text-(--mesa-muted)">{t.menu.empty}</p>
-      ) : (
-        <MenuBrowser token={token} menu={menu} />
-      )}
+      {/* Mesmo sem nada à la carte, o cardápio monta: a aba Rodízio (e o cartão do passagem) mora nele. */}
+      <MenuBrowser token={token} menu={menu} />
     </TableShell>
   );
 }

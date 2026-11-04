@@ -40,6 +40,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/rodizio/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Vira o cartão do rodízio de passagem: verde (pode servir) ou vermelho (pausa) */
+        put: operations["turnRodizioCard"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{productId}/media-order": {
         parameters: {
             query?: never;
@@ -1100,6 +1117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/passagem-tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As mesas abertas no rodízio de passagem, as de cartão vermelho primeiro */
+        get: operations["listPassagemTables"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/awaiting-approval": {
         parameters: {
             query?: never;
@@ -1355,6 +1389,8 @@ export interface components {
             rodizioId: string;
             /** @example Rodízio Japonês */
             name: string;
+            /** @enum {string} */
+            type: "A_LA_MINUTE" | "PASSAGEM";
             /** @description Todas as faixas, mesmo as com 0 pessoas */
             guests: components["schemas"]["TableRodizioGuest"][];
             /**
@@ -1374,6 +1410,16 @@ export interface components {
              * @description O fim previsto (início + tempo limite); ausente sem tempo limite
              */
             endsAt?: string;
+            /**
+             * @description O cartão: SERVING (verde) ou PAUSED (vermelho)
+             * @enum {string}
+             */
+            status: "SERVING" | "PAUSED";
+            /**
+             * Format: date-time
+             * @description A última virada do cartão
+             */
+            statusChangedAt: string;
         };
         TableRodizioGuest: {
             /** @example Adulto */
@@ -1488,6 +1534,13 @@ export interface components {
             /** Format: int64 */
             defaultPriceCents: number;
             prices: components["schemas"]["RodizioSpecialPrice"][];
+        };
+        RodizioCardRequest: {
+            /**
+             * @description SERVING: cartão verde (pode servir). PAUSED: vermelho (pausa)
+             * @enum {string}
+             */
+            status: "SERVING" | "PAUSED";
         };
         /** @description Todos os itens da lista, na ordem nova */
         ReorderRequest: {
@@ -2632,6 +2685,39 @@ export interface components {
             /** @enum {string} */
             support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
         };
+        PageResponsePassagemTable: {
+            content: components["schemas"]["PassagemTable"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Uma mesa no rodízio de passagem, para os passadores */
+        PassagemTable: {
+            /** Format: uuid */
+            tableId: string;
+            /** @example 04 */
+            tableLabel: string;
+            sectorName: string;
+            /** @example Churrasco */
+            rodizioName: string;
+            /** Format: int32 */
+            people: number;
+            /**
+             * @description SERVING: cartão verde. PAUSED: vermelho
+             * @enum {string}
+             */
+            status: "SERVING" | "PAUSED";
+            /**
+             * Format: date-time
+             * @description A última virada do cartão
+             */
+            statusChangedAt: string;
+        };
         PageResponseWaitingOrder: {
             content: components["schemas"]["WaitingOrder"][];
             /** Format: int32 */
@@ -2940,6 +3026,52 @@ export interface operations {
             };
             /** @description Não é um rodízio deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    turnRodizioCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RodizioCardRequest"];
+            };
+        };
+        responses: {
+            /** @description O rodízio da mesa, com a cor nova */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableRodizio"];
+                };
+            };
+            /** @description Sem presença confirmada, ou celular bloqueado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa não está num rodízio de passagem */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5920,6 +6052,31 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listPassagemTables: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Mesas por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página das mesas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponsePassagemTable"];
                 };
             };
         };

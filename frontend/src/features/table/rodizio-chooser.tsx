@@ -76,7 +76,7 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
             href={`/m/${token}/cardapio#rodizio`}
             className={cn("flex h-14 w-full items-center justify-center rounded-2xl bg-(--brand) font-semibold text-white", focus)}
           >
-            {t.orderRound}
+            {active.type === "PASSAGEM" ? t.seeCard : t.orderRound}
           </Link>
         </section>
       </>
@@ -107,7 +107,10 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
                   <span className="flex size-10 items-center justify-center rounded-xl bg-(--brand) text-white">
                     <Flame aria-hidden className="size-5" />
                   </span>
-                  <h2 className="text-xl font-bold tracking-tight">{r.name}</h2>
+                  <span className="flex flex-col">
+                    <h2 className="text-xl font-bold tracking-tight">{r.name}</h2>
+                    {r.type === "PASSAGEM" && <span className="text-sm text-(--mesa-muted)">{t.passagemHint}</span>}
+                  </span>
                 </span>
                 {r.description && <p className="text-sm text-(--mesa-muted)">{r.description}</p>}
                 <ul className="flex flex-col gap-0.5">

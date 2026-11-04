@@ -3,7 +3,7 @@ package br.com.cardapio.domain.rodizio.model;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.order.model.TabId;
-import br.com.cardapio.domain.rodizio.exception.RodizioNotServedException;
+import br.com.cardapio.domain.rodizio.exception.RodizioCardException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import org.junit.jupiter.api.Test;
@@ -73,7 +73,7 @@ class TabRodizioTest {
     }
 
     @Test
-    void needsSomeoneKnownTiersAndAnActiveALaMinuteRodizio() {
+    void needsSomeoneKnownTiersAndAnActiveRodizio() {
         Rodizio rodizio = japones(RodizioType.A_LA_MINUTE);
 
         assertThatThrownBy(() -> TabRodizio.activate(rodizio, tab, Map.of(), FRIDAY_NIGHT, carlos, NOW))
@@ -84,7 +84,29 @@ class TabRodizioTest {
                 NOW)).isInstanceOf(InvalidValueException.class);
         assertThatThrownBy(() -> TabRodizio.activate(rodizio.deactivate(), tab, Map.of("Adulto", 2), FRIDAY_NIGHT,
                 carlos, NOW)).isInstanceOf(InvalidValueException.class);
-        assertThatThrownBy(() -> TabRodizio.activate(japones(RodizioType.PASSAGEM), tab, Map.of("Adulto", 2),
-                FRIDAY_NIGHT, carlos, NOW)).isInstanceOf(RodizioNotServedException.class);
+    }
+
+    @Test
+    void thePassagemTableTurnsTheCardAndTheALaMinuteHasNoCard() {
+        TabRodizio passagem = TabRodizio.activate(japones(RodizioType.PASSAGEM), tab, Map.of("Adulto", 2),
+                FRIDAY_NIGHT, carlos, NOW);
+        assertThat(passagem.type()).isEqualTo(RodizioType.PASSAGEM);
+        assertThat(passagem.status()).isEqualTo(TabRodizioStatus.SERVING);
+        assertThat(passagem.statusChangedAt()).isEqualTo(NOW);
+
+        TabRodizio paused = passagem.turnCard(TabRodizioStatus.PAUSED, NOW.plusSeconds(600));
+        assertThat(paused.status()).isEqualTo(TabRodizioStatus.PAUSED);
+        assertThat(paused.statusChangedAt()).isEqualTo(NOW.plusSeconds(600));
+        // A mesma cor de novo não muda nada, nem a hora da pausa.
+        assertThat(paused.turnCard(TabRodizioStatus.PAUSED, NOW.plusSeconds(900))).isSameAs(paused);
+        assertThat(paused.turnCard(TabRodizioStatus.SERVING, NOW.plusSeconds(900)).status())
+                .isEqualTo(TabRodizioStatus.SERVING);
+        // Ajustar as pessoas não vira o cartão.
+        assertThat(paused.changeGuests(Map.of("Adulto", 3)).status()).isEqualTo(TabRodizioStatus.PAUSED);
+
+        TabRodizio aLaMinute = TabRodizio.activate(japones(RodizioType.A_LA_MINUTE), tab, Map.of("Adulto", 2),
+                FRIDAY_NIGHT, carlos, NOW);
+        assertThatThrownBy(() -> aLaMinute.turnCard(TabRodizioStatus.PAUSED, NOW))
+                .isInstanceOf(RodizioCardException.class);
     }
 }

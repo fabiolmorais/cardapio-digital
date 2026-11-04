@@ -5,6 +5,7 @@ import { useDeferredValue, useId, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { aLaCarte } from "./carte";
 import { MenuItemCard } from "./menu-item";
+import { PassagemCard } from "./passagem-card";
 import { ProductSheet } from "./product-sheet";
 import { RodizioRound } from "./rodizio-round";
 import type { MenuItem, PublicMenu } from "./table-data";
@@ -116,7 +117,8 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               </a>
             ))}
           </nav>
-          {rodizio && (
+          {rodizio?.type === "PASSAGEM" && <PassagemCard token={token} rodizio={rodizio} />}
+          {rodizio?.type === "A_LA_MINUTE" && (
             <RodizioRound
               token={token}
               rodizio={rodizio}
@@ -125,6 +127,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               limits={orders?.rodizioLimits}
             />
           )}
+          {categories.length === 0 && !rodizio && <p className="text-(--mesa-muted)">{t.empty}</p>}
           {categories.map((c) => (
             <section
               key={c.id}

@@ -40,7 +40,9 @@ export function RodizioEntry({ token }: { token: string }) {
         </span>
         <span className="flex flex-1 flex-col">
           <span className="font-semibold">{t.banner(active.name, active.people)}</span>
-          <span className="text-sm opacity-90">{t.rounds(rounds)}</span>
+          <span className="text-sm opacity-90">
+            {active.type === "PASSAGEM" ? t.card.short[active.status] : t.rounds(rounds)}
+          </span>
         </span>
         <ChevronRight aria-hidden className="size-5" />
       </Link>

@@ -53,13 +53,24 @@ export async function placeOrder(
 
 export type RodizioQuote = components["schemas"]["RodizioQuote"];
 
-/** "Escolha o rodízio": os rodízios à la minute, com o preço por pessoa de agora. */
+/** "Escolha o rodízio": os rodízios (à la minute e de passagem), com o preço por pessoa de agora. */
 export async function listRodizios(token: string): Promise<RodizioQuote[]> {
   const response = await send(token, "/rodizios");
   if (!response.ok) throw await failure(response, t.failed);
   const page: { content: RodizioQuote[] } = await response.json();
-  // O de passagem já se cadastra, mas só funciona na mesa numa próxima versão.
-  return page.content.filter((r) => r.type === "A_LA_MINUTE");
+  return page.content;
+}
+
+export type CardStatus = NonNullable<TableOrders["rodizio"]>["status"];
+
+/** O cartão do rodízio de passagem: verde (SERVING, pode servir) ou vermelho (PAUSED). */
+export async function turnCard(token: string, status: CardStatus): Promise<void> {
+  const response = await send(token, "/rodizio/card", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) throw await failure(response, t.failed);
 }
 
 export async function cancelOrderItem(token: string, itemId: string): Promise<void> {
