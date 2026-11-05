@@ -3,9 +3,15 @@ package br.com.cardapio.adapter.out.display;
 import br.com.cardapio.application.port.out.floor.DisplayContent;
 import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.BinaryBitmap;
 import com.google.zxing.EncodeHintType;
+import com.google.zxing.RGBLuminanceSource;
+import com.google.zxing.ReaderException;
+import com.google.zxing.Result;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.openpdf.text.Document;
@@ -26,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,12 +55,56 @@ class QrCodeDisplayRenderer implements TableDisplayRenderer {
     private static final Color INK = new Color(0x16, 0x13, 0x0F);
     private static final Color MUTED = new Color(0x5C, 0x55, 0x4E);
 
+    /** As 8 máscaras do padrão QR (0 a 7), para quando a escolhida pelo ZXing não lê. */
+    private static final int MASKS = 8;
+
+    /**
+     * O QR da URL. A máscara que o ZXing escolhe às vezes desenha, no meio do código, um padrão
+     * parecido com os quadrados de canto, e o leitor não acha o QR na imagem (cerca de 1 em cada
+     * 100 tokens). Por isso o QR só sai depois de ser lido de volta; se não ler, tenta as outras
+     * máscaras. O conteúdo é o mesmo, e o celular lê qualquer máscara.
+     */
     BitMatrix encode(String url) {
+        BitMatrix chosen = encode(url, HINTS);
+        for (int mask = 0; mask < MASKS && !readable(chosen, url); mask++) {
+            Map<EncodeHintType, Object> hints = new EnumMap<>(HINTS);
+            hints.put(EncodeHintType.QR_MASK_PATTERN, mask);
+            chosen = encode(url, hints);
+        }
+        return chosen;
+    }
+
+    private static BitMatrix encode(String url, Map<EncodeHintType, Object> hints) {
         try {
             // Tamanho 0: o ZXing devolve a menor matriz possível (1 ponto por módulo); a escala é nossa.
-            return new QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 0, 0, HINTS);
+            return new QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 0, 0, hints);
         } catch (WriterException e) {
             throw new IllegalStateException("não foi possível gerar o QR Code", e);
+        }
+    }
+
+    /**
+     * O leitor do ZXing acha o QR e lê a mesma URL, pequeno (como numa foto de longe) e no tamanho
+     * do PNG? A detecção muda com a escala: as duas precisam passar.
+     */
+    private static boolean readable(BitMatrix matrix, String url) {
+        return readable(matrix, url, 4) && readable(matrix, url, PNG_SCALE);
+    }
+
+    private static boolean readable(BitMatrix matrix, String url, int scale) {
+        int size = matrix.getWidth() * scale;
+        int[] pixels = new int[size * size];
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                pixels[y * size + x] = matrix.get(x / scale, y / scale) ? 0xFF000000 : 0xFFFFFFFF;
+            }
+        }
+        try {
+            Result result = new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(
+                    new RGBLuminanceSource(size, size, pixels))));
+            return url.equals(result.getText());
+        } catch (ReaderException e) {
+            return false;
         }
     }
 

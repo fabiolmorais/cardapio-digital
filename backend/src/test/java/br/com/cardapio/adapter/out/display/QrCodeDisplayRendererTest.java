@@ -5,7 +5,9 @@ import br.com.cardapio.support.TestImages;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
+import java.util.Random;
 
 import static br.com.cardapio.support.PrintedFiles.pdfPages;
 import static br.com.cardapio.support.PrintedFiles.pdfText;
@@ -26,6 +28,26 @@ class QrCodeDisplayRendererTest {
 
         assertThat(png).startsWith(0x89, 'P', 'N', 'G');
         assertThat(readQr(png)).isEqualTo(URL);
+    }
+
+    /**
+     * Com a máscara que o ZXing escolhe, cerca de 1 em cada 100 tokens dava um QR que o leitor não
+     * achava na imagem (o conteúdo estava certo: lido como código "puro", ele saía). Este token é
+     * um dos que falhavam, e a amostra (com semente fixa) pega os outros casos.
+     */
+    @Test
+    void everyTokenGivesAQrThatTheReaderFinds() throws Exception {
+        String hard = "http://localhost:3000/m/zjyUKHKFAiFnHvu6NVPwtVGOlWlTFqNeVtzposLUzyI";
+        assertThat(readQr(renderer.qrPng(hard))).isEqualTo(hard);
+
+        Random random = new Random(28);
+        for (int i = 0; i < 100; i++) {
+            byte[] bytes = new byte[32];
+            random.nextBytes(bytes);
+            String url = "https://app.cardapio.com.br/m/"
+                    + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+            assertThat(readQr(renderer.qrPng(url))).as(url).isEqualTo(url);
+        }
     }
 
     @Test
