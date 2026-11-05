@@ -12,6 +12,7 @@ import br.com.cardapio.domain.plan.model.PlanFeature;
 import br.com.cardapio.domain.plan.model.PlanId;
 import br.com.cardapio.domain.plan.model.PlanUsage;
 import br.com.cardapio.domain.plan.model.Subscription;
+import br.com.cardapio.domain.plan.model.SubscriptionStatus;
 import br.com.cardapio.domain.plan.model.SupportLevel;
 import br.com.cardapio.domain.shared.model.Limit;
 import br.com.cardapio.domain.shared.model.Money;
@@ -35,11 +36,18 @@ public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
             Set.of(PlanFeature.PRODUCT_VIDEOS));
     public static final Plan UNLIMITED = plan("test", "Sem limites", Limit.unlimited(), Limit.unlimited(),
             Limit.unlimited(), Set.of(PlanFeature.PRODUCT_VIDEOS));
+    /** Sob consulta: sem preço. */
+    public static final Plan ENTERPRISE = new Plan(new PlanId(UUID.nameUUIDFromBytes("enterprise".getBytes())),
+            "enterprise", "Enterprise", null, null, Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0,
+            Set.of(PlanFeature.PRODUCT_VIDEOS), SupportLevel.DEDICATED_MANAGER, 4);
+    private static final List<Plan> CATALOG = List.of(ESSENTIAL, PRO, ENTERPRISE);
 
     public final List<Subscription> saved = new ArrayList<>();
     private Plan plan = UNLIMITED;
     private PlanUsage usage = new PlanUsage(0, 0, 0);
     public int locks;
+    /** A última assinatura gravada (o pedido de plano) ou a suspensa; null: o teste grátis padrão. */
+    private Subscription stored;
 
     /** Daqui em diante, todo restaurante está neste plano e usa isto. */
     public InMemorySubscriptions given(Plan plan, PlanUsage usage) {
@@ -54,14 +62,27 @@ public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
                 Money.ofCents(69900), tables, users, sectors, 90, features, SupportLevel.EMAIL, 1);
     }
 
+    /** A assinatura cancelada: a mesa para de chamar e pedir. */
+    public InMemorySubscriptions suspended() {
+        Subscription trial = Subscription.startTrial(OrganizationId.newId(), plan.id(), Instant.parse("2026-11-05T12:00:00Z"));
+        stored = new Subscription(trial.id(), trial.organizationId(), trial.planId(), SubscriptionStatus.CANCELED, null,
+                trial.trialEndsAt(), null, trial.createdAt());
+        return this;
+    }
+
     private CurrentSubscription current() {
-        Instant now = Instant.parse("2026-11-05T12:00:00Z");
-        return new CurrentSubscription(Subscription.startTrial(OrganizationId.newId(), plan.id(), now), plan);
+        if (stored == null) {
+            stored = Subscription.startTrial(OrganizationId.newId(), plan.id(), Instant.parse("2026-11-05T12:00:00Z"));
+        }
+        Plan requested = stored.request() == null ? null : CATALOG.stream()
+                .filter(p -> p.id().equals(stored.request().planId())).findFirst().orElseThrow();
+        return new CurrentSubscription(stored, plan, requested);
     }
 
     @Override
     public void save(Subscription subscription) {
         saved.add(subscription);
+        stored = subscription;
     }
 
     @Override
@@ -82,11 +103,11 @@ public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
 
     @Override
     public ResultPage<Plan> findActive(PageQuery query) {
-        return new ResultPage<>(List.of(ESSENTIAL, PRO), query.page(), query.size(), 2);
+        return new ResultPage<>(CATALOG, query.page(), query.size(), CATALOG.size());
     }
 
     @Override
     public Optional<Plan> findActiveByCode(String code) {
-        return List.of(ESSENTIAL, PRO).stream().filter(p -> p.code().equals(code)).findFirst();
+        return CATALOG.stream().filter(p -> p.code().equals(code)).findFirst();
     }
 }

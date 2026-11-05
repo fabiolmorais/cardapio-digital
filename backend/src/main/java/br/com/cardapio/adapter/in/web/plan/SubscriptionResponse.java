@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.in.web.plan;
 
 import br.com.cardapio.application.port.in.plan.SubscriptionOverview;
+import br.com.cardapio.domain.plan.model.BillingCycle;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -18,7 +19,10 @@ public record SubscriptionResponse(
         Instant coveredUntil,
         @Schema(requiredMode = REQUIRED, description = "O fim da tolerância, depois de vencer")
         Instant graceEndsAt,
-        @Schema(requiredMode = REQUIRED) Usage usage) {
+        @Schema(requiredMode = REQUIRED) Usage usage,
+        @Schema(requiredMode = REQUIRED, nullable = true,
+                description = "O plano escolhido pelo dono, à espera do pagamento; null se não escolheu")
+        Request request) {
 
     public enum StandingDto {
         TRIAL, ACTIVE, PENDING, SUSPENDED
@@ -31,9 +35,19 @@ public record SubscriptionResponse(
             @Schema(requiredMode = REQUIRED) long sectors) {
     }
 
+    @Schema(name = "PlanRequest", description = "O plano escolhido, à espera do pagamento")
+    public record Request(
+            @Schema(requiredMode = REQUIRED, example = "pro") String planCode,
+            @Schema(requiredMode = REQUIRED, example = "Pro") String planName,
+            @Schema(requiredMode = REQUIRED) BillingCycle billingCycle,
+            @Schema(requiredMode = REQUIRED) Instant requestedAt) {
+    }
+
     static SubscriptionResponse from(SubscriptionOverview o) {
+        var r = o.request();
         return new SubscriptionResponse(PlanWebMapper.toResponse(o.plan()), StandingDto.valueOf(o.standing().name()),
                 o.coveredUntil(), o.graceEndsAt(),
-                new Usage(o.usage().tables(), o.usage().users(), o.usage().sectors()));
+                new Usage(o.usage().tables(), o.usage().users(), o.usage().sectors()),
+                r == null ? null : new Request(r.plan().code(), r.plan().name(), r.cycle(), r.requestedAt()));
     }
 }

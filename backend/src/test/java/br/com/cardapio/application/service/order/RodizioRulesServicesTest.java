@@ -22,6 +22,7 @@ import br.com.cardapio.domain.rodizio.model.RodizioType;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** As regras opcionais valendo nas rodadas, e o produto "só do rodízio" fora do carrinho. */
 class RodizioRulesServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-06T23:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -83,8 +86,8 @@ class RodizioRulesServicesTest {
     }
 
     private TableOrder send(boolean round, Instant at, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
-                clock(at)).place(new PlaceOrderCommand(QR_04, "ana",
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+                published::add, clock(at)).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(product.id(), quantity, null)), round));
     }
 

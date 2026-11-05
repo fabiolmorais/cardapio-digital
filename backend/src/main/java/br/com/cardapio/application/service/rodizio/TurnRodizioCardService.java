@@ -4,9 +4,11 @@ import br.com.cardapio.application.port.in.rodizio.TableRodizio;
 import br.com.cardapio.application.port.in.rodizio.TurnRodizioCardUseCase;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.order.TabPort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
@@ -26,15 +28,18 @@ public class TurnRodizioCardService implements TurnRodizioCardUseCase {
     private final TableSessionPort sessions;
     private final TabPort tabs;
     private final TabRodizioPort tabRodizios;
+    private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public TurnRodizioCardService(DiningTablePort tables, TableSessionPort sessions, TabPort tabs,
-                                  TabRodizioPort tabRodizios, EventPublisherPort events, Clock clock) {
+                                  TabRodizioPort tabRodizios, SubscriptionPort subscriptions,
+                                  EventPublisherPort events, Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.tabs = tabs;
         this.tabRodizios = tabRodizios;
+        this.subscriptions = subscriptions;
         this.events = events;
         this.clock = clock;
     }
@@ -48,6 +53,8 @@ public class TurnRodizioCardService implements TurnRodizioCardUseCase {
     public TableRodizio turn(String tableToken, String sessionToken, TabRodizioStatus status) {
         Instant now = clock.instant();
         var visit = TableVisits.require(tables, sessions, tableToken, sessionToken, now);
+        // Assinatura passou da tolerância: a mesa não chama nem pede pelo celular (Guia 31).
+        PlanAllowances.requireServing(subscriptions, visit.table().establishmentId(), now);
         if (visit.session().isBlocked()) {
             throw new SessionBlockedException();
         }

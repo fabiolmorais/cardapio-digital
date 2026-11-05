@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { PlanChooser } from "./plan-chooser";
 import { canSeeSubscription, daysUntil, formatDate, useSubscription, type Subscription } from "./subscription-api";
 
 const t = messages.subscription;
@@ -34,13 +35,21 @@ export function SubscriptionPage() {
       ) : !subscription.data || !access ? (
         <p className="text-muted-foreground">{t.loading}</p>
       ) : (
-        <Overview subscription={subscription.data} timeZone={access.timeZone} />
+        <Overview subscription={subscription.data} timeZone={access.timeZone} isOwner={access.role === "OWNER"} />
       )}
     </div>
   );
 }
 
-function Overview({ subscription, timeZone }: { subscription: Subscription; timeZone: string }) {
+function Overview({
+  subscription,
+  timeZone,
+  isOwner,
+}: {
+  subscription: Subscription;
+  timeZone: string;
+  isOwner: boolean;
+}) {
   const { plan, standing, coveredUntil, graceEndsAt, usage } = subscription;
   // Só monta com a assinatura carregada (no navegador): a pré-renderização do Next não lê o relógio.
   const [now] = useState(() => Date.now());
@@ -89,10 +98,7 @@ function Overview({ subscription, timeZone }: { subscription: Subscription; time
         </div>
       </section>
 
-      <section aria-label={t.choose} className="flex flex-col gap-2 rounded-2xl border border-dashed border-border p-5">
-        <h2 className="text-lg font-semibold">{t.choose}</h2>
-        <p className="text-sm text-muted-foreground">{t.chooseSoon}</p>
-      </section>
+      <PlanChooser subscription={subscription} isOwner={isOwner} timeZone={timeZone} />
     </>
   );
 }

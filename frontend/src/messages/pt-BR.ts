@@ -1027,7 +1027,22 @@ export const messages = {
     videosIncluded: "Incluídos",
     videosNotIncluded: "A partir do Pro",
     choose: "Assinar ou mudar de plano",
-    chooseSoon: "A escolha do plano pelo painel chega na próxima atualização. Até lá, fale com a gente para assinar.",
+    chooseHint: "Escolha o plano e o ciclo. O pagamento é combinado com a gente; o plano passa a valer quando ele for confirmado.",
+    cycles: { MONTHLY: "Mensal", ANNUAL: "Anual (2 meses grátis)" },
+    cycleNames: { MONTHLY: "mensal", ANNUAL: "anual" },
+    cycleLabel: "Ciclo de cobrança",
+    perMonth: "/mês",
+    perYear: "/ano",
+    current: "Plano atual",
+    chosen: "Escolhido",
+    pick: (name: string) => `Escolher o ${name}`,
+    picking: "Salvando…",
+    byQuote: "Sob consulta. Fale com a gente para combinar.",
+    ownerOnly: "Só o dono escolhe o plano.",
+    requested: (plan: string, cycle: string, date: string) =>
+      `Você escolheu o ${plan} ${cycle} em ${date}. Assim que confirmarmos o pagamento, ele passa a valer.`,
+    plansError: "Não foi possível carregar os planos.",
+    pickError: "Não foi possível salvar a escolha. Tente de novo.",
     banner: {
       trialEnding: (days: number) =>
         days <= 0 ? "Seu teste grátis acaba hoje." : days === 1 ? "Seu teste grátis acaba amanhã." : `Faltam ${days} dias do seu teste grátis.`,

@@ -11,6 +11,7 @@ import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.order.model.OrderLine;
+import br.com.cardapio.domain.plan.exception.ServiceSuspendedException;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
@@ -23,6 +24,7 @@ import br.com.cardapio.domain.rodizio.model.TabRodizioStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +44,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** O rodízio de passagem na mesa: a ativação, o cartão verde/vermelho e a rodada, que não vale. */
 class PassagemServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-06T23:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -76,7 +80,7 @@ class PassagemServicesTest {
     }
 
     private TableRodizio turn(String phone, TabRodizioStatus status) {
-        return new TurnRodizioCardService(tables, sessions, fakes, rodizios, published::add, clock)
+        return new TurnRodizioCardService(tables, sessions, fakes, rodizios, subscriptions, published::add, clock)
                 .turn(QR_04, phone, status);
     }
 
@@ -99,7 +103,7 @@ class PassagemServicesTest {
     void theCutRequestIsARoundAtZeroWithThePoint() {
         rodizio(RodizioType.PASSAGEM);
 
-        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios,
+        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
                 published::add, clock).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(picanha.id(), 1, "Mal passada")), true));
 
@@ -119,5 +123,14 @@ class PassagemServicesTest {
         sessions.given(sakura, mesa04.id(), "bia", NOW);
         assertThatThrownBy(() -> turn("bia", TabRodizioStatus.PAUSED))
                 .isInstanceOf(PresenceRequiredException.class);
+    }
+
+    @Test
+    void aSuspendedSubscriptionStopsTheCard() {
+        rodizio(RodizioType.PASSAGEM);
+        subscriptions.suspended();
+
+        assertThatThrownBy(() -> turn("ana", TabRodizioStatus.PAUSED)).isInstanceOf(ServiceSuspendedException.class);
+        assertThat(published).isEmpty();
     }
 }

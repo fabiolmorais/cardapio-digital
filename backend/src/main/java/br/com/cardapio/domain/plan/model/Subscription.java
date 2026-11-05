@@ -1,6 +1,7 @@
 package br.com.cardapio.domain.plan.model;
 
 import br.com.cardapio.domain.account.model.OrganizationId;
+import br.com.cardapio.domain.plan.exception.PlanNotSelfServiceException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,7 +22,8 @@ public record Subscription(
         BillingCycle billingCycle,
         Instant trialEndsAt,
         Instant currentPeriodEnd,
-        Instant createdAt) {
+        Instant createdAt,
+        PlanRequest request) {
 
     /** Teste grátis de 14 dias (especificação, "Nossos planos"). */
     public static final Duration TRIAL = Duration.ofDays(14);
@@ -45,6 +47,12 @@ public record Subscription(
         }
     }
 
+    /** Sem plano pedido (o mesmo construtor do Guia 30). */
+    public Subscription(SubscriptionId id, OrganizationId organizationId, PlanId planId, SubscriptionStatus status,
+                        BillingCycle billingCycle, Instant trialEndsAt, Instant currentPeriodEnd, Instant createdAt) {
+        this(id, organizationId, planId, status, billingCycle, trialEndsAt, currentPeriodEnd, createdAt, null);
+    }
+
     /** O teste grátis que todo cadastro ganha, a partir de agora. */
     public static Subscription startTrial(OrganizationId organizationId, PlanId trialPlan, Instant now) {
         return new Subscription(SubscriptionId.newId(), organizationId, trialPlan, SubscriptionStatus.TRIALING,
@@ -59,6 +67,18 @@ public record Subscription(
     /** Até quando a tolerância vai, depois de vencer. */
     public Instant graceEndsAt() {
         return coveredUntil().plus(GRACE);
+    }
+
+    /**
+     * O dono escolhe o plano e o ciclo. A escolha substitui a anterior e só vale depois do
+     * pagamento: até lá, os limites continuam os do plano atual. O Enterprise é sob consulta.
+     */
+    public Subscription requestPlan(Plan plan, BillingCycle cycle, Instant now) {
+        if (plan.isCustomPricing()) {
+            throw new PlanNotSelfServiceException(plan.name());
+        }
+        return new Subscription(id, organizationId, planId, status, billingCycle, trialEndsAt, currentPeriodEnd,
+                createdAt, new PlanRequest(plan.id(), cycle, now));
     }
 
     public Standing standing(Instant now) {

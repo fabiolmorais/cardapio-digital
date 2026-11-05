@@ -17,12 +17,14 @@ import br.com.cardapio.domain.order.exception.TooManyOrdersException;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
 import br.com.cardapio.domain.order.model.OrderLine;
 import br.com.cardapio.domain.order.model.OrderStatus;
+import br.com.cardapio.domain.plan.exception.ServiceSuspendedException;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** O pedido pelo celular: enviar, juntar na comanda, ver e cancelar. */
 class OrderServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-03T20:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -69,8 +73,8 @@ class OrderServicesTest {
     }
 
     private TableOrder place(String qr, String phone, OrderLine... lines) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
-                clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+                published::add, clock)
                 .place(new PlaceOrderCommand(qr, phone, List.of(lines)));
     }
 
@@ -182,5 +186,14 @@ class OrderServicesTest {
         assertThat(empty.orderingEnabled()).isTrue();
         assertThat(empty.orders()).isEmpty();
         assertThat(empty.total()).isEqualTo(Money.ZERO);
+    }
+
+    @Test
+    void aSuspendedSubscriptionStopsTheOrders() {
+        subscriptions.suspended();
+
+        assertThatThrownBy(() -> place("ana", line(guioza, 1))).isInstanceOf(ServiceSuspendedException.class);
+        assertThat(fakes.tabs).isEmpty();
+        assertThat(published).isEmpty();
     }
 }

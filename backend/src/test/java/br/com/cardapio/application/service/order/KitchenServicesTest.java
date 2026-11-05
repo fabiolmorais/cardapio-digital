@@ -25,6 +25,7 @@ import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** O outro lado do pedido: a fila da cozinha, os passos de cada item e a confirmação do garçom. */
 class KitchenServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-03T20:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -72,8 +75,8 @@ class KitchenServicesTest {
     /** Um pedido da Ana, um minuto depois do anterior (a fila é por ordem de chegada). */
     private TableOrder place(OrderLine... lines) {
         clock = Clock.offset(clock, Duration.ofMinutes(1));
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
-                clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+                published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, "ana", List.of(lines)));
     }
 

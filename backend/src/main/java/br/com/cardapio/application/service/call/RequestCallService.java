@@ -6,8 +6,10 @@ import br.com.cardapio.application.port.in.call.RequestedCall;
 import br.com.cardapio.application.port.in.call.TableCall;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallStateException;
@@ -28,14 +30,16 @@ public class RequestCallService implements RequestCallUseCase {
     private final DiningTablePort tables;
     private final TableSessionPort sessions;
     private final CallPort calls;
+    private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public RequestCallService(DiningTablePort tables, TableSessionPort sessions, CallPort calls,
-                              EventPublisherPort events, Clock clock) {
+                              SubscriptionPort subscriptions, EventPublisherPort events, Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.calls = calls;
+        this.subscriptions = subscriptions;
         this.events = events;
         this.clock = clock;
     }
@@ -47,6 +51,8 @@ public class RequestCallService implements RequestCallUseCase {
         TableVisits.Visit visit = TableVisits.require(tables, sessions, command.tableToken(), command.sessionToken(),
                 now);
         var establishmentId = visit.table().establishmentId();
+        // Assinatura passou da tolerância: a mesa não chama nem pede pelo celular (Guia 31).
+        PlanAllowances.requireServing(subscriptions, establishmentId, now);
 
         // Celular bloqueado pela equipe: nada, nem o pedido de liberação.
         if (visit.session().isBlocked()) {
