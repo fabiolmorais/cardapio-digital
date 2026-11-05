@@ -18,6 +18,7 @@ import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
@@ -131,5 +132,22 @@ class PostgresRealtimeTest {
         transaction.executeWithoutResult(status -> publisher.publish(changed));
 
         assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(changed);
+    }
+
+    /**
+     * O Spring pausa o ouvinte (stop) e o retoma (start): nos testes, ao trocar de contexto; numa
+     * aplicação, a cada parada e volta do ciclo de vida. Depois da volta, os avisos continuam chegando.
+     */
+    @Test
+    void theListenerComesBackAfterAPause() throws Exception {
+        SmartLifecycle listener = (SmartLifecycle) stream;
+        listener.stop();
+        listener.start();
+        BlockingQueue<DomainEvent> mine = listen(sakura);
+        CallChanged event = event();
+
+        transaction.executeWithoutResult(status -> publisher.publish(event));
+
+        assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(event);
     }
 }
