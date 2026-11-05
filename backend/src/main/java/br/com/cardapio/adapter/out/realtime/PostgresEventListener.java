@@ -53,11 +53,15 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
     private final Clock clock;
     private final Timer delay;
     private final Map<EstablishmentId, Set<Subscriber>> subscribers = new ConcurrentHashMap<>();
-    /** Cada entrega numa thread virtual: uma tela lenta não atrasa as outras. */
-    private final ExecutorService delivery = Executors.newVirtualThreadPerTaskExecutor();
-    private final CountDownLatch firstListen = new CountDownLatch(1);
+    /**
+     * Cada entrega numa thread virtual: uma tela lenta não atrasa as outras. É criado em cada
+     * start(): o stop() o encerra, e o Spring pode ligar o ouvinte de novo depois (ao pausar e
+     * retomar o contexto).
+     */
+    private volatile ExecutorService delivery;
     private volatile boolean running;
-    private Thread thread;
+    /** A thread do LISTEN em uso. Uma antiga, que ainda não saiu depois de um stop(), para sozinha. */
+    private volatile Thread thread;
 
     PostgresEventListener(JdbcConnectionDetails database, RealtimeMessages messages, Clock clock,
                           MeterRegistry meters) {
@@ -83,10 +87,15 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
     /** Liga junto com a aplicação, e só a dá por pronta depois do primeiro LISTEN (ou de 10 s). */
     @Override
     public void start() {
+        delivery = Executors.newVirtualThreadPerTaskExecutor();
+        // Um sinal novo a cada start(): na volta de uma pausa, também espera o LISTEN da conexão nova.
+        CountDownLatch started = new CountDownLatch(1);
         running = true;
-        thread = Thread.ofPlatform().name("realtime-listener").daemon().start(this::listen);
+        Thread listener = Thread.ofPlatform().name("realtime-listener").daemon().unstarted(() -> listen(started));
+        thread = listener;
+        listener.start();
         try {
-            if (!firstListen.await(10, TimeUnit.SECONDS)) {
+            if (!started.await(10, TimeUnit.SECONDS)) {
                 log.warn("O tempo real ainda não conseguiu ouvir o banco; segue tentando");
             }
         } catch (InterruptedException e) {
@@ -99,7 +108,9 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
     public void stop() {
         running = false;
         endAll();
-        delivery.shutdown();
+        if (delivery != null) {
+            delivery.shutdown();
+        }
         if (thread != null) {
             try {
                 thread.join(POLL_MILLIS * 2L);
@@ -114,17 +125,17 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
         return running;
     }
 
-    private void listen() {
+    private void listen(CountDownLatch started) {
         Duration backoff = Duration.ofSeconds(1);
-        while (running) {
+        while (current()) {
             try (Connection connection = DriverManager.getConnection(database.getJdbcUrl(), database.getUsername(),
                     database.getPassword());
                  Statement statement = connection.createStatement()) {
                 statement.execute("LISTEN " + RealtimeMessages.CHANNEL);
-                firstListen.countDown();
+                started.countDown();
                 backoff = Duration.ofSeconds(1);
                 PGConnection postgres = connection.unwrap(PGConnection.class);
-                while (running) {
+                while (current()) {
                     PGNotification[] notifications = postgres.getNotifications(POLL_MILLIS);
                     if (notifications != null) {
                         for (PGNotification notification : notifications) {
@@ -133,7 +144,7 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
                     }
                 }
             } catch (SQLException e) {
-                if (!running) {
+                if (!current()) {
                     return;
                 }
                 // Sem a mensagem do driver no log: ela pode trazer o endereço do banco.
@@ -146,8 +157,13 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
         }
     }
 
+    /** Ligado, e esta é a thread do LISTEN em uso (e não uma antiga, de antes de um stop()). */
+    private boolean current() {
+        return running && Thread.currentThread() == thread;
+    }
+
     private void dispatch(String text) {
-        if (!running) {
+        if (!current()) {
             return; // desligando: a entrega já foi encerrada
         }
         DomainEvent event;
