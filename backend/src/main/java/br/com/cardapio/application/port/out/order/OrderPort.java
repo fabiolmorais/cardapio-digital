@@ -51,10 +51,14 @@ public interface OrderPort {
 
     /**
      * A fila da cozinha: os itens nestes status, dos pedidos que foram para a cozinha (os parados
-     * na confirmação ficam de fora), por ordem de chegada.
+     * na confirmação ficam de fora), por ordem de chegada. Os cortes do rodízio de passagem não
+     * entram: quem leva é o passador, e não a cozinha.
      */
     ResultPage<KitchenItemView> findQueue(EstablishmentId establishmentId, Set<OrderItemStatus> statuses,
                                           PageQuery page);
+
+    /** A fila dos passadores: os cortes pedidos no rodízio de passagem, ainda a caminho, por ordem de chegada. */
+    ResultPage<KitchenItemView> findPassagemQueue(EstablishmentId establishmentId, PageQuery page);
 
     /** Os pedidos parados na confirmação, com os itens: duas consultas, sem N+1. */
     ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page);

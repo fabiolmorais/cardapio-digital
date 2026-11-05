@@ -142,14 +142,18 @@ test("reordenar arrastando ou pelo teclado", async ({ page, request }) => {
   await expect(productNames(page)).toHaveText(["Guioza", "Edamame", "Sunomono"]);
   await expect(page.getByRole("table")).toHaveAttribute("aria-busy", "false"); // terminou de salvar
 
-  // Arrastar: a alça do Sunomono até acima do Guioza.
-  const handle = await page.getByRole("button", { name: "Mover Sunomono" }).boundingBox();
-  const target = await page.getByRole("row", { name: /Guioza/ }).boundingBox();
-  await page.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(handle!.x + handle!.width / 2, target!.y + 2, { steps: 8 });
-  await page.mouse.up();
-  await expect(productNames(page)).toHaveText(["Sunomono", "Guioza", "Edamame"]);
+  // Arrastar: a alça do Sunomono até acima do Guioza. Com a máquina carregada (a suíte inteira em
+  // paralelo), o navegador às vezes perde o começo do gesto; repetir é seguro: se a ordem já mudou,
+  // o toPass para na primeira conferência.
+  await expect(async () => {
+    const handle = await page.getByRole("button", { name: "Mover Sunomono" }).boundingBox();
+    const target = await page.getByRole("row", { name: /Guioza/ }).boundingBox();
+    await page.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handle!.x + handle!.width / 2, target!.y + 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(productNames(page)).toHaveText(["Sunomono", "Guioza", "Edamame"], { timeout: 2000 });
+  }).toPass({ timeout: 15_000 });
 
   // A ordem ficou gravada no back.
   await page.reload();

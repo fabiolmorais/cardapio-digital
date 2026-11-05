@@ -218,6 +218,12 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
         return new ResultPage<>(found, page.page(), page.size(), found.size());
     }
 
+    /** A fila dos passadores junta o tipo do rodízio da comanda: quem confere é o teste de integração. */
+    @Override
+    public ResultPage<KitchenItemView> findPassagemQueue(EstablishmentId establishmentId, PageQuery page) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page) {
         List<WaitingOrderView> found = orders.values().stream()

@@ -63,13 +63,39 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT' AND i.status IN :statuses
+               AND NOT EXISTS (SELECT r.id FROM TabRodizioJpaEntity r
+                                WHERE r.id = i.tabRodizioId AND r.rodizioType = 'PASSAGEM')
              ORDER BY i.createdAt, o.number, i.position
             """,
             countQuery = """
             SELECT count(i) FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT' AND i.status IN :statuses
+               AND NOT EXISTS (SELECT r.id FROM TabRodizioJpaEntity r
+                                WHERE r.id = i.tabRodizioId AND r.rodizioType = 'PASSAGEM')
             """)
     Page<KitchenItemRow> findQueue(@Param("establishmentId") UUID establishmentId,
                                    @Param("statuses") Collection<String> statuses, Pageable pageable);
+
+    /** Os cortes do rodízio de passagem a caminho (na fila, em preparo ou prontos), dos pedidos enviados. */
+    @Query(value = """
+            SELECT new br.com.cardapio.adapter.out.persistence.order.KitchenItemRow(
+                       i, o.number, o.tableId, t.label, s.name)
+              FROM OrderItemJpaEntity i
+              JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabRodizioJpaEntity r ON r.id = i.tabRodizioId
+              JOIN DiningTableJpaEntity t ON t.id = o.tableId
+              JOIN SectorJpaEntity s ON s.id = t.sectorId
+             WHERE i.establishmentId = :establishmentId AND o.status = 'SENT'
+               AND i.status IN ('PENDING', 'PREPARING', 'READY') AND r.rodizioType = 'PASSAGEM'
+             ORDER BY i.createdAt, o.number, i.position
+            """,
+            countQuery = """
+            SELECT count(i) FROM OrderItemJpaEntity i
+              JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabRodizioJpaEntity r ON r.id = i.tabRodizioId
+             WHERE i.establishmentId = :establishmentId AND o.status = 'SENT'
+               AND i.status IN ('PENDING', 'PREPARING', 'READY') AND r.rodizioType = 'PASSAGEM'
+            """)
+    Page<KitchenItemRow> findPassagemQueue(@Param("establishmentId") UUID establishmentId, Pageable pageable);
 }
