@@ -104,6 +104,18 @@ app:
     fake:
       # O endereço do back como o navegador o vê (no celular pela rede local, o IP da máquina).
       public-url: ${FAKE_VIDEO_PUBLIC_URL:http://localhost:8080}
+  # As notificações no celular da equipe (Guia 29). Sem as chaves, o push fica desligado.
+  push:
+    vapid-public-key: ${VAPID_PUBLIC_KEY:}
+    vapid-private-key: ${VAPID_PRIVATE_KEY:}
+    subject: ${VAPID_SUBJECT:mailto:contato@cardapio.local}
+    # Os serviços de push dos navegadores: Chrome/Android, Firefox, Safari/iPhone e Edge/Windows.
+    # Mandar para qualquer outro endereço seria um SSRF (o servidor fazendo pedidos a mando do cliente).
+    allowed-origins:
+      - https://fcm.googleapis.com
+      - https://updates.push.services.mozilla.com
+      - https://web.push.apple.com
+      - https://*.notify.windows.com
 
 sentry:
   dsn: ${SENTRY_DSN:}

@@ -1,0 +1,18 @@
+{
+  "id": "/painel",
+  "name": "Cardápio Digital · Equipe",
+  "short_name": "Equipe",
+  "description": "Chamados, pedidos e comandas do restaurante, em tempo real.",
+  "lang": "pt-BR",
+  "start_url": "/painel",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e0c0b",
+  "theme_color": "#0e0c0b",
+  "icons": [
+    { "src": "/icons/equipe-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/equipe-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/equipe-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

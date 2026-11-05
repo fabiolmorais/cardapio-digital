@@ -14,6 +14,7 @@ import { cn } from "cn";
 import { CancelItemDialog } from "./cancel-item-dialog";
 import { fetchKitchenQueue, stepItem, type ItemStep, type KitchenItem } from "./orders-api";
 import { useLiveOrders } from "./use-live-orders";
+import { useWakeLock } from "@/lib/pwa/use-wake-lock";
 
 const t = messages.panel.kitchen;
 const tc = messages.panel.calls;
@@ -55,6 +56,7 @@ export function KitchenBoard() {
 
 function Board() {
   const queryClient = useQueryClient();
+  useWakeLock();
   const { list, connected } = useLiveOrders(
     QUEUE_KEY,
     () => fetchKitchenQueue(),

@@ -57,6 +57,8 @@ import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
 import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
 import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
+import br.com.cardapio.application.port.in.push.ManagePushUseCase;
+import br.com.cardapio.application.port.in.push.NotifyStaffUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchStaffEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
@@ -96,6 +98,8 @@ import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
+import br.com.cardapio.application.port.out.push.PushSenderPort;
+import br.com.cardapio.application.port.out.push.PushSubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.realtime.EventStreamPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
@@ -166,6 +170,8 @@ import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.presence.CheckPresenceService;
 import br.com.cardapio.application.service.presence.GetPresenceRuleService;
 import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
+import br.com.cardapio.application.service.push.ManagePushService;
+import br.com.cardapio.application.service.push.NotifyStaffService;
 import br.com.cardapio.application.service.realtime.WatchStaffEventsService;
 import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
@@ -785,5 +791,19 @@ class UseCaseConfig {
     @Bean
     ListPassagemRequestsUseCase listPassagemRequestsUseCase(OrderPort orderPort) {
         return new ListPassagemRequestsService(orderPort);
+    }
+
+    // As notificações no celular da equipe (Guia 29)
+
+    @Bean
+    ManagePushUseCase managePushUseCase(PushSubscriptionPort pushSubscriptionPort, PushSenderPort pushSenderPort,
+                                        Clock clock) {
+        return new ManagePushService(pushSubscriptionPort, pushSenderPort, clock);
+    }
+
+    @Bean
+    NotifyStaffUseCase notifyStaffUseCase(DiningTablePort diningTablePort, PushSubscriptionPort pushSubscriptionPort,
+                                          PushSenderPort pushSenderPort) {
+        return new NotifyStaffService(diningTablePort, pushSubscriptionPort, pushSenderPort);
     }
 }
