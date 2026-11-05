@@ -12,7 +12,12 @@ import br.com.cardapio.domain.floor.exception.TableNotFoundException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.TableToken;
 import br.com.cardapio.support.InMemoryStorage;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.Test;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,8 +39,9 @@ class ViewPublicTableServiceTest {
             brand = changed;
         }
     };
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
     private final ViewPublicTableService service = new ViewPublicTableService(floor, floor, brands,
-            new InMemoryStorage());
+            new InMemoryStorage(), subscriptions, Clock.fixed(Instant.parse("2026-11-06T12:00:00Z"), ZoneOffset.UTC));
 
     {
         brand = new Brand(EstablishmentId.newId(), "Sakura Sushi", BrandColor.PETROL, Theme.LIGHT, null,
@@ -74,5 +80,16 @@ class ViewPublicTableServiceTest {
         assertThatThrownBy(() -> service.view("token-que-ninguem-gerou-00")).isInstanceOf(TableNotFoundException.class);
         assertThatThrownBy(() -> service.view("../../etc")).isInstanceOf(TableNotFoundException.class);
         assertThatThrownBy(() -> service.view(null)).isInstanceOf(TableNotFoundException.class);
+    }
+
+    @Test
+    void thePageKnowsWhenTheTableStopsServing() {
+        DiningTable table = floor.givenTable(floor.givenSector(EstablishmentId.newId(), "Salão principal"), "04");
+        assertThat(service.view(table.token().value()).serving()).isTrue();
+
+        subscriptions.suspended();
+
+        // A página continua abrindo (o cardápio vale como vitrine), só sem chamar e pedir.
+        assertThat(service.view(table.token().value()).serving()).isFalse();
     }
 }

@@ -38,6 +38,7 @@ import br.com.cardapio.domain.rodizio.model.TimedPrice;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** O rodízio na mesa: o garçom ativa, a mesa pede rodadas, e a conta soma pessoas × preço. */
 class RodizioTableServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     /** Sexta, 6 de novembro, 20h em São Paulo: vale o preço especial do jantar de fim de semana. */
     private static final Instant NOW = Instant.parse("2026-11-06T23:00:00Z");
@@ -100,8 +103,8 @@ class RodizioTableServicesTest {
     }
 
     private TableOrder send(boolean round, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
-                clock).place(new PlaceOrderCommand(QR_04, "ana", List.of(new OrderLine(product.id(), quantity, null)),
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+                published::add, clock).place(new PlaceOrderCommand(QR_04, "ana", List.of(new OrderLine(product.id(), quantity, null)),
                 round));
     }
 

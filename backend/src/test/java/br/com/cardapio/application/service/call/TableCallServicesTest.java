@@ -13,11 +13,13 @@ import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTable;
+import br.com.cardapio.domain.plan.exception.ServiceSuspendedException;
 import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
 import br.com.cardapio.domain.tablesession.exception.TableSessionRequiredException;
 import br.com.cardapio.domain.tablesession.model.TableSession;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** O lado da mesa: chamar, pedir a conta, ver e cancelar, sempre com a sessão do celular. */
 class TableCallServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-02T20:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -62,7 +66,7 @@ class TableCallServicesTest {
     }
 
     private RequestedCall request(String session, CallType type, PaymentMethod method) {
-        return new RequestCallService(tables, sessions, calls, published::add, clock)
+        return new RequestCallService(tables, sessions, calls, subscriptions, published::add, clock)
                 .request(new RequestCallCommand(QR_04, session, type, method));
     }
 
@@ -199,5 +203,16 @@ class TableCallServicesTest {
                 .isInstanceOf(SessionBlockedException.class);
         assertThatThrownBy(() -> request("bloqueado-sem-presenca", CallType.UNLOCK, null))
                 .isInstanceOf(SessionBlockedException.class);
+    }
+
+    @Test
+    void aSuspendedSubscriptionStopsTheCallsAndNothingIsSaved() {
+        subscriptions.suspended();
+
+        assertThatThrownBy(() -> request("celular-04", CallType.WAITER, null))
+                .isInstanceOf(ServiceSuspendedException.class)
+                .hasMessage("O atendimento pelo celular está pausado neste restaurante. Chame um garçom.");
+        assertThat(calls.saved).isEmpty();
+        assertThat(published).isEmpty();
     }
 }

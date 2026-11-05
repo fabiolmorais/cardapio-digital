@@ -17,7 +17,11 @@ record PublicTableResponse(
         @Schema(requiredMode = REQUIRED, example = "Sakura Sushi") String establishmentName,
         @Schema(requiredMode = REQUIRED, example = "04") String tableLabel,
         @Schema(requiredMode = REQUIRED, example = "Salão principal") String sectorName,
-        @Schema(requiredMode = REQUIRED) PublicBrand brand
+        @Schema(requiredMode = REQUIRED) PublicBrand brand,
+        @Schema(requiredMode = REQUIRED, description = """
+                false: o atendimento pelo celular está pausado (assinatura suspensa); a página mostra o aviso \
+                no lugar dos botões de chamar e pedir""")
+        boolean serving
 ) {
     @Schema(name = "PublicBrand", description = "A aparência da página: só os tons da cor escolhida")
     record PublicBrand(
@@ -44,6 +48,6 @@ record PublicTableResponse(
         PublicLogo logo = t.logoUrls().isEmpty() ? null
                 : new PublicLogo(t.logoUrls().get(LogoVariant.SMALL), t.logoUrls().get(LogoVariant.LARGE));
         return new PublicTableResponse(t.establishmentName(), t.tableLabel(), t.sectorName(),
-                new PublicBrand(t.theme(), color.primary(), accent, logo, t.instagram(), t.reviewLink()));
+                new PublicBrand(t.theme(), color.primary(), accent, logo, t.instagram(), t.reviewLink()), t.serving());
     }
 }

@@ -28,6 +28,7 @@ import br.com.cardapio.domain.order.model.TabStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** A comanda do lado da equipe: as abertas, o detalhe e o fechamento depois do pagamento. */
 class TabServicesTest {
+
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
 
     private static final Instant NOW = Instant.parse("2026-11-03T22:00:00Z");
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
@@ -72,8 +75,8 @@ class TabServicesTest {
     }
 
     private TableOrder place(String phone, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, published::add,
-                clock)
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+                published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, phone, List.of(new OrderLine(product.id(), quantity, null))));
     }
 

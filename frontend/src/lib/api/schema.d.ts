@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/subscription/plan-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Escolhe o plano e o ciclo (vale depois do pagamento) */
+        put: operations["requestPlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rodizios/{id}": {
         parameters: {
             query?: never;
@@ -1501,6 +1518,98 @@ export interface components {
              */
             unitPriceCents: number;
         };
+        /** @description O plano e o ciclo que o dono escolheu */
+        PlanRequestRequest: {
+            /** @example pro */
+            planCode: string;
+            /** @enum {string} */
+            billingCycle: "MONTHLY" | "ANNUAL";
+        };
+        /** @description Plano de assinatura */
+        Plan: {
+            /** Format: uuid */
+            id: string;
+            /** @example pro */
+            code: string;
+            /** @example Pro */
+            name: string;
+            /**
+             * Format: int64
+             * @description Preço mensal em centavos; nulo = sob consulta
+             */
+            monthlyPriceCents: number | null;
+            /**
+             * Format: int64
+             * @description Preço anual em centavos; nulo = sob consulta
+             */
+            annualPriceCents: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxTables: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxUsers: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxSectors: number | null;
+            /**
+             * Format: int32
+             * @description Dias de histórico; nulo = ilimitado
+             */
+            historyDays: number | null;
+            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
+            /** @enum {string} */
+            support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
+        };
+        /** @description O plano escolhido, à espera do pagamento */
+        PlanRequest: {
+            /** @example pro */
+            planCode: string;
+            /** @example Pro */
+            planName: string;
+            /** @enum {string} */
+            billingCycle: "MONTHLY" | "ANNUAL";
+            /** Format: date-time */
+            requestedAt: string;
+        };
+        /** @description Quanto o restaurante usa agora (só os ativos); os limites estão no plano */
+        PlanUsage: {
+            /** Format: int64 */
+            tables: number;
+            /** Format: int64 */
+            users: number;
+            /** Format: int64 */
+            sectors: number;
+        };
+        /** @description A assinatura do restaurante: plano, situação, datas e uso dos limites */
+        Subscription: {
+            plan: components["schemas"]["Plan"];
+            /**
+             * @description TRIAL: teste grátis · ACTIVE: paga · PENDING: venceu, na tolerância (tudo funciona) ·
+             *     SUSPENDED: passou da tolerância (a mesa para de chamar e pedir)
+             * @enum {string}
+             */
+            standing: "TRIAL" | "ACTIVE" | "PENDING" | "SUSPENDED";
+            /**
+             * Format: date-time
+             * @description O fim do teste grátis ou do período pago
+             */
+            coveredUntil: string;
+            /**
+             * Format: date-time
+             * @description O fim da tolerância, depois de vencer
+             */
+            graceEndsAt: string;
+            usage: components["schemas"]["PlanUsage"];
+            /** @description O plano escolhido pelo dono, à espera do pagamento; null se não escolheu */
+            request: components["schemas"]["PlanRequest"];
+        };
         RodizioRequest: {
             /** @example Rodízio Japonês */
             name: string;
@@ -2489,78 +2598,6 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
-        /** @description Plano de assinatura */
-        Plan: {
-            /** Format: uuid */
-            id: string;
-            /** @example pro */
-            code: string;
-            /** @example Pro */
-            name: string;
-            /**
-             * Format: int64
-             * @description Preço mensal em centavos; nulo = sob consulta
-             */
-            monthlyPriceCents: number | null;
-            /**
-             * Format: int64
-             * @description Preço anual em centavos; nulo = sob consulta
-             */
-            annualPriceCents: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxTables: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxUsers: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxSectors: number | null;
-            /**
-             * Format: int32
-             * @description Dias de histórico; nulo = ilimitado
-             */
-            historyDays: number | null;
-            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
-            /** @enum {string} */
-            support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
-        };
-        /** @description Quanto o restaurante usa agora (só os ativos); os limites estão no plano */
-        PlanUsage: {
-            /** Format: int64 */
-            tables: number;
-            /** Format: int64 */
-            users: number;
-            /** Format: int64 */
-            sectors: number;
-        };
-        /** @description A assinatura do restaurante: plano, situação, datas e uso dos limites */
-        Subscription: {
-            plan: components["schemas"]["Plan"];
-            /**
-             * @description TRIAL: teste grátis · ACTIVE: paga · PENDING: venceu, na tolerância (tudo funciona) ·
-             *     SUSPENDED: passou da tolerância (a mesa para de chamar e pedir)
-             * @enum {string}
-             */
-            standing: "TRIAL" | "ACTIVE" | "PENDING" | "SUSPENDED";
-            /**
-             * Format: date-time
-             * @description O fim do teste grátis ou do período pago
-             */
-            coveredUntil: string;
-            /**
-             * Format: date-time
-             * @description O fim da tolerância, depois de vencer
-             */
-            graceEndsAt: string;
-            usage: components["schemas"]["PlanUsage"];
-        };
         PageResponseSector: {
             content: components["schemas"]["Sector"][];
             /** Format: int32 */
@@ -2651,6 +2688,8 @@ export interface components {
             /** @example Salão principal */
             sectorName: string;
             brand: components["schemas"]["PublicBrand"];
+            /** @description false: o atendimento pelo celular está pausado (assinatura suspensa); a página mostra o aviso no lugar dos botões de chamar e pedir */
+            serving: boolean;
         };
         /** @description Cada campo ausente: a regra está desligada */
         RodizioLimits: {
@@ -3065,6 +3104,48 @@ export interface operations {
             };
             /** @description A mesa não está no rodízio */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    requestPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description A assinatura, com o plano escolhido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            /** @description Plano não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Plano sob consulta (Enterprise) */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,10 +1,14 @@
 package br.com.cardapio.domain.plan.model;
 
 import br.com.cardapio.domain.account.model.OrganizationId;
+import br.com.cardapio.domain.plan.exception.PlanNotSelfServiceException;
+import br.com.cardapio.domain.shared.model.Limit;
+import br.com.cardapio.domain.shared.model.Money;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,5 +61,29 @@ class SubscriptionTest {
         assertThatThrownBy(() -> new Subscription(trial.id(), trial.organizationId(), pro, SubscriptionStatus.ACTIVE,
                 BillingCycle.MONTHLY, trial.trialEndsAt(), null, SIGNUP))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void theOwnerRequestsAPlanThatOnlyCountsAfterPayment() {
+        Plan essential = plan("Essencial", Money.ofCents(6990));
+
+        Subscription requested = trial.requestPlan(essential, BillingCycle.ANNUAL, days(10));
+
+        assertThat(requested.request()).isEqualTo(new PlanRequest(essential.id(), BillingCycle.ANNUAL, days(10)));
+        assertThat(requested.planId()).isEqualTo(pro); // os limites continuam os do plano atual
+        assertThat(requested.standing(days(10))).isEqualTo(Standing.TRIAL);
+    }
+
+    @Test
+    void theEnterpriseIsByQuoteOnly() {
+        assertThatThrownBy(() -> trial.requestPlan(plan("Enterprise", null), BillingCycle.MONTHLY, days(1)))
+                .isInstanceOf(PlanNotSelfServiceException.class)
+                .hasMessage("O plano Enterprise é sob consulta. Fale com a gente para combinar.");
+    }
+
+    private static Plan plan(String name, Money monthly) {
+        return new Plan(new PlanId(UUID.randomUUID()), name.toLowerCase(), name, monthly,
+                monthly == null ? null : Money.ofCents(monthly.cents() * 10), Limit.unlimited(), Limit.unlimited(),
+                Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1);
     }
 }

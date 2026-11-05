@@ -55,6 +55,8 @@ import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
+import br.com.cardapio.application.port.in.plan.RequestPlanUseCase;
+import br.com.cardapio.application.port.in.plan.SendTrialNoticesUseCase;
 import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
 import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
 import br.com.cardapio.application.port.in.presence.UpdatePresenceRuleUseCase;
@@ -86,6 +88,7 @@ import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
 import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
+import br.com.cardapio.application.port.out.email.EmailSenderPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
@@ -99,6 +102,7 @@ import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
+import br.com.cardapio.application.port.out.plan.TrialNoticePort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.push.PushSenderPort;
 import br.com.cardapio.application.port.out.push.PushSubscriptionPort;
@@ -170,6 +174,8 @@ import br.com.cardapio.application.service.order.ReviewOrderService;
 import br.com.cardapio.application.service.order.UpdateOrderSettingsService;
 import br.com.cardapio.application.service.plan.GetSubscriptionService;
 import br.com.cardapio.application.service.plan.ListPlansService;
+import br.com.cardapio.application.service.plan.RequestPlanService;
+import br.com.cardapio.application.service.plan.SendTrialNoticesService;
 import br.com.cardapio.application.service.presence.CheckPresenceService;
 import br.com.cardapio.application.service.presence.GetPresenceRuleService;
 import br.com.cardapio.application.service.presence.UpdatePresenceRuleService;
@@ -390,8 +396,10 @@ class UseCaseConfig {
 
     @Bean
     ViewPublicTableUseCase viewPublicTableUseCase(DiningTablePort diningTablePort, SectorPort sectorPort,
-                                                  BrandPort brandPort, MediaStoragePort mediaStoragePort) {
-        return new ViewPublicTableService(diningTablePort, sectorPort, brandPort, mediaStoragePort);
+                                                  BrandPort brandPort, MediaStoragePort mediaStoragePort,
+                                                  SubscriptionPort subscriptionPort, Clock clock) {
+        return new ViewPublicTableService(diningTablePort, sectorPort, brandPort, mediaStoragePort, subscriptionPort,
+                clock);
     }
 
     // Cardápio (Guia 9)
@@ -541,8 +549,10 @@ class UseCaseConfig {
 
     @Bean
     RequestCallUseCase requestCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
-                                          CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
-        return new RequestCallService(diningTablePort, tableSessionPort, callPort, eventPublisherPort, clock);
+                                          CallPort callPort, SubscriptionPort subscriptionPort,
+                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new RequestCallService(diningTablePort, tableSessionPort, callPort, subscriptionPort, eventPublisherPort,
+                clock);
     }
 
     @Bean
@@ -642,9 +652,10 @@ class UseCaseConfig {
     PlaceOrderUseCase placeOrderUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                         OrderSettingsPort orderSettingsPort, ProductPort productPort, TabPort tabPort,
                                         OrderPort orderPort, TabRodizioPort tabRodizioPort, RodizioPort rodizioPort,
-                                        EventPublisherPort eventPublisherPort, Clock clock) {
+                                        SubscriptionPort subscriptionPort, EventPublisherPort eventPublisherPort,
+                                        Clock clock) {
         return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort, tabPort,
-                orderPort, tabRodizioPort, rodizioPort, eventPublisherPort, clock);
+                orderPort, tabRodizioPort, rodizioPort, subscriptionPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -786,9 +797,10 @@ class UseCaseConfig {
     @Bean
     TurnRodizioCardUseCase turnRodizioCardUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                                   TabPort tabPort, TabRodizioPort tabRodizioPort,
+                                                  SubscriptionPort subscriptionPort,
                                                   EventPublisherPort eventPublisherPort, Clock clock) {
         return new TurnRodizioCardService(diningTablePort, tableSessionPort, tabPort, tabRodizioPort,
-                eventPublisherPort, clock);
+                subscriptionPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -822,5 +834,18 @@ class UseCaseConfig {
     @Bean
     GetSubscriptionUseCase getSubscriptionUseCase(SubscriptionPort subscriptionPort, Clock clock) {
         return new GetSubscriptionService(subscriptionPort, clock);
+    }
+
+    // O fim do teste grátis e a escolha do plano (Guia 31)
+
+    @Bean
+    RequestPlanUseCase requestPlanUseCase(SubscriptionPort subscriptionPort, LoadPlansPort loadPlansPort, Clock clock) {
+        return new RequestPlanService(subscriptionPort, loadPlansPort, clock);
+    }
+
+    @Bean
+    SendTrialNoticesUseCase sendTrialNoticesUseCase(TrialNoticePort trialNoticePort, EmailSenderPort emailSenderPort,
+                                                    Clock clock, @Value("${app.public-url}") String publicUrl) {
+        return new SendTrialNoticesService(trialNoticePort, emailSenderPort, clock, publicUrl);
     }
 }

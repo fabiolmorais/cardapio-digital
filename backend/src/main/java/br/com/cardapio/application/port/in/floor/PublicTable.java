@@ -13,8 +13,13 @@ import java.util.Map;
  * @param instagram   null quando não informado
  * @param reviewLink  null quando não informado
  */
+/**
+ * @param serving false quando a assinatura passou da tolerância: a página mostra o aviso no lugar
+ *                dos botões de chamar e pedir
+ */
 public record PublicTable(String establishmentName, String tableLabel, String sectorName, BrandColor color,
-                          Theme theme, Map<LogoVariant, String> logoUrls, String instagram, String reviewLink) {
+                          Theme theme, Map<LogoVariant, String> logoUrls, String instagram, String reviewLink,
+                          boolean serving) {
 
     public PublicTable {
         logoUrls = Map.copyOf(logoUrls);

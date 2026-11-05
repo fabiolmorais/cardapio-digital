@@ -31,17 +31,22 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
         </div>
       </header>
 
-      <section className="flex flex-col gap-1.5">
-        <p className="text-sm text-(--mesa-muted)">{t.welcome}</p>
-        <h1 className="text-[34px] leading-[38px] font-bold tracking-tight">
-          {t.headline}
-          <br />
-          <span className="text-(--brand-text)">{t.highlight}</span>
-        </h1>
-      </section>
+      {/* Atendimento pausado: sem o "Peça sem esperar" e sem os botões de chamar e pedir. */}
+      {table.serving && (
+        <>
+          <section className="flex flex-col gap-1.5">
+            <p className="text-sm text-(--mesa-muted)">{t.welcome}</p>
+            <h1 className="text-[34px] leading-[38px] font-bold tracking-tight">
+              {t.headline}
+              <br />
+              <span className="text-(--brand-text)">{t.highlight}</span>
+            </h1>
+          </section>
 
-      <TableActions token={token} />
-      <RodizioEntry token={token} />
+          <TableActions token={token} />
+          <RodizioEntry token={token} />
+        </>
+      )}
 
       <Link
         href={menuHref}

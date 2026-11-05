@@ -11,7 +11,8 @@ import java.time.Instant;
  *
  * @param coveredUntil o fim do teste grátis ou do período pago
  * @param graceEndsAt  até quando a tolerância vai, depois de vencer
+ * @param request      o plano pedido, à espera do pagamento (null se não pediu)
  */
 public record SubscriptionOverview(Plan plan, Standing standing, Instant coveredUntil, Instant graceEndsAt,
-                                   PlanUsage usage) {
+                                   PlanUsage usage, RequestedPlan request) {
 }

@@ -15,6 +15,10 @@ export const tablePage = {
   actions: "Ações da mesa",
   callWaiter: "Chamar garçom",
   askBill: "Pedir a conta",
+  paused: {
+    title: "Atendimento pelo celular pausado",
+    text: "Neste momento, chame o garçom ou peça no balcão. O cardápio continua aqui para você ver.",
+  },
   presence: {
     checking: "Confirmando que você está no restaurante…",
     title: "Não conseguimos confirmar que você está no salão",

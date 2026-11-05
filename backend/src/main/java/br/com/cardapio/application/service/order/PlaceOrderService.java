@@ -9,10 +9,12 @@ import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabPort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
@@ -64,12 +66,14 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private final OrderPort orders;
     private final TabRodizioPort tabRodizios;
     private final RodizioPort rodizios;
+    private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public PlaceOrderService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                              ProductPort products, TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios,
-                             RodizioPort rodizios, EventPublisherPort events, Clock clock) {
+                             RodizioPort rodizios, SubscriptionPort subscriptions, EventPublisherPort events,
+                             Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.settings = settings;
@@ -78,6 +82,7 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         this.orders = orders;
         this.tabRodizios = tabRodizios;
         this.rodizios = rodizios;
+        this.subscriptions = subscriptions;
         this.events = events;
         this.clock = clock;
     }
@@ -89,6 +94,8 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         var visit = TableVisits.require(tables, sessions, command.tableToken(), command.sessionToken(), now);
         EstablishmentId establishmentId = visit.table().establishmentId();
         DiningTableId tableId = visit.table().id();
+        // Assinatura passou da tolerância: a mesa não chama nem pede pelo celular (Guia 31).
+        PlanAllowances.requireServing(subscriptions, establishmentId, now);
 
         // As travas de sempre: celular bloqueado, presença no salão, pedido ligado.
         if (visit.session().isBlocked()) {

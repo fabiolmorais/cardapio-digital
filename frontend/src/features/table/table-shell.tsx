@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, House } from "lucide-react";
+import { BookOpen, ClipboardList, House, PauseCircle } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { tableThemeVars } from "@/lib/table-theme";
@@ -40,13 +40,26 @@ export function TableShell({
           (current === "home" || current === "menu") && "pb-44",
         )}
       >
+        {/* Assinatura suspensa: a página abre (o cardápio vale como vitrine), mas não chama nem pede. */}
+        {!table.serving && (
+          <section
+            role="status"
+            className="flex items-start gap-3 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4"
+          >
+            <PauseCircle aria-hidden className="mt-0.5 size-5 shrink-0 text-(--brand-text)" />
+            <span className="flex flex-col gap-1">
+              <span className="font-semibold">{t.paused.title}</span>
+              <span className="text-sm text-(--mesa-muted)">{t.paused.text}</span>
+            </span>
+          </section>
+        )}
         {children}
       </main>
       <nav
         aria-label={t.nav.label}
         className="fixed inset-x-0 bottom-0"
       >
-        {(current === "home" || current === "menu") && <CartBar token={token} />}
+        {table.serving && (current === "home" || current === "menu") && <CartBar token={token} />}
         <div className="border-t border-(--mesa-stroke) bg-(--mesa-bg)/95 backdrop-blur">
         <div className="mx-auto grid max-w-md grid-cols-3">
           <Tab href={`/m/${token}`} on={current === "home"} icon={<House aria-hidden className="size-5" />}>

@@ -40,11 +40,21 @@ class SubscriptionJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "requested_plan_id")
+    private UUID requestedPlanId;
+
+    @Column(name = "requested_cycle")
+    private String requestedCycle;
+
+    @Column(name = "requested_at")
+    private Instant requestedAt;
+
     protected SubscriptionJpaEntity() {
     }
 
     SubscriptionJpaEntity(UUID id, UUID organizationId, UUID planId, String status, String billingCycle,
-                          Instant trialEndsAt, Instant currentPeriodEnd, Instant createdAt) {
+                          Instant trialEndsAt, Instant currentPeriodEnd, Instant createdAt, UUID requestedPlanId,
+                          String requestedCycle, Instant requestedAt) {
         this.id = id;
         this.organizationId = organizationId;
         this.planId = planId;
@@ -53,6 +63,9 @@ class SubscriptionJpaEntity {
         this.trialEndsAt = trialEndsAt;
         this.currentPeriodEnd = currentPeriodEnd;
         this.createdAt = createdAt;
+        this.requestedPlanId = requestedPlanId;
+        this.requestedCycle = requestedCycle;
+        this.requestedAt = requestedAt;
     }
 
     UUID getId() { return id; }
@@ -63,4 +76,7 @@ class SubscriptionJpaEntity {
     Instant getTrialEndsAt() { return trialEndsAt; }
     Instant getCurrentPeriodEnd() { return currentPeriodEnd; }
     Instant getCreatedAt() { return createdAt; }
+    UUID getRequestedPlanId() { return requestedPlanId; }
+    String getRequestedCycle() { return requestedCycle; }
+    Instant getRequestedAt() { return requestedAt; }
 }

@@ -43,3 +43,25 @@ test("a 51ª mesa do Pro é barrada, com o atalho para a assinatura", async ({ p
   await alert.getByRole("link", { name: "Ver a assinatura" }).click();
   await expect(page.getByRole("region", { name: "Uso do plano" })).toContainText("Mesas ativas50 de 50");
 });
+
+test("o dono escolhe o Essencial anual, e a escolha fica à espera do pagamento", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+  await page.goto("/admin/assinatura");
+
+  const chooser = page.getByRole("region", { name: "Assinar ou mudar de plano" });
+  await chooser.getByRole("button", { name: "Anual (2 meses grátis)" }).click();
+  const essential = chooser.getByRole("listitem", { name: "Essencial" });
+  await expect(essential).toContainText("R$ 699,00/ano");
+  await expect(chooser.getByRole("listitem", { name: "Pro" })).toContainText("Plano atual");
+  await expect(chooser.getByRole("listitem", { name: "Enterprise" })).toContainText("Sob consulta");
+
+  await essential.getByRole("button", { name: "Escolher o Essencial" }).click();
+  await expect(chooser.getByRole("status")).toContainText("Você escolheu o Essencial anual em");
+  await expect(essential).toContainText("Escolhido");
+  // Os limites continuam os do teste (Pro) até o pagamento.
+  await expect(page.getByRole("region", { name: "Uso do plano" })).toContainText("Mesas ativas0 de 50");
+
+  await page.reload();
+  await expect(chooser.getByRole("status")).toContainText("Você escolheu o Essencial anual em");
+});

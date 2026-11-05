@@ -7,6 +7,8 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.PublicTableView;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.media.MediaStoragePort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.brand.model.Brand;
 import br.com.cardapio.domain.brand.model.LogoVariant;
@@ -14,6 +16,7 @@ import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.Sector;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -25,13 +28,17 @@ public class ViewPublicTableService implements ViewPublicTableUseCase {
     private final SectorPort sectors;
     private final BrandPort brands;
     private final MediaStoragePort storage;
+    private final SubscriptionPort subscriptions;
+    private final Clock clock;
 
     public ViewPublicTableService(DiningTablePort tables, SectorPort sectors, BrandPort brands,
-                                  MediaStoragePort storage) {
+                                  MediaStoragePort storage, SubscriptionPort subscriptions, Clock clock) {
         this.tables = tables;
         this.sectors = sectors;
         this.brands = brands;
         this.storage = storage;
+        this.subscriptions = subscriptions;
+        this.clock = clock;
     }
 
     @Override
@@ -49,6 +56,7 @@ public class ViewPublicTableService implements ViewPublicTableUseCase {
                 : Map.of();
         return new PublicTable(brand.name(), table.label(), sectorName, brand.color(), brand.theme(), logo,
                 brand.instagram() == null ? null : brand.instagram().value(),
-                brand.reviewLink() == null ? null : brand.reviewLink().value());
+                brand.reviewLink() == null ? null : brand.reviewLink().value(),
+                PlanAllowances.serving(subscriptions, establishmentId, clock.instant()));
     }
 }
