@@ -338,6 +338,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/push/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inscreve este navegador nas notificações */
+        post: operations["subscribePush"];
+        /** Tira este navegador das notificações (ao sair, por exemplo) */
+        delete: operations["unsubscribePush"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/session": {
         parameters: {
             query?: never;
@@ -1021,6 +1039,23 @@ export interface paths {
         };
         /** Os rodízios ativos com o preço de cada faixa agora */
         get: operations["quoteRodizios"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/push/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Se o push está ligado, e a chave pública VAPID */
+        get: operations["pushSettings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1939,6 +1974,17 @@ export interface components {
              */
             activeTables: number;
         };
+        PushSubscriptionKeys: {
+            /** @description A chave pública do navegador, em base64url */
+            p256dh: string;
+            /** @description O segredo do navegador, em base64url */
+            auth: string;
+        };
+        PushSubscriptionRequest: {
+            /** @description O endereço do serviço de push do navegador */
+            endpoint: string;
+            keys: components["schemas"]["PushSubscriptionKeys"];
+        };
         TableSession: {
             /**
              * Format: date-time
@@ -2473,6 +2519,12 @@ export interface components {
             name: string;
             /** Format: int64 */
             priceCents: number;
+        };
+        PushSettings: {
+            /** @description false: o servidor está sem as chaves VAPID */
+            enabled: boolean;
+            /** @description A chave pública VAPID (base64url), para o navegador se inscrever */
+            publicKey?: string;
         };
         /** @description A aparência da página: só os tons da cor escolhida */
         PublicBrand: {
@@ -3992,6 +4044,76 @@ export interface operations {
             };
             /** @description O restaurante já tem 10 rodízios ativos */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    subscribePush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Inscrito */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Inscrição inválida, ou serviço de push desconhecido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O push está desligado neste servidor */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    unsubscribePush: {
+        parameters: {
+            query: {
+                /** @description O endpoint da inscrição */
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Este navegador não está inscrito por esta pessoa */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5929,6 +6051,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
+    pushSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As configurações */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushSettings"];
                 };
             };
         };

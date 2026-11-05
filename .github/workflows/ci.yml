@@ -124,6 +124,17 @@ jobs:
         with:
           name: backend-jar
           path: backend-jar
+      - name: Gera chaves VAPID só para este teste
+        # O web push precisa de um par de chaves; geradas na hora, nenhuma fica no repositório.
+        run: |
+          node -e '
+            const { generateKeyPairSync } = require("node:crypto");
+            const jwk = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).privateKey.export({ format: "jwk" });
+            const b64 = (buf) => buf.toString("base64url");
+            const pub = Buffer.concat([Buffer.from([4]), Buffer.from(jwk.x, "base64url"), Buffer.from(jwk.y, "base64url")]);
+            console.log(`::add-mask::${jwk.d}`);
+            require("node:fs").appendFileSync(process.env.GITHUB_ENV, `VAPID_PUBLIC_KEY=${b64(pub)}\nVAPID_PRIVATE_KEY=${jwk.d}\n`);
+          '
       - name: Sobe o back-end
         run: |
           nohup java -jar backend-jar/backend-*.jar > backend.log 2>&1 &

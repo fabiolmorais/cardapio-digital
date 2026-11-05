@@ -14,6 +14,7 @@ import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { fetchPassagemRequests, fetchPassagemTables, type PassagemTable } from "./rodizio-api";
+import { useWakeLock } from "@/lib/pwa/use-wake-lock";
 
 const t = messages.panel.passagem;
 const tc = messages.panel.calls;
@@ -41,6 +42,7 @@ export function PassagemBoard() {
 function Board({ canDeliver }: { canDeliver: boolean }) {
   const { list, connected } = useLiveOrders(KEY, fetchTables, undefined, true, ["rodizio", "tab"]);
   const now = useNow();
+  useWakeLock();
   const tables = list.data ?? [];
   const paused = tables.filter((table) => table.status === "PAUSED").length;
 

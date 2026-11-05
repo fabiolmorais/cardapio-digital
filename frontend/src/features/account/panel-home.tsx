@@ -20,6 +20,8 @@ import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { CallQueue } from "@/features/calls/call-queue";
 import { Deliveries, KitchenLink, PassagemLink, WaitingOrders } from "@/features/orders/staff-orders";
+import { InstallLink } from "@/features/pwa/install-link";
+import { PushCard } from "@/features/pwa/push-card";
 import { OpenTabs } from "@/features/tabs/open-tabs";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
@@ -110,8 +112,10 @@ export function PanelHome() {
           <OpenTabs />
           <KitchenLink />
           <PassagemLink />
+          <PushCard />
         </>
       )}
+      <InstallLink />
       {canManageTeam(establishment.role) && (
         <nav aria-label={t.shortcuts} className="flex flex-col gap-3">
           {SHORTCUTS.map(({ href, icon: Icon, text }) => (

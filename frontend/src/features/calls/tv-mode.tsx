@@ -11,6 +11,7 @@ import { enableSound, playChime } from "./alert-sound";
 import { elapsed, useNow } from "./call-queue";
 import type { StaffCall } from "./calls-api";
 import { staffSource, tvDeviceSource, useLiveCalls, useSoundOn, type LiveCallsSource } from "./use-live-calls";
+import { useWakeLock } from "@/lib/pwa/use-wake-lock";
 
 const t = messages.tv;
 const calls = messages.panel.calls;
@@ -93,6 +94,7 @@ function TvBoard({
 }) {
   const [alert, setAlert] = useState<StaffCall | null>(null);
   const soundOn = useSoundOn();
+  useWakeLock();
   const now = useNow();
   const onNewCall = useCallback((call: StaffCall) => {
     playChime();
