@@ -1,10 +1,22 @@
 "use client";
 
-import { BookOpen, Home, LogOut, Palette, QrCode, Receipt, ShieldCheck, Users, UtensilsCrossed } from "lucide-react";
+import {
+  BookOpen,
+  CreditCard,
+  Home,
+  LogOut,
+  Palette,
+  QrCode,
+  Receipt,
+  ShieldCheck,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { initials } from "@/lib/initials";
@@ -22,6 +34,7 @@ const NAV = [
   { href: "/admin/presenca", label: t.nav.presence, icon: ShieldCheck },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
   { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
+  { href: "/admin/assinatura", label: t.nav.subscription, icon: CreditCard },
 ] as const;
 
 /**
@@ -63,7 +76,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
           {t.logout}
         </Button>
       </aside>
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1">
+        <SubscriptionBanner className="mx-4 mt-4 sm:mx-7" />
+        {children}
+      </main>
     </div>
   );
 }

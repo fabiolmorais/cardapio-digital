@@ -6,7 +6,10 @@ import br.com.cardapio.application.port.in.team.TeamMemberSummary;
 import br.com.cardapio.domain.account.exception.TeamPermissionException;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.Role;
+import br.com.cardapio.domain.plan.exception.PlanLimitReachedException;
+import br.com.cardapio.domain.plan.model.PlanUsage;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AddTeamMemberServiceTest {
 
     private final TeamFakes fakes = new TeamFakes();
-    private final AddTeamMemberService service = new AddTeamMemberService(fakes, fakes);
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final AddTeamMemberService service = new AddTeamMemberService(fakes, fakes, subscriptions);
     private final EstablishmentId sakura = EstablishmentId.newId();
 
     private AddTeamMemberCommand command(Role actor, String name, Role role, String pin) {
@@ -53,6 +57,16 @@ class AddTeamMemberServiceTest {
     void weakPinIsRefusedAndNothingIsSaved() {
         assertThatThrownBy(() -> service.add(command(Role.OWNER, "Carlos", Role.STAFF, "123456")))
                 .isInstanceOf(InvalidValueException.class);
+        assertThat(fakes.members).isEmpty();
+    }
+
+    @Test
+    void theEssentialPlanStopsAtFivePeopleCountingTheOwner() {
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(0, 5, 1));
+
+        assertThatThrownBy(() -> service.add(command(Role.OWNER, "Carlos", Role.STAFF, "258014")))
+                .isInstanceOf(PlanLimitReachedException.class)
+                .hasMessageContaining("até 5 pessoas ativas na equipe");
         assertThat(fakes.members).isEmpty();
     }
 }

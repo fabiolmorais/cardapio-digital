@@ -7,6 +7,9 @@ import br.com.cardapio.domain.floor.exception.SectorNameTakenException;
 import br.com.cardapio.domain.floor.exception.SectorNotEmptyException;
 import br.com.cardapio.domain.floor.exception.SectorNotFoundException;
 import br.com.cardapio.domain.floor.model.Sector;
+import br.com.cardapio.domain.plan.exception.PlanLimitReachedException;
+import br.com.cardapio.domain.plan.model.PlanUsage;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +19,8 @@ class SectorServicesTest {
 
     private final FloorFakes fakes = new FloorFakes();
     private final ListSectorsService list = new ListSectorsService(fakes);
-    private final CreateSectorService create = new CreateSectorService(fakes);
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final CreateSectorService create = new CreateSectorService(fakes, subscriptions);
     private final RenameSectorService rename = new RenameSectorService(fakes);
     private final DeactivateSectorService deactivate = new DeactivateSectorService(fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();
@@ -72,5 +76,14 @@ class SectorServicesTest {
                 .isInstanceOf(SectorNotFoundException.class);
         assertThatThrownBy(() -> deactivate.deactivate(sakura, elsewhere.id()))
                 .isInstanceOf(SectorNotFoundException.class);
+    }
+
+    @Test
+    void theEssentialPlanHasASingleSector() {
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(0, 1, 1));
+
+        assertThatThrownBy(() -> create.create(sakura, "Deck"))
+                .isInstanceOf(PlanLimitReachedException.class)
+                .hasMessage("O plano Essencial permite até 1 setor ativo. Para ter mais, mude de plano.");
     }
 }

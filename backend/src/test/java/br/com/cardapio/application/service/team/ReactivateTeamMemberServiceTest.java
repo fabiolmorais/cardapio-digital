@@ -6,6 +6,9 @@ import br.com.cardapio.domain.account.exception.TeamMemberNotFoundException;
 import br.com.cardapio.domain.account.exception.TeamPermissionException;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.Role;
+import br.com.cardapio.domain.plan.exception.PlanLimitReachedException;
+import br.com.cardapio.domain.plan.model.PlanUsage;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReactivateTeamMemberServiceTest {
 
     private final TeamFakes fakes = new TeamFakes();
-    private final ReactivateTeamMemberService service = new ReactivateTeamMemberService(fakes);
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final ReactivateTeamMemberService service = new ReactivateTeamMemberService(fakes, subscriptions);
     private final EstablishmentId sakura = EstablishmentId.newId();
 
     private TeamMember deactivated(EstablishmentId establishmentId, String name, Role role) {
@@ -54,5 +58,16 @@ class ReactivateTeamMemberServiceTest {
                 new ReactivateTeamMemberCommand(sakura, Role.OWNER, elsewhere.membership().id())))
                 .isInstanceOf(TeamMemberNotFoundException.class);
         assertThat(fakes.stored(elsewhere.membership().id()).active()).isFalse();
+    }
+
+    @Test
+    void reactivatingTakesASeatInThePlan() {
+        TeamMember carlos = deactivated(sakura, "Carlos", Role.STAFF);
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(0, 5, 1));
+
+        assertThatThrownBy(() -> service.reactivate(
+                new ReactivateTeamMemberCommand(sakura, Role.OWNER, carlos.membership().id())))
+                .isInstanceOf(PlanLimitReachedException.class);
+        assertThat(fakes.stored(carlos.membership().id()).active()).isFalse();
     }
 }

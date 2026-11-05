@@ -1,12 +1,14 @@
 package br.com.cardapio.adapter.out.persistence.plan;
 
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
-import br.com.cardapio.domain.plan.model.Plan;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
+import br.com.cardapio.domain.plan.model.Plan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 class PlanPersistenceAdapter implements LoadPlansPort {
@@ -26,5 +28,10 @@ class PlanPersistenceAdapter implements LoadPlansPort {
                 query.page(),
                 query.size(),
                 page.getTotalElements());
+    }
+
+    @Override
+    public Optional<Plan> findActiveByCode(String code) {
+        return repository.findByCodeAndActiveTrue(code).map(PlanPersistenceMapper::toDomain);
     }
 }

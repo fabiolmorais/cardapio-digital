@@ -12,6 +12,9 @@ import br.com.cardapio.domain.menu.model.MenuCategory;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.VideoFile;
+import br.com.cardapio.domain.plan.exception.FeatureNotInPlanException;
+import br.com.cardapio.domain.plan.model.PlanUsage;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +28,8 @@ class VideoServicesTest {
 
     private final MenuFakes menu = new MenuFakes();
     private final MediaFakes fakes = new MediaFakes();
-    private final StartVideoUploadService start = new StartVideoUploadService(menu, fakes, fakes);
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final StartVideoUploadService start = new StartVideoUploadService(menu, fakes, fakes, subscriptions);
     private final ListProductMediaService list = new ListProductMediaService(menu, fakes, fakes, fakes);
     private final SyncVideoService sync = new SyncVideoService(fakes, fakes);
     private final RemoveProductMediaService remove = new RemoveProductMediaService(fakes, fakes);
@@ -131,5 +135,15 @@ class VideoServicesTest {
 
         assertThat(fakes.media.get(upload.mediaId()).active()).isFalse();
         assertThat(fakes.videos).doesNotContainKey(videoId);
+    }
+
+    @Test
+    void videosStartAtTheProPlan() {
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(0, 1, 1));
+
+        assertThatThrownBy(() -> start.start(sakura, guioza.id(), mp4))
+                .isInstanceOf(FeatureNotInPlanException.class)
+                .hasMessageStartingWith("Vídeos nos pratos fazem parte dos planos Pro");
+        assertThat(fakes.videos).isEmpty(); // nada foi criado no Bunny
     }
 }

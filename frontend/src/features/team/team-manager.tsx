@@ -11,6 +11,7 @@ import { cn } from "cn";
 import { DeactivateDialog } from "./deactivate-dialog";
 import { MemberFormDialog } from "./member-form-dialog";
 import { fetchTeam, reactivateTeamMember, type TeamMember } from "./team-api";
+import { ErrorText, isPlanLimit } from "@/features/subscription/error-text";
 import { assignableRoles, canManageMember, canManageTeam, type Role } from "./team-rules";
 
 const t = messages.team;
@@ -191,7 +192,11 @@ export function TeamManager() {
 
           {reactivation.isError && (
             <p role="alert" className="text-sm text-destructive">
-              {t.reactivateError(reactivation.variables?.name ?? "")}
+              {isPlanLimit(reactivation.error.message) ? (
+                <ErrorText message={reactivation.error.message} />
+              ) : (
+                t.reactivateError(reactivation.variables?.name ?? "")
+              )}
             </p>
           )}
 

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   ChevronRight,
+  CreditCard,
   LogOut,
   Palette,
   QrCode,
@@ -22,6 +23,7 @@ import { CallQueue } from "@/features/calls/call-queue";
 import { Deliveries, KitchenLink, PassagemLink, WaitingOrders } from "@/features/orders/staff-orders";
 import { InstallLink } from "@/features/pwa/install-link";
 import { PushCard } from "@/features/pwa/push-card";
+import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { OpenTabs } from "@/features/tabs/open-tabs";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
@@ -36,6 +38,7 @@ const SHORTCUTS = [
   { href: "/admin/marca", icon: Palette, text: t.manage.brand },
   { href: "/admin/presenca", icon: ShieldCheck, text: t.manage.presence },
   { href: "/admin/comandas", icon: Receipt, text: t.manage.tabs },
+  { href: "/admin/assinatura", icon: CreditCard, text: t.manage.subscription },
 ] as const;
 
 async function fetchMe() {
@@ -86,6 +89,7 @@ export function PanelHome() {
           {t.logout}
         </Button>
       </header>
+      <SubscriptionBanner />
       <section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-brand-text">
           <Store aria-hidden className="size-6" />

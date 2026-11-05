@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { messages } from "@/messages/pt-BR";
 import { addTeamMember, updateTeamMember, type TeamMember } from "./team-api";
+import { ErrorText } from "@/features/subscription/error-text";
 import type { Role } from "./team-rules";
 
 const t = messages.team;
@@ -142,7 +143,7 @@ export function MemberFormDialog({ open, onOpenChange, roles, member }: Props) {
           </div>
 
           <p id="member-form-error" role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-            {mutation.error?.message ?? ""}
+            {mutation.error && <ErrorText message={mutation.error.message} />}
           </p>
 
           <DialogFooter className="-mx-6 -mb-6 gap-2 px-6 pb-6">
