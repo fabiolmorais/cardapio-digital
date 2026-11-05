@@ -14,6 +14,7 @@ import {
   uploadProductVideo,
   type ProductMedia,
 } from "./menu-api";
+import { ErrorText } from "@/features/subscription/error-text";
 import { useReorder } from "./use-reorder";
 
 const t = messages.menu.photos;
@@ -339,7 +340,9 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
       {errors.length > 0 && (
         <ul role="alert" className="flex flex-col gap-1 text-sm text-destructive">
           {errors.map((error) => (
-            <li key={error}>{error}</li>
+            <li key={error}>
+              <ErrorText message={error} />
+            </li>
           ))}
         </ul>
       )}

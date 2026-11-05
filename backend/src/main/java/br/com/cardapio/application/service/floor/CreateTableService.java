@@ -5,12 +5,15 @@ import br.com.cardapio.application.port.in.floor.CreateTableUseCase;
 import br.com.cardapio.application.port.in.floor.TableSummary;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.domain.floor.exception.SectorNotFoundException;
 import br.com.cardapio.domain.floor.exception.TableLabelTakenException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.Sector;
 import br.com.cardapio.domain.floor.model.TableToken;
+import br.com.cardapio.domain.plan.model.PlanResource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -20,12 +23,15 @@ public class CreateTableService implements CreateTableUseCase {
     private final SectorPort sectors;
     private final DiningTablePort tables;
     private final RandomTokenGenerator tokens;
+    private final SubscriptionPort subscriptions;
     private final Clock clock;
 
-    public CreateTableService(SectorPort sectors, DiningTablePort tables, RandomTokenGenerator tokens, Clock clock) {
+    public CreateTableService(SectorPort sectors, DiningTablePort tables, RandomTokenGenerator tokens,
+                              SubscriptionPort subscriptions, Clock clock) {
         this.sectors = sectors;
         this.tables = tables;
         this.tokens = tokens;
+        this.subscriptions = subscriptions;
         this.clock = clock;
     }
 
@@ -42,6 +48,7 @@ public class CreateTableService implements CreateTableUseCase {
         if (tables.labelExists(command.establishmentId(), table.label(), null)) {
             throw new TableLabelTakenException(table.label());
         }
+        PlanAllowances.requireRoomForOneMore(subscriptions, command.establishmentId(), PlanResource.TABLES);
         tables.save(table);
         return TableSummary.from(table);
     }

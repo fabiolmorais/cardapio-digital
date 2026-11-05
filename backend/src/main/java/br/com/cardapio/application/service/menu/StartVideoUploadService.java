@@ -4,7 +4,9 @@ import br.com.cardapio.application.port.in.menu.StartVideoUploadUseCase;
 import br.com.cardapio.application.port.in.menu.VideoUpload;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
+import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.exception.MediaLimitReachedException;
 import br.com.cardapio.domain.menu.exception.VideoLimitReachedException;
@@ -26,11 +28,14 @@ public class StartVideoUploadService implements StartVideoUploadUseCase {
     private final ProductPort products;
     private final ProductMediaPort media;
     private final VideoHostingPort videos;
+    private final SubscriptionPort subscriptions;
 
-    public StartVideoUploadService(ProductPort products, ProductMediaPort media, VideoHostingPort videos) {
+    public StartVideoUploadService(ProductPort products, ProductMediaPort media, VideoHostingPort videos,
+                                   SubscriptionPort subscriptions) {
         this.products = products;
         this.media = media;
         this.videos = videos;
+        this.subscriptions = subscriptions;
     }
 
     /**
@@ -41,6 +46,7 @@ public class StartVideoUploadService implements StartVideoUploadUseCase {
     @Transactional
     public VideoUpload start(EstablishmentId establishmentId, ProductId productId, VideoFile file) {
         Product product = MenuLookups.activeProduct(products, establishmentId, productId);
+        PlanAllowances.requireVideos(subscriptions, establishmentId);
         List<ProductMedia> gallery = media.findActiveByProduct(establishmentId, productId);
         if (gallery.size() >= ProductMedia.MAX_PER_PRODUCT) {
             throw new MediaLimitReachedException();

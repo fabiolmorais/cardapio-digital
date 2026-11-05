@@ -26,6 +26,7 @@ import {
   type DownloadedFile,
   type Sector,
 } from "./floor-api";
+import { ErrorText } from "@/features/subscription/error-text";
 import { SectorFormDialog, TableFormDialog } from "./floor-dialogs";
 
 const t = messages.floor;
@@ -115,7 +116,7 @@ export function FloorManager() {
       )}
       {failure && (
         <p role="alert" className="text-sm text-destructive">
-          {failure}
+          <ErrorText message={failure} />
         </p>
       )}
 

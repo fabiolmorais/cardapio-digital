@@ -53,6 +53,7 @@ import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
 import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
+import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.presence.CheckPresenceUseCase;
 import br.com.cardapio.application.port.in.presence.GetPresenceRuleUseCase;
@@ -97,6 +98,7 @@ import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
+import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.push.PushSenderPort;
 import br.com.cardapio.application.port.out.push.PushSubscriptionPort;
@@ -166,6 +168,7 @@ import br.com.cardapio.application.service.order.ListWaitingOrdersService;
 import br.com.cardapio.application.service.order.PlaceOrderService;
 import br.com.cardapio.application.service.order.ReviewOrderService;
 import br.com.cardapio.application.service.order.UpdateOrderSettingsService;
+import br.com.cardapio.application.service.plan.GetSubscriptionService;
 import br.com.cardapio.application.service.plan.ListPlansService;
 import br.com.cardapio.application.service.presence.CheckPresenceService;
 import br.com.cardapio.application.service.presence.GetPresenceRuleService;
@@ -211,8 +214,10 @@ class UseCaseConfig {
 
     @Bean
     SignupUseCase signupUseCase(LoadUserPort loadUserPort, LoadEstablishmentPort loadEstablishmentPort,
-                                SaveAccountPort saveAccountPort, PasswordHasher passwordHasher) {
-        return new SignupService(loadUserPort, loadEstablishmentPort, saveAccountPort, passwordHasher);
+                                SaveAccountPort saveAccountPort, PasswordHasher passwordHasher,
+                                LoadPlansPort loadPlansPort, SubscriptionPort subscriptionPort, Clock clock) {
+        return new SignupService(loadUserPort, loadEstablishmentPort, saveAccountPort, passwordHasher, loadPlansPort,
+                subscriptionPort, clock);
     }
 
     /** Não é caso de uso: é a peça que login e renovação usam para montar a sessão. */
@@ -252,8 +257,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    AddTeamMemberUseCase addTeamMemberUseCase(TeamMemberPort teamMemberPort, PasswordHasher passwordHasher) {
-        return new AddTeamMemberService(teamMemberPort, passwordHasher);
+    AddTeamMemberUseCase addTeamMemberUseCase(TeamMemberPort teamMemberPort, PasswordHasher passwordHasher,
+                                              SubscriptionPort subscriptionPort) {
+        return new AddTeamMemberService(teamMemberPort, passwordHasher, subscriptionPort);
     }
 
     @Bean
@@ -267,8 +273,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    ReactivateTeamMemberUseCase reactivateTeamMemberUseCase(TeamMemberPort teamMemberPort) {
-        return new ReactivateTeamMemberService(teamMemberPort);
+    ReactivateTeamMemberUseCase reactivateTeamMemberUseCase(TeamMemberPort teamMemberPort,
+                                                            SubscriptionPort subscriptionPort) {
+        return new ReactivateTeamMemberService(teamMemberPort, subscriptionPort);
     }
 
     @Bean
@@ -330,8 +337,8 @@ class UseCaseConfig {
     }
 
     @Bean
-    CreateSectorUseCase createSectorUseCase(SectorPort sectorPort) {
-        return new CreateSectorService(sectorPort);
+    CreateSectorUseCase createSectorUseCase(SectorPort sectorPort, SubscriptionPort subscriptionPort) {
+        return new CreateSectorService(sectorPort, subscriptionPort);
     }
 
     @Bean
@@ -351,13 +358,15 @@ class UseCaseConfig {
 
     @Bean
     CreateTableUseCase createTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort,
-                                          RandomTokenGenerator randomTokenGenerator, Clock clock) {
-        return new CreateTableService(sectorPort, diningTablePort, randomTokenGenerator, clock);
+                                          RandomTokenGenerator randomTokenGenerator, SubscriptionPort subscriptionPort,
+                                          Clock clock) {
+        return new CreateTableService(sectorPort, diningTablePort, randomTokenGenerator, subscriptionPort, clock);
     }
 
     @Bean
-    UpdateTableUseCase updateTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort) {
-        return new UpdateTableService(sectorPort, diningTablePort);
+    UpdateTableUseCase updateTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort,
+                                          SubscriptionPort subscriptionPort) {
+        return new UpdateTableService(sectorPort, diningTablePort, subscriptionPort);
     }
 
     @Bean
@@ -725,8 +734,9 @@ class UseCaseConfig {
 
     @Bean
     StartVideoUploadUseCase startVideoUploadUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
-                                                    VideoHostingPort videoHostingPort) {
-        return new StartVideoUploadService(productPort, productMediaPort, videoHostingPort);
+                                                    VideoHostingPort videoHostingPort,
+                                                    SubscriptionPort subscriptionPort) {
+        return new StartVideoUploadService(productPort, productMediaPort, videoHostingPort, subscriptionPort);
     }
 
     @Bean
@@ -805,5 +815,12 @@ class UseCaseConfig {
     NotifyStaffUseCase notifyStaffUseCase(DiningTablePort diningTablePort, PushSubscriptionPort pushSubscriptionPort,
                                           PushSenderPort pushSenderPort) {
         return new NotifyStaffService(diningTablePort, pushSubscriptionPort, pushSenderPort);
+    }
+
+    // A assinatura e os limites do plano (Guia 30)
+
+    @Bean
+    GetSubscriptionUseCase getSubscriptionUseCase(SubscriptionPort subscriptionPort, Clock clock) {
+        return new GetSubscriptionService(subscriptionPort, clock);
     }
 }

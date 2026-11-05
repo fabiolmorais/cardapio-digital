@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { messages } from "@/messages/pt-BR";
+import { ErrorText } from "@/features/subscription/error-text";
 import type { DiningTable, Sector } from "./floor-api";
 
 const t = messages.floor;
@@ -66,7 +67,7 @@ export function SectorFormDialog({
             />
           </div>
           <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-            {mutation.error?.message ?? ""}
+            {mutation.error && <ErrorText message={mutation.error.message} />}
           </p>
           <DialogFooter className={footerClass}>
             <DialogClose render={<Button variant="outline" size="lg" className="h-11 px-4" />}>
@@ -160,7 +161,7 @@ export function TableFormDialog({
             </select>
           </div>
           <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-            {mutation.error?.message ?? ""}
+            {mutation.error && <ErrorText message={mutation.error.message} />}
           </p>
           <DialogFooter className={footerClass}>
             <DialogClose render={<Button variant="outline" size="lg" className="h-11 px-4" />}>

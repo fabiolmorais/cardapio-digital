@@ -1013,6 +1013,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A assinatura deste restaurante, com o uso dos limites */
+        get: operations["getSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sectors/{id}/displays": {
         parameters: {
             query?: never;
@@ -2472,6 +2489,78 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        /** @description Plano de assinatura */
+        Plan: {
+            /** Format: uuid */
+            id: string;
+            /** @example pro */
+            code: string;
+            /** @example Pro */
+            name: string;
+            /**
+             * Format: int64
+             * @description Preço mensal em centavos; nulo = sob consulta
+             */
+            monthlyPriceCents: number | null;
+            /**
+             * Format: int64
+             * @description Preço anual em centavos; nulo = sob consulta
+             */
+            annualPriceCents: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxTables: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxUsers: number | null;
+            /**
+             * Format: int32
+             * @description Nulo = ilimitado
+             */
+            maxSectors: number | null;
+            /**
+             * Format: int32
+             * @description Dias de histórico; nulo = ilimitado
+             */
+            historyDays: number | null;
+            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
+            /** @enum {string} */
+            support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
+        };
+        /** @description Quanto o restaurante usa agora (só os ativos); os limites estão no plano */
+        PlanUsage: {
+            /** Format: int64 */
+            tables: number;
+            /** Format: int64 */
+            users: number;
+            /** Format: int64 */
+            sectors: number;
+        };
+        /** @description A assinatura do restaurante: plano, situação, datas e uso dos limites */
+        Subscription: {
+            plan: components["schemas"]["Plan"];
+            /**
+             * @description TRIAL: teste grátis · ACTIVE: paga · PENDING: venceu, na tolerância (tudo funciona) ·
+             *     SUSPENDED: passou da tolerância (a mesa para de chamar e pedir)
+             * @enum {string}
+             */
+            standing: "TRIAL" | "ACTIVE" | "PENDING" | "SUSPENDED";
+            /**
+             * Format: date-time
+             * @description O fim do teste grátis ou do período pago
+             */
+            coveredUntil: string;
+            /**
+             * Format: date-time
+             * @description O fim da tolerância, depois de vencer
+             */
+            graceEndsAt: string;
+            usage: components["schemas"]["PlanUsage"];
+        };
         PageResponseSector: {
             content: components["schemas"]["Sector"][];
             /** Format: int32 */
@@ -2711,48 +2800,6 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
-        };
-        /** @description Plano de assinatura */
-        Plan: {
-            /** Format: uuid */
-            id: string;
-            /** @example pro */
-            code: string;
-            /** @example Pro */
-            name: string;
-            /**
-             * Format: int64
-             * @description Preço mensal em centavos; nulo = sob consulta
-             */
-            monthlyPriceCents: number | null;
-            /**
-             * Format: int64
-             * @description Preço anual em centavos; nulo = sob consulta
-             */
-            annualPriceCents: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxTables: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxUsers: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxSectors: number | null;
-            /**
-             * Format: int32
-             * @description Dias de histórico; nulo = ilimitado
-             */
-            historyDays: number | null;
-            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
-            /** @enum {string} */
-            support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
         };
         PageResponsePassagemTable: {
             content: components["schemas"]["PassagemTable"][];
@@ -5986,6 +6033,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A assinatura */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
                 };
             };
         };

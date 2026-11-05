@@ -295,6 +295,7 @@ export const messages = {
         description: "Wi-Fi do salão, o local e o pedido pelo celular, com os limites",
       },
       tabs: { title: "Comandas", description: "O histórico das comandas fechadas, por data e por mesa" },
+      subscription: { title: "Assinatura", description: "O plano, o teste grátis e o uso dos limites" },
     },
   },
   presence: {
@@ -422,6 +423,7 @@ export const messages = {
       presence: "Presença e pedidos",
       tabs: "Comandas",
       rodizios: "Rodízios",
+      subscription: "Assinatura",
     },
     logout: "Sair",
     loading: "Carregando…",
@@ -995,6 +997,44 @@ export const messages = {
       PRIORITY_WHATSAPP: "WhatsApp prioritário",
       DEDICATED_MANAGER: "Gerente dedicado",
     },
+  },
+  subscription: {
+    title: "Assinatura",
+    subtitle: "O plano do restaurante, o teste grátis e os limites.",
+    loading: "Carregando a assinatura…",
+    loadError: "Não foi possível carregar a assinatura.",
+    plan: (name: string) => `Plano ${name}`,
+    standing: {
+      TRIAL: "Teste grátis",
+      ACTIVE: "Ativa",
+      PENDING: "Assinatura pendente",
+      SUSPENDED: "Suspensa",
+    },
+    daysLeft: (days: number) => (days <= 0 ? "acaba hoje" : days === 1 ? "acaba amanhã" : `faltam ${days} dias`),
+    trialUntil: (date: string, left: string) => `Teste grátis até ${date} · ${left}`,
+    trialPlan: "Durante o teste, valem os limites do Pro.",
+    paidUntil: (date: string) => `Paga até ${date}`,
+    pending: (date: string) =>
+      `O período venceu. A mesa continua chamando e pedindo até ${date}; depois disso, para.`,
+    suspended: (date: string) =>
+      `Desde ${date}, a mesa não chama nem pede pelo celular. O painel e a gestão continuam abrindo.`,
+    usage: "Uso do plano",
+    tables: "Mesas ativas",
+    users: "Pessoas na equipe",
+    sectors: "Setores",
+    of: (used: number, max: number | null) => (max === null ? `${used} · ilimitado` : `${used} de ${max}`),
+    videos: "Vídeos nos pratos",
+    videosIncluded: "Incluídos",
+    videosNotIncluded: "A partir do Pro",
+    choose: "Assinar ou mudar de plano",
+    chooseSoon: "A escolha do plano pelo painel chega na próxima atualização. Até lá, fale com a gente para assinar.",
+    banner: {
+      trialEnding: (days: number) =>
+        days <= 0 ? "Seu teste grátis acaba hoje." : days === 1 ? "Seu teste grátis acaba amanhã." : `Faltam ${days} dias do seu teste grátis.`,
+      pending: (date: string) => `Assinatura pendente: a mesa funciona até ${date}.`,
+      suspended: "Assinatura suspensa: a mesa não chama nem pede pelo celular.",
+    },
+    see: "Ver a assinatura",
   },
   pwa: {
     push: {

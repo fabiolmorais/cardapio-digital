@@ -10,6 +10,9 @@ import br.com.cardapio.domain.floor.exception.TableLabelTakenException;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.Sector;
+import br.com.cardapio.domain.plan.exception.PlanLimitReachedException;
+import br.com.cardapio.domain.plan.model.PlanUsage;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,8 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TableServicesTest {
 
     private final FloorFakes fakes = new FloorFakes();
-    private final CreateTableService create = new CreateTableService(fakes, fakes, fakes, fakes.clock());
-    private final UpdateTableService update = new UpdateTableService(fakes, fakes);
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final CreateTableService create = new CreateTableService(fakes, fakes, fakes, subscriptions, fakes.clock());
+    private final UpdateTableService update = new UpdateTableService(fakes, fakes, subscriptions);
     private final RotateTableTokenService rotate = new RotateTableTokenService(fakes, fakes, fakes.clock());
     private final ListTablesService list = new ListTablesService(fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();
@@ -110,5 +114,27 @@ class TableServicesTest {
         assertThatThrownBy(() -> rotate.rotate(sakura, elsewhere.id())).isInstanceOf(TableNotFoundException.class);
         assertThatThrownBy(() -> update.update(new UpdateTableCommand(sakura, elsewhere.id(), "X", null, null)))
                 .isInstanceOf(TableNotFoundException.class);
+    }
+
+    @Test
+    void theEssentialPlanStopsAtTwentyActiveTables() {
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(20, 1, 1));
+
+        assertThatThrownBy(() -> createTable(salao, "21"))
+                .isInstanceOf(PlanLimitReachedException.class)
+                .hasMessage("O plano Essencial permite até 20 mesas ativas. Para ter mais, mude de plano.");
+        assertThat(subscriptions.locks).isEqualTo(1); // travou a assinatura antes de contar
+    }
+
+    @Test
+    void reactivatingATableTakesASeatButDeactivatingNeverIsBlocked() {
+        TableSummary table = createTable(salao, "04");
+        update.update(new UpdateTableCommand(sakura, table.id(), null, null, false));
+        subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(20, 1, 1));
+
+        assertThatThrownBy(() -> update.update(new UpdateTableCommand(sakura, table.id(), null, null, true)))
+                .isInstanceOf(PlanLimitReachedException.class);
+        // Renomear uma mesa inativa não ocupa vaga.
+        assertThat(update.update(new UpdateTableCommand(sakura, table.id(), "05", null, null)).label()).isEqualTo("05");
     }
 }

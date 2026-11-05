@@ -4,14 +4,19 @@ import br.com.cardapio.application.port.in.account.SignupCommand;
 import br.com.cardapio.application.port.in.account.SignupResult;
 import br.com.cardapio.application.port.out.account.LoadEstablishmentPort;
 import br.com.cardapio.application.port.out.account.LoadUserPort;
-import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.account.SaveAccountPort;
+import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.domain.account.exception.EmailAlreadyRegisteredException;
 import br.com.cardapio.domain.account.model.*;
+import br.com.cardapio.domain.plan.model.SubscriptionStatus;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Email;
+import br.com.cardapio.support.InMemorySubscriptions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +28,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SignupServiceTest {
 
     private final InMemoryAccounts accounts = new InMemoryAccounts();
-    private final SignupService service = new SignupService(accounts, accounts, accounts, new FakeHasher());
+    private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
+    private final SignupService service = new SignupService(accounts, accounts, accounts, new FakeHasher(),
+            subscriptions, subscriptions, Clock.fixed(Instant.parse("2026-11-05T12:00:00Z"), ZoneOffset.UTC));
 
     private static SignupCommand command(String email, String establishmentName) {
         return new SignupCommand(establishmentName, "Marina Tanaka", "11.222.333/0001-81",
@@ -119,5 +126,17 @@ class SignupServiceTest {
             users.add(owner);
             memberships.add(membership);
         }
+    }
+
+    @Test
+    void everySignupStartsAFourteenDayTrialOnThePro() {
+        SignupResult result = service.signup(command("marina@sakura.com", "Sakura Sushi"));
+
+        assertThat(subscriptions.saved).singleElement().satisfies(s -> {
+            assertThat(s.organizationId()).isEqualTo(result.organizationId());
+            assertThat(s.planId()).isEqualTo(InMemorySubscriptions.PRO.id());
+            assertThat(s.status()).isEqualTo(SubscriptionStatus.TRIALING);
+            assertThat(s.trialEndsAt()).isEqualTo(Instant.parse("2026-11-19T12:00:00Z"));
+        });
     }
 }
