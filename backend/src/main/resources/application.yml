@@ -75,6 +75,16 @@ app:
     # O cabeçalho com o IP do cliente que SÓ o proxy da hospedagem escreve (no Fly.io, Fly-Client-IP).
     # Vazio (desenvolvimento): vale o endereço da conexão. Nunca use X-Forwarded-For: o cliente o escreve.
     client-ip-header: ${CLIENT_IP_HEADER:}
+  # Limite de tentativas por IP (Guia 32). O IP é o mesmo do app.presence.client-ip-header. Um
+  # restaurante inteiro pode sair por um IP só (o Wi-Fi do salão): os limites da mesa são folgados.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    rules:
+      login: { requests: 20, window: 10m }
+      pin: { requests: 60, window: 10m }
+      pairing: { requests: 30, window: 1h }
+      table-session: { requests: 600, window: 10m }
+      table-actions: { requests: 300, window: 1m }
   # Endereço público do front: o QR Code de cada mesa aponta para {public-url}/m/{token}.
   # Para testar no celular pela rede local, use o IP da máquina (ver README).
   public-url: ${APP_PUBLIC_URL:http://localhost:3000}

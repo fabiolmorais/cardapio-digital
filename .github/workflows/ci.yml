@@ -98,6 +98,8 @@ jobs:
       STORAGE_PUBLIC_URL: http://s3mock:9090/cardapio-e2e
       STORAGE_ACCESS_KEY_ID: ci
       STORAGE_SECRET_ACCESS_KEY: ci-only
+      # Os testes ponta a ponta fazem centenas de logins do mesmo IP (Guia 32).
+      RATE_LIMIT_ENABLED: "false"
       API_URL: http://localhost:8080
       NEXT_PUBLIC_API_URL: http://localhost:8080
     steps:
