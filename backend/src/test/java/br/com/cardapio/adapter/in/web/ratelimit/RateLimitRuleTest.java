@@ -9,6 +9,7 @@ class RateLimitRuleTest {
     @Test
     void eachEntryPointFallsInItsGroup() {
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/login")).contains(RateLimitRule.LOGIN);
+        assertThat(RateLimitRule.of("POST", "/api/v1/signup")).contains(RateLimitRule.SIGNUP);
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/password-reset")).contains(RateLimitRule.PASSWORD_RESET);
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/password-reset/confirm"))
                 .contains(RateLimitRule.PASSWORD_RESET);
@@ -30,7 +31,8 @@ class RateLimitRuleTest {
         assertThat(RateLimitRule.of("GET", "/api/v1/public/tables/abc123/calls")).isEmpty();
         assertThat(RateLimitRule.of("GET", "/api/v1/public/tables/abc123")).isEmpty();
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/refresh")).isEmpty();
-        assertThat(RateLimitRule.of("POST", "/api/v1/device-pairings/9f1c/claim")).isEmpty(); // exige o dono logado
+        // O aparelho pergunta de tempos em tempos se já foi vinculado, com o segredo (256 bits) dele.
+        assertThat(RateLimitRule.of("POST", "/api/v1/device-pairings/9f1c/claim")).isEmpty();
         assertThat(RateLimitRule.of("POST", "/api/v1/tables")).isEmpty();
     }
 }
