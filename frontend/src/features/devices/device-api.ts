@@ -16,7 +16,7 @@ export class PairingGoneError extends Error {}
 function failure(response: Response | undefined, error: unknown): Error {
   const problem = error as { detail?: string; fields?: string[] } | undefined;
   if (response?.status === 400 && problem?.fields) return new Error(t.fields);
-  if (response && [400, 403, 404, 422].includes(response.status) && problem?.detail) {
+  if (response && [400, 403, 404, 422, 429].includes(response.status) && problem?.detail) {
     return new Error(problem.detail);
   }
   return new Error(t.generic);

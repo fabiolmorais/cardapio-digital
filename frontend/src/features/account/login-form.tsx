@@ -26,7 +26,8 @@ async function login(body: LoginRequest): Promise<LoginResponse> {
   if (data) return data;
   const problem = error as { detail?: string } | undefined;
   // 401 traz a mensagem do back ("E-mail ou senha incorretos"); o resto vira a mensagem genérica.
-  if (response?.status === 401 && problem?.detail) throw new Error(problem.detail);
+  // 401: e-mail ou senha errados; 429: muitas tentativas desta rede (a frase diz quanto esperar).
+  if ((response?.status === 401 || response?.status === 429) && problem?.detail) throw new Error(problem.detail);
   if (response?.status === 400) throw new Error(t.errors.fields);
   throw new Error(t.errors.generic);
 }

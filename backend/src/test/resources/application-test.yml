@@ -4,6 +4,9 @@ spring:
 sentry:
   dsn: ""
 app:
+  # Os testes fazem centenas de logins do mesmo IP; o RateLimitTest liga de novo, com limites pequenos.
+  rate-limit:
+    enabled: false
   security:
     jwt:
       secret: chave-so-para-testes-com-mais-de-32-bytes-0123456789
