@@ -36,4 +36,14 @@ interface RefreshTokenJpaRepository extends JpaRepository<RefreshTokenJpaEntity,
                AND t.revokedAt IS NULL
             """)
     int revokeFamily(@Param("familyId") UUID familyId, @Param("now") Instant now);
+
+    /** Encerra todas as sessões da pessoa (a senha mudou). */
+    @Modifying
+    @Query("""
+            UPDATE RefreshTokenJpaEntity t
+               SET t.revokedAt = :now
+             WHERE t.userId = :userId
+               AND t.revokedAt IS NULL
+            """)
+    int revokeAllOf(@Param("userId") UUID userId, @Param("now") Instant now);
 }
