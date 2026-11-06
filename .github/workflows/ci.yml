@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
           cache: maven
       - name: Build, testes (Testcontainers) e ArchUnit
         run: ./mvnw -B verify
@@ -115,7 +115,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -184,7 +184,7 @@ jobs:
         if: env.NVD_API_KEY != ''
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
           cache: maven
       - name: Cache da base de vulnerabilidades (NVD)
         if: env.NVD_API_KEY != ''

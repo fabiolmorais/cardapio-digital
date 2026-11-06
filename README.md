@@ -4,7 +4,7 @@ SaaS de cardápio digital e atendimento por mesa para bares e restaurantes.
 
 ## Requisitos
 
-- Java 21, Node 22, Docker
+- Java 25, Node 22, Docker
 
 ## Rodando localmente
 
