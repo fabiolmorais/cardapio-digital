@@ -839,6 +839,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manda o link para redefinir a senha, se houver conta com este e-mail */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca a senha com o token do link e encerra as sessões */
+        post: operations["confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -2480,6 +2514,18 @@ export interface components {
             memberId: string;
             /** @example 258014 */
             pin: string;
+        };
+        /** @description O e-mail de quem esqueceu a senha */
+        PasswordResetRequest: {
+            /** @example marina@sakura.com */
+            email: string;
+        };
+        /** @description O token do link e a senha nova */
+        PasswordResetConfirmRequest: {
+            /** @description O token que veio no link do e-mail */
+            token: string;
+            /** @description Pelo menos 10 caracteres, com letra e número */
+            newPassword: string;
         };
         LoginRequest: {
             /** @example marina@sakurasushi.com.br */
@@ -5571,6 +5617,77 @@ export interface operations {
             };
             /** @description Erros demais: PIN bloqueado por alguns minutos */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Pedido recebido (a mesma resposta com ou sem conta) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description E-mail fora do formato */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Senha trocada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Senha fraca */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Link vencido, já usado ou inexistente */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 enum RateLimitRule {
     /** Entrar com e-mail e senha. */
     LOGIN(Set.of("POST"), "/api/v1/auth/login"),
+    /** "Esqueci a senha": pedir o link e trocar a senha com ele. */
+    PASSWORD_RESET(Set.of("POST"), "/api/v1/auth/password-reset(/confirm)?"),
     /** Entrar com PIN num aparelho vinculado. */
     PIN(Set.of("POST"), "/api/v1/auth/pin"),
     /** Um aparelho pedindo o código de vínculo. */

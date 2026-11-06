@@ -81,6 +81,7 @@ app:
     enabled: ${RATE_LIMIT_ENABLED:true}
     rules:
       login: { requests: 20, window: 10m }
+      password-reset: { requests: 10, window: 1h }
       pin: { requests: 60, window: 10m }
       pairing: { requests: 30, window: 1h }
       table-session: { requests: 600, window: 10m }
@@ -115,6 +116,12 @@ app:
       # O endereço do back como o navegador o vê (no celular pela rede local, o IP da máquina).
       public-url: ${FAKE_VIDEO_PUBLIC_URL:http://localhost:8080}
   # As notificações no celular da equipe (Guia 29). Sem as chaves, o push fica desligado.
+  # E-mail pelo Resend (Guia 33). Sem a chave, o e-mail só vai para o log (só o assunto).
+  # O remetente precisa ser de um domínio verificado no Resend.
+  email:
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${EMAIL_FROM:Cardápio Digital <avisos@cardapio.local>}
+    resend-url: https://api.resend.com
   push:
     vapid-public-key: ${VAPID_PUBLIC_KEY:}
     vapid-private-key: ${VAPID_PRIVATE_KEY:}

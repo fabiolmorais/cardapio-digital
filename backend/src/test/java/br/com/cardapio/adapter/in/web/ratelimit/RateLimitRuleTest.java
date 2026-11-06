@@ -9,6 +9,9 @@ class RateLimitRuleTest {
     @Test
     void eachEntryPointFallsInItsGroup() {
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/login")).contains(RateLimitRule.LOGIN);
+        assertThat(RateLimitRule.of("POST", "/api/v1/auth/password-reset")).contains(RateLimitRule.PASSWORD_RESET);
+        assertThat(RateLimitRule.of("POST", "/api/v1/auth/password-reset/confirm"))
+                .contains(RateLimitRule.PASSWORD_RESET);
         assertThat(RateLimitRule.of("POST", "/api/v1/auth/pin")).contains(RateLimitRule.PIN);
         assertThat(RateLimitRule.of("POST", "/api/v1/device-pairings")).contains(RateLimitRule.PAIRING);
         assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/session")).contains(RateLimitRule.TABLE_SESSION);

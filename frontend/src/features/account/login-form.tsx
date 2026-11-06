@@ -112,6 +112,13 @@ export function LoginForm() {
         {mutation.isPending || mutation.isSuccess ? t.submitting : t.submit}
       </Button>
 
+      <Link
+        href="/esqueci-a-senha"
+        className="self-center text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        {t.forgot}
+      </Link>
+
       <div aria-hidden className="h-px bg-border" />
 
       <p className="text-center text-sm text-muted-foreground">

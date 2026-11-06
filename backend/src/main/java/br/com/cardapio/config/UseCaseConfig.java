@@ -1,6 +1,8 @@
 package br.com.cardapio.config;
 
 import br.com.cardapio.application.port.in.account.*;
+import br.com.cardapio.application.port.in.account.RequestPasswordResetUseCase;
+import br.com.cardapio.application.port.in.account.ResetPasswordUseCase;
 import br.com.cardapio.application.port.in.brand.GetBrandUseCase;
 import br.com.cardapio.application.port.in.brand.RemoveLogoUseCase;
 import br.com.cardapio.application.port.in.brand.SetLogoUseCase;
@@ -83,6 +85,7 @@ import br.com.cardapio.application.port.in.team.ReactivateTeamMemberUseCase;
 import br.com.cardapio.application.port.in.team.UpdateTeamMemberUseCase;
 import br.com.cardapio.application.port.out.account.*;
 import br.com.cardapio.application.port.out.account.EstablishmentTimeZonePort;
+import br.com.cardapio.application.port.out.account.PasswordResetPort;
 import br.com.cardapio.application.port.out.brand.BrandPort;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.device.DevicePairingPort;
@@ -118,6 +121,8 @@ import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.service.account.*;
+import br.com.cardapio.application.service.account.RequestPasswordResetService;
+import br.com.cardapio.application.service.account.ResetPasswordService;
 import br.com.cardapio.application.service.brand.GetBrandService;
 import br.com.cardapio.application.service.brand.RemoveLogoService;
 import br.com.cardapio.application.service.brand.SetLogoService;
@@ -847,5 +852,23 @@ class UseCaseConfig {
     SendTrialNoticesUseCase sendTrialNoticesUseCase(TrialNoticePort trialNoticePort, EmailSenderPort emailSenderPort,
                                                     Clock clock, @Value("${app.public-url}") String publicUrl) {
         return new SendTrialNoticesService(trialNoticePort, emailSenderPort, clock, publicUrl);
+    }
+
+    // Esqueci a senha (Guia 33)
+
+    @Bean
+    RequestPasswordResetUseCase requestPasswordResetUseCase(LoadUserPort loadUserPort,
+                                                            PasswordResetPort passwordResetPort,
+                                                            RandomTokenGenerator randomTokenGenerator,
+                                                            EmailSenderPort emailSenderPort, Clock clock,
+                                                            @Value("${app.public-url}") String publicUrl) {
+        return new RequestPasswordResetService(loadUserPort, passwordResetPort, randomTokenGenerator, emailSenderPort,
+                clock, publicUrl);
+    }
+
+    @Bean
+    ResetPasswordUseCase resetPasswordUseCase(PasswordResetPort passwordResetPort, PasswordHasher passwordHasher,
+                                              Clock clock) {
+        return new ResetPasswordService(passwordResetPort, passwordHasher, clock);
     }
 }
