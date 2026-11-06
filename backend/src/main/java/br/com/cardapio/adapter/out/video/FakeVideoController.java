@@ -30,7 +30,7 @@ import java.util.Base64;
  */
 @RestController
 @Hidden
-@ConditionalOnProperty(prefix = "app.video", name = "provider", havingValue = "fake", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "app.video", name = "provider", havingValue = "fake")
 @RequestMapping(FakeVideoController.PATH)
 class FakeVideoController {
 

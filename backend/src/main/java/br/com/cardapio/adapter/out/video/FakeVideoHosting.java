@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * converte nada: o vídeo toca como foi enviado. É o padrão (app.video.provider=fake).
  */
 @Component
-@ConditionalOnProperty(prefix = "app.video", name = "provider", havingValue = "fake", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "app.video", name = "provider", havingValue = "fake")
 class FakeVideoHosting implements VideoHostingPort {
 
     /** As medidas que o falso diz ter "convertido". */

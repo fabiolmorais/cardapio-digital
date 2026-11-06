@@ -49,11 +49,13 @@ management:
         enabled: true
       show-details: never
 
+# A documentação da API (Swagger) vem desligada: só liga onde a variável pedir (no seu .env e no
+# CI, que confere os tipos do front). Esquecer a variável em produção não abre o mapa da API.
 springdoc:
   api-docs:
-    enabled: ${OPENAPI_ENABLED:true}
+    enabled: ${OPENAPI_ENABLED:false}
   swagger-ui:
-    enabled: ${OPENAPI_ENABLED:true}
+    enabled: ${OPENAPI_ENABLED:false}
   default-produces-media-type: application/json
 
 app:
@@ -82,6 +84,7 @@ app:
     rules:
       login: { requests: 20, window: 10m }
       password-reset: { requests: 10, window: 1h }
+      signup: { requests: 10, window: 1h }
       pin: { requests: 60, window: 10m }
       pairing: { requests: 30, window: 1h }
       table-session: { requests: 600, window: 10m }
@@ -105,7 +108,8 @@ app:
   # O vídeo do prato (Guia 22). Até a Etapa 15, o serviço de vídeo falso (fake): o próprio back
   # recebe o envio. Com a conta do Bunny Stream: VIDEO_PROVIDER=bunny e as chaves (ver README).
   video:
-    provider: ${VIDEO_PROVIDER:fake}
+    # O Bunny é o padrão: o falso (com rotas públicas de envio) só liga com VIDEO_PROVIDER=fake.
+    provider: ${VIDEO_PROVIDER:bunny}
     # O segredo do aviso do serviço de vídeo (?token= na URL do webhook). Vazio recusa todo aviso.
     webhook-token: ${VIDEO_WEBHOOK_TOKEN:}
     bunny:

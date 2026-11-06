@@ -100,8 +100,13 @@ jobs:
       STORAGE_SECRET_ACCESS_KEY: ci-only
       # Os testes ponta a ponta fazem centenas de logins do mesmo IP (Guia 32).
       RATE_LIMIT_ENABLED: "false"
+      # O vídeo falso (o padrão é o Bunny) e a documentação da API, que confere os tipos do front (Guia 34).
+      VIDEO_PROVIDER: fake
+      OPENAPI_ENABLED: "true"
       API_URL: http://localhost:8080
       NEXT_PUBLIC_API_URL: http://localhost:8080
+      # O CSP do front (Guia 34) libera o S3Mock, para onde o navegador envia as fotos no e2e.
+      CSP_EXTRA_SOURCES: http://s3mock:9090
     steps:
       - uses: actions/checkout@v4
       - name: Libera a pasta do projeto para o Git

@@ -3,7 +3,16 @@ spring:
     import: []
 sentry:
   dsn: ""
+# Os testes conferem o contrato da API e os cabeçalhos do Swagger (Guia 34: em produção, desligado).
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 app:
+  # O serviço de vídeo falso, na própria aplicação (o Bunny é o padrão desde o Guia 34).
+  video:
+    provider: fake
   # Os testes fazem centenas de logins do mesmo IP; o RateLimitTest liga de novo, com limites pequenos.
   rate-limit:
     enabled: false
