@@ -997,7 +997,6 @@ export const messages = {
       A_LA_MINUTE: { title: "À la minute", text: "Rodadas pelo celular → cozinha" },
       PASSAGEM: { title: "Passagem", text: "Passadores + cartão verde/vermelho" },
     },
-    passagemSoon: "O rodízio de passagem já pode ser cadastrado; ele passa a funcionar na mesa numa próxima versão.",
     prices: {
       title: "Preço por pessoa",
       text: "Cada faixa tem um preço padrão. Os preços especiais valem só nos dias e horários escolhidos.",
