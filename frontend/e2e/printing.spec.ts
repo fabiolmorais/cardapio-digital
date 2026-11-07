@@ -49,7 +49,7 @@ async function station(browser: Browser, email: string) {
     };
   });
   await loginThroughForm(page, email);
-  await page.getByRole("link", { name: /Abrir a impressão de comandas/ }).click();
+  await page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Impressão de comandas" }).click();
   await expect(page).toHaveURL(/\/painel\/impressao$/);
   await expect(page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
   const prints = () => page.evaluate(() => (window as unknown as { __prints: string[] }).__prints);

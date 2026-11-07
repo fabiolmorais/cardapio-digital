@@ -38,7 +38,7 @@ test("dono muda nome, cor, tema e Instagram, e o menu mostra o nome novo", async
   await expect(page.getByRole("status").filter({ hasText: "Marca salva." })).toBeVisible();
 
   // O menu lateral (a sessão) já mostra o nome novo.
-  await expect(page.getByRole("complementary", { name: "Gestão" })).toContainText("Sakura Sushi");
+  await expect(page.getByRole("complementary", { name: "Menu" })).toContainText("Sakura Sushi");
 
   // Gravado no back: depois de recarregar, tudo continua, e o Instagram ficou só com o @.
   await page.reload();

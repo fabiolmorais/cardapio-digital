@@ -34,7 +34,7 @@ test("o painel vira app (manifesto da equipe), e a página da mesa não", async 
 test("o painel leva ao passo a passo da instalação", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
-  await page.getByRole("link", { name: /Instalar o app no celular/ }).click();
+  await page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Instalar o app" }).click();
   await expect(page.getByRole("heading", { name: "Instalar o app da equipe" })).toBeVisible();
   await expect(page.getByRole("region", { name: "No Android (Chrome)" })).toContainText("Instalar app");
   await expect(page.getByRole("region", { name: "No iPhone (Safari)" })).toContainText("Adicionar à Tela de Início");

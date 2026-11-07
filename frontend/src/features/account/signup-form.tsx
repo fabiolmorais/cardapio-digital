@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PasswordInput } from "@/components/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, type Schemas } from "@/lib/api/client";
@@ -134,66 +135,70 @@ export function SignupForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby="signup-error">
       <div className="grid gap-4 sm:grid-cols-2">
-        {FIELDS.map((field) => (
-          <div key={field.name} className={field.half ? "flex flex-col gap-2" : "flex flex-col gap-2 sm:col-span-2"}>
-            <Label htmlFor={field.name} className="text-muted-foreground">
-              {t.fields[field.name]}
-            </Label>
-            <Input
-              id={field.name}
-              name={field.name}
-              type={field.type}
-              inputMode={field.inputMode}
-              autoComplete={field.autoComplete}
-              autoCapitalize={field.name === "document" ? "characters" : undefined}
-              placeholder={t.placeholders[field.name]}
-              required
-              minLength={field.type === "password" ? 10 : undefined}
-              maxLength={field.maxLength}
-              {...(isControlled(field) && {
-                value: values[field.name] ?? "",
-                onChange: (e: ChangeEvent<HTMLInputElement>) => {
-                  const next = field.format ? field.format(e.target.value) : e.target.value;
-                  setValues((current) => ({ ...current, [field.name]: next }));
-                  if (field.type === "password") setPasswordMismatch(false);
-                },
-              })}
-              aria-invalid={
-                invalid.has(field.name) ||
-                (field.name === "confirmPassword" && passwordMatch === "mismatch") ||
-                undefined
-              }
-              aria-describedby={
-                field.name === "confirmPassword"
-                  ? "password-hint password-match"
-                  : field.type === "password"
-                    ? "password-hint"
-                    : undefined
-              }
-              className={
-                field.name === "confirmPassword" && passwordMatch === "match"
-                  ? "h-12 rounded-xl border-success/70 px-4 text-base focus-visible:border-success focus-visible:ring-success/30"
-                  : "h-12 rounded-xl px-4 text-base"
-              }
-            />
-            {field.name === "confirmPassword" && (
-              <p
-                id="password-match"
-                aria-live="polite"
-                className={
-                  passwordMatch === "match"
-                    ? "flex min-h-5 items-center gap-1.5 text-sm text-success"
-                    : "flex min-h-5 items-center gap-1.5 text-sm text-destructive"
+        {FIELDS.map((field) => {
+          // As senhas ganham o botão de mostrar o que foi digitado.
+          const FieldInput = field.type === "password" ? PasswordInput : Input;
+          return (
+            <div key={field.name} className={field.half ? "flex flex-col gap-2" : "flex flex-col gap-2 sm:col-span-2"}>
+              <Label htmlFor={field.name} className="text-muted-foreground">
+                {t.fields[field.name]}
+              </Label>
+              <FieldInput
+                id={field.name}
+                name={field.name}
+                {...(field.type !== "password" && { type: field.type })}
+                inputMode={field.inputMode}
+                autoComplete={field.autoComplete}
+                autoCapitalize={field.name === "document" ? "characters" : undefined}
+                placeholder={t.placeholders[field.name]}
+                required
+                minLength={field.type === "password" ? 10 : undefined}
+                maxLength={field.maxLength}
+                {...(isControlled(field) && {
+                  value: values[field.name] ?? "",
+                  onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                    const next = field.format ? field.format(e.target.value) : e.target.value;
+                    setValues((current) => ({ ...current, [field.name]: next }));
+                    if (field.type === "password") setPasswordMismatch(false);
+                  },
+                })}
+                aria-invalid={
+                  invalid.has(field.name) ||
+                  (field.name === "confirmPassword" && passwordMatch === "mismatch") ||
+                  undefined
                 }
-              >
-                {passwordMatch === "match" && <CircleCheck aria-hidden className="size-4" />}
-                {passwordMatch === "mismatch" && <CircleAlert aria-hidden className="size-4" />}
-                {passwordMatch === "match" && t.passwordMatch.ok}
-                {passwordMatch === "mismatch" && t.passwordMatch.mismatch}
-              </p>
-            )}
-          </div>
-        ))}
+                aria-describedby={
+                  field.name === "confirmPassword"
+                    ? "password-hint password-match"
+                    : field.type === "password"
+                      ? "password-hint"
+                      : undefined
+                }
+                className={
+                  field.name === "confirmPassword" && passwordMatch === "match"
+                    ? "h-12 rounded-xl border-success/70 px-4 text-base focus-visible:border-success focus-visible:ring-success/30"
+                    : "h-12 rounded-xl px-4 text-base"
+                }
+              />
+              {field.name === "confirmPassword" && (
+                <p
+                  id="password-match"
+                  aria-live="polite"
+                  className={
+                    passwordMatch === "match"
+                      ? "flex min-h-5 items-center gap-1.5 text-sm text-success"
+                      : "flex min-h-5 items-center gap-1.5 text-sm text-destructive"
+                  }
+                >
+                  {passwordMatch === "match" && <CircleCheck aria-hidden className="size-4" />}
+                  {passwordMatch === "mismatch" && <CircleAlert aria-hidden className="size-4" />}
+                  {passwordMatch === "match" && t.passwordMatch.ok}
+                  {passwordMatch === "mismatch" && t.passwordMatch.mismatch}
+                </p>
+              )}
+            </div>
+          );
+        })}
         <p id="password-hint" className="text-xs text-muted-foreground sm:col-span-2">
           {t.passwordHint}
         </p>
