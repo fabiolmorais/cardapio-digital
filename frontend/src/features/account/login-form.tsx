@@ -49,12 +49,21 @@ export function LoginForm() {
     },
   });
 
-  // O Next guarda páginas já visitadas com o estado delas. Toda vez que a tela de entrar
-  // volta a aparecer, começa limpa: sem "Entrando…", sem erro antigo e sem a senha de antes.
-  const { reset } = mutation;
+  // O Next guarda páginas já visitadas com o estado delas. Quando a tela de entrar VOLTA a
+  // aparecer com uma tentativa guardada (pelo "voltar" do navegador, depois de entrar), começa
+  // limpa: sem "Entrando…", sem erro antigo e sem a senha de antes. Sem tentativa, não mexe: no
+  // 4G a pessoa começa a digitar antes de o JavaScript carregar, e limpar ali apagaria o que ela
+  // digitou (e o modo estrito do React roda este efeito duas vezes ao abrir).
+  const { reset, status } = mutation;
+  const statusRef = useRef(status);
   useEffect(() => {
-    reset();
-    formRef.current?.reset();
+    statusRef.current = status;
+  }, [status]);
+  useEffect(() => {
+    if (statusRef.current !== "idle") {
+      reset();
+      formRef.current?.reset();
+    }
   }, [reset]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {

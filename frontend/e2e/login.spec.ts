@@ -52,3 +52,26 @@ test("voltar para a tela de entrar pelo navegador mostra o formulário limpo", a
   await expect(page.getByRole("button", { name: "Entrar" })).toBeEnabled();
   await expect(page.getByLabel("Senha")).toHaveValue("");
 });
+
+test("o que a pessoa digita antes de a página carregar o JavaScript não some", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  // Um 4G lento: o JavaScript da página chega 2 s depois do HTML.
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await route.continue();
+  });
+
+  await page.goto("/entrar", { waitUntil: "commit" });
+  await page.getByLabel("E-mail").fill(email);
+  await page.getByLabel("Senha").fill(PASSWORD);
+  // Espera o React assumir a página (o formulário ganha a ligação com o React) e os efeitos rodarem.
+  await page.waitForFunction(() => {
+    const form = document.querySelector("form");
+    return form !== null && Object.keys(form).some((key) => key.startsWith("__reactFiber"));
+  });
+  await page.waitForTimeout(500);
+  await expect(page.getByLabel("E-mail")).toHaveValue(email);
+  await expect(page.getByLabel("Senha")).toHaveValue(PASSWORD);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/painel$/, { timeout: 15_000 });
+});
