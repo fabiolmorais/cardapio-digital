@@ -69,4 +69,4 @@ cd frontend && npm run test:e2e      # Playwright (com o back rodando)
 
 ## Publicação
 
-Ainda não há staging nem produção. A publicação (Fly.io, Vercel e Neon, em São Paulo) acontece na Etapa 15 do roadmap, com o MVP pronto. Os arquivos já estão no repositório (`backend/Dockerfile`, `backend/fly.staging.toml`, `.github/workflows/deploy-staging.yml`), com o deploy desligado.
+O staging fica em `https://staging.ohchefe.app.br` (front na Vercel, back no Fly.io, banco no Neon, todos em São Paulo): o merge na `main` publica nele, depois do CI verde. Endereços, segredos e passo a passo em [`docs/operacao/staging.md`](docs/operacao/staging.md). A produção (`ohchefe.app.br`) vem depois de validar o staging.
