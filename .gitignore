@@ -29,3 +29,7 @@ next-env.d.ts
 *.iml
 .DS_Store
 *.log
+
+# Teste de carga: os restaurantes de teste e os resultados de cada rodada
+load/restaurantes.json
+load/resultado-*.txt
