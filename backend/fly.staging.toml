@@ -1,5 +1,6 @@
-# Staging no Fly.io (São Paulo). Segredos via `fly secrets set` (DB_URL, DB_PASSWORD, FLYWAY_PASSWORD, SENTRY_DSN...).
-app = "cardapio-api-staging"
+# Staging no Fly.io (São Paulo), em https://api.staging.ohchefe.app.br (ADR 0007).
+# Aqui só o que não é segredo. Os segredos vão por `fly secrets set` (ver docs/operacao/staging.md).
+app = "ohchefe-api-staging"
 primary_region = "gru"
 
 [build]
@@ -8,14 +9,43 @@ primary_region = "gru"
 [env]
   SENTRY_ENVIRONMENT = "staging"
   LOGGING_STRUCTURED_FORMAT_CONSOLE = "logstash"
-  OPENAPI_ENABLED = "true"
+  # Os usuários do banco (as senhas e o endereço do banco são segredos).
+  FLYWAY_USERNAME = "cardapio_owner"
+  DB_USERNAME = "cardapio_app"
+  # O front do staging: CORS, e o endereço impresso no QR Code das mesas.
+  CORS_ALLOWED_ORIGINS = "https://staging.ohchefe.app.br"
+  APP_PUBLIC_URL = "https://staging.ohchefe.app.br"
+  # O IP do cliente, escrito só pelo proxy do Fly (nunca X-Forwarded-For).
+  CLIENT_IP_HEADER = "Fly-Client-IP"
+  # Fotos: o bucket do staging no R2.
+  STORAGE_ENDPOINT = "https://d9302c470e6653fc5e0425fe6fb7a56b.r2.cloudflarestorage.com"
+  STORAGE_BUCKET = "ohchefe-fotos-staging"
+  STORAGE_PUBLIC_URL = "https://fotos-staging.ohchefe.app.br"
+  # Vídeos: a biblioteca do staging no Bunny Stream.
+  VIDEO_PROVIDER = "bunny"
+  BUNNY_LIBRARY_ID = "802661"
+  BUNNY_CDN_HOST = "vz-4bbe5cc8-e7e.b-cdn.net"
+  # E-mail pelo Resend, do domínio verificado.
+  EMAIL_FROM = "Cardápio Digital <nao-responda@avisos.ohchefe.app.br>"
+  VAPID_SUBJECT = "mailto:contato@ohchefe.app.br"
+  # O staging fica aberto na internet: sem o mapa da API, como na produção.
+  OPENAPI_ENABLED = "false"
+  # Os erros do back, no projeto ohchefe-api do Sentry (o DSN não é segredo).
+  SENTRY_DSN = "https://4a3706d14b45453a74a9ef0f00a17fa9@o4512391467958272.ingest.us.sentry.io/4512391480934400"
 
 [http_service]
   internal_port = 8080
   force_https = true
+  # No staging a máquina dorme sem uso, e acorda no primeiro acesso (alguns segundos).
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
+
+  # As telas ficam com o tempo real (SSE) aberto o tempo todo: uma conexão por tela.
+  # Conta por requisição, com folga, para o Fly não achar a máquina cheia com poucas telas.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 500
 
   [[http_service.checks]]
     grace_period = "30s"
