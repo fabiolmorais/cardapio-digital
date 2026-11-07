@@ -6,7 +6,7 @@ test("login leva ao painel com os dados de quem entrou", async ({ page, request 
 
   await page.goto("/entrar");
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill(PASSWORD);
+  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page).toHaveURL(/\/painel$/);
@@ -18,7 +18,7 @@ test("login leva ao painel com os dados de quem entrou", async ({ page, request 
   await expect(page).toHaveURL(/\/entrar$/);
   // A tela de entrar volta limpa: botão liberado e sem a senha de quem saiu.
   await expect(page.getByRole("button", { name: "Entrar" })).toBeEnabled();
-  await expect(page.getByLabel("Senha")).toHaveValue("");
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveValue("");
 });
 
 test("senha errada mostra o erro sem sair da tela", async ({ page, request }) => {
@@ -26,7 +26,7 @@ test("senha errada mostra o erro sem sair da tela", async ({ page, request }) =>
 
   await page.goto("/entrar");
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill("senhaErrada123");
+  await page.getByLabel("Senha", { exact: true }).fill("senhaErrada123");
   await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page.locator("#login-error")).toHaveText("E-mail ou senha incorretos");
@@ -43,14 +43,14 @@ test("voltar para a tela de entrar pelo navegador mostra o formulário limpo", a
 
   await page.goto("/entrar");
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill(PASSWORD);
+  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(/\/painel$/);
 
   await page.goBack();
   await expect(page).toHaveURL(/\/entrar$/);
   await expect(page.getByRole("button", { name: "Entrar" })).toBeEnabled();
-  await expect(page.getByLabel("Senha")).toHaveValue("");
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveValue("");
 });
 
 test("o que a pessoa digita antes de a página carregar o JavaScript não some", async ({ page, request }) => {
@@ -63,7 +63,7 @@ test("o que a pessoa digita antes de a página carregar o JavaScript não some",
 
   await page.goto("/entrar", { waitUntil: "commit" });
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill(PASSWORD);
+  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
   // Espera o React assumir a página (o formulário ganha a ligação com o React) e os efeitos rodarem.
   await page.waitForFunction(() => {
     const form = document.querySelector("form");
@@ -71,7 +71,24 @@ test("o que a pessoa digita antes de a página carregar o JavaScript não some",
   });
   await page.waitForTimeout(500);
   await expect(page.getByLabel("E-mail")).toHaveValue(email);
-  await expect(page.getByLabel("Senha")).toHaveValue(PASSWORD);
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveValue(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(/\/painel$/, { timeout: 15_000 });
+});
+
+test("o olho mostra e esconde a senha digitada", async ({ page }) => {
+  await page.goto("/entrar");
+  const password = page.getByLabel("Senha", { exact: true });
+  await password.fill("sushi2026bom");
+  await expect(password).toHaveAttribute("type", "password");
+
+  const eye = page.getByRole("button", { name: "Mostrar senha" });
+  await eye.click();
+  await expect(password).toHaveAttribute("type", "text");
+  await expect(eye).toHaveAttribute("aria-pressed", "true");
+  await expect(password).toHaveValue("sushi2026bom");
+
+  await eye.click();
+  await expect(password).toHaveAttribute("type", "password");
+  await expect(eye).toHaveAttribute("aria-pressed", "false");
 });

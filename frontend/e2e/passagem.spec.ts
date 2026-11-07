@@ -63,7 +63,7 @@ test("a mesa entra no passagem, vira o cartão, e os passadores veem a cor na ho
 
   // A tela dos passadores mostra a mesa, e acompanha cada virada.
   await owner.page.goto("/painel");
-  await owner.page.getByRole("link", { name: /Abrir a tela dos passadores/ }).click();
+  await owner.page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Passadores" }).click();
   const mesa = owner.page.getByRole("listitem", { name: /^Mesa 04/ });
   await expect(mesa).toHaveAccessibleName("Mesa 04 · Pode servir");
   await expect(mesa).toContainText("2 pessoas · Churrasco");

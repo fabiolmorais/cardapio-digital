@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import { Label } from "@/components/ui/label";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
@@ -54,10 +54,9 @@ export function ResetPasswordForm() {
         <Label htmlFor="password" className="text-muted-foreground">
           {t.newPassword}
         </Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={10}
@@ -69,10 +68,9 @@ export function ResetPasswordForm() {
         <Label htmlFor="confirm" className="text-muted-foreground">
           {t.confirmPassword}
         </Label>
-        <Input
+        <PasswordInput
           id="confirm"
           name="confirm"
-          type="password"
           autoComplete="new-password"
           required
           minLength={10}

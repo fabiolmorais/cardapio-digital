@@ -7,6 +7,7 @@ export const messages = {
     cancel: "Cancelar",
     working: "Aguarde…",
     sendFailed: "O envio do arquivo falhou. Confira a conexão e tente de novo.",
+    showPassword: "Mostrar senha",
   },
   app: {
     name: "OhChefe",
@@ -274,8 +275,8 @@ export const messages = {
   },
   panel: {
     title: "Painel",
+    liveNow: (date: string) => `Ao vivo · ${date}`,
     greeting: (name: string) => `Olá, ${name}`,
-    workingAt: "Você está no",
     roleLabel: "Seu papel",
     roles: {
       OWNER: "Dono",
@@ -285,7 +286,6 @@ export const messages = {
     },
     loading: "Carregando seus dados…",
     error: "Não foi possível carregar seus dados. Entre de novo.",
-    comingSoon: "O fechamento da conta pelo garçom chega numa próxima etapa.",
     tabs: {
       title: "Mesas com comanda aberta",
       subtitle: "Toque numa mesa para ver a comanda e fechar a conta",
@@ -501,20 +501,6 @@ export const messages = {
       openTv: "Abrir Modo TV",
     },
     logout: "Sair",
-    shortcuts: "Gestão",
-    manage: {
-      floor: { title: "Mesas e QR Codes", description: "Setores, mesas e os displays para imprimir" },
-      menu: { title: "Cardápio", description: "Categorias, produtos, preços e promoções" },
-      rodizios: { title: "Rodízios", description: "Preço por pessoa, faixas, produtos incluídos e regras" },
-      team: { title: "Equipe", description: "Cadastre garçons, cozinha e gerentes" },
-      brand: { title: "Marca e aparência", description: "Logo, cor e tema da página da mesa" },
-      presence: {
-        title: "Presença e pedidos",
-        description: "Wi-Fi do salão, o local e o pedido pelo celular, com os limites",
-      },
-      tabs: { title: "Comandas", description: "O histórico das comandas fechadas, por data e por mesa" },
-      subscription: { title: "Assinatura", description: "O plano, o teste grátis e o uso dos limites" },
-    },
   },
   presence: {
     title: "Presença e pedidos",
@@ -632,8 +618,17 @@ export const messages = {
   },
   admin: {
     management: "Gestão",
+    staffPanel: "Painel da equipe",
+    menuLabel: "Menu",
+    navigation: "Navegação",
+    screens: "Telas",
     nav: {
-      panel: "Painel",
+      panel: "Ao vivo",
+      tv: "Modo TV",
+      kitchen: "Cozinha",
+      passagem: "Passadores",
+      printing: "Impressão de comandas",
+      install: "Instalar o app",
       team: "Equipe e aparelhos",
       floor: "Mesas e QR Codes",
       menu: "Cardápio",
@@ -1282,8 +1277,6 @@ export const messages = {
       error: "Não foi possível ativar os avisos. Tente de novo.",
     },
     install: {
-      link: "Instalar o app no celular",
-      linkHint: "Abre o painel como um app, direto da tela de início",
       title: "Instalar o app da equipe",
       intro: "Com o app na tela de início, o painel abre em tela cheia e recebe os avisos das mesas.",
       installed: "O app já está instalado neste aparelho.",

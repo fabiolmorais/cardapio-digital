@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, type Schemas } from "@/lib/api/client";
@@ -100,10 +101,9 @@ export function LoginForm() {
         <Label htmlFor="password" className="text-muted-foreground">
           {t.fields.password}
         </Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           placeholder={t.placeholders.password}
           required

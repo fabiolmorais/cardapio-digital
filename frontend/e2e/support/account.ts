@@ -28,7 +28,7 @@ export async function createAccount(request: APIRequestContext) {
 export async function loginThroughForm(page: Page, email: string) {
   await page.goto("/entrar");
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill(PASSWORD);
+  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   // O servidor de desenvolvimento compila o painel na primeira visita: com a suíte inteira em
   // paralelo, isso passa dos 5 segundos de espera padrão.
