@@ -1,10 +1,11 @@
 import { connection } from "next/server";
+import type { ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { messages } from "@/messages/pt-BR";
-import { PlanCard } from "./plan-card";
+import { PlanBilling } from "./plan-billing";
 
 /** Busca os planos na API a cada requisição (renderizado no servidor). */
-export async function PlanList() {
+export async function PlanList({ heading }: { heading: ReactNode }) {
   await connection();
   const { data, error } = await api
     .GET("/api/v1/plans", { params: { query: { size: 20 } } })
@@ -12,19 +13,14 @@ export async function PlanList() {
 
   if (error || !data) {
     return (
-      <p role="alert" className="text-muted-foreground">
-        {messages.home.plansError}
-      </p>
+      <>
+        <div className="mb-10">{heading}</div>
+        <p role="alert" className="text-muted-foreground">
+          {messages.home.plansError}
+        </p>
+      </>
     );
   }
 
-  return (
-    <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {data.content.map((plan) => (
-        <li key={plan.id}>
-          <PlanCard plan={plan} />
-        </li>
-      ))}
-    </ul>
-  );
+  return <PlanBilling plans={data.content} heading={heading} />;
 }

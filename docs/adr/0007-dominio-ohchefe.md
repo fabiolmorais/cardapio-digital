@@ -25,4 +25,4 @@ O cardápio tem domínio próprio, `ohchefe.app.br` (já registrado):
 - Nenhum outro produto divide o domínio: o prefixo `__Host-` nos cookies, que protegeria contra um subdomínio vizinho, deixa de ser necessário (Guia 34).
 - O DNS fica só com os registros acima; nada de curinga (`*.ohchefe.app.br`) nem registro apontando para serviço desligado.
 - A reputação de envio de e-mail é só do cardápio; o SPF, o DKIM e o DMARC são configurados no `avisos.ohchefe.app.br`.
-- O nome do produto na interface (hoje "Cardápio Digital") fica para uma decisão à parte.
+- O nome do produto na interface (antes "Cardápio Digital") passa a ser **OhChefe** (07/11/2026), com a landing page em `ohchefe.app.br` e o logo da mão levantada chamando o garçom ("Ô, chefe!").
