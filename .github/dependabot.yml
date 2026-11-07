@@ -18,6 +18,10 @@ updates:
       # Os tipos do Node acompanham a versão usada no projeto (Node 22).
       - dependency-name: "@types/node"
         update-types: [version-update:semver-major]
+      # O openapi-typescript (gera os tipos do front a partir da API) só aceita o TypeScript 5.
+      # Liberar o 7 quando ele aceitar.
+      - dependency-name: "typescript"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
