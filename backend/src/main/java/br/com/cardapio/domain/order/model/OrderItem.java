@@ -115,6 +115,15 @@ public record OrderItem(
     }
 
     /**
+     * A comanda deste item saiu na impressora da cozinha: quem cozinha pela comanda de papel não
+     * tem botão para apertar, então o item que estava na fila passa para "em preparo". O que já
+     * estava em preparo ou pronto (alguém mexeu no tablet antes) continua como está.
+     */
+    public OrderItem printedForKitchen(Instant now) {
+        return status == OrderItemStatus.PENDING ? start(now) : this;
+    }
+
+    /**
      * "Pronto": saindo da cozinha. Vale da fila também: a bebida que ninguém "prepara" pula
      * direto para pronto, sem passar por em preparo.
      */

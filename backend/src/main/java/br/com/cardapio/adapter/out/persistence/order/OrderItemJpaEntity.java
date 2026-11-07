@@ -66,6 +66,14 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "tab_rodizio_id")
     private UUID tabRodizioId;
 
+    /** Quando saiu na impressora da cozinha (a comanda de papel). */
+    @Column(name = "printed_at")
+    private Instant printedAt;
+
+    /** Quando saiu a via "CANCELADO" do item já impresso. */
+    @Column(name = "cancel_printed_at")
+    private Instant cancelPrintedAt;
+
     protected OrderItemJpaEntity() {
     }
 
@@ -103,4 +111,6 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     UUID getCanceledBy() { return canceledBy; }
     String getCancelReason() { return cancelReason; }
     UUID getTabRodizioId() { return tabRodizioId; }
+    Instant getPrintedAt() { return printedAt; }
+    Instant getCancelPrintedAt() { return cancelPrintedAt; }
 }

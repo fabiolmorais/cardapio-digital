@@ -530,6 +530,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/print-jobs/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pega a comanda para imprimir: os itens saem marcados como impressos e só esta estação os recebe */
+        post: operations["claimPrintJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/{id}/reject": {
         parameters: {
             query?: never;
@@ -1192,6 +1209,40 @@ export interface paths {
         };
         /** Avisos da mesa em tempo real: "ready" ao conectar, "call" quando um chamado dela muda */
         get: operations["streamTableEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As comandas que ainda não saíram na impressora, da mais antiga à mais nova */
+        get: operations["listPendingPrintJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-jobs/printed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As comandas impressas nas últimas 12 horas, da mais recente para a mais antiga (para reimprimir) */
+        get: operations["listPrintedJobs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2348,6 +2399,51 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
         };
+        ClaimPrintJobRequest: {
+            /**
+             * Format: uuid
+             * @description O pedido da comanda
+             */
+            orderId: string;
+            /**
+             * @description A comanda do pedido (ORDER) ou a via "CANCELADO" (CANCELLATION)
+             * @enum {string}
+             */
+            kind: "ORDER" | "CANCELLATION";
+        };
+        /** @description Uma comanda para a impressora da cozinha */
+        PrintJob: {
+            /** Format: uuid */
+            orderId: string;
+            /** @enum {string} */
+            kind: "ORDER" | "CANCELLATION";
+            /**
+             * Format: int32
+             * @description O número do pedido no dia
+             */
+            orderNumber: number;
+            tableLabel: string;
+            sectorName: string;
+            /**
+             * Format: date-time
+             * @description Quando o pedido chegou; vazio se não há itens
+             */
+            orderedAt?: string;
+            /** @description Os itens desta via; vazio se outra estação já imprimiu */
+            items: components["schemas"]["PrintJobLine"][];
+        };
+        PrintJobLine: {
+            /** Format: uuid */
+            id: string;
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            note?: string;
+            /** @description Veio numa rodada do rodízio */
+            rodizio: boolean;
+            /** @description O motivo, na via "CANCELADO" */
+            cancelReason?: string;
+        };
         CancelItemRequest: {
             /**
              * @description O motivo, que o cliente vê
@@ -2866,6 +2962,17 @@ export interface components {
         };
         PageResponseProductMedia: {
             content: components["schemas"]["ProductMedia"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponsePrintJob: {
+            content: components["schemas"]["PrintJob"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4868,6 +4975,39 @@ export interface operations {
             };
         };
     };
+    claimPrintJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimPrintJobRequest"];
+            };
+        };
+        responses: {
+            /** @description Os itens para imprimir (vazio: outra estação já imprimiu) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintJob"];
+                };
+            };
+            /** @description Não é um pedido deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     rejectOrder: {
         parameters: {
             query?: never;
@@ -6478,6 +6618,58 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+        };
+    };
+    listPendingPrintJobs: {
+        parameters: {
+            query: {
+                /** @description ORDER: os pedidos novos; CANCELLATION: os itens cancelados depois de impressos */
+                kind: "ORDER" | "CANCELLATION";
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Comandas por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de comandas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponsePrintJob"];
+                };
+            };
+        };
+    };
+    listPrintedJobs: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Comandas por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de comandas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponsePrintJob"];
                 };
             };
         };

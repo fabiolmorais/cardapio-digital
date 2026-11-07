@@ -174,7 +174,7 @@ class OrderPersistenceAdapter implements OrderPort {
                 e.getApprovedBy() == null ? null : new UserId(e.getApprovedBy()), e.getApprovedAt());
     }
 
-    private static OrderItem toDomain(OrderItemJpaEntity e) {
+    static OrderItem toDomain(OrderItemJpaEntity e) {
         return new OrderItem(new OrderItemId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
                 new OrderId(e.getOrderId()), new ProductId(e.getProductId()), e.getProductName(),
                 Money.ofCents(e.getUnitPriceCents()), e.getQuantity(), e.getNote(),
