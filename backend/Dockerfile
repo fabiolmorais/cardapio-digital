@@ -1,5 +1,5 @@
 # Build
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /app
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
@@ -9,7 +9,7 @@ RUN ./mvnw -q package -DskipTests && \
     java -Djarmode=tools -jar target/backend-*.jar extract --layers --launcher --destination target/extracted
 
 # Runtime
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 RUN addgroup -S app && adduser -S app -G app
 USER app
 WORKDIR /app
