@@ -268,7 +268,6 @@ function RodizioEditor({
                 </button>
               ))}
             </div>
-            {draft.type === "PASSAGEM" && <p className="text-sm text-muted-foreground">{t.passagemSoon}</p>}
           </fieldset>
         </Panel>
 

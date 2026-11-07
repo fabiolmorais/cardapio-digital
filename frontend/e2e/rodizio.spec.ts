@@ -31,6 +31,12 @@ test("o dono cadastra um rodízio com faixas, preço de fim de semana, produtos 
   await expect(editor.getByLabel("Nome da faixa 1")).toHaveValue("Adulto");
   await expect(editor.getByLabel("Nome da faixa 2")).toHaveValue("Criança");
 
+  // O passagem já funciona na mesa (Etapa 12): nada de aviso dizendo que vem "numa próxima versão".
+  await editor.getByRole("button", { name: /^Passagem/ }).click();
+  await expect(editor.getByRole("button", { name: /^Passagem/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText(/próxima versão/)).toHaveCount(0);
+  await editor.getByRole("button", { name: /^À la minute/ }).click();
+
   await editor.getByLabel("Nome que o cliente vê").fill("Rodízio Japonês");
   await editor.getByLabel("O que está incluído (opcional)").fill("Peças à vontade");
   const adulto = editor.getByRole("group", { name: "Adulto", exact: true });
