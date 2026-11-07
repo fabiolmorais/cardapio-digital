@@ -21,6 +21,7 @@ import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { CallQueue } from "@/features/calls/call-queue";
 import { Deliveries, KitchenLink, PassagemLink, WaitingOrders } from "@/features/orders/staff-orders";
+import { PrintingLink } from "@/features/printing/printing-link";
 import { InstallLink } from "@/features/pwa/install-link";
 import { PushCard } from "@/features/pwa/push-card";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
@@ -106,6 +107,7 @@ export function PanelHome() {
         <>
           <KitchenLink />
           <PassagemLink />
+          <PrintingLink />
           <CallQueue role={establishment.role} />
         </>
       ) : (
@@ -116,6 +118,7 @@ export function PanelHome() {
           <OpenTabs />
           <KitchenLink />
           <PassagemLink />
+          <PrintingLink />
           <PushCard />
         </>
       )}

@@ -49,6 +49,9 @@ import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.order.GetTabUseCase;
 import br.com.cardapio.application.port.in.order.ListClosedTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
+import br.com.cardapio.application.port.in.order.ListPrintJobsUseCase;
+import br.com.cardapio.application.port.in.order.ClaimPrintJobUseCase;
+import br.com.cardapio.application.port.out.order.KitchenPrintPort;
 import br.com.cardapio.application.port.in.order.ListOpenTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
 import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
@@ -171,6 +174,8 @@ import br.com.cardapio.application.service.order.GetOrderSettingsService;
 import br.com.cardapio.application.service.order.GetTabService;
 import br.com.cardapio.application.service.order.ListClosedTabsService;
 import br.com.cardapio.application.service.order.ListKitchenQueueService;
+import br.com.cardapio.application.service.order.ListPrintJobsService;
+import br.com.cardapio.application.service.order.ClaimPrintJobService;
 import br.com.cardapio.application.service.order.ListOpenTabsService;
 import br.com.cardapio.application.service.order.ListTableOrdersService;
 import br.com.cardapio.application.service.order.ListWaitingOrdersService;
@@ -694,6 +699,17 @@ class UseCaseConfig {
     @Bean
     ListKitchenQueueUseCase listKitchenQueueUseCase(OrderPort orderPort) {
         return new ListKitchenQueueService(orderPort);
+    }
+
+    @Bean
+    ListPrintJobsUseCase listPrintJobsUseCase(KitchenPrintPort kitchenPrintPort, Clock clock) {
+        return new ListPrintJobsService(kitchenPrintPort, clock);
+    }
+
+    @Bean
+    ClaimPrintJobUseCase claimPrintJobUseCase(KitchenPrintPort kitchenPrintPort, OrderPort orderPort,
+                                              EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ClaimPrintJobService(kitchenPrintPort, orderPort, eventPublisherPort, clock);
     }
 
     @Bean

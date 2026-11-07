@@ -82,6 +82,19 @@ class OrderItemTest {
     }
 
     @Test
+    void thePrintedTicketPutsTheQueuedItemInPreparation() {
+        OrderItem printed = item(1, null).printedForKitchen(NOW.plusSeconds(30));
+        assertThat(printed.status()).isEqualTo(OrderItemStatus.PREPARING);
+        assertThat(printed.preparingAt()).isEqualTo(NOW.plusSeconds(30));
+
+        // Quem já tinha andado (pelo tablet) fica como está, sem erro.
+        OrderItem ready = item(1, null).markReady(NOW);
+        assertThat(ready.printedForKitchen(NOW.plusSeconds(30))).isEqualTo(ready);
+        OrderItem preparing = item(1, null).start(NOW);
+        assertThat(preparing.printedForKitchen(NOW.plusSeconds(30))).isEqualTo(preparing);
+    }
+
+    @Test
     void aDrinkCanSkipStraightToReadyOrDelivered() {
         assertThat(item(1, null).markReady(NOW).status()).isEqualTo(OrderItemStatus.READY);
         assertThat(item(1, null).markReady(NOW).preparingAt()).isNull();
