@@ -46,3 +46,32 @@ test("a aba do navegador mostra o ícone do OhChefe", async ({ request }) => {
   expect(icon.ok()).toBe(true);
   expect((await request.get("/apple-icon.png")).ok()).toBe(true);
 });
+
+test("depois de usar os links das seções, voltar do cadastro mostra a página inicial", async ({ page }) => {
+  // No computador, onde os links das seções aparecem no topo.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Seções" }).getByRole("link", { name: "Perguntas" }).click();
+  await expect(page).toHaveURL(/#perguntas$/);
+  await expect(page.getByRole("heading", { name: "Ficou alguma dúvida?" })).toBeInViewport();
+  await page.getByRole("banner").getByRole("link", { name: "Testar grátis" }).click();
+  await expect(page).toHaveURL(/\/cadastro$/);
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Ô, chefe!");
+});
+
+test("o logo leva à página inicial, da própria página e das telas de acesso", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/#perguntas");
+  await page.getByRole("banner").getByRole("link", { name: "OhChefe, início" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
+
+  for (const path of ["/cadastro", "/entrar", "/esqueci-a-senha"]) {
+    await page.goto(path);
+    await page.getByRole("link", { name: "OhChefe, início" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Ô, chefe!");
+  }
+});

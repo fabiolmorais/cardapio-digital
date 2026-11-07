@@ -1,7 +1,8 @@
-import { Check, UtensilsCrossed } from "lucide-react";
+import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SignupForm } from "@/features/account/signup-form";
+import { BrandMark } from "@/features/landing/brand-mark";
 import { messages } from "@/messages/pt-BR";
 import cover from "../../../../public/images/cadastro.jpg";
 
@@ -15,11 +16,8 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-dvh flex-wrap">
       <main className="flex flex-[1_1_480px] flex-col justify-center gap-8 px-4 py-12 sm:px-12 lg:px-24">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <UtensilsCrossed aria-hidden className="size-5" />
-          </span>
-          <span className="font-semibold">{messages.app.name}</span>
+        <div className="self-start">
+          <BrandMark />
         </div>
         <div className="flex max-w-xl flex-col gap-2">
           <h1 className="text-4xl font-bold tracking-tight">{t.title}</h1>

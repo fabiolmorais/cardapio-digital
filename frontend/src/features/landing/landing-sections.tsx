@@ -17,10 +17,10 @@ export function LandingHeader() {
     <header className={cn(wrap, "flex flex-wrap items-center gap-x-3 gap-y-4 py-5 sm:gap-x-7")}>
       <BrandMark />
       <nav aria-label={t.nav.label} className="mr-auto hidden flex-wrap gap-x-6 gap-y-1 md:flex">
-        <a href="#como-funciona" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-        <a href="#recursos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.features}</a>
-        <a href="#planos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.plans}</a>
-        <a href="#perguntas" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.faq}</a>
+        <Link href="#como-funciona" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.how}</Link>
+        <Link href="#recursos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.features}</Link>
+        <Link href="#planos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.plans}</Link>
+        <Link href="#perguntas" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.faq}</Link>
       </nav>
       <div className="ml-auto flex gap-1.5 sm:gap-2.5 md:ml-0">
         <Link href="/entrar" className={cn(buttonVariants({ size: "xl", variant: "ghost" }), "h-11 px-3 text-sm sm:px-4")}>
@@ -220,9 +220,9 @@ export function LandingFooter() {
       </div>
       <nav aria-label={t.footer.product} className="flex min-w-40 flex-col gap-2.5">
         <span className="text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">{t.footer.product}</span>
-        <a href="#como-funciona" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-        <a href="#recursos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.features}</a>
-        <a href="#planos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.plans}</a>
+        <Link href="#como-funciona" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.how}</Link>
+        <Link href="#recursos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.features}</Link>
+        <Link href="#planos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.plans}</Link>
         <Link href="/entrar" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.login}</Link>
       </nav>
       <p className="basis-full border-t border-border pt-6 text-[13px] text-muted-foreground">{t.footer.copyright(2026)}</p>
