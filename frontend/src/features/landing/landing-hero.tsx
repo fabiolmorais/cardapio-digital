@@ -2,6 +2,7 @@ import { ArrowRight, Bell, Check, ChefHat, QrCode, ReceiptText } from "lucide-re
 import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { SectionLink } from "./section-link";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import combinado from "../../../public/images/combinado.jpg";
@@ -14,7 +15,7 @@ const dishPhotos = [combinado, temaki];
 /** A abertura: o título, os botões e, ao lado, o celular da mesa com os avisos chegando na equipe. */
 export function LandingHero() {
   return (
-    <section id="topo" className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center gap-12 px-6 pt-10 pb-18">
+    <section className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center gap-12 px-6 pt-10 pb-18">
       <div className="flex min-w-0 flex-[1_1_480px] flex-col gap-6">
         <span className="inline-flex h-8 items-center gap-2 self-start rounded-full bg-primary/15 px-3.5 text-[13px] font-semibold text-brand-text">
           <QrCode aria-hidden className="size-4" />
@@ -30,9 +31,9 @@ export function LandingHero() {
             {t.trialCta}
             <ArrowRight aria-hidden className="size-[18px]" />
           </Link>
-          <Link href="#planos" className={cn(buttonVariants({ size: "xl", variant: "secondary" }), "h-14 px-6 text-base")}>
+          <SectionLink section="planos" className={cn(buttonVariants({ size: "xl", variant: "secondary" }), "h-14 px-6 text-base")}>
             {t.plansCta}
-          </Link>
+          </SectionLink>
         </div>
         <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
           {t.trust.map((item) => (

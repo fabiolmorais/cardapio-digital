@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { SectionLink } from "./section-link";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import photo from "../../../public/images/cadastro.jpg";
@@ -15,12 +16,12 @@ const wrap = "mx-auto w-full max-w-[1200px] px-6";
 export function LandingHeader() {
   return (
     <header className={cn(wrap, "flex flex-wrap items-center gap-x-3 gap-y-4 py-5 sm:gap-x-7")}>
-      <BrandMark />
+      <BrandMark onLanding />
       <nav aria-label={t.nav.label} className="mr-auto hidden flex-wrap gap-x-6 gap-y-1 md:flex">
-        <a href="#como-funciona" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-        <a href="#recursos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.features}</a>
-        <a href="#planos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.plans}</a>
-        <a href="#perguntas" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.faq}</a>
+        <SectionLink section="como-funciona" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.how}</SectionLink>
+        <SectionLink section="recursos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.features}</SectionLink>
+        <SectionLink section="planos" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.plans}</SectionLink>
+        <SectionLink section="perguntas" className="text-[15px] font-medium text-muted-foreground hover:text-foreground">{t.nav.faq}</SectionLink>
       </nav>
       <div className="ml-auto flex gap-1.5 sm:gap-2.5 md:ml-0">
         <Link href="/entrar" className={cn(buttonVariants({ size: "xl", variant: "ghost" }), "h-11 px-3 text-sm sm:px-4")}>
@@ -200,9 +201,9 @@ export function LandingClosing() {
             <Link href="/cadastro" className={cn(buttonVariants({ size: "xl" }), "h-14 px-6 text-base")}>
               {t.trialCta}
             </Link>
-            <Link href="#planos" className={cn(buttonVariants({ size: "xl", variant: "secondary" }), "h-14 px-6 text-base")}>
+            <SectionLink section="planos" className={cn(buttonVariants({ size: "xl", variant: "secondary" }), "h-14 px-6 text-base")}>
               {t.plansCta}
-            </Link>
+            </SectionLink>
           </div>
         </div>
       </div>
@@ -215,14 +216,14 @@ export function LandingFooter() {
   return (
     <footer className={cn(wrap, "flex flex-wrap gap-x-12 gap-y-8 border-t border-border pt-12 pb-10")}>
       <div className="flex flex-[1_1_280px] flex-col gap-3.5">
-        <BrandMark size={32} />
+        <BrandMark size={32} onLanding />
         <p className="max-w-[300px] text-sm text-muted-foreground">{t.footer.tagline}</p>
       </div>
       <nav aria-label={t.footer.product} className="flex min-w-40 flex-col gap-2.5">
         <span className="text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">{t.footer.product}</span>
-        <a href="#como-funciona" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-        <a href="#recursos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.features}</a>
-        <a href="#planos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.plans}</a>
+        <SectionLink section="como-funciona" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.how}</SectionLink>
+        <SectionLink section="recursos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.features}</SectionLink>
+        <SectionLink section="planos" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.plans}</SectionLink>
         <Link href="/entrar" className="text-sm text-muted-foreground hover:text-foreground">{t.nav.login}</Link>
       </nav>
       <p className="basis-full border-t border-border pt-6 text-[13px] text-muted-foreground">{t.footer.copyright(2026)}</p>

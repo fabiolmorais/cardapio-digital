@@ -46,3 +46,46 @@ test("a aba do navegador mostra o ícone do OhChefe", async ({ request }) => {
   expect(icon.ok()).toBe(true);
   expect((await request.get("/apple-icon.png")).ok()).toBe(true);
 });
+
+test("depois de usar os links das seções, voltar do cadastro mostra a página inicial", async ({ page }) => {
+  // No computador, onde os links das seções aparecem no topo.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Seções" }).getByRole("link", { name: "Perguntas" }).click();
+  await expect(page).toHaveURL(/#perguntas$/);
+  await expect(page.getByRole("heading", { name: "Ficou alguma dúvida?" })).toBeInViewport();
+  // Um segundo link de seção, já com uma âncora no endereço, troca a âncora (sem acumular).
+  await page.getByRole("navigation", { name: "Seções" }).getByRole("link", { name: "Planos" }).click();
+  await expect(page).toHaveURL(/\/#planos$/);
+  await expect(page.getByRole("heading", { name: "Comece grátis. Escolha depois." })).toBeInViewport();
+  await page.getByRole("navigation", { name: "Seções" }).getByRole("link", { name: "Perguntas" }).click();
+  await expect(page).toHaveURL(/\/#perguntas$/);
+  await page.getByRole("banner").getByRole("link", { name: "Testar grátis" }).click();
+  await expect(page).toHaveURL(/\/cadastro$/);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/#perguntas$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Ô, chefe!");
+});
+
+test("o logo leva à página inicial, da própria página e das telas de acesso", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/#perguntas");
+  // Com a página já carregada (o React no comando): é aí que o roteador do Next decide o clique.
+  await page.waitForFunction(() => Object.keys(document.querySelector("header a")!).some((k) => k.startsWith("__react")));
+  // Aberta já numa âncora: o link de outra seção troca a âncora, sem acumular (/#perguntas#planos).
+  await page.getByRole("navigation", { name: "Seções" }).getByRole("link", { name: "Planos" }).click();
+  await expect(page).toHaveURL(/\/#planos$/);
+  await expect(page.getByRole("heading", { name: "Comece grátis. Escolha depois." })).toBeInViewport();
+  // E o logo volta ao topo, com o endereço limpo.
+  await page.getByRole("banner").getByRole("link", { name: "OhChefe, início" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+  for (const path of ["/cadastro", "/entrar", "/esqueci-a-senha"]) {
+    await page.goto(path);
+    await page.getByRole("link", { name: "OhChefe, início" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Ô, chefe!");
+  }
+});
