@@ -26,7 +26,7 @@ primary_region = "gru"
   BUNNY_LIBRARY_ID = "802661"
   BUNNY_CDN_HOST = "vz-4bbe5cc8-e7e.b-cdn.net"
   # E-mail pelo Resend, do domínio verificado.
-  EMAIL_FROM = "Cardápio Digital <nao-responda@avisos.ohchefe.app.br>"
+  EMAIL_FROM = "OhChefe <nao-responda@avisos.ohchefe.app.br>"
   VAPID_SUBJECT = "mailto:contato@ohchefe.app.br"
   # O staging fica aberto na internet: sem o mapa da API, como na produção.
   OPENAPI_ENABLED = "false"

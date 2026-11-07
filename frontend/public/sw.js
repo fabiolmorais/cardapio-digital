@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   } catch {
     // Mensagem fora do formato: ainda avisa, com o texto padrão.
   }
-  const title = message.title || "Cardápio Digital";
+  const title = message.title || "OhChefe";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: message.body || "",

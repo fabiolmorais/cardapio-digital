@@ -9,16 +9,165 @@ export const messages = {
     sendFailed: "O envio do arquivo falhou. Confira a conexão e tente de novo.",
   },
   app: {
-    name: "Cardápio Digital",
+    name: "OhChefe",
+    title: "OhChefe · Cardápio digital e atendimento por mesa",
     description: "Cardápio digital e atendimento por mesa para bares e restaurantes.",
   },
   home: {
-    headline: "Cardápio digital e atendimento por mesa",
+    brandHome: "OhChefe, início",
+    nav: {
+      label: "Seções",
+      how: "Como funciona",
+      features: "Recursos",
+      plans: "Planos",
+      faq: "Perguntas",
+      login: "Entrar",
+      trial: "Testar grátis",
+    },
+    eyebrow: "Cardápio digital e atendimento por mesa",
+    headlineStart: "Ô, chefe! Agora a mesa ",
+    headlineAccent: "chama pelo celular.",
     subheadline:
-      "O cliente escaneia o QR Code, chama o garçom, vê o cardápio e faz o pedido pelo celular. A equipe recebe tudo na hora.",
-    plansTitle: "Planos",
+      "O cliente escaneia o QR Code, chama o garçom, vê o cardápio com fotos e vídeos, faz o pedido e pede a conta. A equipe recebe tudo na hora: no painel, na TV da cozinha e no celular.",
+    trialCta: "Testar grátis por 14 dias",
+    plansCta: "Ver planos",
+    trust: ["Sem cartão de crédito", "Sem aplicativo para o cliente", "Sem taxa por pedido"],
+    demo: {
+      label: "O cliente chama pelo celular e a equipe recebe na hora",
+      photoAlt: "Mesa de restaurante japonês com barca de sushis",
+      restaurant: "Sakura Sushi",
+      table: "Mesa 04 · Salão",
+      title: "Peça sem",
+      titleAccent: "esperar.",
+      call: "Chamar garçom",
+      bill: "Pedir a conta",
+      popular: "Mais pedidos",
+      dishes: [
+        { name: "Combinado", price: "R$ 89,90" },
+        { name: "Temaki", price: "R$ 32,90" },
+      ],
+      callAlert: "Mesa 04 chamando",
+      callWhere: "Painel e celular do garçom",
+      callTimer: "0:12",
+      order: "2× Temaki Salmão",
+      orderWhere: "Mesa 04 · na cozinha",
+    },
+    segmentsTitle: "Feito para quem vive o salão",
+    segments: [
+      "Restaurantes",
+      "Bares e botecos",
+      "Rodízios",
+      "Sushi",
+      "Pizzarias",
+      "Hamburguerias",
+      "Churrascarias",
+      "Cafeterias",
+      "Quiosques e beach clubs",
+    ],
+    how: {
+      eyebrow: "Como funciona",
+      title: "Do QR Code ao prato, em três passos",
+      lead: "Nada para instalar no celular do cliente. A equipe usa o navegador e, se quiser, instala o app no celular para receber os avisos.",
+      steps: [
+        {
+          title: "Monte o cardápio e imprima os QR Codes",
+          text: "Cadastre pratos com foto e vídeo, as mesas e a equipe. Cada mesa ganha o seu QR Code, pronto para imprimir.",
+        },
+        {
+          title: "O cliente escaneia e chama",
+          text: "Ele chama o garçom, pede pelo celular, acompanha cada item e pede a conta. Sem cadastro e sem baixar nada.",
+        },
+        {
+          title: "A equipe recebe na hora",
+          text: "O chamado aparece no painel, na TV e no celular do garçom. O pedido vai direto para a fila da cozinha ou do bar.",
+        },
+      ],
+    },
+    features: {
+      eyebrow: "Recursos",
+      title: "Tudo o que o salão precisa, num lugar só",
+      calls: {
+        title: "Chamar o garçom e pedir a conta",
+        text: "Um toque na mesa e o chamado chega com o número da mesa e o tempo de espera. Atrasou, ele fica vermelho.",
+      },
+      media: {
+        title: "Cardápio com fotos e vídeos",
+        text: "Mostre o prato como ele é. Os vídeos curtos aparecem em tela cheia, do jeito que o cliente já está acostumado.",
+      },
+      kitchen: {
+        title: "Pedido direto na cozinha e no bar",
+        text: "Cada item vai para a fila certa. A cozinha marca o que está pronto e o cliente acompanha pelo celular.",
+      },
+      rodizio: {
+        title: "Rodízio sem confusão",
+        text: "Preço por pessoa e rodadas pedidas pelo celular. A cozinha vê cada rodada, e a comanda fecha certinho.",
+      },
+      tv: {
+        title: "Modo TV e app da equipe",
+        text: "Uma TV no salão ou na cozinha mostra os chamados ao vivo. O garçom recebe o aviso no celular, mesmo com a tela apagada.",
+      },
+      presence: {
+        title: "Só quem está na mesa pede",
+        text: "A trava de presença confere se o cliente está mesmo no restaurante. Foto do QR Code não chama garçom de casa.",
+      },
+    },
+    perksLabel: "Por que o OhChefe",
+    perks: [
+      { title: "Sem taxa por pedido", text: "Você paga só a assinatura, venda quanto vender." },
+      { title: "Sem app para baixar", text: "Abre no navegador do celular, no Wi-Fi ou no 4G." },
+      { title: "Cliente anônimo", text: "Sem cadastro na mesa: menos atrito e menos dado pessoal guardado." },
+      { title: "A cara do seu restaurante", text: "Logo e cores da casa na página da mesa." },
+    ],
+    plans: {
+      eyebrow: "Planos",
+      title: "Comece grátis. Escolha depois.",
+      lead: "14 dias de teste com tudo do Pro. Sem cartão de crédito.",
+      billingLabel: "Forma de pagamento",
+      monthly: "Mensal",
+      annual: "Anual · 2 meses grátis",
+      trialBadge: "Teste grátis",
+      perYearSuffix: "/ano",
+      annualEquivalent: (value: string) => `Equivale a ${value} por mês`,
+      customNote: "Para redes e várias unidades",
+      start: "Começar teste grátis",
+    },
     plansLoading: "Carregando planos…",
     plansError: "Não foi possível carregar os planos agora. Tente de novo em instantes.",
+    faq: {
+      eyebrow: "Perguntas frequentes",
+      title: "Ficou alguma dúvida?",
+      items: [
+        {
+          q: "O cliente precisa baixar um aplicativo?",
+          a: "Não. Ele aponta a câmera para o QR Code da mesa e tudo abre no navegador do celular. Não precisa de cadastro nem de senha.",
+        },
+        {
+          q: "Como funciona o teste grátis?",
+          a: "São 14 dias com tudo do plano Pro, sem cartão de crédito. No fim do teste, você escolhe o plano que faz sentido para o seu salão.",
+        },
+        {
+          q: "Preciso comprar algum equipamento?",
+          a: "Não. A equipe usa o celular, o tablet ou o computador que já tem. Uma TV com navegador vira o painel do salão ou da cozinha.",
+        },
+        {
+          q: "E se alguém tirar foto do QR Code e chamar de casa?",
+          a: "A trava de presença confere se o cliente está no restaurante antes de liberar o chamado e o pedido. O garçom também pode liberar a mesa na hora.",
+        },
+        {
+          q: "Serve para rodízio?",
+          a: "Sim. O rodízio cobra por pessoa, o cliente pede as rodadas pelo celular e a cozinha recebe cada rodada na fila.",
+        },
+      ],
+    },
+    closing: {
+      title: "Seu salão atendendo mais rápido ainda hoje.",
+      text: "Cadastre o restaurante, suba o cardápio e imprima os QR Codes. O teste é grátis por 14 dias.",
+    },
+    footer: {
+      tagline: "Cardápio digital e atendimento por mesa para bares e restaurantes.",
+      product: "Produto",
+      copyright: (year: number) => `© ${year} OhChefe`,
+    },
   },
   signup: {
     title: "Teste grátis por 14 dias",
@@ -68,7 +217,8 @@ export const messages = {
     },
     aside: {
       headline: "O cliente pede pelo celular. A cozinha recebe na hora.",
-      perks: [
+      perksLabel: "Por que o OhChefe",
+    perks: [
         "Chamar garçom, pedir a conta e pedido pelo celular em todos os planos",
         "Sem taxa por pedido: você paga só a assinatura",
         "Rodízio com rodadas pelo celular, sem preço por item",
