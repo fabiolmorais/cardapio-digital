@@ -96,6 +96,10 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await expect(guioza.getByRole("heading", { name: "Guioza" })).toBeVisible();
   await expect(guioza).toContainText("Destaque");
   await expect.poll(() => playing(page, "Guioza")).toBe(true);
+  // A barra do topo enche conforme o vídeo passa (como no Instagram), em vez de vir cheia.
+  const bar = guioza.locator("[aria-hidden] > span > span").first();
+  await expect.poll(() => bar.evaluate((el) => parseFloat((el as HTMLElement).style.width))).toBeGreaterThan(0);
+  expect(await bar.evaluate((el) => parseFloat((el as HTMLElement).style.width))).toBeLessThan(100);
   await page.getByRole("button", { name: "Ativar som" }).click();
   await expect(page.getByRole("button", { name: "Tirar o som" })).toHaveAttribute("aria-pressed", "true");
 
@@ -110,4 +114,8 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
 
   await page.getByRole("link", { name: "Fechar os vídeos" }).click();
   await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
+  // Fechado o Reels, nenhum vídeo continua tocando (nem o som) escondido atrás do cardápio.
+  await expect
+    .poll(() => page.evaluate(() => [...document.querySelectorAll("video")].every((v) => v.paused)))
+    .toBe(true);
 });

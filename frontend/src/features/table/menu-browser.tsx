@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useDeferredValue, useId, useState } from "react";
+import { useDeferredValue, useEffect, useId, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { aLaCarte } from "./carte";
 import { MenuItemCard } from "./menu-item";
@@ -43,6 +43,28 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   const rounds = orders?.orders.filter((o) => o.items.some((i) => i.rodizio)).length ?? 0;
   // O cardápio de sempre, sem o que é só do rodízio (que fica na aba Rodízio).
   const categories = aLaCarte(menu);
+
+  // Vindo de um destaque da página da mesa (#produto-<id>): rola até o prato e já o abre.
+  useEffect(() => {
+    function openFromHash() {
+      const id = window.location.hash.match(/^#produto-(.+)$/)?.[1];
+      const item = id && categories.flatMap((c) => c.products).find((p) => p.id === decodeURIComponent(id));
+      if (!item) return;
+      document.getElementById(`produto-${item.id}`)?.scrollIntoView({ block: "center" });
+      if (ordering && item.available) setOpen(item);
+      // Sem o #: fechar o prato e voltar a esta página não o abre de novo.
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+    // Um quadro depois: a lista já está na tela para a rolagem.
+    const frame = requestAnimationFrame(openFromHash);
+    window.addEventListener("hashchange", openFromHash);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", openFromHash);
+    };
+    // Só ao abrir o cardápio (e quando o # muda); o cardápio é o que veio com a página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ordering]);
 
   const card = (item: MenuItem) => (
     <MenuItemCard

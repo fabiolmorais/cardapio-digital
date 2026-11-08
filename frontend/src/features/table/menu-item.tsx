@@ -96,7 +96,7 @@ export function MenuItemCard({
           )}
         </span>
         {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
-        <span className="mt-auto flex items-end justify-between gap-2 pt-1">
+        <span className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-1">
           {item.available && price !== undefined ? (
             price
           ) : !item.available ? (
@@ -104,15 +104,16 @@ export function MenuItemCard({
               {t.soldOut}
             </span>
           ) : item.promoPriceCents != null ? (
-            <span className="flex items-baseline gap-2">
+            // O "de" em cima, pequeno, e o "por" embaixo: cabe ao lado do "Adicionar".
+            <span className="flex flex-col">
+              <s className="text-xs text-(--mesa-muted)">
+                <span className="sr-only">{t.normalPrice} </span>
+                {formatCents(item.priceCents)}
+              </s>
               <span className="font-bold text-(--brand-text)">
                 <span className="sr-only">{t.promoPrice} </span>
                 {formatCents(item.promoPriceCents)}
               </span>
-              <s className="text-sm text-(--mesa-muted)">
-                <span className="sr-only">{t.normalPrice} </span>
-                {formatCents(item.priceCents)}
-              </s>
             </span>
           ) : (
             <span className="font-bold">{formatCents(item.priceCents)}</span>
