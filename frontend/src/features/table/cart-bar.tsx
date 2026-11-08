@@ -13,7 +13,7 @@ export function CartBar({ token }: { token: string }) {
   const { count, totalCents } = useCart(token);
   if (count === 0) return null;
   return (
-    <div className="mx-auto w-full max-w-md px-3 pb-2">
+    <div className="mx-auto w-full max-w-md pb-2.5">
       <Link
         href={`/m/${token}/carrinho`}
         className="flex h-14 items-center gap-3 rounded-2xl bg-(--brand) px-4 font-semibold text-white shadow-lg focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none"

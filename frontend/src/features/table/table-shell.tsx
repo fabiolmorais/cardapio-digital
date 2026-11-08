@@ -19,19 +19,37 @@ export function TableShell({
   token,
   table,
   current,
+  ambient,
   children,
 }: {
   token: string;
   table: PublicTable;
   current: "home" | "menu" | "orders" | "cart";
+  /** Uma foto para o fundo do topo, desfocada (o início da mesa, desenho 2.1). */
+  ambient?: string;
   children: ReactNode;
 }) {
   const brand = table.brand;
   return (
     <div
       style={tableThemeVars(brand.theme, brand.primary, brand.accent)}
-      className="flex min-h-dvh flex-1 flex-col bg-(--mesa-bg) text-(--mesa-fg)"
+      className="relative isolate flex min-h-dvh flex-1 flex-col overflow-x-clip bg-(--mesa-bg) text-(--mesa-fg)"
     >
+      {ambient && (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[460px] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element -- só o fundo desfocado, foto já vinda do R2 */}
+          <img
+            src={ambient}
+            alt=""
+            decoding="async"
+            className={cn(
+              "absolute -inset-x-16 -top-16 h-[420px] w-[calc(100%+8rem)] max-w-none object-cover blur-[48px] saturate-[1.3]",
+              brand.theme === "DARK" ? "opacity-40" : "opacity-25",
+            )}
+          />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent to-(--mesa-bg) to-[92%]" />
+        </div>
+      )}
       <StartSession token={token} />
       {/* Embaixo, espaço para as abas (e para a barra do carrinho, onde ela aparece). */}
       <main
@@ -55,13 +73,14 @@ export function TableShell({
         )}
         {children}
       </main>
+      {/* As abas flutuando sobre a página, em vidro (desenho 2.1), com a barra do carrinho em cima. */}
       <nav
         aria-label={t.nav.label}
-        className="fixed inset-x-0 bottom-0"
+        className="fixed inset-x-0 bottom-0 z-10 px-4 pb-[max(env(safe-area-inset-bottom),16px)]"
       >
         {table.serving && (current === "home" || current === "menu") && <CartBar token={token} />}
-        <div className="border-t border-(--mesa-stroke) bg-(--mesa-bg)/95 backdrop-blur">
-        <div className="mx-auto grid max-w-md grid-cols-3">
+        <div className="mx-auto max-w-md rounded-3xl border border-(--mesa-stroke) bg-(--mesa-bar) shadow-[0_12px_32px_rgba(0,0,0,.45)] backdrop-blur-xl">
+        <div className="grid h-[68px] grid-cols-3">
           <Tab href={`/m/${token}`} on={current === "home"} icon={<House aria-hidden className="size-5" />}>
             {t.nav.home}
           </Tab>

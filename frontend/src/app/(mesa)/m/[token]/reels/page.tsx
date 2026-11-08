@@ -29,7 +29,7 @@ export default function TableReelsPage({ params, searchParams }: PageProps<"/m/[
 async function ReelsPage({ params, searchParams }: Pick<PageProps<"/m/[token]/reels">, "params" | "searchParams">) {
   await connection();
   const { token } = await params;
-  const { produto } = await searchParams;
+  const { produto, de } = await searchParams;
   const [table, menu] = await Promise.all([getTable(token), getMenu(token)]);
   if (!table || !menu) {
     return (
@@ -47,6 +47,7 @@ async function ReelsPage({ params, searchParams }: Pick<PageProps<"/m/[token]/re
         menu={menu}
         startId={typeof produto === "string" ? produto : null}
         establishmentName={table.establishmentName}
+        backHref={de === "inicio" ? `/m/${token}` : `/m/${token}/cardapio`}
       />
     </div>
   );

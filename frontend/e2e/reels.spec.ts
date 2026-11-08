@@ -75,7 +75,7 @@ async function restaurant(request: APIRequestContext, video: Buffer) {
   await product("Chá verde", 1200); // sem foto nem vídeo: fica fora do Reels
   await addVideo(request, headers, guioza.id, video);
   await addVideo(request, headers, sunomono.id, video);
-  return { qr: table.publicToken as string };
+  return { qr: table.publicToken as string, headers, guiozaId: guioza.id as string };
 }
 
 /** O vídeo de um prato está tocando? */
@@ -96,6 +96,9 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await expect(guioza.getByRole("heading", { name: "Guioza" })).toBeVisible();
   await expect(guioza).toContainText("Destaque");
   await expect.poll(() => playing(page, "Guioza")).toBe(true);
+  // E continua tocando (a barra de progresso atualizando a tela não pode pausar o vídeo).
+  await page.waitForTimeout(1500);
+  expect(await playing(page, "Guioza")).toBe(true);
   // A barra do topo enche conforme o vídeo passa (como no Instagram), em vez de vir cheia.
   const bar = guioza.locator("[aria-hidden] > span > span").first();
   await expect.poll(() => bar.evaluate((el) => parseFloat((el as HTMLElement).style.width))).toBeGreaterThan(0);
@@ -118,4 +121,28 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await expect
     .poll(() => page.evaluate(() => [...document.querySelectorAll("video")].every((v) => v.paused)))
     .toBe(true);
+});
+
+test("o destaque com vídeo abre o Reels, tocar na borda passa a mídia, e fechar volta ao início", async ({
+  page,
+  request,
+}) => {
+  const video = await recordVideo(page);
+  const { qr, headers, guiozaId } = await restaurant(request, video);
+  await addVideo(request, headers, guiozaId, video); // o Guioza com dois vídeos
+  await page.goto(`/m/${qr}`);
+
+  await page.getByRole("region", { name: "Destaques" }).getByRole("link", { name: /Guioza/ }).click();
+  await expect(page).toHaveURL(/\/reels\?produto=.*&de=inicio/);
+  const guioza = page.getByRole("region", { name: "Guioza" });
+  await expect(guioza.getByText("1 de 2")).toBeAttached();
+
+  // Como no Instagram: um toque perto da borda direita passa para a próxima; da esquerda, volta.
+  await guioza.getByRole("button", { name: "Próxima foto ou vídeo" }).click();
+  await expect(guioza.getByText("2 de 2")).toBeAttached();
+  await guioza.getByRole("button", { name: "Foto ou vídeo anterior" }).click();
+  await expect(guioza.getByText("1 de 2")).toBeAttached();
+
+  await page.getByRole("link", { name: "Fechar os vídeos" }).click();
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}$`));
 });

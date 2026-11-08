@@ -136,6 +136,10 @@
   html {
     @apply font-sans;
   }
+  /* Com uma janela aberta (o prato da mesa, por exemplo), a página de trás não rola junto. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
   /* O Tailwind v4 tirou a "mãozinha" dos botões; aqui ela volta para tudo que é clicável. */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
