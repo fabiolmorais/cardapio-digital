@@ -216,3 +216,35 @@ test("categoria com produtos não pode ser desativada", async ({ page, request }
   await page.getByRole("alertdialog").getByRole("button", { name: "Desativar" }).click();
   await expect(page.getByRole("heading", { name: "Comece pelas categorias" })).toBeVisible();
 });
+
+test("o produto não criado não volta preenchido, e o novo produto usa a categoria escolhida", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  const token = await apiLogin(request, email);
+  await apiCategory(request, token, "Entradas");
+  await apiCategory(request, token, "Sushis");
+  await loginThroughForm(page, email);
+  await openMenu(page);
+
+  // Começa um produto em Entradas e desiste, sem criar.
+  await page.getByRole("link", { name: "Novo produto" }).click();
+  await field(page, "Nome").fill("Ceviche");
+  await field(page, "Preço").fill("32,50");
+  await page.getByRole("link", { name: /Cardápio · Entradas/ }).click();
+  await expect(page.getByRole("heading", { name: "Cardápio", level: 1 })).toBeVisible();
+
+  // Escolhe Sushis e abre um produto novo: em branco, já em Sushis.
+  await page.getByRole("navigation", { name: "Categorias" }).getByRole("button", { name: /^Sushis/ }).click();
+  await page.getByRole("link", { name: "Novo produto" }).click();
+  await expect(page.getByRole("heading", { name: "Novo produto" })).toBeVisible();
+  await expect(field(page, "Nome")).toHaveValue("");
+  await expect(field(page, "Preço")).toHaveValue("");
+  await expect(page.getByLabel("Categoria").filter({ visible: true })).toHaveValue(/.+/);
+  await expect(page.getByLabel("Categoria").filter({ visible: true }).locator("option:checked")).toHaveText("Sushis");
+});
+
+test("os campos de escolha usam o tema escuro (a lista que abre não vem clara)", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+  await page.goto("/admin/cardapio/produtos/novo");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
+});
