@@ -18,4 +18,6 @@ COPY --from=build /app/target/extracted/spring-boot-loader/ ./
 COPY --from=build /app/target/extracted/snapshot-dependencies/ ./
 COPY --from=build /app/target/extracted/application/ ./
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "org.springframework.boot.loader.launch.JarLauncher"]
+# Metade da memória para os dados do Java (heap): a outra metade fica para o próprio Java (as
+# classes do Spring e do Hibernate, as threads, o código compilado), que passa de 300 MB.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=50", "org.springframework.boot.loader.launch.JarLauncher"]
