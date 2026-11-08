@@ -55,8 +55,8 @@ async function create(ticket: TusTicket, file: File): Promise<string> {
 }
 
 /** Até onde o servidor já recebeu (para retomar). */
-async function offsetOf(url: string): Promise<number> {
-  const response = await fetch(url, { method: "HEAD", headers: { "Tus-Resumable": VERSION } });
+async function offsetOf(ticket: TusTicket, url: string): Promise<number> {
+  const response = await fetch(url, { method: "HEAD", headers: { ...ticket.headers, "Tus-Resumable": VERSION } });
   const offset = Number(response.headers.get("Upload-Offset"));
   if (!response.ok || Number.isNaN(offset)) throw new Error(String(response.status));
   return offset;
@@ -75,7 +75,9 @@ export async function tusUpload(ticket: TusTicket, file: File, onProgress: (frac
     try {
       const response = await fetch(url, {
         method: "PATCH",
+        // O Bunny pede a autorização em todo passo, não só na criação.
         headers: {
+          ...ticket.headers,
           "Tus-Resumable": VERSION,
           "Upload-Offset": String(offset),
           "Content-Type": "application/offset+octet-stream",
@@ -84,7 +86,7 @@ export async function tusUpload(ticket: TusTicket, file: File, onProgress: (frac
       });
       if (response.status === 409) {
         // Fora de ordem (um pedaço chegou e a resposta se perdeu): pergunta e segue de lá.
-        offset = await offsetOf(url);
+        offset = await offsetOf(ticket, url);
         continue;
       }
       const next = Number(response.headers.get("Upload-Offset"));
@@ -98,7 +100,7 @@ export async function tusUpload(ticket: TusTicket, file: File, onProgress: (frac
       failures++;
       if (failures > RETRIES) throw error;
       await wait(1000 * 2 ** failures);
-      offset = await offsetOf(url).catch(() => offset);
+      offset = await offsetOf(ticket, url).catch(() => offset);
     }
   }
 }

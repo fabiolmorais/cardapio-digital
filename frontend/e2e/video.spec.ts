@@ -25,6 +25,12 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
       data: { categoryId: category.id, name: "Guioza", priceCents: 2990, featured: false, available: true },
     })
   ).json();
+  // Como o Bunny: todo passo do envio (não só a criação) precisa da autorização.
+  const unauthorized: string[] = [];
+  await page.route("**/tus**", (route) => {
+    if (!route.request().headers()["libraryid"]) unauthorized.push(route.request().method());
+    return route.fallback();
+  });
   await loginThroughForm(page, email);
   await page.goto(`/admin/cardapio/produtos/${product.id}`);
 
@@ -36,6 +42,7 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
 
   await gallery(page).getByLabel("Enviar vídeo").setInputFiles(VIDEO);
   await expect(gallery(page).getByText("Vídeo enviado.")).toBeVisible({ timeout: 30_000 });
+  expect(unauthorized).toEqual([]);
   // O serviço falso "converte" na hora: 1080 × 1920, 15 segundos.
   const video = gallery(page).getByLabel("Vídeo 1", { exact: true });
   await expect(video).toBeVisible();
