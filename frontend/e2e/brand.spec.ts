@@ -35,8 +35,16 @@ test("dono muda nome, cor, tema e Instagram, e o menu mostra o nome novo", async
   await page.getByRole("radio", { name: "Petróleo" }).check();
   await page.getByRole("radio", { name: "Claro" }).check();
   await page.getByLabel("Instagram").fill("https://www.instagram.com/sakurasushi.sp/");
+  // A prévia já mostra os links do fim da página da mesa, antes de salvar.
+  const preview = page.getByRole("img", { name: /Prévia ao vivo/ });
+  await expect(preview).toContainText("Siga no Instagram · @sakurasushi.sp");
+  await expect(preview).not.toContainText("Avalie no Google");
+  await page.getByLabel("Link de avaliação no Google").fill("https://g.page/r/CSakura/review");
+  await expect(preview).toContainText("Avalie no Google");
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Marca salva." })).toBeVisible();
+  // O campo fica com o @ que o back guardou.
+  await expect(page.getByLabel("Instagram")).toHaveValue("sakurasushi.sp");
 
   // O menu lateral (a sessão) já mostra o nome novo.
   await expect(page.getByRole("complementary", { name: "Menu" })).toContainText("Sakura Sushi");
