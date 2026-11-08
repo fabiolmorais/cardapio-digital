@@ -1,8 +1,9 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu as openPanelMenu } from "./support/account";
 
-/** Abre o cardápio pelo atalho do painel. */
+/** Abre o cardápio pelo menu do painel. */
 async function openMenu(page: Page) {
+  await openPanelMenu(page);
   await page.getByRole("link", { name: /^Cardápio/ }).click();
   await expect(page.getByRole("heading", { name: "Cardápio", level: 1 })).toBeVisible();
 }

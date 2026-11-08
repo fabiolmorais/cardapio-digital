@@ -620,6 +620,7 @@ export const messages = {
     management: "Gestão",
     staffPanel: "Painel da equipe",
     menuLabel: "Menu",
+    openMenu: "Abrir o menu",
     navigation: "Navegação",
     screens: "Telas",
     nav: {

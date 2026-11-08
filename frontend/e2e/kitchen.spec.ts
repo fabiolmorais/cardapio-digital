@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
 test.describe.configure({ timeout: 90_000 });
@@ -52,6 +52,7 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
   const panel = await ownerPanel(browser, email);
   try {
     const kitchen = panel.page;
+    await openMenu(kitchen);
     await kitchen.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Cozinha" }).click();
     await expect(kitchen).toHaveURL(/\/painel\/cozinha$/);
     const queue = kitchen.getByRole("region", { name: "Na fila" });

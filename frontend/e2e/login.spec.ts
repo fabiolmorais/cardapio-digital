@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createAccount, PASSWORD } from "./support/account";
+import { createAccount, PASSWORD, openMenu } from "./support/account";
 
 test("login leva ao painel com os dados de quem entrou", async ({ page, request }) => {
   const { email, establishmentName } = await createAccount(request);
@@ -12,6 +12,7 @@ test("login leva ao painel com os dados de quem entrou", async ({ page, request 
   await expect(page).toHaveURL(/\/painel$/);
   await expect(page.getByRole("heading", { name: "Olá, Marina Tanaka" })).toBeVisible();
   await expect(page.getByText(establishmentName)).toBeVisible();
+  await openMenu(page);
   await expect(page.getByText("Seu papel: Dono")).toBeVisible();
 
   await page.getByRole("button", { name: "Sair" }).click();

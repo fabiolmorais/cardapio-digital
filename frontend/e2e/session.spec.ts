@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createAccount, loginThroughForm, panelGreeting } from "./support/account";
+import { createAccount, loginThroughForm, panelGreeting, openMenu } from "./support/account";
 
 const isRefresh = (url: string) => url.endsWith("/api/v1/auth/refresh");
 
@@ -17,6 +17,7 @@ test("depois de sair, o painel pede login de novo", async ({ page, request }) =>
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
 
+  await openMenu(page);
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL(/\/entrar$/);
 
@@ -66,6 +67,7 @@ test("sair numa aba tira a outra do painel", async ({ page, context, request }) 
   await other.goto("/painel");
   await expect(panelGreeting(other)).toBeVisible();
 
+  await openMenu(page);
   await page.getByRole("button", { name: "Sair" }).click();
 
   await expect(other).toHaveURL(/\/entrar$/);

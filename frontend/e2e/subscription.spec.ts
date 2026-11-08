@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 test.describe.configure({ timeout: 90_000 });
 
@@ -7,6 +7,7 @@ test("o dono vê o teste grátis no Pro e o uso de cada limite", async ({ page, 
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
 
+  await openMenu(page);
   await page.getByRole("link", { name: /Assinatura/ }).click();
   await expect(page.getByRole("heading", { name: "Assinatura", level: 1 })).toBeVisible();
   const plan = page.getByRole("region", { name: "Plano Pro" });

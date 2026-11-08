@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
 test.describe.configure({ timeout: 90_000 });
@@ -63,6 +63,7 @@ test("a mesa entra no passagem, vira o cartão, e os passadores veem a cor na ho
 
   // A tela dos passadores mostra a mesa, e acompanha cada virada.
   await owner.page.goto("/painel");
+  await openMenu(owner.page);
   await owner.page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Passadores" }).click();
   const mesa = owner.page.getByRole("listitem", { name: /^Mesa 04/ });
   await expect(mesa).toHaveAccessibleName("Mesa 04 · Pode servir");
