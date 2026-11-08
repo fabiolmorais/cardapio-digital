@@ -20,6 +20,8 @@ const t = tablePage.reels;
  */
 const WINDOW_BEFORE = 1;
 const WINDOW_AFTER = 2;
+/** Quanto tempo uma foto fica na tela antes de passar para a próxima mídia do prato. */
+const PHOTO_SECONDS = 5;
 
 /**
  * O Reels do cardápio (desenho Reels): os pratos com foto ou vídeo, um por tela, deslizando
@@ -168,24 +170,57 @@ function ProductReel({
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  /** Quanto da mídia à vista já passou (0 a 1): enche a barra do topo, como no Instagram. */
+  const [progress, setProgress] = useState(0);
   const strip = useRef<HTMLDivElement>(null);
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
   const media = item.media;
+  const several = media.length > 1;
 
   // Só o vídeo do prato na tela, na mídia que está à vista, toca. Os outros param e voltam ao começo.
   useEffect(() => {
     videos.current.forEach((video, i) => {
       if (!video) return;
-      if (active && i === index && !paused) {
-        void video.play().catch(() => {
-          // O navegador recusou tocar sozinho (economia de dados, por exemplo): fica parado.
-        });
+      if (active && i === index) {
+        if (paused) video.pause();
+        else
+          void video.play().catch(() => {
+            // O navegador recusou tocar sozinho (economia de dados, por exemplo): fica parado.
+          });
       } else {
         video.pause();
-        if (!active) video.currentTime = 0;
+        video.currentTime = 0;
       }
     });
   }, [active, index, paused, mounted]);
+
+  /** Passa para a próxima mídia do prato (da última, volta à primeira). */
+  function next() {
+    const el = strip.current;
+    if (!el) return;
+    el.scrollTo({ left: ((index + 1) % media.length) * el.clientWidth, behavior: "smooth" });
+  }
+
+  // A foto à vista enche a barra em PHOTO_SECONDS e passa para a próxima mídia.
+  const photoShown = active && several && !paused && !media[index]?.video;
+  useEffect(() => {
+    if (!photoShown) return;
+    const step = 100;
+    const timer = setInterval(() => setProgress((p) => Math.min(1, p + step / 1000 / PHOTO_SECONDS)), step);
+    return () => clearInterval(timer);
+  }, [photoShown, index]);
+  useEffect(() => {
+    if (photoShown && progress >= 1) next();
+    // next() lê o índice da renderização atual, de propósito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoShown, progress]);
+
+  // Outra mídia à vista: a barra dela começa do zero.
+  const [shownIndex, setShownIndex] = useState(index);
+  if (shownIndex !== index) {
+    setShownIndex(index);
+    setProgress(0);
+  }
 
   // Saiu da tela: volta para a primeira mídia e despausa, para quem voltar ver do começo. (O
   // estado se ajusta já na renderização, como o React recomenda; o efeito só rola a faixa.)
@@ -195,6 +230,7 @@ function ProductReel({
     if (!active) {
       setPaused(false);
       setIndex(0);
+      setProgress(0);
     }
   }
   useEffect(() => {
@@ -224,14 +260,28 @@ function ProductReel({
                 <video
                   ref={(el) => {
                     videos.current[i] = el;
+                    // Ao sair da tela (fechar o Reels), o vídeo para: a página fica guardada
+                    // escondida para voltar rápido, e o som seguiria tocando pelo cardápio.
+                    return () => {
+                      el?.pause();
+                      if (videos.current[i] === el) videos.current[i] = null;
+                    };
                   }}
                   src={m.video.url}
                   poster={m.video.poster ?? undefined}
                   // O vídeo à vista carrega; o primeiro do próximo prato também, para não ficar tela preta.
                   preload={(active && i === index) || (preloadFirst && i === 0) ? "auto" : "none"}
                   muted={muted}
-                  loop
+                  // Com uma mídia só, o vídeo repete; com várias, ao acabar passa para a próxima.
+                  loop={!several}
                   playsInline
+                  onTimeUpdate={(event) => {
+                    const video = event.currentTarget;
+                    if (active && i === index && video.duration) setProgress(video.currentTime / video.duration);
+                  }}
+                  onEnded={() => {
+                    if (active && i === index && several) next();
+                  }}
                   onClick={() => setPaused((p) => !p)}
                   aria-label={paused ? t.play : t.pause}
                   className="size-full object-cover"
@@ -250,6 +300,8 @@ function ProductReel({
                   alt=""
                   loading={active || preloadFirst ? "eager" : "lazy"}
                   decoding="async"
+                  // Com várias mídias, tocar na foto pausa a passagem, como no vídeo.
+                  onClick={several ? () => setPaused((p) => !p) : undefined}
                   className="size-full object-cover"
                 />
               )
@@ -264,16 +316,21 @@ function ProductReel({
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.55)_0%,rgba(0,0,0,0)_22%,rgba(0,0,0,0)_48%,rgba(0,0,0,.88)_100%)]"
       />
 
-      {media.length > 1 && (
+      {(several || current?.video) && (
         <div className="pointer-events-none absolute inset-x-4 top-4 flex gap-1" aria-hidden>
           {media.map((_, i) => (
-            <span key={i} className={cn("h-[3px] flex-1 rounded-full bg-white/35", i <= index && "bg-white")} />
+            <span key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/35">
+              <span
+                className="block h-full rounded-full bg-white transition-[width] duration-200 ease-linear"
+                style={{ width: `${i < index ? 100 : i === index ? Math.round(progress * 100) : 0}%` }}
+              />
+            </span>
           ))}
         </div>
       )}
       {media.length > 1 && <span className="sr-only">{t.mediaOf(index + 1, media.length)}</span>}
 
-      {current?.video && paused && active && (
+      {(current?.video || several) && paused && active && (
         <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="flex size-18 items-center justify-center rounded-full bg-black/45">
             <Pause aria-hidden className="size-8" />

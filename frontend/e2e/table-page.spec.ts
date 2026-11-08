@@ -54,6 +54,11 @@ test("a mesa abre com a marca, os botões, os destaques e os links do restaurant
   await expect(destaques.getByRole("listitem")).toHaveCount(1);
   await expect(destaques).toContainText("Sunomono");
   await expect(destaques).toContainText("R$ 15,90");
+  // Tocar no destaque abre o prato, no cardápio (e não só o cardápio inteiro).
+  await destaques.getByRole("link", { name: /Sunomono/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
+  await expect(page.getByRole("dialog", { name: "Sunomono" })).toBeVisible();
+  await page.goBack();
   // Categorias sem produto não aparecem.
   await expect(page.getByRole("navigation", { name: "Categorias" }).getByRole("link")).toHaveText([
     "Entradas",
