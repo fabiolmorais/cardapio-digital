@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ToggleRow } from "@/components/toggle-row";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,11 @@ export function ProductEditor({ productId, initialCategoryId }: { productId?: st
     retry: false,
   });
   const [round, setRound] = useState(0);
+  // O Next guarda as telas visitadas (escondidas, com o estado) para a volta ser instantânea. Ao
+  // sair desta tela, os efeitos dela são desligados: é a hora de marcar uma visita nova, para o
+  // formulário voltar em branco (e na categoria do endereço), e não com o rascunho abandonado.
+  const [visit, setVisit] = useState(0);
+  useEffect(() => () => setVisit((n) => n + 1), []);
 
   if (status !== "authenticated" || (allowed && (categories.isPending || (productId && product.isPending)))) {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
@@ -65,11 +70,15 @@ export function ProductEditor({ productId, initialCategoryId }: { productId?: st
     );
   }
 
-  // O Next guarda o estado das telas já visitadas. A chave faz o formulário recomeçar: o novo,
-  // a cada produto criado; o de edição, sempre que o produto chega de novo do back.
+  // A chave faz o formulário recomeçar: a cada volta a esta tela; o novo, também a cada produto
+  // criado e a cada categoria do endereço; o de edição, sempre que o produto chega de novo do back.
   return (
     <ProductForm
-      key={product.data ? `${product.data.id}-${product.dataUpdatedAt}` : `new-${round}`}
+      key={
+        product.data
+          ? `${product.data.id}-${product.dataUpdatedAt}-${visit}`
+          : `new-${initialCategoryId ?? ""}-${round}-${visit}`
+      }
       product={product.data}
       categories={categories.data}
       initialCategoryId={initialCategoryId}

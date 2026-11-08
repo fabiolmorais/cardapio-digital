@@ -88,6 +88,8 @@
 }
 
 .dark {
+  /* Os controles do próprio navegador (a lista do select, as barras de rolagem) no tema escuro. */
+  color-scheme: dark;
   /* Paleta do design (canvas "Cardápio Digital — Telas"): grafite quente + tomate */
   --background: #0e0c0b;
   --foreground: #f8f5f1;
