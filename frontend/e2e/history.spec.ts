@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -51,6 +51,7 @@ test("o dono vê as comandas fechadas de hoje, filtra por mesa e abre uma", asyn
   await loginThroughForm(page, email);
   // As seções do painel carregam aos poucos e empurram o resto para baixo: espera elas assentarem.
   await expect(page.getByText("Nenhuma comanda aberta.")).toBeVisible();
+  await openMenu(page);
   await page.getByRole("link", { name: /Comandas/ }).click();
   await expect(page).toHaveURL(/\/admin\/comandas$/);
 

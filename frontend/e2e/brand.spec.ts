@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createAccount, loginThroughForm } from "./support/account";
+import { createAccount, loginThroughForm, openMenu } from "./support/account";
 
 /** Abre a marca pelo atalho do painel. */
 async function openBrand(page: Page) {
+  await openMenu(page);
   await page.getByRole("link", { name: /^Marca e aparência/ }).click();
   await expect(page.getByRole("heading", { name: "Marca e aparência", level: 1 })).toBeVisible();
 }

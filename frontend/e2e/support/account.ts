@@ -72,3 +72,9 @@ export async function linkDeviceByCode(
   expect(response.status()).toBe(201);
   return (await response.json()).id as string;
 }
+
+/** No celular, o menu do painel fica atrás do botão (hambúrguer): abre antes de usar um item dele. */
+export async function openMenu(page: Page) {
+  const button = page.getByRole("button", { name: "Abrir o menu" });
+  if ((await button.isVisible()) && (await button.getAttribute("aria-expanded")) !== "true") await button.click();
+}

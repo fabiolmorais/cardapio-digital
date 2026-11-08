@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
+import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
@@ -96,10 +97,12 @@ export function CallQueue({ role }: { role: Role }) {
             {t.enableSound}
           </Button>
         )}
-        <Link href="/painel/tv" className={buttonVariants({ variant: "outline" })}>
-          <Tv aria-hidden />
-          {t.openTv}
-        </Link>
+        {canManageTeam(role) && (
+          <Link href="/painel/tv" className={buttonVariants({ variant: "outline" })}>
+            <Tv aria-hidden />
+            {t.openTv}
+          </Link>
+        )}
       </div>
       {!soundOn && <p className="text-sm text-muted-foreground">{t.soundHint}</p>}
 

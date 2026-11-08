@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 // O celular da mesa e duas estações de impressão, em navegadores separados: mais tempo.
 test.describe.configure({ timeout: 90_000 });
@@ -49,6 +49,7 @@ async function station(browser: Browser, email: string) {
     };
   });
   await loginThroughForm(page, email);
+  await openMenu(page);
   await page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Impressão de comandas" }).click();
   await expect(page).toHaveURL(/\/painel\/impressao$/);
   await expect(page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();

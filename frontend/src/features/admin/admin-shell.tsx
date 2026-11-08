@@ -7,6 +7,7 @@ import {
   CreditCard,
   Flame,
   LogOut,
+  Menu,
   Palette,
   Printer,
   QrCode,
@@ -16,11 +17,12 @@ import {
   Tv,
   Users,
   UtensilsCrossed,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { canManageTeam, type Role } from "@/features/team/team-rules";
@@ -32,16 +34,22 @@ import { cn } from "cn";
 
 const t = messages.admin;
 
-type Item = { href: string; label: string; icon: LucideIcon };
+/** O item do menu; `roles`: só para esses papéis (sem a lista, para todos). */
+type Item = { href: string; label: string; icon: LucideIcon; roles?: readonly Role[] };
+
+const MANAGERS = ["OWNER", "MANAGER"] as const;
 
 const LIVE: Item[] = [{ href: "/painel", label: t.nav.panel, icon: BellRing }];
 
-/** As telas de tela cheia: a TV, a cozinha, os passadores, a impressão e o app no celular. */
+/**
+ * As telas de tela cheia, cada uma para quem a usa: o Modo TV o dono ou o gerente liga na TV; a
+ * cozinha e a impressão ficam com a cozinha (e o balcão); os passadores são garçons do churrasco.
+ */
 const SCREENS: Item[] = [
-  { href: "/painel/tv", label: t.nav.tv, icon: Tv },
-  { href: "/painel/cozinha", label: t.nav.kitchen, icon: ChefHat },
-  { href: "/painel/passadores", label: t.nav.passagem, icon: Flame },
-  { href: "/painel/impressao", label: t.nav.printing, icon: Printer },
+  { href: "/painel/tv", label: t.nav.tv, icon: Tv, roles: MANAGERS },
+  { href: "/painel/cozinha", label: t.nav.kitchen, icon: ChefHat, roles: [...MANAGERS, "KITCHEN"] },
+  { href: "/painel/passadores", label: t.nav.passagem, icon: Flame, roles: [...MANAGERS, "STAFF"] },
+  { href: "/painel/impressao", label: t.nav.printing, icon: Printer, roles: [...MANAGERS, "KITCHEN"] },
   { href: "/painel/instalar", label: t.nav.install, icon: Smartphone },
 ];
 
@@ -69,6 +77,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   const establishment = status === "authenticated" ? session.establishment : null;
   const role = establishment?.role as Role | undefined;
+  // No celular, o menu fica recolhido atrás do botão (hambúrguer); no computador, sempre aberto.
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -83,42 +94,55 @@ export function AdminShell({ children }: { children: ReactNode }) {
           >
             {establishment ? initials(establishment.name) : ""}
           </span>
-          <span className="flex min-w-0 flex-col">
+          <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate font-semibold">{establishment?.name ?? t.loading}</span>
             <span className="text-sm text-muted-foreground">{t.staffPanel}</span>
           </span>
-        </div>
-        {/* O endereço só existe quando a página abre (rotas como /admin/cardapio/produtos/[id]):
-            o menu espera por ele num Suspense, já desenhado, só sem o item aceso. */}
-        <Suspense fallback={<ShellNav pathname={null} role={role} />}>
-          <ActiveShellNav role={role} />
-        </Suspense>
-        <div className="flex flex-wrap items-center gap-3 border-border px-2 md:mt-auto md:border-t md:pt-4">
-          {session && (
-            <>
-              <span
-                aria-hidden
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold"
-              >
-                {initials(session.userName)}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-semibold">{session.userName}</span>
-                <span className="text-sm text-muted-foreground">
-                  {messages.panel.roleLabel}: {messages.panel.roles[session.establishment.role]}
-                </span>
-              </span>
-            </>
-          )}
           <Button
             variant="ghost"
-            className="h-11 shrink-0 gap-2 px-3 md:w-full md:justify-start"
-            onClick={logout}
-            disabled={leaving}
+            size="icon-lg"
+            className="size-11 md:hidden"
+            aria-label={t.openMenu}
+            aria-expanded={open}
+            aria-controls="menu-do-painel"
+            onClick={() => setOpen((v) => !v)}
           >
-            <LogOut aria-hidden />
-            {t.logout}
+            {open ? <X aria-hidden className="size-6" /> : <Menu aria-hidden className="size-6" />}
           </Button>
+        </div>
+        <div id="menu-do-painel" className={cn("flex-1 flex-col gap-4 md:flex", open ? "flex" : "hidden")}>
+          {/* O endereço só existe quando a página abre (rotas como /admin/cardapio/produtos/[id]):
+            o menu espera por ele num Suspense, já desenhado, só sem o item aceso. */}
+          <Suspense fallback={<ShellNav pathname={null} role={role} onNavigate={close} />}>
+            <ActiveShellNav role={role} onNavigate={close} />
+          </Suspense>
+          <div className="flex flex-wrap items-center gap-3 border-t border-border px-2 pt-4 md:mt-auto">
+            {session && (
+              <>
+                <span
+                  aria-hidden
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold"
+                >
+                  {initials(session.userName)}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-semibold">{session.userName}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {messages.panel.roleLabel}: {messages.panel.roles[session.establishment.role]}
+                  </span>
+                </span>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              className="h-11 shrink-0 gap-2 px-3 md:w-full md:justify-start"
+              onClick={logout}
+              disabled={leaving}
+            >
+              <LogOut aria-hidden />
+              {t.logout}
+            </Button>
+          </div>
         </div>
       </aside>
       <main className="min-w-0 flex-1">
@@ -129,8 +153,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   );
 }
 
-function ActiveShellNav({ role }: { role: Role | undefined }) {
-  return <ShellNav pathname={usePathname()} role={role} />;
+function ActiveShellNav({ role, onNavigate }: { role: Role | undefined; onNavigate: () => void }) {
+  return <ShellNav pathname={usePathname()} role={role} onNavigate={onNavigate} />;
 }
 
 /** "/painel" acende só nele mesmo e na comanda (as telas de /painel/… têm item próprio). */
@@ -140,18 +164,27 @@ function isActive(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function ShellNav({ pathname, role }: { pathname: string | null; role: Role | undefined }) {
+function ShellNav({
+  pathname,
+  role,
+  onNavigate,
+}: {
+  pathname: string | null;
+  role: Role | undefined;
+  onNavigate: () => void;
+}) {
+  const allowed = (item: Item) => !item.roles || (role !== undefined && item.roles.includes(role));
   const groups: { label: string | null; items: Item[] }[] = [
     { label: null, items: LIVE },
-    { label: t.screens, items: SCREENS },
+    { label: t.screens, items: SCREENS.filter(allowed) },
     ...(role && canManageTeam(role) ? [{ label: t.management, items: MANAGEMENT }] : []),
   ];
   return (
-    <nav aria-label={t.navigation} className="flex gap-1 overflow-x-auto md:flex-col">
+    <nav aria-label={t.navigation} className="flex flex-col gap-1">
       {groups.map(({ label, items }) => (
-        <div key={label ?? "live"} className="flex shrink-0 gap-1 md:flex-col">
+        <div key={label ?? "live"} className="flex flex-col gap-1">
           {label && (
-            <span className="hidden px-3 pt-4 pb-1.5 text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase md:block">
+            <span className="px-3 pt-4 pb-1.5 text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">
               {label}
             </span>
           )}
@@ -161,6 +194,7 @@ function ShellNav({ pathname, role }: { pathname: string | null; role: Role | un
               <Link
                 key={href}
                 href={href}
+                onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -34,6 +34,7 @@ test("o painel vira app (manifesto da equipe), e a página da mesa não", async 
 test("o painel leva ao passo a passo da instalação", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
+  await openMenu(page);
   await page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Instalar o app" }).click();
   await expect(page.getByRole("heading", { name: "Instalar o app da equipe" })).toBeVisible();
   await expect(page.getByRole("region", { name: "No Android (Chrome)" })).toContainText("Instalar app");

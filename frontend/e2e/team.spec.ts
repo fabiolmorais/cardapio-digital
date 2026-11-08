@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createAccount, loginThroughForm } from "./support/account";
+import { createAccount, loginThroughForm, openMenu } from "./support/account";
 
 /** Abre a equipe pelo cartão do painel. */
 async function openTeam(page: Page) {
+  await openMenu(page);
   await page.getByRole("link", { name: /Equipe/ }).first().click();
   await expect(page).toHaveURL(/\/admin\/equipe$/);
   await expect(page.getByRole("heading", { name: "Equipe" })).toBeVisible();

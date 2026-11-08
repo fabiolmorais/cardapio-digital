@@ -1,5 +1,5 @@
 import { devices, expect, test, type Browser, type APIRequestContext, type Page } from "@playwright/test";
-import { addTeamMember, API_URL, apiLogin, createAccount, linkDeviceByCode } from "./support/account";
+import { addTeamMember, API_URL, apiLogin, createAccount, linkDeviceByCode, openMenu } from "./support/account";
 
 const APP_URL = "http://localhost:3000";
 const PIN = "258014";
@@ -36,8 +36,17 @@ test("garçom entra com PIN, cai no painel e, ao sair, volta para o PIN", async 
 
   await expect(phone).toHaveURL(/\/painel$/);
   await expect(phone.getByRole("heading", { name: "Olá, Carlos Souza" })).toBeVisible();
+  await openMenu(phone);
   await expect(phone.getByText("Seu papel: Garçom")).toBeVisible();
   await expect(phone.getByRole("link", { name: /Equipe/ })).toHaveCount(0); // garçom não cuida da equipe
+  // O menu do garçom: o Ao vivo, os passadores e o app; sem Modo TV, cozinha nem impressão.
+  const nav = phone.getByRole("navigation", { name: "Navegação" });
+  await expect(nav.getByRole("link", { name: "Passadores" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Instalar o app" })).toBeVisible();
+  for (const screen of ["Modo TV", "Cozinha", "Impressão de comandas"]) {
+    await expect(nav.getByRole("link", { name: screen })).toHaveCount(0);
+  }
+  await expect(phone.getByRole("link", { name: "Abrir Modo TV" })).toHaveCount(0);
 
   await phone.getByRole("button", { name: "Sair" }).click();
   await expect(phone).toHaveURL(/\/aparelho$/);

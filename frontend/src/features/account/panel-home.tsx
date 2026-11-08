@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CallQueue } from "@/features/calls/call-queue";
-import { Deliveries, KitchenLink, PassagemLink, WaitingOrders } from "@/features/orders/staff-orders";
+import { Deliveries, KitchenLink, WaitingOrders } from "@/features/orders/staff-orders";
 import { PrintingLink } from "@/features/printing/printing-link";
 import { PushCard } from "@/features/pwa/push-card";
 import { OpenTabs } from "@/features/tabs/open-tabs";
@@ -67,7 +67,6 @@ export function PanelHome() {
         <div className="grid items-start gap-5 lg:grid-cols-2">
           <div className="flex flex-col gap-4">
             <KitchenLink />
-            <PassagemLink />
             <PrintingLink />
           </div>
           <CallQueue role={establishment.role} />

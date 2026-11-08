@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -22,6 +22,7 @@ async function restaurant(request: APIRequestContext) {
 test("o dono cadastra um rodízio com faixas, preço de fim de semana, produtos e regras", async ({ page, request }) => {
   const { email, headers, ids } = await restaurant(request);
   await loginThroughForm(page, email);
+  await openMenu(page);
   await page.getByRole("link", { name: /^Rodízios/ }).click();
   await expect(page).toHaveURL(/\/admin\/rodizios$/);
 
