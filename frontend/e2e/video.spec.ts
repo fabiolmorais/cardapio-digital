@@ -25,6 +25,12 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
       data: { categoryId: category.id, name: "Guioza", priceCents: 2990, featured: false, available: true },
     })
   ).json();
+  // Como o Bunny: todo passo do envio (não só a criação) precisa da autorização.
+  const unauthorized: string[] = [];
+  await page.route("**/tus**", (route) => {
+    if (!route.request().headers()["libraryid"]) unauthorized.push(route.request().method());
+    return route.fallback();
+  });
   await loginThroughForm(page, email);
   await page.goto(`/admin/cardapio/produtos/${product.id}`);
 
@@ -36,6 +42,7 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
 
   await gallery(page).getByLabel("Enviar vídeo").setInputFiles(VIDEO);
   await expect(gallery(page).getByText("Vídeo enviado.")).toBeVisible({ timeout: 30_000 });
+  expect(unauthorized).toEqual([]);
   // O serviço falso "converte" na hora: 1080 × 1920, 15 segundos.
   const video = gallery(page).getByLabel("Vídeo 1", { exact: true });
   await expect(video).toBeVisible();
@@ -46,4 +53,33 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
   await expect(page.getByRole("alertdialog")).toContainText("apagado do serviço de vídeo");
   await page.getByRole("alertdialog").getByRole("button", { name: "Remover" }).click();
   await expect(gallery(page)).toContainText("Nenhuma foto ainda");
+});
+
+test("se o serviço de vídeo recusa o envio, o motivo aparece e o vídeo não fica convertendo", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
+  const category = await (
+    await request.post(`${API_URL}/api/v1/menu-categories`, { headers, data: { name: "Entradas" } })
+  ).json();
+  const product = await (
+    await request.post(`${API_URL}/api/v1/products`, {
+      headers,
+      data: { categoryId: category.id, name: "Guioza", priceCents: 2990, featured: false, available: true },
+    })
+  ).json();
+  // O serviço de vídeo recusa o primeiro pedaço, como o Bunny faria com um cabeçalho que não aceita.
+  await page.route("**/tus/**", (route) =>
+    route.request().method() === "PATCH"
+      ? route.fulfill({ status: 400, body: "Invalid Upload-Offset" })
+      : route.fallback(),
+  );
+  await loginThroughForm(page, email);
+  await page.goto(`/admin/cardapio/produtos/${product.id}`);
+
+  await gallery(page).getByLabel("Enviar vídeo").setInputFiles(VIDEO);
+  await expect(gallery(page).getByRole("alert")).toContainText(
+    "guioza.mp4: o serviço de vídeo não aceitou o envio (400: Invalid Upload-Offset)",
+  );
+  await expect(gallery(page)).toContainText("Nenhuma foto ainda");
+  await expect(gallery(page).getByText("Convertendo…")).toHaveCount(0);
 });
