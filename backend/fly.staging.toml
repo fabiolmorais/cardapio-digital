@@ -54,6 +54,7 @@ primary_region = "gru"
     method = "GET"
     path = "/actuator/health/readiness"
 
+# 512 MB não bastou: o Java morreu sem memória gerando os QR Codes (08/11/2026). A produção também usa 1 GB.
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "1gb"
