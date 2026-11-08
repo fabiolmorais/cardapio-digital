@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
+import { choose } from "./support/select";
 
 // Dois navegadores por teste (o celular e o painel), com login: mais tempo.
 test.describe.configure({ timeout: 60_000 });
@@ -128,7 +129,7 @@ test("o dono cadastra a rede de onde está, o nome do Wi-Fi e o local", async ({
   await page.getByLabel("IP ou faixa (CIDR)").fill("2804:14c:6a::/48");
   await page.getByRole("button", { name: "Adicionar" }).click();
   await page.getByLabel("Conferir pela localização").check();
-  await page.getByLabel("A sessão da mesa expira após").selectOption({ label: "1 hora sem uso" });
+  await choose(page, page.getByLabel("A sessão da mesa expira após"), "1 hora sem uso");
   await expect(page.getByRole("group", { name: /Mapa com o restaurante e o raio de 100 metros/ })).toBeVisible();
   await page.getByRole("button", { name: "Salvar" }).click();
 

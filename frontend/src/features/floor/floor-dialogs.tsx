@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { messages } from "@/messages/pt-BR";
 import { ErrorText } from "@/features/subscription/error-text";
 import type { DiningTable, Sector } from "./floor-api";
@@ -146,19 +147,13 @@ export function TableFormDialog({
             <Label htmlFor="table-sector" className="text-muted-foreground">
               {t.tableForm.sector}
             </Label>
-            <select
+            <Select
               id="table-sector"
               name="sectorId"
               required
               defaultValue={table?.sectorId ?? defaultSectorId ?? sectors[0]?.id}
-              className="h-12 rounded-xl border border-input bg-transparent px-3 text-base dark:bg-input/30"
-            >
-              {sectors.map((sector) => (
-                <option key={sector.id} value={sector.id}>
-                  {sector.name}
-                </option>
-              ))}
-            </select>
+              options={sectors.map((sector) => ({ value: sector.id, label: sector.name }))}
+            />
           </div>
           <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
             {mutation.error && <ErrorText message={mutation.error.message} />}

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
+import { choose } from "./support/select";
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -58,7 +59,7 @@ test("o dono vê as comandas fechadas de hoje, filtra por mesa e abre uma", asyn
   await expect(page.getByText("2 comandas fechadas")).toBeVisible();
   await expect(page.getByRole("link", { name: /Comanda da mesa 04/ })).toContainText("R$ 59,80");
 
-  await page.getByLabel("Mesa", { exact: true }).selectOption({ label: "Mesa 05" });
+  await choose(page, page.getByLabel("Mesa", { exact: true }), "Mesa 05");
   await expect(page.getByText("1 comanda fechada")).toBeVisible();
   await page.getByRole("link", { name: /Comanda da mesa 05/ }).click();
 

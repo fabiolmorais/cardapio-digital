@@ -10,6 +10,7 @@ import { ToggleRow } from "@/components/toggle-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
 import { centsToInput, parseCents } from "@/lib/format";
@@ -239,19 +240,13 @@ function ProductForm({
               <Label htmlFor={`${id}category`} className="text-muted-foreground">
                 {t.category}
               </Label>
-              <select
+              <Select
                 id={`${id}category`}
                 value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
+                onValueChange={setCategoryId}
                 required
-                className="h-12 rounded-xl border border-input bg-transparent px-3 text-base dark:bg-input/30"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </div>
             <MoneyField
               id={`${id}price`}

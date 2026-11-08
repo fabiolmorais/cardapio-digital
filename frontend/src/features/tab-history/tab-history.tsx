@@ -7,6 +7,7 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { fetchTables } from "@/features/floor/floor-api";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
@@ -155,22 +156,19 @@ function History({ timeZone }: { timeZone: string }) {
           )}
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${id}table`}>{t.table}</Label>
-            <select
+            <Select
               id={`${id}table`}
               value={tableId ?? ""}
-              onChange={(event) => {
-                setTableId(event.target.value || null);
+              onValueChange={(next) => {
+                setTableId(next || null);
                 setPage(0);
               }}
-              className="h-11 min-w-48 rounded-xl border border-input bg-transparent px-3 text-base focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              <option value="">{t.allTables}</option>
-              {(tables.data ?? []).map((table) => (
-                <option key={table.id} value={table.id}>
-                  {t.tableOption(table.label)}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: t.allTables },
+                ...(tables.data ?? []).map((table) => ({ value: table.id, label: t.tableOption(table.label) })),
+              ]}
+              className="h-11 min-w-48"
+            />
           </div>
         </div>
       </section>
