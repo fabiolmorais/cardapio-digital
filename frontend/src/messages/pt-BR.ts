@@ -1178,6 +1178,8 @@ export const messages = {
       callWaiter: "Chamar garçom",
       askBill: "Pedir a conta",
       menu: "Ver o cardápio",
+      follow: (handle: string) => `Siga no Instagram · @${handle}`,
+      review: "Avalie no Google",
     },
     errors: {
       generic: "Não foi possível salvar agora. Tente de novo em instantes.",

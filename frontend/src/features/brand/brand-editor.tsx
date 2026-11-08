@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useState, type ChangeEvent, type FormEvent } from "react";
+import { ExternalLink, Star } from "lucide-react";
+import { useId, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,8 @@ function BrandForm({ brand }: { brand: Brand }) {
       // A sessão traz o nome do restaurante (o menu lateral mostra): renova para ele mudar já.
       await refreshSession();
       keep(saved);
+      // O back guarda só o @ (de um link colado, por exemplo): o campo mostra o que ficou salvo.
+      setForm((current) => ({ ...current, instagram: saved.instagram ?? "" }));
       setNotice(t.saved);
     },
   });
@@ -237,6 +240,8 @@ function BrandForm({ brand }: { brand: Brand }) {
             primary={selected.primary}
             accent={form.theme === "DARK" ? selected.textOnDark : selected.textOnLight}
             logo={brand.logo?.small}
+            instagram={previewHandle(form.instagram ?? "")}
+            review={Boolean(form.googleReviewUrl?.trim())}
           />
         </aside>
       </div>
@@ -355,12 +360,16 @@ function PhonePreview({
   primary,
   accent,
   logo,
+  instagram,
+  review,
 }: {
   name: string;
   theme: "DARK" | "LIGHT";
   primary: string;
   accent: string;
   logo?: string;
+  instagram: string;
+  review: boolean;
 }) {
   const colors = tableThemeVars(theme, primary, accent);
 
@@ -395,7 +404,42 @@ function PhonePreview({
         <span className="flex h-12 items-center justify-center rounded-[14px] border border-(--mesa-stroke) bg-(--mesa-glass) text-sm font-semibold">
           {t.preview.menu}
         </span>
+        {(instagram || review) && (
+          <div className="mt-2 flex flex-col gap-2">
+            {instagram && (
+              <PreviewLink icon={<span className="text-base font-bold">@</span>}>
+                {t.preview.follow(instagram)}
+              </PreviewLink>
+            )}
+            {review && <PreviewLink icon={<Star className="size-4" />}>{t.preview.review}</PreviewLink>}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+/** Uma linha de link da página da mesa (Instagram, Google), em miniatura. */
+function PreviewLink({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span className="flex h-11 items-center gap-2.5 rounded-[14px] border border-(--mesa-stroke) bg-(--mesa-glass) px-3 text-[13px] font-medium">
+      <span aria-hidden className="flex size-5 items-center justify-center text-(--brand-text)">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <ExternalLink aria-hidden className="size-3.5 text-(--mesa-muted)" />
+    </span>
+  );
+}
+
+/**
+ * O @ como a página da mesa vai mostrar, só para a prévia: o dono pode colar o link inteiro, e
+ * quem decide o que vale é o back (InstagramHandle), ao salvar.
+ */
+function previewHandle(text: string) {
+  return text
+    .trim()
+    .replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, "")
+    .replace(/^@/, "")
+    .replace(/\/.*$/, "");
 }
