@@ -71,7 +71,7 @@ function SheetBody({ token, item, id, onDone }: { token: string; item: MenuItem;
     "flex size-11 items-center justify-center rounded-full focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none disabled:opacity-40";
 
   return (
-    <div className="flex max-h-[90dvh] flex-col gap-4 overflow-y-auto rounded-t-[28px] border border-(--mesa-stroke) bg-(--mesa-bg) p-5 pb-6">
+    <div className="flex max-h-[90dvh] flex-col gap-4 overflow-y-auto overscroll-contain rounded-t-[28px] border border-(--mesa-stroke) bg-(--mesa-bg) p-5 pb-6">
       <div className="relative -mx-5 -mt-5 h-52 shrink-0 overflow-hidden rounded-t-[28px] bg-(--mesa-stroke)">
         {item.photo ? (
           // eslint-disable-next-line @next/next/no-img-element -- foto já no tamanho certo, vinda do R2

@@ -1,93 +1,119 @@
-import { ChevronRight, ExternalLink, Star, UtensilsCrossed } from "lucide-react";
+import { ExternalLink, Plus, Sparkles, Star, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
+import { cn } from "cn";
 import { aLaCarte } from "./carte";
+import { CategoryIcon } from "./category-icon";
 import { RodizioEntry } from "./rodizio-entry";
 import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
 import type { PublicMenu, PublicTable } from "./table-data";
 
 const t = messages.tablePage;
+const tile =
+  "flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-[18px] pt-3 pb-2.5 text-xs font-medium focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
 
 /**
- * "Como podemos ajudar?" (desenho Main): a marca, a mesa, os botões (Chamar garçom e Pedir a
- * conta, a única parte com JavaScript), as categorias, os destaques e os links do restaurante.
+ * O início da mesa (desenho 2.1): a marca e a mesa (com "No salão" quando a presença está
+ * confirmada), o "Peça sem esperar", os botões (Chamar garçom e Pedir a conta, a parte com
+ * JavaScript), as categorias com ícone, o rodízio, os destaques e os links do restaurante, sobre a
+ * foto de um prato desfocada.
  */
 export function TableHome({ token, table, menu }: { token: string; table: PublicTable; menu: PublicMenu | null }) {
   const brand = table.brand;
   const categories = menu ? aLaCarte(menu) : [];
-  const featured = categories.flatMap((c) => c.products).filter((p) => p.featured && p.available);
+  const products = categories.flatMap((c) => c.products);
+  const featured = products.filter((p) => p.featured && p.available);
   const menuHref = `/m/${token}/cardapio`;
+  // O fundo: a foto do primeiro destaque (ou de qualquer prato), desfocada.
+  const ambient = (featured.find((p) => p.photo) ?? products.find((p) => p.photo))?.photo?.medium;
+
+  const header = (
+    <header className="flex min-w-0 items-center gap-3">
+      <BrandLogo
+        logo={brand.logo?.small}
+        name={table.establishmentName}
+        color={brand.primary}
+        alt=""
+        className="size-[46px] text-[15px]"
+      />
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="truncate font-semibold">{table.establishmentName}</span>
+        <span className="text-[13px] text-(--mesa-muted)">{t.where(table.tableLabel, table.sectorName)}</span>
+      </div>
+    </header>
+  );
+  const intro = (
+    <section className="flex flex-col gap-1.5">
+      <p className="text-[13px] text-(--mesa-muted)">{t.welcome}</p>
+      <h1 className="text-[34px] leading-[38px] font-bold tracking-[-0.8px]">
+        {t.headline}
+        <br />
+        <span className="text-(--brand-text)">{t.highlight}</span>
+      </h1>
+    </section>
+  );
 
   return (
-    <TableShell token={token} table={table} current="home">
-      <header className="flex items-center gap-3">
-        <BrandLogo logo={brand.logo?.small} name={table.establishmentName} color={brand.primary} alt="" className="size-12 text-[15px]" />
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-lg font-semibold">{table.establishmentName}</span>
-          <span className="text-sm text-(--mesa-muted)">{t.where(table.tableLabel, table.sectorName)}</span>
-        </div>
-      </header>
-
+    <TableShell token={token} table={table} current="home" ambient={ambient}>
       {/* Atendimento pausado: sem o "Peça sem esperar" e sem os botões de chamar e pedir. */}
-      {table.serving && (
-        <>
-          <section className="flex flex-col gap-1.5">
-            <p className="text-sm text-(--mesa-muted)">{t.welcome}</p>
-            <h1 className="text-[34px] leading-[38px] font-bold tracking-tight">
-              {t.headline}
-              <br />
-              <span className="text-(--brand-text)">{t.highlight}</span>
-            </h1>
-          </section>
-
-          <TableActions token={token} />
-          <RodizioEntry token={token} />
-        </>
-      )}
-
-      <Link
-        href={menuHref}
-        className="flex h-14 items-center justify-between rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) px-5 font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
-      >
-        {t.seeMenu}
-        <ChevronRight aria-hidden className="size-5" />
-      </Link>
+      {table.serving ? <TableActions token={token} header={header} intro={intro} /> : header}
 
       {categories.length > 0 && (
-        <nav aria-label={t.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+        <nav aria-label={t.categories} className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+          {featured.length > 0 && (
+            <a
+              href="#destaques"
+              className={cn(
+                tile,
+                "border border-(--brand-text)/45 bg-linear-to-b from-(--brand)/30 to-(--brand)/10",
+              )}
+            >
+              <Sparkles aria-hidden className="size-6" strokeWidth={1.8} />
+              {t.featured}
+            </a>
+          )}
           {categories.map((c) => (
             <Link
               key={c.id}
               href={`${menuHref}#categoria-${c.id}`}
-              className="flex h-10 shrink-0 items-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass) px-4 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+              className={cn(tile, "border border-(--mesa-stroke) bg-(--mesa-glass) text-(--mesa-muted)")}
             >
-              {c.name}
+              <CategoryIcon name={c.name} className="size-6" />
+              <span className="line-clamp-1 max-w-full px-1">{c.name}</span>
             </Link>
           ))}
         </nav>
       )}
 
+      {table.serving && <RodizioEntry token={token} photo={ambient} />}
+
       {featured.length > 0 && (
-        <section aria-labelledby="destaques" className="flex flex-col gap-3">
+        <section aria-labelledby="destaques" className="flex scroll-mt-6 flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 id="destaques" className="text-xl font-bold tracking-tight">
+            <h2 id="destaques" className="scroll-mt-6 text-xl font-semibold tracking-[-0.3px]">
               {t.featured}
             </h2>
-            <Link href={menuHref} className="text-sm font-semibold text-(--brand-text)">
-              {t.seeAll}
+            <Link href={menuHref} className="text-[13px] font-semibold text-(--brand-text)">
+              {t.seeMenu}
             </Link>
           </div>
-          <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1">
+          <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
             {featured.map((item) => (
-              <li key={item.id} className="w-40 shrink-0">
+              <li key={item.id} className="w-[168px] shrink-0">
+                {/* Com foto ou vídeo, abre o Reels do prato; sem, abre o prato no cardápio. */}
                 <Link
-                  href={`${menuHref}#produto-${item.id}`}
+                  href={
+                    item.media.length > 0
+                      ? `/m/${token}/reels?produto=${encodeURIComponent(item.id)}&de=inicio`
+                      : `${menuHref}#produto-${item.id}`
+                  }
+                  prefetch={false}
                   className="flex flex-col gap-2.5 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-2 pb-3 focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
                 >
-                  <span className="flex h-28 items-center justify-center overflow-hidden rounded-2xl bg-(--mesa-stroke) text-(--mesa-muted)">
+                  <span className="flex h-[120px] items-center justify-center overflow-hidden rounded-2xl bg-(--mesa-stroke) text-(--mesa-muted)">
                     {item.photo ? (
                       // eslint-disable-next-line @next/next/no-img-element -- foto já no tamanho certo, vinda do R2
                       <img src={item.photo.medium} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
@@ -95,10 +121,16 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
                       <UtensilsCrossed aria-hidden className="size-7" />
                     )}
                   </span>
-                  <span className="flex flex-col gap-1 px-1">
+                  <span className="flex flex-col gap-1.5 px-1">
                     <span className="line-clamp-1 font-semibold">{item.name}</span>
-                    <span className="font-bold text-(--brand-text)">
-                      {formatCents(item.promoPriceCents ?? item.priceCents)}
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-bold">{formatCents(item.promoPriceCents ?? item.priceCents)}</span>
+                      <span
+                        aria-hidden
+                        className="flex size-9 items-center justify-center rounded-xl bg-(--brand) text-white shadow-[0_6px_16px_rgba(0,0,0,.3)]"
+                      >
+                        <Plus className="size-[18px]" strokeWidth={2.4} />
+                      </span>
                     </span>
                   </span>
                 </Link>

@@ -2,7 +2,7 @@
 
 import { Pause, Plus, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
@@ -34,11 +34,14 @@ export function Reels({
   menu,
   startId,
   establishmentName,
+  backHref,
 }: {
   token: string;
   menu: PublicMenu;
   startId: string | null;
   establishmentName: string;
+  /** Para onde o "Fechar" volta: o cardápio ou, vindo de um destaque, o início da mesa. */
+  backHref: string;
 }) {
   // O Reels é do cardápio de sempre: o que é só do rodízio não tem preço para mostrar nem para adicionar.
   const items = aLaCarte(menu).flatMap((c) => c.products).filter((p) => p.media.length > 0);
@@ -82,7 +85,7 @@ export function Reels({
     };
   }, [token]);
 
-  const back = `/m/${token}/cardapio`;
+  const back = backHref;
   const round =
     "flex size-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md focus-visible:ring-3 focus-visible:ring-white focus-visible:outline-none";
 
@@ -194,12 +197,43 @@ function ProductReel({
     });
   }, [active, index, paused, mounted]);
 
-  /** Passa para a próxima mídia do prato (da última, volta à primeira). */
-  function next() {
+  /** Mostra a mídia `target` do prato (rolando a faixa: o índice segue a rolagem). */
+  function show(target: number) {
     const el = strip.current;
     if (!el) return;
-    el.scrollTo({ left: ((index + 1) % media.length) * el.clientWidth, behavior: "smooth" });
+    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
   }
+  /** A próxima mídia do prato (da última, volta à primeira). */
+  function next() {
+    show((index + 1) % media.length);
+  }
+  /** A anterior; na primeira, recomeça ela. */
+  function previous() {
+    if (index === 0) {
+      setProgress(0);
+      const video = videos.current[0];
+      if (video) video.currentTime = 0;
+    } else show(index - 1);
+  }
+
+  /**
+   * Uma função de ref por vídeo, a mesma a cada renderização: uma função nova faria o React soltar
+   * e prender o vídeo de novo, e a pausa da saída (abaixo) pararia o vídeo a cada atualização da
+   * barra de progresso.
+   */
+  const videoRefs = useMemo(
+    () =>
+      media.map((_, i) => (el: HTMLVideoElement | null) => {
+        videos.current[i] = el;
+        // Ao sair da tela (fechar o Reels), o vídeo para: a página fica guardada escondida
+        // para voltar rápido, e o som seguiria tocando pelo cardápio.
+        return () => {
+          el?.pause();
+          if (videos.current[i] === el) videos.current[i] = null;
+        };
+      }),
+    [media],
+  );
 
   // A foto à vista enche a barra em PHOTO_SECONDS e passa para a próxima mídia.
   const photoShown = active && several && !paused && !media[index]?.video;
@@ -258,15 +292,7 @@ function ProductReel({
             {m.video ? (
               mounted ? (
                 <video
-                  ref={(el) => {
-                    videos.current[i] = el;
-                    // Ao sair da tela (fechar o Reels), o vídeo para: a página fica guardada
-                    // escondida para voltar rápido, e o som seguiria tocando pelo cardápio.
-                    return () => {
-                      el?.pause();
-                      if (videos.current[i] === el) videos.current[i] = null;
-                    };
-                  }}
+                  ref={videoRefs[i]}
                   src={m.video.url}
                   poster={m.video.poster ?? undefined}
                   // O vídeo à vista carrega; o primeiro do próximo prato também, para não ficar tela preta.
@@ -315,6 +341,24 @@ function ProductReel({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.55)_0%,rgba(0,0,0,0)_22%,rgba(0,0,0,0)_48%,rgba(0,0,0,.88)_100%)]"
       />
+
+      {/* Como no Instagram: tocar perto da borda direita passa para a próxima mídia; da esquerda, volta. */}
+      {several && active && (
+        <>
+          <button
+            type="button"
+            aria-label={t.previous}
+            onClick={previous}
+            className="absolute top-20 bottom-72 left-0 w-1/4 focus-visible:ring-3 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
+          />
+          <button
+            type="button"
+            aria-label={t.next}
+            onClick={next}
+            className="absolute top-20 right-0 bottom-72 w-1/4 focus-visible:ring-3 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
+          />
+        </>
+      )}
 
       {(several || current?.video) && (
         <div className="pointer-events-none absolute inset-x-4 top-4 flex gap-1" aria-hidden>

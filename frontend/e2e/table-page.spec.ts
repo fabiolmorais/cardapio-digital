@@ -60,7 +60,9 @@ test("a mesa abre com a marca, os botões, os destaques e os links do restaurant
   await expect(page.getByRole("dialog", { name: "Sunomono" })).toBeVisible();
   await page.goBack();
   // Categorias sem produto não aparecem.
+  // O "Destaques" vem na frente, quando há destaque.
   await expect(page.getByRole("navigation", { name: "Categorias" }).getByRole("link")).toHaveText([
+    "Destaques",
     "Entradas",
     "Sobremesas",
   ]);
