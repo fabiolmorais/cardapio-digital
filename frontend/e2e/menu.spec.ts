@@ -194,6 +194,31 @@ test("arrastar categorias por cima de várias, duas vezes seguidas", async ({ pa
   await expect(names).toHaveText([/Bebidas/, /Sushis/, /Temakis/, /Entradas/]);
 });
 
+test("a linha arrastada não sai da lista, nem puxando muito para baixo ou para cima", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  const token = await apiLogin(request, email);
+  for (const name of ["Entradas", "Sushis", "Bebidas"]) await apiCategory(request, token, name);
+  await loginThroughForm(page, email);
+  await openMenu(page);
+  const names = page.getByRole("navigation", { name: "Categorias" }).getByRole("listitem");
+  await expect(names).toHaveText([/Entradas/, /Sushis/, /Bebidas/]);
+  const first = (await names.first().boundingBox())!;
+  const last = (await names.last().boundingBox())!;
+  const handle = (await page.getByRole("button", { name: "Mover Sushis" }).boundingBox())!;
+  const x = handle.x + handle.width / 2;
+
+  await page.mouse.move(x, handle.y + handle.height / 2);
+  await page.mouse.down();
+  // Bem abaixo da lista: a linha para no lugar da última.
+  await page.mouse.move(x, last.y + 400, { steps: 20 });
+  expect((await names.filter({ hasText: "Sushis" }).boundingBox())!.y).toBeCloseTo(last.y, 0);
+  // Bem acima: para no lugar da primeira.
+  await page.mouse.move(x, Math.max(1, first.y - 400), { steps: 20 });
+  expect((await names.filter({ hasText: "Sushis" }).boundingBox())!.y).toBeCloseTo(first.y, 0);
+  await page.mouse.up();
+  await expect(names).toHaveText([/Sushis/, /Entradas/, /Bebidas/]);
+});
+
 test("categoria com produtos não pode ser desativada", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);

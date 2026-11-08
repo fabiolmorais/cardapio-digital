@@ -138,7 +138,11 @@ export function useReorder<T extends Item>(
     if (!drag) return undefined;
     const translate = axis === "y" ? "translateY" : "translateX";
     if (id === drag.id) {
-      return { transform: `${translate}(${offset}px)`, position: "relative", zIndex: 10 };
+      // A linha não sai da lista: vai, no máximo, do lugar da primeira ao lugar da última.
+      const min = drag.centers[0] - drag.centers[drag.from];
+      const max = drag.centers[drag.centers.length - 1] - drag.centers[drag.from];
+      const shown = Math.min(max, Math.max(min, offset));
+      return { transform: `${translate}(${shown}px)`, position: "relative", zIndex: 10 };
     }
     const index = items.findIndex((x) => x.id === id);
     const to = targetIndex(drag, offset);
