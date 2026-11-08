@@ -164,7 +164,8 @@ async function startVideoUpload(productId: string, file: File): Promise<VideoUpl
 
 /**
  * Os dois passos de um vídeo. Depois deles, o serviço de vídeo ainda converte: a galeria mostra
- * "convertendo" até ficar pronto.
+ * "convertendo" até ficar pronto. Se o envio falhar, o vídeo criado sai da galeria (e do serviço
+ * de vídeo): sem isso, ele ficaria "convertendo" para sempre.
  */
 export async function uploadProductVideo(
   productId: string,
@@ -172,7 +173,12 @@ export async function uploadProductVideo(
   onProgress: (fraction: number) => void,
 ): Promise<void> {
   const upload = await startVideoUpload(productId, file);
-  await tusUpload(upload, file, onProgress);
+  try {
+    await tusUpload(upload, file, onProgress);
+  } catch (error) {
+    await removeProductMedia(productId, upload.mediaId).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function removeProductMedia(productId: string, mediaId: string): Promise<void> {

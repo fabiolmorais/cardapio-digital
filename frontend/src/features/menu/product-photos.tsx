@@ -16,6 +16,7 @@ import {
 } from "./menu-api";
 import { ErrorText } from "@/features/subscription/error-text";
 import { useReorder } from "./use-reorder";
+import { TusError } from "./tus-upload";
 
 const t = messages.menu.photos;
 const tv = t.video;
@@ -125,7 +126,9 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
       );
       setNotice(tv.sent);
     } catch (error) {
-      setErrors([`${file.name}: ${(error as Error).message}`]);
+      setErrors([
+        error instanceof TusError ? tv.uploadFailed(file.name, error.message) : `${file.name}: ${(error as Error).message}`,
+      ]);
     }
     setVideoSending(null);
     await refresh();

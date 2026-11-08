@@ -1001,6 +1001,8 @@ export const messages = {
         sent: "Vídeo enviado. Ele aparece na galeria assim que a conversão terminar.",
         wrongType: (name: string) => `${name}: envie um vídeo MP4, MOV ou WebM.`,
         tooBig: (name: string) => `${name}: o vídeo precisa ter até 200 MB.`,
+        uploadFailed: (name: string, reason: string) =>
+          `${name}: o serviço de vídeo não aceitou o envio (${reason}). Tente de novo; se continuar, avise o suporte com esta mensagem.`,
         full: "Cada produto pode ter até 3 vídeos.",
         confirmTitle: (position: number) => `Remover o vídeo ${position}?`,
         confirmText: "O vídeo sai da galeria do produto e do cardápio, e é apagado do serviço de vídeo.",

@@ -20,6 +20,21 @@ function metadata(entries: Record<string, string>) {
     .join(",");
 }
 
+/** O serviço de vídeo recusou um passo do envio: o código HTTP e o motivo que ele mandou. */
+export class TusError extends Error {
+  constructor(
+    readonly status: number,
+    readonly detail: string,
+  ) {
+    super(detail ? `${status}: ${detail}` : String(status));
+  }
+}
+
+async function refused(response: Response): Promise<TusError> {
+  const text = await response.text().catch(() => "");
+  return new TusError(response.status, text.replace(/\s+/g, " ").trim().slice(0, 200));
+}
+
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Cria o envio (POST) com a autorização que o back deu, e devolve o endereço dele. */
@@ -34,7 +49,7 @@ async function create(ticket: TusTicket, file: File): Promise<string> {
     },
   });
   const location = response.headers.get("Location");
-  if (response.status !== 201 || !location) throw new Error(String(response.status));
+  if (response.status !== 201 || !location) throw await refused(response);
   // O Location pode vir relativo ("/tus/…"): vale a partir do endpoint.
   return new URL(location, ticket.endpoint).toString();
 }
@@ -73,11 +88,13 @@ export async function tusUpload(ticket: TusTicket, file: File, onProgress: (frac
         continue;
       }
       const next = Number(response.headers.get("Upload-Offset"));
-      if (!response.ok || Number.isNaN(next)) throw new Error(String(response.status));
+      if (!response.ok || Number.isNaN(next)) throw await refused(response);
       offset = next;
       failures = 0;
       onProgress(offset / file.size);
     } catch (error) {
+      // Recusa do serviço (4xx): tentar de novo dá o mesmo resultado. Só rede e 5xx repetem.
+      if (error instanceof TusError && error.status < 500) throw error;
       failures++;
       if (failures > RETRIES) throw error;
       await wait(1000 * 2 ** failures);
