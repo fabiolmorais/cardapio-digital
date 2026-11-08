@@ -7,6 +7,7 @@ import { useCallback, useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { canManageTeam } from "@/features/team/team-rules";
 import { centsToInput, parseCents } from "@/lib/format";
 import { useSession } from "@/lib/auth/use-session";
@@ -348,21 +349,16 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
           <Label htmlFor={`${id}idle`} className="text-muted-foreground">
             {t.session.label}
           </Label>
-          <select
+          <Select
             id={`${id}idle`}
-            value={idleMinutes}
-            onChange={(event) => {
+            value={String(idleMinutes)}
+            onValueChange={(minutes) => {
               changed();
-              setIdleMinutes(Number(event.target.value));
+              setIdleMinutes(Number(minutes));
             }}
-            className="h-11 w-full max-w-xs rounded-xl border border-input bg-transparent px-3 text-base focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-          >
-            {IDLE_OPTIONS.map((minutes) => (
-              <option key={minutes} value={minutes}>
-                {t.session.option(minutes)}
-              </option>
-            ))}
-          </select>
+            options={IDLE_OPTIONS.map((minutes) => ({ value: String(minutes), label: t.session.option(minutes) }))}
+            className="h-11 max-w-xs"
+          />
         </section>
 
         <section aria-labelledby={`${id}orders`} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6">

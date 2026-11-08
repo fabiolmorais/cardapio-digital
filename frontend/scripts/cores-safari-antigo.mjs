@@ -1,4 +1,6 @@
-// Roda depois do `next build` (npm "postbuild"), pelo iPhone com iOS 15 (iPhone 7, 6s, SE de 1ª
+// Roda dentro do `next build` (next.config.ts, compiler.runAfterProductionCompile), logo depois da
+// compilação: depois dela a Vercel já copia os arquivos para publicar, e um "postbuild" chegaria
+// tarde demais. É pelo iPhone com iOS 15 (iPhone 7, 6s, SE de 1ª
 // geração), que para no Safari 15 (ADR 0009). Confere que o JavaScript roda nele e ajusta, no CSS
 // final, o "plano B" que o Tailwind escreve para os navegadores sem color-mix() (antes do 16.2).
 //
@@ -13,10 +15,9 @@
 // As cores que cada restaurante escolhe (--brand) não são conhecidas no build: o plano B delas
 // vira transparente. As outras variáveis sem valor fixo (--mesa-bg) ficam como o Tailwind deixou.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const CSS_DIR = join(ROOT, ".next/static");
 const DYNAMIC_TO_TRANSPARENT = new Set(["brand"]);
 
 /** As cores do tema escuro: --nome: #rrggbb ou rgb(r g b / a%). */
@@ -86,20 +87,25 @@ function jsFiles(dir) {
     e.isDirectory() ? jsFiles(join(dir, e.name)) : e.name.endsWith(".js") ? [join(dir, e.name)] : [],
   );
 }
-const withStaticBlock = jsFiles(CSS_DIR).filter((f) => /[{};]static\{/.test(readFileSync(f, "utf8")));
-if (withStaticBlock.length) {
-  console.error(
-    `O código gerado tem bloco "static {}" em classe, que o Safari 15 (iPhone com iOS 15) não entende:\n  ${withStaticBlock.join("\n  ")}\n` +
-      'Confira o "browserslist" do package.json (precisa incluir "safari 15").',
-  );
-  process.exit(1);
-}
 
-const colors = themeColors();
-let total = 0;
-for (const file of cssFiles(CSS_DIR)) {
-  const { out, changed } = fix(readFileSync(file, "utf8"), colors);
-  if (changed) writeFileSync(file, out);
-  total += changed;
+/** Confere o JavaScript e ajusta o CSS em <distDir>/static (distDir relativo ao front ou absoluto). */
+export function adjustForOldSafari(distDir = ".next") {
+  const staticDir = join(resolve(ROOT, distDir), "static");
+  const withStaticBlock = jsFiles(staticDir).filter((f) => /[{};]static\{/.test(readFileSync(f, "utf8")));
+  if (withStaticBlock.length) {
+    console.error(
+      `O código gerado tem bloco "static {}" em classe, que o Safari 15 (iPhone com iOS 15) não entende:\n  ${withStaticBlock.join("\n  ")}\n` +
+        'Confira o "browserslist" do package.json (precisa incluir "safari 15").',
+    );
+    throw new Error("Bloco static {} no código gerado.");
+  }
+
+  const colors = themeColors();
+  let total = 0;
+  for (const file of cssFiles(staticDir)) {
+    const { out, changed } = fix(readFileSync(file, "utf8"), colors);
+    if (changed) writeFileSync(file, out);
+    total += changed;
+  }
+  console.log(`Cores para o Safari antigo: ${total} regra(s) ajustada(s).`);
 }
-console.log(`Cores para o Safari antigo: ${total} regra(s) ajustada(s).`);

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu as openPanelMenu } from "./support/account";
+import { choose } from "./support/select";
 
 /** Abre o cardápio pelo menu do painel. */
 async function openMenu(page: Page) {
@@ -107,7 +108,7 @@ test("editar, esgotar e buscar produtos", async ({ page, request }) => {
   await expect(field(page, "Preço promocional (opcional)")).toHaveValue("24,90");
   await field(page, "Preço promocional (opcional)").fill("");
   await page.getByRole("switch", { name: /Destaque/ }).click();
-  await field(page, "Categoria").selectOption({ label: "Pratos frios" });
+  await choose(page, field(page, "Categoria"), "Pratos frios");
   await page.getByRole("button", { name: "Salvar" }).click();
 
   // Volta para a categoria do produto, sem a promoção e com o selo de destaque.
@@ -238,13 +239,21 @@ test("o produto não criado não volta preenchido, e o novo produto usa a catego
   await expect(page.getByRole("heading", { name: "Novo produto" })).toBeVisible();
   await expect(field(page, "Nome")).toHaveValue("");
   await expect(field(page, "Preço")).toHaveValue("");
-  await expect(page.getByLabel("Categoria").filter({ visible: true })).toHaveValue(/.+/);
-  await expect(page.getByLabel("Categoria").filter({ visible: true }).locator("option:checked")).toHaveText("Sushis");
+  await expect(field(page, "Categoria")).toHaveText("Sushis");
 });
 
 test("os campos de escolha usam o tema escuro (a lista que abre não vem clara)", async ({ page, request }) => {
   const { email } = await createAccount(request);
+  await apiCategory(request, await apiLogin(request, email), "Entradas");
   await loginThroughForm(page, email);
   await page.goto("/admin/cardapio/produtos/novo");
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
+
+  // A lista da categoria é desenhada pelo sistema, no fundo escuro do tema (não a do navegador).
+  await field(page, "Categoria").click();
+  const list = page.getByRole("listbox");
+  await expect(list).toBeVisible();
+  expect(await list.evaluate((el) => getComputedStyle(el.closest("[class*=bg-popover]")!).backgroundColor)).toBe(
+    "rgb(31, 27, 25)",
+  );
 });

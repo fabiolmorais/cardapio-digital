@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { adjustForOldSafari } from "./scripts/cores-safari-antigo.mjs";
 
 const dev = process.env.NODE_ENV !== "production";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -45,6 +46,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Só em desenvolvimento: libera o acesso pelo IP da rede local (testar no celular).
   allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
+  compiler: {
+    // O iPhone com iOS 15 (ADR 0009): logo depois da compilação, antes de a Vercel copiar os
+    // arquivos. O Sentry encadeia o envio dos source maps depois deste.
+    runAfterProductionCompile: async ({ distDir }) => adjustForOldSafari(distDir),
+  },
   turbopack: {
     rules: {
       "*.css": {
