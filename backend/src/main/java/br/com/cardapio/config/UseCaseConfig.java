@@ -96,6 +96,7 @@ import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.email.EmailSenderPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.floor.TableActivityPort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
 import br.com.cardapio.application.port.out.media.ImageProcessorPort;
@@ -368,8 +369,8 @@ class UseCaseConfig {
     }
 
     @Bean
-    ListTablesUseCase listTablesUseCase(DiningTablePort diningTablePort) {
-        return new ListTablesService(diningTablePort);
+    ListTablesUseCase listTablesUseCase(DiningTablePort diningTablePort, TableActivityPort tableActivityPort) {
+        return new ListTablesService(diningTablePort, tableActivityPort);
     }
 
     @Bean
@@ -440,8 +441,8 @@ class UseCaseConfig {
     }
 
     @Bean
-    ListProductsUseCase listProductsUseCase(ProductPort productPort) {
-        return new ListProductsService(productPort);
+    ListProductsUseCase listProductsUseCase(ProductPort productPort, ProductMediaPort productMediaPort) {
+        return new ListProductsService(productPort, productMediaPort);
     }
 
     @Bean

@@ -65,6 +65,19 @@ class RodizioTest {
     }
 
     @Test
+    void reactivateBringsThePausedBackUnchanged() {
+        Rodizio rodizio = japones(List.of(tier("Adulto", 12990)));
+        Rodizio paused = rodizio.deactivate();
+
+        Rodizio back = paused.reactivate();
+
+        assertThat(back.active()).isTrue();
+        assertThat(back.id()).isEqualTo(rodizio.id());
+        assertThat(back.tiers()).isEqualTo(rodizio.tiers());
+        assertThat(back.productIds()).isEqualTo(rodizio.productIds());
+    }
+
+    @Test
     void rulesAreOptionalButStayInRange() {
         assertThat(new RodizioRules(null, null, null, null, "  ").wasteNotice()).isNull();
         assertThatThrownBy(() -> new RodizioRules(0, null, null, null, null)).isInstanceOf(InvalidValueException.class);

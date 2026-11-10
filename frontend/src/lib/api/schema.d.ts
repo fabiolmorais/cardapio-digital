@@ -50,7 +50,7 @@ export interface paths {
         /** Troca o rodízio inteiro (faixas, preços, produtos, regras) */
         put: operations["updateRodizio"];
         post?: never;
-        /** Desativa o rodízio (o cadastro fica) */
+        /** Pausa o rodízio (o cadastro fica, para reativar) */
         delete: operations["deactivateRodizio"];
         options?: never;
         head?: never;
@@ -105,6 +105,23 @@ export interface paths {
         post?: never;
         /** Tira o produto do cardápio (o registro fica) */
         delete: operations["deactivateProduct"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{id}/rodizios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Em quais rodízios o produto fica (entra nos escolhidos e sai dos outros) */
+        put: operations["setProductRodizios"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -349,6 +366,23 @@ export interface paths {
         put?: never;
         /** Cria um rodízio */
         post: operations["createRodizio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rodizios/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Volta a oferecer o rodízio pausado */
+        post: operations["reactivateRodizio"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1771,6 +1805,8 @@ export interface components {
             rules: components["schemas"]["RodizioRulesView"];
             tiers: components["schemas"]["RodizioTier"][];
             productIds: string[];
+            /** @description false: pausado (as mesas não podem pedir) */
+            active: boolean;
         };
         RodizioRulesView: {
             /** Format: int32 */
@@ -1861,6 +1897,24 @@ export interface components {
             position: number;
             /** @description false: só do rodízio */
             aLaCarte: boolean;
+            /**
+             * Format: int32
+             * @description Fotos da galeria; só na lista (null nos outros casos)
+             */
+            photoCount?: number;
+            /**
+             * Format: int32
+             * @description Vídeos da galeria (sem os que falharam); só na lista
+             */
+            videoCount?: number;
+        };
+        /** @description Os rodízios em que o produto fica (vazio: em nenhum) */
+        ProductRodiziosRequest: {
+            rodizioIds: string[];
+        };
+        /** @description Os rodízios em que o produto ficou */
+        ProductRodizios: {
+            rodizioIds: string[];
         };
         PresenceLocation: {
             /**
@@ -2030,6 +2084,11 @@ export interface components {
             role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
             /** @description false = desligado do restaurante */
             active: boolean;
+            /**
+             * Format: date-time
+             * @description Última entrada ou renovação da sessão neste restaurante; null se nunca entrou
+             */
+            lastAccessAt?: string;
         };
         CloseTabRequest: {
             /**
@@ -2125,6 +2184,11 @@ export interface components {
              */
             tokenIssuedAt: string;
             active: boolean;
+            /**
+             * @description Como a mesa está agora (comanda, conta pedida, rodízio)
+             * @enum {string}
+             */
+            situation: "FREE" | "OCCUPIED" | "RODIZIO" | "BILL_REQUESTED" | "INACTIVE";
         };
         ActivateRodizioRequest: {
             /** Format: uuid */
@@ -3403,7 +3467,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Desativado */
+            /** @description Pausado */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -3594,6 +3658,41 @@ export interface operations {
                 content?: never;
             };
             /** @description Não é um produto deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    setProductRodizios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductRodiziosRequest"];
+            };
+        };
+        responses: {
+            /** @description Os rodízios em que ele ficou */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductRodizios"];
+                };
+            };
+            /** @description O produto ou algum rodízio não é deste restaurante */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4325,6 +4424,46 @@ export interface operations {
             };
             /** @description O restaurante já tem 10 rodízios ativos */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reactivateRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ativo de novo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Não é um rodízio deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe um rodízio ativo com este nome, ou o limite de ativos */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

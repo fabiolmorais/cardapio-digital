@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.out.persistence.menu;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.menu.MediaCount;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.model.MediaStatus;
@@ -10,7 +11,10 @@ import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -57,6 +61,24 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
         establishmentFilter.enable(establishmentId);
         return media.findByEstablishmentIdAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
                 establishmentId.value(), MediaStatus.READY.name()).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Map<ProductId, MediaCount> countByProducts(EstablishmentId establishmentId,
+                                                      Collection<ProductId> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+        establishmentFilter.enable(establishmentId);
+        Map<ProductId, MediaCount> counts = new HashMap<>();
+        for (MediaCountRow row : media.countByProducts(establishmentId.value(),
+                productIds.stream().map(ProductId::value).toList())) {
+            int total = Math.toIntExact(row.getTotal());
+            counts.merge(new ProductId(row.getProductId()),
+                    MediaType.VIDEO.name().equals(row.getType()) ? new MediaCount(0, total) : new MediaCount(total, 0),
+                    (a, b) -> new MediaCount(a.photos() + b.photos(), a.videos() + b.videos()));
+        }
+        return counts;
     }
 
     /** Sem o filtro por restaurante: o aviso do serviço de vídeo não diz de qual restaurante é. */

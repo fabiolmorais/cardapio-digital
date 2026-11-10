@@ -148,10 +148,72 @@ class RodizioControllerTest {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM rodizio_price WHERE establishment_id = ?",
                 Integer.class, sakura.establishmentId())).isZero();
 
+        // Pausar não apaga: o rodízio continua no cadastro, como pausado, e volta com o reativar.
         assertThat(send("DELETE", sakura.token(), RODIZIOS + "/" + id, null)).hasStatus(HttpStatus.NO_CONTENT);
-        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + id, null)).hasStatus(HttpStatus.NOT_FOUND);
-        assertThat(send("GET", sakura.token(), RODIZIOS, null)).bodyJson().extractingPath("$.totalElements")
-                .isEqualTo(0);
+        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + id, null)).bodyJson().extractingPath("$.active")
+                .isEqualTo(false);
+        MvcTestResult list = send("GET", sakura.token(), RODIZIOS, null);
+        assertThat(list).bodyJson().extractingPath("$.totalElements").isEqualTo(1);
+        assertThat(list).bodyJson().extractingPath("$.content[0].active").isEqualTo(false);
+
+        MvcTestResult reactivated = send("POST", sakura.token(), RODIZIOS + "/" + id + "/reactivate", null);
+        assertThat(reactivated).hasStatusOk();
+        assertThat(reactivated).bodyJson().extractingPath("$.active").isEqualTo(true);
+    }
+
+    @Test
+    void thePausedComesAfterTheActiveAndCannotTakeAnActiveName() throws Exception {
+        String pausado = create(sakura.token(), japones("Japonês"));
+        create(sakura.token(), japones("Churrasco"));
+        assertThat(send("DELETE", sakura.token(), RODIZIOS + "/" + pausado, null)).hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(send("GET", sakura.token(), RODIZIOS, null)).bodyJson().extractingPath("$.content[*].name")
+                .asArray().containsExactly("Churrasco", "Japonês");
+
+        // Outro "Japonês" ativo no lugar: o pausado não volta com o mesmo nome.
+        create(sakura.token(), japones("Japonês"));
+        assertThat(send("POST", sakura.token(), RODIZIOS + "/" + pausado + "/reactivate", null))
+                .hasStatus(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void theProductScreenPutsTheProductInAndOutOfEachRodizio() throws Exception {
+        String guioza = product(sakura.token(), "Guioza");
+        String sushi = product(sakura.token(), "Sushi");
+        String japones = create(sakura.token(), japones("Japonês", sushi));
+        String petiscos = create(sakura.token(), japones("Petiscos", sushi));
+
+        // Entra no Japonês; o Sushi, que já estava nos dois, continua.
+        MvcTestResult set = send("PUT", sakura.token(), "/api/v1/products/" + guioza + "/rodizios",
+                "{\"rodizioIds\":[\"" + japones + "\"]}");
+        assertThat(set).hasStatusOk();
+        assertThat(set).bodyJson().extractingPath("$.rodizioIds").asArray().containsExactly(japones);
+        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + japones, null)).bodyJson()
+                .extractingPath("$.productIds").asArray().containsExactlyInAnyOrder(guioza, sushi);
+        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + petiscos, null)).bodyJson()
+                .extractingPath("$.productIds").asArray().containsExactly(sushi);
+
+        // Sai de todos.
+        assertThat(send("PUT", sakura.token(), "/api/v1/products/" + guioza + "/rodizios", "{\"rodizioIds\":[]}"))
+                .bodyJson().extractingPath("$.rodizioIds").asArray().isEmpty();
+        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + japones, null)).bodyJson()
+                .extractingPath("$.productIds").asArray().containsExactly(sushi);
+    }
+
+    @Test
+    void anotherRestaurantCannotPutItsProductOrUseOurRodizio() throws Exception {
+        String sushi = product(sakura.token(), "Sushi");
+        String japones = create(sakura.token(), japones("Japonês"));
+        Owner other = newRestaurant();
+        String theirs = product(other.token(), "Pizza");
+
+        // O produto da Sakura, pelo outro restaurante: 404.
+        assertThat(send("PUT", other.token(), "/api/v1/products/" + sushi + "/rodizios", "{\"rodizioIds\":[]}"))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        // O produto dele num rodízio da Sakura: 404, e o rodízio não muda.
+        assertThat(send("PUT", other.token(), "/api/v1/products/" + theirs + "/rodizios",
+                "{\"rodizioIds\":[\"" + japones + "\"]}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("GET", sakura.token(), RODIZIOS + "/" + japones, null)).bodyJson()
+                .extractingPath("$.productIds").asArray().isEmpty();
     }
 
     @Test
@@ -218,6 +280,8 @@ class RodizioControllerTest {
         assertThat(send("GET", other.token(), RODIZIOS + "/" + id, null)).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("PUT", other.token(), RODIZIOS + "/" + id, japones("Meu"))).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("DELETE", other.token(), RODIZIOS + "/" + id, null)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.token(), RODIZIOS + "/" + id + "/reactivate", null))
+                .hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("GET", other.token(), RODIZIOS, null)).bodyJson().extractingPath("$.totalElements")
                 .isEqualTo(0);
         assertThat(send("GET", sakura.token(), RODIZIOS + "/" + id, null)).bodyJson().extractingPath("$.name")
@@ -235,6 +299,9 @@ class RodizioControllerTest {
         assertThat(send("POST", waiter, RODIZIOS, japones("Pizza"))).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(send("PUT", waiter, RODIZIOS + "/" + id, japones("Pizza"))).hasStatus(HttpStatus.FORBIDDEN);
         assertThat(send("DELETE", waiter, RODIZIOS + "/" + id, null)).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(send("POST", waiter, RODIZIOS + "/" + id + "/reactivate", null)).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(send("PUT", waiter, "/api/v1/products/" + UUID.randomUUID() + "/rodizios", "{\"rodizioIds\":[]}"))
+                .hasStatus(HttpStatus.FORBIDDEN);
         assertThat(send("GET", null, RODIZIOS, null)).hasStatus(HttpStatus.UNAUTHORIZED);
     }
 }

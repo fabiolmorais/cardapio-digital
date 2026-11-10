@@ -7,7 +7,8 @@ test.describe.configure({ timeout: 60_000 });
 async function restaurant(request: APIRequestContext) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
-  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
   const product = (categoryId: string, name: string) =>
     post("/api/v1/products", { categoryId, name, priceCents: 1990, featured: false, available: true });
   const entradas = await post("/api/v1/menu-categories", { name: "Entradas" });
@@ -65,11 +66,12 @@ test("o dono cadastra um rodízio com faixas, preço de fim de semana, produtos 
   await editor.getByRole("switch", { name: /Aviso de desperdício/ }).click();
   await editor.getByLabel("Aviso de desperdício", { exact: true }).fill("Sobras são cobradas à parte.");
 
-  await page.getByRole("button", { name: "Criar rodízio" }).click();
+  await page.getByRole("button", { name: "Criar rodízio" }).first().click();
   const saved = page.getByRole("region", { name: "Rodízio Japonês" });
   await expect(saved).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Rodízios" }).getByRole("button", { name: "Rodízio Japonês" }))
-    .toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("navigation", { name: "Rodízios" }).getByRole("button", { name: "Rodízio Japonês" }),
+  ).toHaveAttribute("aria-current", "page");
 
   // O back guardou tudo.
   const list = await (await request.get(`${API_URL}/api/v1/rodizios`, { headers })).json();
@@ -93,13 +95,16 @@ test("o dono cadastra um rodízio com faixas, preço de fim de semana, produtos 
   expect(rodizio.rules.maxPerItemPerRound).toBeNull();
 
   // Reabre igual: o formulário volta com o que foi salvo.
-  await expect(saved.getByRole("group", { name: "Adulto: Preço especial · sex a dom" }).getByLabel("Preço", { exact: true })).toHaveValue(
-    "149,90",
-  );
+  await expect(
+    saved.getByRole("group", { name: "Adulto: Preço especial · sex a dom" }).getByLabel("Preço", { exact: true }),
+  ).toHaveValue("149,90");
   await expect(saved.getByText("3 produtos incluídos")).toBeVisible();
 });
 
-test("o domínio recusa preços que se cruzam, e o rodízio desativado sai da lista", async ({ page, request }) => {
+test("o domínio recusa preços que se cruzam, e o rodízio pausado fica na lista até reativar", async ({
+  page,
+  request,
+}) => {
   const { email, headers } = await restaurant(request);
   await request.post(`${API_URL}/api/v1/rodizios`, {
     headers,
@@ -120,30 +125,78 @@ test("o domínio recusa preços que se cruzam, e o rodízio desativado sai da li
 
   // Preço vazio: o aviso sai antes de enviar.
   await adulto.getByLabel("Preço padrão").fill("");
-  await page.getByRole("button", { name: "Salvar alterações" }).click();
+  await page.getByRole("button", { name: "Salvar alterações" }).last().click();
   await expect(page.getByText("Confira os campos marcados.")).toBeVisible();
   await expect(adulto.getByText("Preço inválido")).toBeVisible();
   await adulto.getByLabel("Preço padrão").fill("79,90");
 
   // Dois preços especiais no sábado à noite: quem recusa é o domínio, com a frase dele.
   await adulto.getByRole("button", { name: "+ Preço especial por dia e horário" }).click();
-  await adulto.getByRole("group", { name: /sex e sáb/ }).getByLabel("Preço", { exact: true }).fill("89,90");
+  await adulto
+    .getByRole("group", { name: /sex e sáb/ })
+    .getByLabel("Preço", { exact: true })
+    .fill("89,90");
   await adulto.getByRole("button", { name: "+ Preço especial por dia e horário" }).click();
   // Pela posição: o nome do grupo muda quando os dias mudam.
   const second = adulto.getByRole("group", { name: /Preço especial/ }).nth(1);
   await second.getByRole("button", { name: "sexta" }).click();
   await second.getByLabel("Das").fill("22:00");
   await second.getByLabel("Preço", { exact: true }).fill("99,90");
-  await page.getByRole("button", { name: "Salvar alterações" }).click();
+  await page.getByRole("button", { name: "Salvar alterações" }).last().click();
   await expect(page.getByRole("alert").filter({ hasText: "valem ao mesmo tempo" })).toBeVisible();
 
-  await adulto.getByRole("group", { name: /· sáb$/ }).getByRole("button", { name: "Remover este preço especial" }).click();
-  await page.getByRole("button", { name: "Salvar alterações" }).click();
+  await adulto
+    .getByRole("group", { name: /· sáb$/ })
+    .getByRole("button", { name: "Remover este preço especial" })
+    .click();
+  await page.getByRole("button", { name: "Salvar alterações" }).last().click();
   await expect(page.getByRole("status")).toHaveText("Rodízio salvo.");
 
-  await page.getByRole("button", { name: "Desativar" }).click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "Desativar" }).click();
-  await expect(page.getByText("Nenhum rodízio ainda.")).toBeVisible();
+  // Pausar não apaga: ele fica na lista como "Pausado", com o aviso, e volta com o Reativar.
+  await page.getByRole("button", { name: "Pausar" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Pausar" }).click();
+  const menu = page.getByRole("navigation", { name: "Rodízios" });
+  await expect(menu.getByRole("button", { name: /Rodízio de Pizza/ })).toContainText("Pausado");
+  await expect(editor).toContainText("as mesas não podem pedir este rodízio");
   const list = await (await request.get(`${API_URL}/api/v1/rodizios`, { headers })).json();
-  expect(list.totalElements).toBe(0);
+  expect(list.content[0].active).toBe(false);
+
+  await page.getByRole("button", { name: "Reativar" }).click();
+  await expect(menu.getByRole("button", { name: /Rodízio de Pizza/ })).toContainText("Ativo");
+  await expect(page.getByRole("button", { name: "Pausar" })).toBeVisible();
+});
+
+test("na tela do produto, a chave põe e tira o prato do rodízio, e a lista mostra onde ele aparece", async ({
+  page,
+  request,
+}) => {
+  const { email, headers, ids } = await restaurant(request);
+  const japones = await (
+    await request.post(`${API_URL}/api/v1/rodizios`, {
+      headers,
+      data: {
+        name: "Rodízio Japonês",
+        type: "A_LA_MINUTE",
+        rules: {},
+        tiers: [{ name: "Adulto", defaultPriceCents: 12990, prices: [] }],
+        productIds: [],
+      },
+    })
+  ).json();
+  await loginThroughForm(page, email);
+  await page.goto(`/admin/cardapio/produtos/${ids.guioza}`);
+
+  const chave = page.getByRole("switch", { name: /Incluído no Rodízio Japonês/ });
+  await expect(chave).not.toBeChecked();
+  await chave.click();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);
+
+  // Gravado no rodízio, e a lista do cardápio mostra "À la carte e rodízio".
+  const saved = await (await request.get(`${API_URL}/api/v1/rodizios/${japones.id}`, { headers })).json();
+  expect(saved.productIds).toEqual([ids.guioza]);
+  const row = page.getByRole("row", { name: /Guioza/ });
+  await expect(row).toContainText("À la carte e rodízio");
+  await expect(row).toContainText("—"); // sem foto nem vídeo
+  await expect(page.getByRole("row", { name: /Sunomono/ })).toContainText("À la carte");
 });

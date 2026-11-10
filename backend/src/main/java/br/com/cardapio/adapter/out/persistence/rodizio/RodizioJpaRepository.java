@@ -16,6 +16,8 @@ interface RodizioJpaRepository extends JpaRepository<RodizioJpaEntity, UUID> {
     Page<RodizioJpaEntity> findByEstablishmentIdAndActiveTrueOrderByNameAscIdAsc(UUID establishmentId,
                                                                                Pageable pageable);
 
+    Page<RodizioJpaEntity> findByEstablishmentIdOrderByActiveDescNameAscIdAsc(UUID establishmentId, Pageable pageable);
+
     long countByEstablishmentIdAndActiveTrue(UUID establishmentId);
 
     /** Outro rodízio ativo com o mesmo nome, sem diferenciar maiúscula (como o índice único do banco). */

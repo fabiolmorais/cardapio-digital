@@ -33,6 +33,15 @@ public final class InMemoryRodizios implements RodizioPort, TabRodizioPort {
     }
 
     @Override
+    public ResultPage<Rodizio> findAll(EstablishmentId establishmentId, PageQuery page) {
+        List<Rodizio> all = rodizios.values().stream()
+                .filter(r -> r.establishmentId().equals(establishmentId))
+                .sorted(Comparator.comparing((Rodizio r) -> !r.active()).thenComparing(Rodizio::name))
+                .toList();
+        return new ResultPage<>(all, page.page(), page.size(), all.size());
+    }
+
+    @Override
     public ResultPage<Rodizio> findActive(EstablishmentId establishmentId, PageQuery page) {
         List<Rodizio> all = rodizios.values().stream()
                 .filter(r -> r.establishmentId().equals(establishmentId) && r.active())

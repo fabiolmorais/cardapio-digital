@@ -50,6 +50,7 @@ export function MemberFormDialog({ open, onOpenChange, roles, member }: Props) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["team"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscription"] });
       onOpenChange(false);
     },
   });

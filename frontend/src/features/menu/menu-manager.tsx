@@ -28,6 +28,7 @@ import {
   type Product,
 } from "./menu-api";
 import { useReorder } from "./use-reorder";
+import { fetchRodizios } from "@/features/rodizio/rodizio-api";
 
 const t = messages.menu;
 
@@ -69,6 +70,9 @@ export function MenuManager({ initialCategoryId }: { initialCategoryId?: string 
     // Na busca, a lista anterior fica na tela enquanto a nova chega (sem piscar a cada letra).
     placeholderData: q ? keepPreviousData : undefined,
   });
+  // "Aparece em": os produtos que estão em algum rodízio ativo.
+  const rodizios = useQuery({ queryKey: ["rodizios"], queryFn: fetchRodizios, enabled: allowed });
+  const inRodizio = new Set((rodizios.data ?? []).filter((r) => r.active).flatMap((r) => r.productIds));
 
   async function refresh() {
     await Promise.all([
@@ -212,6 +216,7 @@ export function MenuManager({ initialCategoryId }: { initialCategoryId?: string 
               loading={products.isPending}
               failed={products.isError}
               searching={q !== ""}
+              inRodizio={inRodizio}
               hintId={hintId}
               onReorder={(ids) =>
                 attempt(async () => {
@@ -296,9 +301,7 @@ function CategoryList({
   onNew: () => void;
   onReorder: (ids: string[]) => Promise<void>;
 }) {
-  const reorder = useReorder(categories, onReorder, (c, position, total) =>
-    t.reorder.moved(c.name, position, total),
-  );
+  const reorder = useReorder(categories, onReorder, (c, position, total) => t.reorder.moved(c.name, position, total));
 
   return (
     <nav aria-label={t.categories} className="w-full rounded-2xl border border-border bg-card p-2 lg:w-64 lg:shrink-0">
@@ -314,7 +317,10 @@ function CategoryList({
             key={category.id}
             ref={reorder.rowRef(category.id)}
             style={reorder.rowStyle(category.id)}
-            className={cn("flex items-center rounded-xl", reorder.draggingId === category.id && "bg-card shadow-lg ring-1 ring-border")}
+            className={cn(
+              "flex items-center rounded-xl",
+              reorder.draggingId === category.id && "bg-card shadow-lg ring-1 ring-border",
+            )}
           >
             <DragHandle label={t.reorder.handle(category.name)} hintId={hintId} {...reorder.handleProps(category)} />
             <button
@@ -349,6 +355,7 @@ function ProductTable({
   loading,
   failed,
   searching,
+  inRodizio,
   hintId,
   onReorder,
   onToggle,
@@ -357,6 +364,7 @@ function ProductTable({
   loading: boolean;
   failed: boolean;
   searching: boolean;
+  inRodizio: Set<string>;
   hintId: string;
   onReorder: (ids: string[]) => Promise<void>;
   onToggle: (product: Product) => Promise<void>;
@@ -384,6 +392,12 @@ function ProductTable({
             <th scope="col" className="px-2 py-3 font-semibold sm:px-4">
               {t.columns.price}
             </th>
+            <th scope="col" className="hidden px-4 py-3 font-semibold md:table-cell">
+              {t.columns.appears}
+            </th>
+            <th scope="col" className="hidden px-4 py-3 font-semibold md:table-cell">
+              {t.columns.media}
+            </th>
             <th scope="col" className="px-2 py-3 font-semibold sm:px-4">
               {t.columns.available}
             </th>
@@ -392,7 +406,7 @@ function ProductTable({
         <tbody>
           {(loading || failed || products.length === 0) && (
             <tr>
-              <td colSpan={4} className={cn("px-4 py-6", failed ? "text-destructive" : "text-muted-foreground")}>
+              <td colSpan={6} className={cn("px-4 py-6", failed ? "text-destructive" : "text-muted-foreground")}>
                 {loading ? t.loading : failed ? t.loadError : searching ? t.emptySearch : t.emptyCategory}
               </td>
             </tr>
@@ -411,7 +425,11 @@ function ProductTable({
                 {searching ? (
                   <span className="sr-only">{t.reorder.searching}</span>
                 ) : (
-                  <DragHandle label={t.reorder.handle(product.name)} hintId={hintId} {...reorder.handleProps(product)} />
+                  <DragHandle
+                    label={t.reorder.handle(product.name)}
+                    hintId={hintId}
+                    {...reorder.handleProps(product)}
+                  />
                 )}
               </td>
               <td className={cn("px-2 py-2", !product.available && "opacity-60")}>
@@ -433,6 +451,22 @@ function ProductTable({
                 {product.promoPriceCents != null && (
                   <span className="block text-xs text-primary">{t.promo(formatCents(product.promoPriceCents))}</span>
                 )}
+              </td>
+              <td
+                className={cn(
+                  "hidden px-4 py-2 text-muted-foreground md:table-cell",
+                  !product.available && "opacity-60",
+                )}
+              >
+                {t.appears(product.aLaCarte, inRodizio.has(product.id))}
+              </td>
+              <td
+                className={cn(
+                  "hidden px-4 py-2 whitespace-nowrap text-muted-foreground md:table-cell",
+                  !product.available && "opacity-60",
+                )}
+              >
+                {t.media(product.photoCount ?? 0, product.videoCount ?? 0)}
               </td>
               <td className="px-2 py-2 sm:px-4">
                 <ToggleSwitch

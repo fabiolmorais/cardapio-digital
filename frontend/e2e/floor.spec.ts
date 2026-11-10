@@ -34,6 +34,9 @@ test("dono monta o salão: setores, mesas e troca de QR", async ({ page, request
   // "1", "2", "10" nessa ordem, e o setor contando 3 mesas.
   await expect(page.getByRole("button", { name: /^Mesa / })).toHaveText(["Mesa 1", "Mesa 2", "Mesa 10"]);
   await expect(page.getByRole("button", { name: "Salão principal · 3" })).toBeVisible();
+  // A situação de cada mesa (sem comanda: livre) e o uso do plano no topo.
+  await expect(page.getByRole("row", { name: /Mesa 1\b/ })).toContainText("Livre");
+  await expect(page.getByRole("meter", { name: "Mesas usadas no plano" })).toHaveAttribute("aria-valuenow", "3");
 
   // Rótulo repetido: o erro do back aparece no formulário.
   await page.getByRole("button", { name: "Nova mesa" }).click();

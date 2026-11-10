@@ -28,6 +28,7 @@ export function DeactivateDialog({ member, onOpenChange }: Props) {
     mutationFn: (id: string) => deactivateTeamMember(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["team"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscription"] });
       onOpenChange(false);
     },
   });

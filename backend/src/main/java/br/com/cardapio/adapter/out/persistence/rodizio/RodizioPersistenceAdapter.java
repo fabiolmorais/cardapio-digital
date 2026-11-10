@@ -100,6 +100,14 @@ class RodizioPersistenceAdapter implements RodizioPort {
     }
 
     @Override
+    public ResultPage<Rodizio> findAll(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<RodizioJpaEntity> found = rodizios.findByEstablishmentIdOrderByActiveDescNameAscIdAsc(
+                establishmentId.value(), PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(toDomain(found.getContent()), page.page(), page.size(), found.getTotalElements());
+    }
+
+    @Override
     public long countActive(EstablishmentId establishmentId) {
         establishmentFilter.enable(establishmentId);
         return rodizios.countByEstablishmentIdAndActiveTrue(establishmentId.value());

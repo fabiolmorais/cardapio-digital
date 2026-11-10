@@ -21,7 +21,8 @@ record RodizioResponse(
         @Schema(requiredMode = REQUIRED) String description,
         @Schema(requiredMode = REQUIRED) Rules rules,
         @Schema(requiredMode = REQUIRED) List<Tier> tiers,
-        @Schema(requiredMode = REQUIRED) List<UUID> productIds
+        @Schema(requiredMode = REQUIRED) List<UUID> productIds,
+        @Schema(requiredMode = REQUIRED, description = "false: pausado (as mesas não podem pedir)") boolean active
 ) {
 
     @Schema(name = "RodizioRulesView")
@@ -54,6 +55,6 @@ record RodizioResponse(
                 r.tiers().stream().map(t -> new Tier(t.name(), t.defaultPrice().cents(),
                         t.exceptions().stream().map(e -> new Special(e.days(), e.startsAt(), e.endsAt(),
                                 e.price().cents())).toList())).toList(),
-                r.productIds().stream().map(p -> p.value()).sorted().toList());
+                r.productIds().stream().map(p -> p.value()).sorted().toList(), r.active());
     }
 }

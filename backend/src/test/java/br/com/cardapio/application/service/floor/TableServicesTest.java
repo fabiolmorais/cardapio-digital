@@ -26,7 +26,7 @@ class TableServicesTest {
     private final CreateTableService create = new CreateTableService(fakes, fakes, fakes, subscriptions, fakes.clock());
     private final UpdateTableService update = new UpdateTableService(fakes, fakes, subscriptions);
     private final RotateTableTokenService rotate = new RotateTableTokenService(fakes, fakes, fakes.clock());
-    private final ListTablesService list = new ListTablesService(fakes);
+    private final ListTablesService list = new ListTablesService(fakes, (establishment, ids) -> java.util.Map.of());
     private final EstablishmentId sakura = EstablishmentId.newId();
     private Sector salao;
     private Sector deck;

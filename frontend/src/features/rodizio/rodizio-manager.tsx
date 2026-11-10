@@ -18,6 +18,7 @@ import { cn } from "cn";
 import {
   createRodizio,
   deactivateRodizio,
+  reactivateRodizio,
   fetchAllProducts,
   fetchRodizios,
   updateRodizio,
@@ -96,7 +97,10 @@ export function RodizioManager() {
       </header>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <nav aria-label={t.listLabel} className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-2 lg:w-64">
+        <nav
+          aria-label={t.listLabel}
+          className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-2 lg:w-64"
+        >
           {list.length === 0 && <p className="px-3 py-2 text-sm text-muted-foreground">{t.empty}</p>}
           {list.map((r) => (
             <button
@@ -105,18 +109,22 @@ export function RodizioManager() {
               aria-current={r.id === selectedKey ? "page" : undefined}
               onClick={() => choose(r.id)}
               className={cn(
-                "flex min-h-11 items-center rounded-xl px-3 text-left font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                "flex min-h-11 items-center gap-2 rounded-xl px-3 text-left font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                 r.id === selectedKey && "bg-muted",
+                !r.active && "text-muted-foreground",
               )}
             >
-              {r.name}
+              <span className="min-w-0 flex-1 truncate">{r.name}</span>
+              <span className={cn("shrink-0 text-xs", r.active ? "text-success" : "text-muted-foreground")}>
+                {r.active ? t.status.active : t.status.paused}
+              </span>
             </button>
           ))}
           <div className="my-1 border-t border-border" />
           <button
             type="button"
             aria-current={selectedKey === NEW ? "page" : undefined}
-            disabled={list.length >= MAX_RODIZIOS}
+            disabled={list.filter((r) => r.active).length >= MAX_RODIZIOS}
             onClick={() => choose(NEW)}
             className={cn(
               "flex min-h-11 items-center gap-2 rounded-xl px-3 text-left font-semibold text-primary hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:text-muted-foreground",
@@ -124,7 +132,7 @@ export function RodizioManager() {
             )}
           >
             <Plus aria-hidden className="size-4" />
-            {list.length >= MAX_RODIZIOS ? t.limit(MAX_RODIZIOS) : t.newRodizio}
+            {list.filter((r) => r.active).length >= MAX_RODIZIOS ? t.limit(MAX_RODIZIOS) : t.newRodizio}
           </button>
         </nav>
 
@@ -140,7 +148,7 @@ export function RodizioManager() {
             setSavedId(id);
           }}
           onEdited={() => setSavedId(null)}
-          onDeactivated={() => choose(null)}
+          onDeactivated={() => {}}
         />
       </div>
     </div>
@@ -169,6 +177,11 @@ function RodizioEditor({
   const [draft, setDraft] = useState<Draft>(() => toDraft(rodizio));
   const [touched, setTouched] = useState(false);
   const [confirming, setConfirming] = useState(false);
+
+  const reactivate = useMutation({
+    mutationFn: () => reactivateRodizio(rodizio!.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rodizios"] }),
+  });
 
   const save = useMutation({
     mutationFn: () => (rodizio ? updateRodizio(rodizio.id, toRequest(draft)) : createRodizio(toRequest(draft))),
@@ -199,7 +212,7 @@ function RodizioEditor({
     <section aria-label={rodizio?.name ?? t.newTitle} className="flex min-w-0 flex-1 flex-col gap-4 lg:max-w-4xl">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="mr-auto text-xl font-semibold break-words">{rodizio?.name ?? t.newTitle}</h2>
-        {rodizio && (
+        {rodizio?.active && (
           <Button
             variant="ghost"
             size="xl"
@@ -209,10 +222,25 @@ function RodizioEditor({
             {t.deactivate}
           </Button>
         )}
+        {rodizio && !rodizio.active && (
+          <Button variant="secondary" size="xl" disabled={reactivate.isPending} onClick={() => reactivate.mutate()}>
+            {reactivate.isPending ? t.reactivating : t.reactivate}
+          </Button>
+        )}
         <Button type="submit" form={formId} size="xl" disabled={save.isPending}>
           {save.isPending ? t.saving : rodizio ? t.save : t.create}
         </Button>
       </div>
+      {rodizio && !rodizio.active && (
+        <p role="status" className="rounded-xl border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+          {t.pausedNotice}
+        </p>
+      )}
+      {reactivate.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {reactivate.error.message}
+        </p>
+      )}
 
       <form id={formId} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <Panel>
@@ -336,6 +364,12 @@ function RodizioEditor({
         <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
           {touched && hasErrors(draft) ? t.errors.fields : (save.error?.message ?? "")}
         </p>
+        {/* O salvar também no fim: a página é longa, e não precisa rolar até o topo. */}
+        <div className="flex justify-end">
+          <Button type="submit" size="xl" disabled={save.isPending}>
+            {save.isPending ? t.saving : rodizio ? t.save : t.create}
+          </Button>
+        </div>
         <p role="status" className="sr-only">
           {justSaved ? t.saved : ""}
         </p>
@@ -554,7 +588,11 @@ function SpecialEditor({
                 aria-pressed={on}
                 aria-label={t.days[day].long}
                 onClick={() =>
-                  onChange({ days: on ? special.days.filter((d) => d !== day) : DAYS.filter((d) => d === day || special.days.includes(d)) })
+                  onChange({
+                    days: on
+                      ? special.days.filter((d) => d !== day)
+                      : DAYS.filter((d) => d === day || special.days.includes(d)),
+                  })
                 }
                 className={cn(
                   "h-10 min-w-12 rounded-full border border-border px-3 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
@@ -732,7 +770,12 @@ function ProductPicker({
                     size="sm"
                     className="self-start text-primary"
                     aria-label={all ? t.products.noneOf(category.name) : t.products.allOf(category.name)}
-                    onClick={() => set(items.map((p) => p.id), !all)}
+                    onClick={() =>
+                      set(
+                        items.map((p) => p.id),
+                        !all,
+                      )
+                    }
                   >
                     {all ? t.products.none : t.products.all}
                   </Button>

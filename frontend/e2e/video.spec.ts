@@ -36,11 +36,11 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
 
   // Tipo errado: o aviso sai antes de enviar.
   await gallery(page)
-    .getByLabel("Enviar vídeo")
+    .getByLabel("Enviar foto ou vídeo")
     .setInputFiles({ name: "cardapio.avi", mimeType: "video/x-msvideo", buffer: Buffer.from("x") });
   await expect(gallery(page).getByRole("alert")).toHaveText("cardapio.avi: envie um vídeo MP4, MOV ou WebM.");
 
-  await gallery(page).getByLabel("Enviar vídeo").setInputFiles(VIDEO);
+  await gallery(page).getByLabel("Enviar foto ou vídeo").setInputFiles(VIDEO);
   await expect(gallery(page).getByText("Vídeo enviado.")).toBeVisible({ timeout: 30_000 });
   expect(unauthorized).toEqual([]);
   // O serviço falso "converte" na hora: 1080 × 1920, 15 segundos.
@@ -55,7 +55,10 @@ test("o dono envia um vídeo em pedaços, ele converte e entra na galeria", asyn
   await expect(gallery(page)).toContainText("Nenhuma foto ainda");
 });
 
-test("se o serviço de vídeo recusa o envio, o motivo aparece e o vídeo não fica convertendo", async ({ page, request }) => {
+test("se o serviço de vídeo recusa o envio, o motivo aparece e o vídeo não fica convertendo", async ({
+  page,
+  request,
+}) => {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const category = await (
@@ -76,7 +79,7 @@ test("se o serviço de vídeo recusa o envio, o motivo aparece e o vídeo não f
   await loginThroughForm(page, email);
   await page.goto(`/admin/cardapio/produtos/${product.id}`);
 
-  await gallery(page).getByLabel("Enviar vídeo").setInputFiles(VIDEO);
+  await gallery(page).getByLabel("Enviar foto ou vídeo").setInputFiles(VIDEO);
   await expect(gallery(page).getByRole("alert")).toContainText(
     "guioza.mp4: o serviço de vídeo não aceitou o envio (400: Invalid Upload-Offset)",
   );

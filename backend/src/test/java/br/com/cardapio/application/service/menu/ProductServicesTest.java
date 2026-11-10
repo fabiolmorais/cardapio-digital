@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ProductServicesTest {
 
     private final MenuFakes fakes = new MenuFakes();
-    private final ListProductsService list = new ListProductsService(fakes);
+    private final ListProductsService list = new ListProductsService(fakes, new MediaFakes());
     private final GetProductService get = new GetProductService(fakes);
     private final CreateProductService create = new CreateProductService(fakes, fakes);
     private final UpdateProductService update = new UpdateProductService(fakes, fakes);

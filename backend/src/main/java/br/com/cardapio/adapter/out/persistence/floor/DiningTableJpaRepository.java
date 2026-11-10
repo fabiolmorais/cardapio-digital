@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,4 +54,22 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
              WHERE t.establishmentId = :establishmentId AND t.sectorId = :sectorId AND t.active = true
             """)
     long countActiveBySector(@Param("establishmentId") UUID establishmentId, @Param("sectorId") UUID sectorId);
+
+    /**
+     * O movimento das mesas pedidas: comanda aberta (ou em fechamento), conta pedida (chamado de
+     * conta em aberto, ou a comanda em fechamento) e rodízio ativo na comanda aberta.
+     */
+    @Query(value = """
+            SELECT t.id AS tableId,
+                   EXISTS (SELECT 1 FROM tab b WHERE b.table_id = t.id AND b.status IN ('OPEN', 'CLOSING')) AS tabOpen,
+                   (EXISTS (SELECT 1 FROM call c WHERE c.table_id = t.id AND c.type = 'BILL'
+                                AND c.status IN ('PENDING', 'IN_PROGRESS'))
+                    OR EXISTS (SELECT 1 FROM tab b WHERE b.table_id = t.id AND b.status = 'CLOSING')) AS billRequested,
+                   EXISTS (SELECT 1 FROM tab b JOIN tab_rodizio r ON r.tab_id = b.id
+                            WHERE b.table_id = t.id AND b.status IN ('OPEN', 'CLOSING')) AS rodizio
+              FROM dining_table t
+             WHERE t.establishment_id = :establishmentId AND t.id IN (:tableIds)
+            """, nativeQuery = true)
+    List<TableActivityRow> findActivity(@Param("establishmentId") UUID establishmentId,
+                                                  @Param("tableIds") Collection<UUID> tableIds);
 }

@@ -123,6 +123,9 @@ class TeamMemberControllerTest {
         assertThat(list).hasStatusOk();
         assertThat(list).bodyJson().extractingPath("$.content[*].name").asArray().containsExactly("Carlos Souza", "Marina");
         assertThat(list).bodyJson().extractingPath("$.totalElements").isEqualTo(2);
+        // O último acesso: a dona entrou pelo login (a sessão dela conta); o Carlos ainda não entrou.
+        assertThat(list).bodyJson().extractingPath("$.content[1].lastAccessAt").isNotNull();
+        assertThat(list).bodyJson().extractingPath("$.content[0].lastAccessAt").isNull();
 
         MvcTestResult updated = patch(sakura.token(), carlos, "{\"role\":\"KITCHEN\",\"pin\":\"739105\"}");
         assertThat(updated).hasStatusOk();

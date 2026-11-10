@@ -74,7 +74,24 @@ public record Rodizio(
                 active, createdAt);
     }
 
+    /** Pausa: sai das mesas (não pode ser pedido), mas continua no cadastro para voltar depois. */
     public Rodizio deactivate() {
         return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, false, createdAt);
+    }
+
+    /** O mesmo rodízio, com o produto incluído (ou tirado): a chave na tela do produto. */
+    public Rodizio withProduct(ProductId productId, boolean included) {
+        Set<ProductId> next = new HashSet<>(productIds);
+        if (included) {
+            next.add(productId);
+        } else {
+            next.remove(productId);
+        }
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, next, active, createdAt);
+    }
+
+    /** Volta a valer para as mesas. */
+    public Rodizio reactivate() {
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, true, createdAt);
     }
 }

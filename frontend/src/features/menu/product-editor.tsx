@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { fetchRodizios, setProductRodizios } from "@/features/rodizio/rodizio-api";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ToggleRow } from "@/components/toggle-row";
@@ -122,6 +123,12 @@ function ProductForm({
   const [available, setAvailable] = useState(product?.available ?? true);
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [aLaCarte, setALaCarte] = useState(product?.aLaCarte ?? true);
+  // "Incluído no Rodízio X": uma chave por rodízio. Até a pessoa mexer, vale o que o cadastro diz.
+  const rodizios = useQuery({ queryKey: ["rodizios"], queryFn: fetchRodizios });
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+  const inRodizios =
+    picked ??
+    new Set((rodizios.data ?? []).filter((r) => product && r.productIds.includes(product.id)).map((r) => r.id));
   const [confirming, setConfirming] = useState(false);
   // O Next mantém telas já visitadas escondidas na página: ids fixos se repetiriam, e um
   // rótulo apontaria para o campo da tela escondida. useId dá um id único a cada formulário.
@@ -146,7 +153,14 @@ function ProductForm({
   }
 
   const save = useMutation({
-    mutationFn: async (body: ProductRequest) => (product ? updateProduct(product.id, body) : createProduct(body)),
+    mutationFn: async (body: ProductRequest) => {
+      const saved = await (product ? updateProduct(product.id, body) : createProduct(body));
+      if (picked !== null) {
+        await setProductRodizios(saved.id, [...picked]);
+        await queryClient.invalidateQueries({ queryKey: ["rodizios"] });
+      }
+      return saved;
+    },
     onSuccess: (saved) => finish(saved.categoryId),
   });
 
@@ -274,6 +288,20 @@ function ProductForm({
           <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
           <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
           <ToggleRow title={t.aLaCarteTitle} text={t.aLaCarteText} checked={aLaCarte} onChange={setALaCarte} />
+          {(rodizios.data ?? []).map((rodizio) => (
+            <ToggleRow
+              key={rodizio.id}
+              title={t.inRodizioTitle(rodizio.name)}
+              text={rodizio.active ? t.inRodizioText : t.inRodizioPaused}
+              checked={inRodizios.has(rodizio.id)}
+              onChange={(on) => {
+                const next = new Set(inRodizios);
+                if (on) next.add(rodizio.id);
+                else next.delete(rodizio.id);
+                setPicked(next);
+              }}
+            />
+          ))}
 
           <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
             {save.error?.message ?? ""}

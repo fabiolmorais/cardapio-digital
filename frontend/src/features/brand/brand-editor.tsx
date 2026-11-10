@@ -150,11 +150,11 @@ function BrandForm({ brand }: { brand: Brand }) {
 
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-2 text-sm font-medium text-muted-foreground">{t.theme}</legend>
-              <div className="grid grid-cols-2 gap-2.5 sm:max-w-sm">
+              <div className="grid grid-cols-2 gap-3">
                 {(["DARK", "LIGHT"] as const).map((theme) => (
                   <label
                     key={theme}
-                    className="relative flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
+                    className="relative flex cursor-pointer flex-col items-center gap-2.5 rounded-xl border border-border p-3.5 text-sm font-semibold has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
                   >
                     <input
                       type="radio"
@@ -167,7 +167,7 @@ function BrandForm({ brand }: { brand: Brand }) {
                     <span
                       aria-hidden
                       className={cn(
-                        "h-10 w-full rounded-lg border border-border",
+                        "h-12 w-full rounded-lg border border-border",
                         theme === "DARK" ? "bg-[#0F0D0C]" : "bg-[#F7F4F0]",
                       )}
                     />
@@ -301,7 +301,13 @@ function LogoField({
 
   return (
     <section aria-labelledby={`${inputId}title`} className="flex flex-wrap items-center gap-4">
-      <BrandLogo logo={brand.logo?.large} name={name} color={color} alt={t.logo.alt(name)} className="size-18 text-2xl" />
+      <BrandLogo
+        logo={brand.logo?.large}
+        name={name}
+        color={color}
+        alt={t.logo.alt(name)}
+        className="size-18 text-2xl"
+      />
       <div className="flex min-w-0 flex-col gap-2">
         <h2 id={`${inputId}title`} className="text-sm font-medium text-muted-foreground">
           {t.logo.title}
