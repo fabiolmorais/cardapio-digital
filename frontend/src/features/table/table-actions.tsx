@@ -4,7 +4,7 @@ import { Bell, Receipt, UserCheck } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
-import { PresencePanel } from "./presence-panel";
+import { ArrivalGate, PresencePanel } from "./presence-panel";
 import { requestCall, cancelCall, useTableCalls } from "./table-calls";
 
 const t = tablePage;
@@ -15,7 +15,18 @@ const t = tablePage;
  * o mesmo chamado. "Pedir a conta" abre a tela da forma de pagamento. Sem a presença no salão
  * confirmada, mostra a trava (PresencePanel) no lugar dos botões.
  */
-export function TableActions({ token, header, intro }: { token: string; header: ReactNode; intro: ReactNode }) {
+export function TableActions({
+  token,
+  header,
+  intro,
+  arrival,
+}: {
+  token: string;
+  header: ReactNode;
+  intro: ReactNode;
+  /** O restaurante e a mesa para a tela de chegada (o QR abre aqui). */
+  arrival: { name: string; where: string; logo: ReactNode };
+}) {
   const state = useTableCalls(token);
   const { waiter, bill, busy, error, run } = state;
   const coming = waiter?.status === "IN_PROGRESS";
@@ -24,9 +35,19 @@ export function TableActions({ token, header, intro }: { token: string; header: 
   if (!state.present)
     return (
       <>
-        {header}
-        {intro}
-        <PresencePanel token={token} state={state} />
+        {/* A chegada em tela cheia; depois do "Ver só o cardápio", o topo com a trava no meio. */}
+        <ArrivalGate
+          token={token}
+          state={state}
+          {...arrival}
+          fallback={
+            <>
+              {header}
+              {intro}
+              <PresencePanel token={token} state={state} />
+            </>
+          }
+        />
       </>
     );
 

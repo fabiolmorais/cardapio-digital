@@ -1,7 +1,8 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useDeferredValue, useEffect, useId, useState } from "react";
+import { useDeferredValue, useEffect, useId, useRef, useState } from "react";
+import { cn } from "cn";
 import { tablePage } from "@/messages/table.pt-BR";
 import { aLaCarte } from "./carte";
 import { MenuItemCard } from "./menu-item";
@@ -34,6 +35,9 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   const query = plain(useDeferredValue(search).trim());
   const inputId = useId();
   const [open, setOpen] = useState<MenuItem | null>(null);
+  // A categoria selecionada (branca): a que está na tela, ou a que o cliente tocou.
+  const [current, setCurrent] = useState<string | null>(null);
+  const chips = useRef<HTMLElement>(null);
   // Sem resposta, os botões ficam: o envio do pedido confere de novo.
   const { data: orders } = useTableOrders(token);
   const ordering = orders?.orderingEnabled ?? true;
@@ -66,11 +70,14 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ordering]);
 
+  const reels = (item: MenuItem) => `/m/${token}/reels?produto=${encodeURIComponent(item.id)}`;
   const card = (item: MenuItem) => (
     <MenuItemCard
       key={item.id}
       item={item}
-      reelsHref={item.media.length > 0 ? `/m/${token}/reels?produto=${encodeURIComponent(item.id)}` : undefined}
+      // Com vídeo, o Reels; sem foto ou só com fotos, o detalhe do prato (que leva ao Reels pela foto).
+      reelsHref={item.media.some((m) => m.type === "VIDEO") ? reels(item) : undefined}
+      onOpen={item.available ? () => setOpen(item) : undefined}
       action={
         ordering && (
           <button
@@ -86,6 +93,38 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
       }
     />
   );
+
+  // Rolando a lista, a categoria na faixa de cima da tela fica selecionada.
+  useEffect(() => {
+    if (query) return;
+    const sections = [...document.querySelectorAll<HTMLElement>("[data-categoria]")];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => (e.target as HTMLElement).dataset.categoria!);
+        if (visible.length) setCurrent(visible[0]);
+      },
+      { rootMargin: "-25% 0px -65% 0px" },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [query, categories.length]);
+
+  // A pílula selecionada aparece na faixa (rola de lado, sem mexer na página).
+  useEffect(() => {
+    const nav = chips.current;
+    const chip = nav?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (nav && chip) nav.scrollTo({ left: chip.offsetLeft - 20, behavior: "smooth" });
+  }, [current]);
+
+  function goTo(event: React.MouseEvent<HTMLAnchorElement>, id: string) {
+    const target = document.getElementById(id);
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    setCurrent(id.replace(/^categoria-/, ""));
+  }
 
   const found: MenuItem[] = query
     ? categories.flatMap((c) =>
@@ -116,12 +155,18 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
 
       {query ? (
         <section aria-live="polite" className="flex flex-col gap-2.5">
-          <p className="text-sm text-(--mesa-muted)">{found.length ? t.results(found.length) : t.noResults(search.trim())}</p>
+          <p className="text-sm text-(--mesa-muted)">
+            {found.length ? t.results(found.length) : t.noResults(search.trim())}
+          </p>
           {found.map(card)}
         </section>
       ) : (
         <>
-          <nav aria-label={tablePage.categories} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+          <nav
+            ref={chips}
+            aria-label={tablePage.categories}
+            className="sticky top-0 z-10 -mx-5 flex gap-2 overflow-x-auto bg-(--mesa-bg)/95 px-5 py-2 backdrop-blur [scrollbar-width:none]"
+          >
             {rodizio && (
               <a
                 href="#rodizio"
@@ -134,7 +179,14 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
               <a
                 key={c.id}
                 href={`#categoria-${c.id}`}
-                className="flex h-10 shrink-0 items-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass) px-4 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+                onClick={(event) => goTo(event, `categoria-${c.id}`)}
+                aria-current={(current ?? categories[0]?.id) === c.id ? "true" : undefined}
+                className={cn(
+                  "flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none",
+                  (current ?? categories[0]?.id) === c.id
+                    ? "border-transparent bg-(--mesa-fg) text-(--mesa-bg)"
+                    : "border-(--mesa-stroke) bg-(--mesa-glass)",
+                )}
               >
                 {c.name}
               </a>
@@ -160,8 +212,9 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
             <section
               key={c.id}
               id={`categoria-${c.id}`}
+              data-categoria={c.id}
               aria-labelledby={`${inputId}-${c.id}`}
-              className="flex scroll-mt-6 flex-col gap-2.5"
+              className="flex scroll-mt-16 flex-col gap-2.5"
             >
               <h2 id={`${inputId}-${c.id}`} className="pt-1 text-xl font-bold tracking-tight">
                 {c.name}
@@ -171,7 +224,12 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
           ))}
         </>
       )}
-      <ProductSheet token={token} item={open} onClose={() => setOpen(null)} />
+      <ProductSheet
+        token={token}
+        item={open}
+        onClose={() => setOpen(null)}
+        reelsHref={(item) => (item.media.length > 0 ? reels(item) : undefined)}
+      />
     </div>
   );
 }

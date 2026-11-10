@@ -102,6 +102,7 @@ import br.com.cardapio.application.port.out.floor.TableDisplayRenderer;
 import br.com.cardapio.application.port.out.media.ImageProcessorPort;
 import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
+import br.com.cardapio.application.port.out.menu.PopularProductsPort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
@@ -542,9 +543,10 @@ class UseCaseConfig {
     GetPublicMenuUseCase getPublicMenuUseCase(DiningTablePort diningTablePort, MenuCategoryPort menuCategoryPort,
                                               ProductPort productPort, ProductMediaPort productMediaPort,
                                               MediaStoragePort mediaStoragePort,
-                                              VideoHostingPort videoHostingPort) {
+                                              VideoHostingPort videoHostingPort,
+                                              PopularProductsPort popularProductsPort, Clock clock) {
         return new GetPublicMenuService(diningTablePort, menuCategoryPort, productPort, productMediaPort,
-                mediaStoragePort, videoHostingPort);
+                mediaStoragePort, videoHostingPort, popularProductsPort, clock);
     }
 
     @Bean

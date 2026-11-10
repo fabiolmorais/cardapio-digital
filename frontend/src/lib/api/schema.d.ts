@@ -2941,6 +2941,8 @@ export interface components {
         };
         PublicMenu: {
             categories: components["schemas"]["PublicMenuCategory"][];
+            /** @description Os mais pedidos dos últimos 30 dias (ids, do mais pedido); vazio enquanto houver menos de 3 */
+            mostOrdered: string[];
         };
         PublicMenuCategory: {
             /** Format: uuid */

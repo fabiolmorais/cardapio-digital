@@ -42,7 +42,10 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
       <Link
         href={`/m/${token}`}
         aria-label={t.back}
-        className={cn("flex size-11 items-center justify-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass)", focus)}
+        className={cn(
+          "flex size-11 items-center justify-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass)",
+          focus,
+        )}
       >
         <ChevronLeft aria-hidden className="size-5" />
       </Link>
@@ -74,7 +77,10 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
           <p className="text-(--mesa-muted)">{t.banner(active.name, active.people)}</p>
           <Link
             href={`/m/${token}/cardapio#rodizio`}
-            className={cn("flex h-14 w-full items-center justify-center rounded-2xl bg-(--brand) font-semibold text-white", focus)}
+            className={cn(
+              "flex h-14 w-full items-center justify-center rounded-2xl bg-(--brand) font-semibold text-white",
+              focus,
+            )}
           >
             {active.type === "PASSAGEM" ? t.seeCard : t.orderRound}
           </Link>
@@ -141,7 +147,10 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
           {!calls.present ? (
             calls.presence && <PresencePanel token={token} state={calls} />
           ) : request ? (
-            <section role="status" className="flex flex-col gap-3.5 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4">
+            <section
+              role="status"
+              className="flex flex-col gap-3.5 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4"
+            >
               <span className="flex items-center gap-3.5">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-(--brand) text-white">
                   <UserCheck aria-hidden className="size-5" />
@@ -157,7 +166,10 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
                 type="button"
                 disabled={calls.busy !== null}
                 onClick={() => calls.run("cancel", () => cancelCall(token, request.id))}
-                className={cn("h-11 rounded-2xl border border-(--mesa-stroke) text-sm font-semibold disabled:opacity-60", focus)}
+                className={cn(
+                  "h-11 rounded-2xl border border-(--mesa-stroke) text-sm font-semibold disabled:opacity-60",
+                  focus,
+                )}
               >
                 {calls.busy === "cancel" ? t.canceling : t.cancel}
               </button>

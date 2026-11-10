@@ -1,19 +1,18 @@
-import { ExternalLink, Plus, Sparkles, Star, UtensilsCrossed } from "lucide-react";
+import { ExternalLink, Plus, Star, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { aLaCarte } from "./carte";
-import { CategoryIcon } from "./category-icon";
 import { RodizioEntry } from "./rodizio-entry";
 import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
 import type { PublicMenu, PublicTable } from "./table-data";
 
 const t = messages.tablePage;
-const tile =
-  "flex w-[68px] shrink-0 flex-col items-center gap-1.5 rounded-[18px] pt-3 pb-2.5 text-xs font-medium focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
+const chip =
+  "flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
 
 /**
  * O início da mesa (desenho 2.1): a marca e a mesa (com "No salão" quando a presença está
@@ -25,7 +24,11 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
   const brand = table.brand;
   const categories = menu ? aLaCarte(menu) : [];
   const products = categories.flatMap((c) => c.products);
-  const featured = products.filter((p) => p.featured && p.available);
+  // "Mais pedidos" (os do último mês, que o back calcula); enquanto não há pedidos bastantes, os destaques.
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const mostOrdered = (menu?.mostOrdered ?? []).flatMap((id) => byId.get(id) ?? []);
+  const featured = mostOrdered.length > 0 ? mostOrdered : products.filter((p) => p.featured && p.available);
+  const showcaseTitle = mostOrdered.length > 0 ? t.mostOrdered : t.featured;
   const menuHref = `/m/${token}/cardapio`;
   // O fundo: a foto do primeiro destaque (ou de qualquer prato), desfocada.
   const ambient = (featured.find((p) => p.photo) ?? products.find((p) => p.photo))?.photo?.medium;
@@ -59,30 +62,44 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
   return (
     <TableShell token={token} table={table} current="home" ambient={ambient}>
       {/* Atendimento pausado: sem o "Peça sem esperar" e sem os botões de chamar e pedir. */}
-      {table.serving ? <TableActions token={token} header={header} intro={intro} /> : header}
+      {table.serving ? (
+        <TableActions
+          token={token}
+          header={header}
+          intro={intro}
+          arrival={{
+            name: table.establishmentName,
+            where: t.where(table.tableLabel, table.sectorName),
+            logo: (
+              <BrandLogo
+                logo={brand.logo?.small}
+                name={table.establishmentName}
+                color={brand.primary}
+                alt=""
+                className="size-full"
+              />
+            ),
+          }}
+        />
+      ) : (
+        header
+      )}
 
       {categories.length > 0 && (
         <nav aria-label={t.categories} className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+          {/* Só os nomes (ícones não servem a todo tipo de restaurante), com a cor da marca para dar vida. */}
           {featured.length > 0 && (
-            <a
-              href="#destaques"
-              className={cn(
-                tile,
-                "border border-(--brand-text)/45 bg-linear-to-b from-(--brand)/30 to-(--brand)/10",
-              )}
-            >
-              <Sparkles aria-hidden className="size-6" strokeWidth={1.8} />
-              {t.featured}
+            <a href="#destaques" className={cn(chip, "bg-(--brand) text-white")}>
+              {showcaseTitle}
             </a>
           )}
           {categories.map((c) => (
             <Link
               key={c.id}
               href={`${menuHref}#categoria-${c.id}`}
-              className={cn(tile, "border border-(--mesa-stroke) bg-(--mesa-glass) text-(--mesa-muted)")}
+              className={cn(chip, "border border-(--brand-text)/30 bg-(--brand)/15")}
             >
-              <CategoryIcon name={c.name} className="size-6" />
-              <span className="line-clamp-1 max-w-full px-1">{c.name}</span>
+              {c.name}
             </Link>
           ))}
         </nav>
@@ -94,7 +111,7 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
         <section aria-labelledby="destaques" className="flex scroll-mt-6 flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 id="destaques" className="scroll-mt-6 text-xl font-semibold tracking-[-0.3px]">
-              {t.featured}
+              {showcaseTitle}
             </h2>
             <Link href={menuHref} className="text-[13px] font-semibold text-(--brand-text)">
               {t.seeMenu}
@@ -116,7 +133,13 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
                   <span className="flex h-[120px] items-center justify-center overflow-hidden rounded-2xl bg-(--mesa-stroke) text-(--mesa-muted)">
                     {item.photo ? (
                       // eslint-disable-next-line @next/next/no-img-element -- foto já no tamanho certo, vinda do R2
-                      <img src={item.photo.medium} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+                      <img
+                        src={item.photo.medium}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="size-full object-cover"
+                      />
                     ) : (
                       <UtensilsCrossed aria-hidden className="size-7" />
                     )}
@@ -143,7 +166,14 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
       {(brand.instagram || brand.googleReviewUrl) && (
         <section className="flex flex-col gap-2">
           {brand.instagram && (
-            <ExternalRow href={`https://instagram.com/${brand.instagram}`} icon={<span aria-hidden className="text-lg font-bold">@</span>}>
+            <ExternalRow
+              href={`https://instagram.com/${brand.instagram}`}
+              icon={
+                <span aria-hidden className="text-lg font-bold">
+                  @
+                </span>
+              }
+            >
               {t.follow} · @{brand.instagram}
             </ExternalRow>
           )}

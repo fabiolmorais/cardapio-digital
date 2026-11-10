@@ -44,8 +44,13 @@ export function Reels({
   backHref: string;
 }) {
   // O Reels é do cardápio de sempre: o que é só do rodízio não tem preço para mostrar nem para adicionar.
-  const items = aLaCarte(menu).flatMap((c) => c.products).filter((p) => p.media.length > 0);
-  const startIndex = Math.max(0, items.findIndex((p) => p.id === startId));
+  const items = aLaCarte(menu)
+    .flatMap((c) => c.products)
+    .filter((p) => p.media.length > 0);
+  const startIndex = Math.max(
+    0,
+    items.findIndex((p) => p.id === startId),
+  );
   const [active, setActive] = useState(startIndex);
   const [muted, setMuted] = useState(true);
   const [ordering, setOrdering] = useState(true);
@@ -146,7 +151,8 @@ export function Reels({
         </Link>
       )}
 
-      <ProductSheet token={token} item={adding} onClose={() => setAdding(null)} />
+      {/* O "Adicionar" abre o detalhe do prato (3.2); tocar na foto dele volta ao vídeo. */}
+      <ProductSheet token={token} item={adding} onClose={() => setAdding(null)} onPhoto={() => {}} />
     </div>
   );
 }
@@ -411,9 +417,7 @@ function ProductReel({
         )}
         <div className="flex items-center gap-3 rounded-[22px] border border-white/15 bg-black/35 py-2 pr-2 pl-4.5 backdrop-blur-xl">
           <span className="flex flex-1 flex-col">
-            {item.promoPriceCents != null && (
-              <s className="text-xs text-white/70">{formatCents(item.priceCents)}</s>
-            )}
+            {item.promoPriceCents != null && <s className="text-xs text-white/70">{formatCents(item.priceCents)}</s>}
             <span className="text-xl font-bold">{formatCents(price)}</span>
           </span>
           {canAdd && (

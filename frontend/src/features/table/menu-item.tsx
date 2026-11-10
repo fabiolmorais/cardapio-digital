@@ -19,11 +19,14 @@ export function MenuItemCard({
   item,
   action,
   reelsHref,
+  onOpen,
   price,
 }: {
   item: MenuItem;
   action?: ReactNode;
   reelsHref?: string;
+  /** Sem vídeo: tocar na foto ou no nome abre o detalhe do prato (desenho 3.2). */
+  onOpen?: () => void;
   /** No lugar do preço (a aba Rodízio não mostra preço). */
   price?: ReactNode;
 }) {
@@ -42,7 +45,12 @@ export function MenuItemCard({
           aria-label={t.openReels(item.name)}
           className="relative flex shrink-0 rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
         >
-          <span className={cn("size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)", !item.available && "opacity-45 grayscale")}>
+          <span
+            className={cn(
+              "size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)",
+              !item.available && "opacity-45 grayscale",
+            )}
+          >
             {item.photo ? (
               // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
               <img
@@ -67,8 +75,45 @@ export function MenuItemCard({
             </span>
           )}
         </Link>
+      ) : onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={t.openDetail(item.name)}
+          className="flex shrink-0 rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+        >
+          <span
+            className={cn(
+              "size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)",
+              !item.available && "opacity-45 grayscale",
+            )}
+          >
+            {item.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
+              <img
+                src={item.photo.thumb}
+                alt=""
+                width={96}
+                height={96}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+              />
+            ) : (
+              <span className="flex size-full items-center justify-center text-(--mesa-muted)">
+                <UtensilsCrossed aria-hidden className="size-6" />
+                <span className="sr-only">{t.noPhoto}</span>
+              </span>
+            )}
+          </span>
+        </button>
       ) : (
-        <span className={cn("size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)", !item.available && "opacity-45 grayscale")}>
+        <span
+          className={cn(
+            "size-24 shrink-0 overflow-hidden rounded-2xl bg-(--mesa-stroke)",
+            !item.available && "opacity-45 grayscale",
+          )}
+        >
           {item.photo ? (
             // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
             <img

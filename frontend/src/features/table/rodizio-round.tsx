@@ -115,7 +115,10 @@ export function RodizioRound({
       ) : (
         minutesLeft !== null &&
         endsAt! - now <= ENDING_SOON_MS && (
-          <p role="status" className="flex items-center gap-2.5 rounded-2xl border border-(--brand-text) px-4 py-3 text-sm font-semibold">
+          <p
+            role="status"
+            className="flex items-center gap-2.5 rounded-2xl border border-(--brand-text) px-4 py-3 text-sm font-semibold"
+          >
             <Clock aria-hidden className="size-4 shrink-0 text-(--brand-text)" />
             {t.endingSoon(minutesLeft)}
           </p>
@@ -136,7 +139,9 @@ export function RodizioRound({
           <MenuItemCard
             key={item.id}
             item={item}
-            price={<span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">{t.included}</span>}
+            price={
+              <span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">{t.included}</span>
+            }
             action={
               n > 0 ? (
                 <span className="flex shrink-0 items-center gap-1.5">

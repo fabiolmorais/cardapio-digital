@@ -80,21 +80,25 @@ export function TableShell({
       >
         {table.serving && (current === "home" || current === "menu") && <CartBar token={token} />}
         <div className="mx-auto max-w-md rounded-3xl border border-(--mesa-stroke) bg-(--mesa-bar) shadow-[0_12px_32px_rgba(0,0,0,.45)] backdrop-blur-xl">
-        <div className="grid h-[68px] grid-cols-3">
-          <Tab href={`/m/${token}`} on={current === "home"} icon={<House aria-hidden className="size-5" />}>
-            {t.nav.home}
-          </Tab>
-          <Tab href={`/m/${token}/cardapio`} on={current === "menu"} icon={<BookOpen aria-hidden className="size-5" />}>
-            {t.nav.menu}
-          </Tab>
-          <Tab
-            href={`/m/${token}/pedidos`}
-            on={current === "orders"}
-            icon={<ClipboardList aria-hidden className="size-5" />}
-          >
-            {t.nav.orders}
-          </Tab>
-        </div>
+          <div className="grid h-[68px] grid-cols-3">
+            <Tab href={`/m/${token}`} on={current === "home"} icon={<House aria-hidden className="size-5" />}>
+              {t.nav.home}
+            </Tab>
+            <Tab
+              href={`/m/${token}/cardapio`}
+              on={current === "menu"}
+              icon={<BookOpen aria-hidden className="size-5" />}
+            >
+              {t.nav.menu}
+            </Tab>
+            <Tab
+              href={`/m/${token}/pedidos`}
+              on={current === "orders"}
+              icon={<ClipboardList aria-hidden className="size-5" />}
+            >
+              {t.nav.orders}
+            </Tab>
+          </div>
         </div>
       </nav>
     </div>

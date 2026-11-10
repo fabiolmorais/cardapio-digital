@@ -22,7 +22,8 @@ class GetPublicMenuServiceTest {
     private final MenuFakes menu = new MenuFakes();
     private final MediaFakes media = new MediaFakes();
     private final TablesByToken tables = new TablesByToken();
-    private final GetPublicMenuService service = new GetPublicMenuService(tables, menu, menu, media, media, media);
+    private final GetPublicMenuService service = new GetPublicMenuService(tables, menu, menu, media, media, media,
+            (establishment, since, limit) -> java.util.List.of(), java.time.Clock.systemUTC());
     private final EstablishmentId sakura = EstablishmentId.newId();
 
     @Test

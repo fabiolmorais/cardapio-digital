@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { PresenceBadge } from "@/features/table/presence-badge";
 import { MenuBrowser } from "@/features/table/menu-browser";
 import { getMenu, getTable } from "@/features/table/table-data";
 import { TableShell } from "@/features/table/table-shell";
@@ -35,11 +36,14 @@ async function Menu({ params }: Pick<PageProps<"/m/[token]/cardapio">, "params">
   }
   return (
     <TableShell token={token} table={table} current="menu">
-      <header className="flex flex-col gap-0.5">
-        <span className="text-sm text-(--mesa-muted)">
-          {table.establishmentName} · {t.where(table.tableLabel, "")}
-        </span>
-        <h1 className="text-3xl font-bold tracking-tight">{t.menu.title}</h1>
+      <header className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-sm text-(--mesa-muted)">
+            {table.establishmentName} · {t.where(table.tableLabel, "")}
+          </span>
+          <h1 className="text-3xl font-bold tracking-tight">{t.menu.title}</h1>
+        </div>
+        <PresenceBadge token={token} />
       </header>
       {/* Mesmo sem nada à la carte, o cardápio monta: a aba Rodízio (e o cartão do passagem) mora nele. */}
       <MenuBrowser token={token} menu={menu} />

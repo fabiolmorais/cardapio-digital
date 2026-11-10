@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.menu;
 
+import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.application.port.in.menu.PublicMenu;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.MediaType;
@@ -16,7 +17,10 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
  * paginada, e o teto de 500 produtos (Product.MAX_PER_ESTABLISHMENT) mantém o tamanho sob controle.
  */
 @Schema(name = "PublicMenu")
-record PublicMenuResponse(@Schema(requiredMode = REQUIRED) List<Category> categories) {
+record PublicMenuResponse(
+        @Schema(requiredMode = REQUIRED) List<Category> categories,
+        @Schema(requiredMode = REQUIRED, description = "Os mais pedidos dos últimos 30 dias (ids, do mais pedido); "
+                + "vazio enquanto houver menos de 3") List<UUID> mostOrdered) {
 
     @Schema(name = "PublicMenuCategory")
     record Category(
@@ -76,7 +80,7 @@ record PublicMenuResponse(@Schema(requiredMode = REQUIRED) List<Category> catego
                                 p.promoPriceCents(), p.featured(), p.available(), p.aLaCarte(), photo(p.photoUrls()),
                                 p.media().stream().map(PublicMenuResponse::media).toList()))
                         .toList()))
-                .toList());
+                .toList(), menu.mostOrdered().stream().map(ProductId::value).toList());
     }
 
     private static Media media(PublicMenu.Media m) {

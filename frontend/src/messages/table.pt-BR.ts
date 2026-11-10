@@ -36,12 +36,24 @@ export const tablePage = {
     releaseTitle: "Pedido de liberação enviado",
     releaseText: "Um garçom vai confirmar sua mesa em instantes. Você não precisa fazer nada.",
     cancelRelease: "Cancelar pedido de liberação",
-    outside: "Sua localização ficou fora do restaurante, ou imprecisa. Tente de novo perto da janela ou peça ao garçom.",
+    outside:
+      "Sua localização ficou fora do restaurante, ou imprecisa. Tente de novo perto da janela ou peça ao garçom.",
     denied: "Sem permissão para a localização. Libere nas configurações do navegador, ou peça ao garçom.",
     noLocation: "Não deu para pegar sua localização agora. Tente de novo ou peça ao garçom.",
     notOnWifi: "Ainda não estamos vendo a rede do restaurante. Confira o Wi-Fi ou peça ao garçom.",
+    welcome: (name: string) => `Bem-vindo ao ${name}`,
+    welcomeText: "Estamos confirmando que você está no restaurante para liberar os pedidos.",
+    stepWifi: "Wi-Fi do restaurante",
+    stepWifiHint: "Conferindo sua conexão…",
+    stepLocation: "Localização",
+    stepLocationHint: "Só se o Wi-Fi não bastar",
+    stepWaiting: "Aguardando",
+    fewSeconds: "Leva só alguns segundos. Sem app, sem login, sem cadastro.",
+    waitingFor: (time: string) => `Aguardando há ${time}`,
+    onlyMenu: "Ver só o cardápio",
     blockedTitle: "Chamados bloqueados neste celular",
-    blockedText: "A equipe do restaurante bloqueou os chamados deste celular. Fale com um garçom. O cardápio continua liberado.",
+    blockedText:
+      "A equipe do restaurante bloqueou os chamados deste celular. Fale com um garçom. O cardápio continua liberado.",
   },
   calls: {
     waiterSub: "Um toque e ele vem",
@@ -95,12 +107,14 @@ export const tablePage = {
   seeMenu: "Ver o cardápio",
   categories: "Categorias",
   featured: "Destaques",
+  mostOrdered: "Mais pedidos",
   seeAll: "Ver tudo",
   follow: "Siga no Instagram",
   review: "Avalie no Google",
   newTab: "(abre em outra aba)",
   nav: { label: "Navegação da mesa", home: "Mesa", menu: "Cardápio", orders: "Pedidos" },
   menu: {
+    openDetail: (name: string) => `Ver ${name}`,
     title: "Cardápio",
     empty: "O cardápio ainda está sendo montado. Peça ajuda ao garçom.",
     search: "Buscar no cardápio",
@@ -125,9 +139,16 @@ export const tablePage = {
     quantity: (count: number) => `Quantidade: ${count}`,
     add: "Adicionar",
     full: "O carrinho já tem 30 itens diferentes. Envie este pedido e faça outro.",
+    openReels: (name: string) => `Ver ${name} em fotos e vídeos`,
+    backToReels: "Voltar aos vídeos",
+    seeVideo: (seconds: number | null) =>
+      seconds ? `Ver vídeo · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : "Ver vídeo",
+    featured: "Destaque",
+    off: (percent: number) => `-${percent}%`,
   },
   cartBar: {
     see: "Ver pedido",
+    notSent: "Ainda não enviado",
     items: (count: number) => (count === 1 ? "1 item" : `${count} itens`),
   },
   cart: {
@@ -235,7 +256,12 @@ export const tablePage = {
     sent: "Rodada enviada para a cozinha.",
     empty: "O rodízio ainda não tem produtos. Chame o garçom.",
     item: "Rodízio",
-    room: (n: number) => (n === 0 ? "Espere chegar parte do que está a caminho" : n === 1 ? "Cabe mais 1 item agora" : `Cabem mais ${n} itens agora`),
+    room: (n: number) =>
+      n === 0
+        ? "Espere chegar parte do que está a caminho"
+        : n === 1
+          ? "Cabe mais 1 item agora"
+          : `Cabem mais ${n} itens agora`,
     full: "A rodada chegou ao limite",
     passagemHint: "Os passadores servem na mesa",
     cuts: {

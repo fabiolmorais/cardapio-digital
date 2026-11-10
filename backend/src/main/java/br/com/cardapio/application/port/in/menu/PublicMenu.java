@@ -12,10 +12,11 @@ import java.util.Map;
  * O cardápio como o cliente vê: as categorias na ordem, cada uma com os produtos dela.
  * Categoria sem produto ativo não aparece. Produto esgotado aparece (com available = false).
  */
-public record PublicMenu(List<Category> categories) {
+public record PublicMenu(List<Category> categories, List<ProductId> mostOrdered) {
 
     public PublicMenu {
         categories = List.copyOf(categories);
+        mostOrdered = List.copyOf(mostOrdered);
     }
 
     public record Category(MenuCategoryId id, String name, List<Item> products) {
