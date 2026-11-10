@@ -1,4 +1,9 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 import { API_URL, apiLogin, createAccount } from "./support/account";
 
 test.describe.configure({ timeout: 90_000 });
@@ -14,7 +19,9 @@ async function recordVideo(page: Page): Promise<Buffer> {
     canvas.width = 360;
     canvas.height = 640;
     const context = canvas.getContext("2d")!;
-    const recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: "video/webm" });
+    const recorder = new MediaRecorder(canvas.captureStream(30), {
+      mimeType: "video/webm",
+    });
     const parts: Blob[] = [];
     recorder.ondataavailable = (event) => parts.push(event.data);
     recorder.start();
@@ -34,62 +41,115 @@ async function recordVideo(page: Page): Promise<Buffer> {
 }
 
 /** Envia o vídeo de um produto pelo serviço de vídeo falso (o mesmo TUS do navegador) e espera ficar pronto. */
-async function addVideo(request: APIRequestContext, headers: Record<string, string>, productId: string, video: Buffer) {
+async function addVideo(
+  request: APIRequestContext,
+  headers: Record<string, string>,
+  productId: string,
+  video: Buffer,
+) {
   const upload = await (
     await request.post(`${API_URL}/api/v1/products/${productId}/videos`, {
       headers,
       data: { contentType: "video/webm", sizeBytes: video.length },
     })
   ).json();
-  const created = await request.post(`${API_URL}${new URL(upload.endpoint).pathname}`, {
-    headers: {
-      ...upload.headers,
-      "Tus-Resumable": "1.0.0",
-      "Upload-Length": String(video.length),
-      "Upload-Metadata": `filetype ${Buffer.from("video/webm").toString("base64")}`,
+  const created = await request.post(
+    `${API_URL}${new URL(upload.endpoint).pathname}`,
+    {
+      headers: {
+        ...upload.headers,
+        "Tus-Resumable": "1.0.0",
+        "Upload-Length": String(video.length),
+        "Upload-Metadata": `filetype ${Buffer.from("video/webm").toString("base64")}`,
+      },
     },
-  });
+  );
   expect(created.status()).toBe(201);
-  const patched = await request.patch(`${API_URL}${created.headers()["location"]}`, {
-    headers: { "Tus-Resumable": "1.0.0", "Upload-Offset": "0", "Content-Type": "application/offset+octet-stream" },
-    data: video,
-  });
+  const patched = await request.patch(
+    `${API_URL}${created.headers()["location"]}`,
+    {
+      headers: {
+        "Tus-Resumable": "1.0.0",
+        "Upload-Offset": "0",
+        "Content-Type": "application/offset+octet-stream",
+      },
+      data: video,
+    },
+  );
   expect(patched.status()).toBe(204);
   // A galeria do admin pergunta ao serviço e grava "pronto" (no computador, o aviso do serviço não chega).
-  const media = await (await request.get(`${API_URL}/api/v1/products/${productId}/media`, { headers })).json();
+  const media = await (
+    await request.get(`${API_URL}/api/v1/products/${productId}/media`, {
+      headers,
+    })
+  ).json();
   expect(media.content.at(-1).status).toBe("READY");
 }
 
 async function restaurant(request: APIRequestContext, video: Buffer) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
-  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
-  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  await request.put(`${API_URL}/api/v1/presence-rule`, {
+    headers,
+    data: { networks: ["127.0.0.1", "::1"] },
+  });
   const sector = await post("/api/v1/sectors", { name: "Salão" });
-  const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
+  const table = await post("/api/v1/tables", {
+    label: "04",
+    sectorId: sector.id,
+  });
   const entradas = await post("/api/v1/menu-categories", { name: "Entradas" });
   const product = (name: string, priceCents: number, extra: object = {}) =>
-    post("/api/v1/products", { categoryId: entradas.id, name, priceCents, featured: false, available: true, ...extra });
-  const guioza = await product("Guioza", 2990, { featured: true, description: "Pastel japonês selado na chapa." });
+    post("/api/v1/products", {
+      categoryId: entradas.id,
+      name,
+      priceCents,
+      featured: false,
+      available: true,
+      ...extra,
+    });
+  const guioza = await product("Guioza", 2990, {
+    featured: true,
+    description: "Pastel japonês selado na chapa.",
+  });
   const sunomono = await product("Sunomono", 1990);
   await product("Chá verde", 1200); // sem foto nem vídeo: fica fora do Reels
   await addVideo(request, headers, guioza.id, video);
   await addVideo(request, headers, sunomono.id, video);
-  return { qr: table.publicToken as string, headers, guiozaId: guioza.id as string };
+  return {
+    qr: table.publicToken as string,
+    headers,
+    guiozaId: guioza.id as string,
+  };
 }
 
 /** O vídeo de um prato está tocando? */
 async function playing(page: Page, name: string) {
-  return page.getByRole("region", { name }).locator("video").first().evaluate((v: HTMLVideoElement) => !v.paused);
+  return page
+    .getByRole("region", { name })
+    .locator("video")
+    .first()
+    .evaluate((v: HTMLVideoElement) => !v.paused);
 }
 
-test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedido", async ({ page, request }) => {
+test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedido", async ({
+  page,
+  request,
+}) => {
   const video = await recordVideo(page);
   const { qr } = await restaurant(request, video);
   await page.goto(`/m/${qr}/cardapio`);
 
-  await expect(page.getByRole("link", { name: "Ver Chá verde em fotos e vídeos" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Ver Guioza em fotos e vídeos" }).click();
+  await expect(
+    page.getByRole("link", { name: "Ver Chá verde em fotos e vídeos" }),
+  ).toHaveCount(0);
+  // O Guioza é destaque: aparece nos Destaques e na categoria dele.
+  await page
+    .getByRole("region", { name: "Entradas" })
+    .getByRole("link", { name: "Ver Guioza em fotos e vídeos" })
+    .click();
   await expect(page).toHaveURL(/\/reels\?produto=/);
 
   const guioza = page.getByRole("region", { name: "Guioza" });
@@ -101,10 +161,18 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   expect(await playing(page, "Guioza")).toBe(true);
   // A barra do topo enche conforme o vídeo passa (como no Instagram), em vez de vir cheia.
   const bar = guioza.locator("[aria-hidden] > span > span").first();
-  await expect.poll(() => bar.evaluate((el) => parseFloat((el as HTMLElement).style.width))).toBeGreaterThan(0);
-  expect(await bar.evaluate((el) => parseFloat((el as HTMLElement).style.width))).toBeLessThan(100);
+  await expect
+    .poll(() =>
+      bar.evaluate((el) => parseFloat((el as HTMLElement).style.width)),
+    )
+    .toBeGreaterThan(0);
+  expect(
+    await bar.evaluate((el) => parseFloat((el as HTMLElement).style.width)),
+  ).toBeLessThan(100);
   await page.getByRole("button", { name: "Ativar som" }).click();
-  await expect(page.getByRole("button", { name: "Tirar o som" })).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: "Tirar o som" }),
+  ).toHaveAttribute("aria-pressed", "true");
 
   // Desliza para o próximo prato: o vídeo dele toca, e o do anterior para.
   await page.getByRole("region", { name: "Sunomono" }).scrollIntoViewIfNeeded();
@@ -112,14 +180,23 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await expect.poll(() => playing(page, "Guioza")).toBe(false);
 
   await page.getByRole("button", { name: "Adicionar Sunomono" }).click();
-  await page.getByRole("dialog", { name: "Sunomono" }).getByRole("button", { name: /^Adicionar/ }).click();
-  await expect(page.getByRole("link", { name: /Ver pedido/ })).toContainText("R$ 19,90");
+  await page
+    .getByRole("dialog", { name: "Sunomono" })
+    .getByRole("button", { name: /^Adicionar/ })
+    .click();
+  await expect(page.getByRole("link", { name: /Ver pedido/ })).toContainText(
+    "R$ 19,90",
+  );
 
   await page.getByRole("link", { name: "Fechar os vídeos" }).click();
   await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
   // Fechado o Reels, nenhum vídeo continua tocando (nem o som) escondido atrás do cardápio.
   await expect
-    .poll(() => page.evaluate(() => [...document.querySelectorAll("video")].every((v) => v.paused)))
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("video")].every((v) => v.paused),
+      ),
+    )
     .toBe(true);
 });
 
@@ -132,7 +209,10 @@ test("o destaque com vídeo abre o Reels, tocar na borda passa a mídia, e fecha
   await addVideo(request, headers, guiozaId, video); // o Guioza com dois vídeos
   await page.goto(`/m/${qr}`);
 
-  await page.getByRole("region", { name: "Destaques" }).getByRole("link", { name: /Guioza/ }).click();
+  await page
+    .getByRole("region", { name: "Destaques" })
+    .getByRole("link", { name: /Guioza/ })
+    .click();
   await expect(page).toHaveURL(/\/reels\?produto=.*&de=inicio/);
   const guioza = page.getByRole("region", { name: "Guioza" });
   await expect(guioza.getByText("1 de 2")).toBeAttached();

@@ -4,7 +4,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { aLaCarte } from "./carte";
+import { aLaCarte, showcase } from "./carte";
 import { RodizioEntry } from "./rodizio-entry";
 import { TableActions } from "./table-actions";
 import { TableShell } from "./table-shell";
@@ -20,18 +20,26 @@ const chip =
  * JavaScript), as categorias com ícone, o rodízio, os destaques e os links do restaurante, sobre a
  * foto de um prato desfocada.
  */
-export function TableHome({ token, table, menu }: { token: string; table: PublicTable; menu: PublicMenu | null }) {
+export function TableHome({
+  token,
+  table,
+  menu,
+}: {
+  token: string;
+  table: PublicTable;
+  menu: PublicMenu | null;
+}) {
   const brand = table.brand;
   const categories = menu ? aLaCarte(menu) : [];
   const products = categories.flatMap((c) => c.products);
-  // "Mais pedidos" (os do último mês, que o back calcula); enquanto não há pedidos bastantes, os destaques.
-  const byId = new Map(products.map((p) => [p.id, p]));
-  const mostOrdered = (menu?.mostOrdered ?? []).flatMap((id) => byId.get(id) ?? []);
-  const featured = mostOrdered.length > 0 ? mostOrdered : products.filter((p) => p.featured && p.available);
-  const showcaseTitle = mostOrdered.length > 0 ? t.mostOrdered : t.featured;
+  const top = menu ? showcase(menu) : { items: [], mostOrdered: false };
+  const featured = top.items;
+  const showcaseTitle = top.mostOrdered ? t.mostOrdered : t.featured;
   const menuHref = `/m/${token}/cardapio`;
   // O fundo: a foto do primeiro destaque (ou de qualquer prato), desfocada.
-  const ambient = (featured.find((p) => p.photo) ?? products.find((p) => p.photo))?.photo?.medium;
+  const ambient = (
+    featured.find((p) => p.photo) ?? products.find((p) => p.photo)
+  )?.photo?.medium;
 
   const header = (
     <header className="flex min-w-0 items-center gap-3">
@@ -43,8 +51,12 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
         className="size-[46px] text-[15px]"
       />
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate font-semibold">{table.establishmentName}</span>
-        <span className="text-[13px] text-(--mesa-muted)">{t.where(table.tableLabel, table.sectorName)}</span>
+        <span className="truncate font-semibold">
+          {table.establishmentName}
+        </span>
+        <span className="text-[13px] text-(--mesa-muted)">
+          {t.where(table.tableLabel, table.sectorName)}
+        </span>
       </div>
     </header>
   );
@@ -86,10 +98,16 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
       )}
 
       {categories.length > 0 && (
-        <nav aria-label={t.categories} className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+        <nav
+          aria-label={t.categories}
+          className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]"
+        >
           {/* Só os nomes (ícones não servem a todo tipo de restaurante), com a cor da marca para dar vida. */}
           {featured.length > 0 && (
-            <a href="#destaques" className={cn(chip, "bg-(--brand) text-white")}>
+            <a
+              href="#destaques"
+              className={cn(chip, "bg-(--brand) text-white")}
+            >
               {showcaseTitle}
             </a>
           )}
@@ -97,7 +115,10 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
             <Link
               key={c.id}
               href={`${menuHref}#categoria-${c.id}`}
-              className={cn(chip, "border border-(--brand-text)/30 bg-(--brand)/15")}
+              className={cn(
+                chip,
+                "border border-(--brand-text)/30 bg-(--brand)/15",
+              )}
             >
               {c.name}
             </Link>
@@ -108,12 +129,21 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
       {table.serving && <RodizioEntry token={token} photo={ambient} />}
 
       {featured.length > 0 && (
-        <section aria-labelledby="destaques" className="flex scroll-mt-6 flex-col gap-3">
+        <section
+          aria-labelledby="destaques"
+          className="flex scroll-mt-6 flex-col gap-3"
+        >
           <div className="flex items-center justify-between">
-            <h2 id="destaques" className="scroll-mt-6 text-xl font-semibold tracking-[-0.3px]">
+            <h2
+              id="destaques"
+              className="scroll-mt-6 text-xl font-semibold tracking-[-0.3px]"
+            >
               {showcaseTitle}
             </h2>
-            <Link href={menuHref} className="text-[13px] font-semibold text-(--brand-text)">
+            <Link
+              href={menuHref}
+              className="text-[13px] font-semibold text-(--brand-text)"
+            >
               {t.seeMenu}
             </Link>
           </div>
@@ -145,9 +175,13 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
                     )}
                   </span>
                   <span className="flex flex-col gap-1.5 px-1">
-                    <span className="line-clamp-1 font-semibold">{item.name}</span>
+                    <span className="line-clamp-1 font-semibold">
+                      {item.name}
+                    </span>
                     <span className="flex items-center justify-between gap-2">
-                      <span className="font-bold">{formatCents(item.promoPriceCents ?? item.priceCents)}</span>
+                      <span className="font-bold">
+                        {formatCents(item.promoPriceCents ?? item.priceCents)}
+                      </span>
                       <span
                         aria-hidden
                         className="flex size-9 items-center justify-center rounded-xl bg-(--brand) text-white shadow-[0_6px_16px_rgba(0,0,0,.3)]"
@@ -178,7 +212,10 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
             </ExternalRow>
           )}
           {brand.googleReviewUrl && (
-            <ExternalRow href={brand.googleReviewUrl} icon={<Star aria-hidden className="size-5" />}>
+            <ExternalRow
+              href={brand.googleReviewUrl}
+              icon={<Star aria-hidden className="size-5" />}
+            >
               {t.review}
             </ExternalRow>
           )}
@@ -189,7 +226,15 @@ export function TableHome({ token, table, menu }: { token: string; table: Public
 }
 
 /** Link para fora (Instagram, Google): outra aba, sem passar o endereço desta página (noreferrer). */
-function ExternalRow({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
+function ExternalRow({
+  href,
+  icon,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <a
       href={href}
@@ -197,7 +242,9 @@ function ExternalRow({ href, icon, children }: { href: string; icon: React.React
       rel="noopener noreferrer"
       className="flex h-13 items-center gap-3 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) px-4 font-medium focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
     >
-      <span className="flex size-8 items-center justify-center text-(--brand-text)">{icon}</span>
+      <span className="flex size-8 items-center justify-center text-(--brand-text)">
+        {icon}
+      </span>
       <span className="flex-1">{children}</span>
       <ExternalLink aria-hidden className="size-4 text-(--mesa-muted)" />
       <span className="sr-only">{t.newTab}</span>

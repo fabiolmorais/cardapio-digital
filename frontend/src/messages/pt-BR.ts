@@ -12,7 +12,8 @@ export const messages = {
   app: {
     name: "OhChefe",
     title: "OhChefe · Cardápio digital e atendimento por mesa",
-    description: "Cardápio digital e atendimento por mesa para bares e restaurantes.",
+    description:
+      "Cardápio digital e atendimento por mesa para bares e restaurantes.",
   },
   home: {
     brandHome: "OhChefe, início",
@@ -32,7 +33,11 @@ export const messages = {
       "O cliente escaneia o QR Code, chama o garçom, vê o cardápio com fotos e vídeos, faz o pedido e pede a conta. A equipe recebe tudo na hora: no painel, na TV da cozinha e no celular.",
     trialCta: "Testar grátis por 14 dias",
     plansCta: "Ver planos",
-    trust: ["Sem cartão de crédito", "Sem aplicativo para o cliente", "Sem taxa por pedido"],
+    trust: [
+      "Sem cartão de crédito",
+      "Sem aplicativo para o cliente",
+      "Sem taxa por pedido",
+    ],
     demo: {
       label: "O cliente chama pelo celular e a equipe recebe na hora",
       photoAlt: "Mesa de restaurante japonês com barca de sushis",
@@ -114,10 +119,22 @@ export const messages = {
     },
     perksLabel: "Por que o OhChefe",
     perks: [
-      { title: "Sem taxa por pedido", text: "Você paga só a assinatura, venda quanto vender." },
-      { title: "Sem app para baixar", text: "Abre no navegador do celular, no Wi-Fi ou no 4G." },
-      { title: "Cliente anônimo", text: "Sem cadastro na mesa: menos atrito e menos dado pessoal guardado." },
-      { title: "A cara do seu restaurante", text: "Logo e cores da casa na página da mesa." },
+      {
+        title: "Sem taxa por pedido",
+        text: "Você paga só a assinatura, venda quanto vender.",
+      },
+      {
+        title: "Sem app para baixar",
+        text: "Abre no navegador do celular, no Wi-Fi ou no 4G.",
+      },
+      {
+        title: "Cliente anônimo",
+        text: "Sem cadastro na mesa: menos atrito e menos dado pessoal guardado.",
+      },
+      {
+        title: "A cara do seu restaurante",
+        text: "Logo e cores da casa na página da mesa.",
+      },
     ],
     plans: {
       eyebrow: "Planos",
@@ -133,7 +150,8 @@ export const messages = {
       start: "Começar teste grátis",
     },
     plansLoading: "Carregando planos…",
-    plansError: "Não foi possível carregar os planos agora. Tente de novo em instantes.",
+    plansError:
+      "Não foi possível carregar os planos agora. Tente de novo em instantes.",
     faq: {
       eyebrow: "Perguntas frequentes",
       title: "Ficou alguma dúvida?",
@@ -165,14 +183,16 @@ export const messages = {
       text: "Cadastre o restaurante, suba o cardápio e imprima os QR Codes. O teste é grátis por 14 dias.",
     },
     footer: {
-      tagline: "Cardápio digital e atendimento por mesa para bares e restaurantes.",
+      tagline:
+        "Cardápio digital e atendimento por mesa para bares e restaurantes.",
       product: "Produto",
       copyright: (year: number) => `© ${year} OhChefe`,
     },
   },
   signup: {
     title: "Teste grátis por 14 dias",
-    subtitle: "Cadastre o restaurante, suba o cardápio e imprima os QR Codes. Sem cartão de crédito.",
+    subtitle:
+      "Cadastre o restaurante, suba o cardápio e imprima os QR Codes. Sem cartão de crédito.",
     fields: {
       establishmentName: "Nome do restaurante",
       ownerName: "Seu nome",
@@ -191,7 +211,8 @@ export const messages = {
       password: "Mínimo de 10 caracteres",
       confirmPassword: "Repita a senha",
     },
-    passwordHint: "Use letras e números. Guardamos só uma versão protegida da senha.",
+    passwordHint:
+      "Use letras e números. Guardamos só uma versão protegida da senha.",
     passwordMatch: {
       ok: "As senhas são iguais",
       mismatch: "As senhas ainda não são iguais",
@@ -206,9 +227,12 @@ export const messages = {
     login: "Entrar",
     errors: {
       fields: "Confira os campos destacados.",
-      terms: "Para continuar, aceite os termos de uso e a política de privacidade.",
-      passwordMismatch: "As senhas não são iguais. Digite a mesma senha nos dois campos.",
-      generic: "Não foi possível criar a conta agora. Tente de novo em instantes.",
+      terms:
+        "Para continuar, aceite os termos de uso e a política de privacidade.",
+      passwordMismatch:
+        "As senhas não são iguais. Digite a mesma senha nos dois campos.",
+      generic:
+        "Não foi possível criar a conta agora. Tente de novo em instantes.",
     },
     success: {
       title: "Conta criada!",
@@ -229,7 +253,8 @@ export const messages = {
   },
   login: {
     title: "Entrar no painel",
-    subtitle: "Para donos e gerentes. A equipe do salão entra com PIN no celular.",
+    subtitle:
+      "Para donos e gerentes. A equipe do salão entra com PIN no celular.",
     fields: {
       email: "E-mail",
       password: "Senha",
@@ -251,14 +276,16 @@ export const messages = {
   },
   passwordReset: {
     requestTitle: "Esqueci a senha",
-    requestSubtitle: "Informe o e-mail da conta. Mandamos um link para você criar uma senha nova.",
+    requestSubtitle:
+      "Informe o e-mail da conta. Mandamos um link para você criar uma senha nova.",
     email: "E-mail",
     send: "Mandar o link",
     sending: "Mandando…",
     sent: "Se houver uma conta com este e-mail, o link chega em instantes. Ele vale por 30 minutos. Confira também a caixa de spam.",
     sendAgain: "Mandar de novo",
     resetTitle: "Senha nova",
-    resetSubtitle: "Escolha uma senha com pelo menos 10 caracteres, com letra e número.",
+    resetSubtitle:
+      "Escolha uma senha com pelo menos 10 caracteres, com letra e número.",
     newPassword: "Senha nova",
     confirmPassword: "Repita a senha nova",
     mismatch: "As duas senhas não são iguais.",
@@ -266,7 +293,8 @@ export const messages = {
     saving: "Salvando…",
     done: "Senha trocada. Entre com a senha nova; quem estava logado com a antiga vai precisar entrar de novo.",
     goToLogin: "Ir para a tela de entrar",
-    noToken: "Este link está incompleto. Abra o link do e-mail de novo, ou peça outro.",
+    noToken:
+      "Este link está incompleto. Abra o link do e-mail de novo, ou peça outro.",
     askAnother: "Pedir outro link",
     backToLogin: "Voltar para a tela de entrar",
     errors: {
@@ -290,7 +318,8 @@ export const messages = {
       title: "Mesas com comanda aberta",
       subtitle: "Toque numa mesa para ver a comanda e fechar a conta",
       empty: "Nenhuma comanda aberta.",
-      onTheWay: (count: number) => (count === 1 ? "1 item a caminho" : `${count} itens a caminho`),
+      onTheWay: (count: number) =>
+        count === 1 ? "1 item a caminho" : `${count} itens a caminho`,
       allDelivered: "Tudo entregue",
       since: (time: string) => `desde ${time}`,
       open: (table: string) => `Comanda da mesa ${table}`,
@@ -309,16 +338,20 @@ export const messages = {
       total: "Total",
       toReceive: "Total a receber",
       payment: "Forma de pagamento",
-      paymentChosen: (method: string) => `Forma de pagamento · a mesa escolheu ${method}`,
-      onTheWayWarning: (items: string) => `Ainda a caminho: ${items}. Entregue ou cancele antes de fechar.`,
+      paymentChosen: (method: string) =>
+        `Forma de pagamento · a mesa escolheu ${method}`,
+      onTheWayWarning: (items: string) =>
+        `Ainda a caminho: ${items}. Entregue ou cancele antes de fechar.`,
       close: (method: string) => `Recebi no ${method} · fechar comanda`,
       closing: "Fechando…",
       closedText: (table: string) =>
         `A mesa ${table} está livre. Os celulares da mesa foram desconectados e o QR volta a pedir presença.`,
       paidWith: (method: string, total: string) => `${total} no ${method}`,
       rodizioItem: "Rodízio",
-      rodizio: (name: string, people: number) => `${name} · ${people} ${people === 1 ? "pessoa" : "pessoas"}`,
-      guestLine: (tier: string, quantity: number, price: string) => `${quantity}× ${tier} · ${price}`,
+      rodizio: (name: string, people: number) =>
+        `${name} · ${people} ${people === 1 ? "pessoa" : "pessoas"}`,
+      guestLine: (tier: string, quantity: number, price: string) =>
+        `${quantity}× ${tier} · ${price}`,
       activateRodizio: "Ativar rodízio",
       adjustGuests: "Ajustar pessoas",
       rodizioEnds: (time: string) => `Termina às ${time}`,
@@ -351,8 +384,10 @@ export const messages = {
       activateTitle: "Ativar rodízio",
       adjustTitle: "Ajustar pessoas",
       table: (label: string) => `Mesa ${label}`,
-      activateText: "Confirme quantas pessoas vão participar. O preço de agora entra na comanda.",
-      adjustText: "Chegou ou saiu alguém? O preço por pessoa continua o da ativação.",
+      activateText:
+        "Confirme quantas pessoas vão participar. O preço de agora entra na comanda.",
+      adjustText:
+        "Chegou ou saiu alguém? O preço por pessoa continua o da ativação.",
       choose: "Rodízio",
       people: "Pessoas",
       each: (price: string) => `${price} cada`,
@@ -375,7 +410,11 @@ export const messages = {
       back: "Voltar ao painel",
       loading: "Carregando a fila…",
       loadError: "Não foi possível carregar a fila. Tentando de novo…",
-      lanes: { PENDING: "Na fila", PREPARING: "Em preparo", READY: "Pronto · aguardando garçom" },
+      lanes: {
+        PENDING: "Na fila",
+        PREPARING: "Em preparo",
+        READY: "Pronto · aguardando garçom",
+      },
       empty: "Nada aqui.",
       table: "Mesa",
       order: (number: number) => `Pedido nº ${number}`,
@@ -387,13 +426,16 @@ export const messages = {
       markReady: (name: string) => `Marcar ${name} como pronto`,
       cancel: "Cancelar um item",
       waitingFor: (time: string) => `esperando há ${time}`,
-      since: (seconds: number) => (seconds < 60 ? "agora" : `há ${Math.floor(seconds / 60)} min`),
+      since: (seconds: number) =>
+        seconds < 60 ? "agora" : `há ${Math.floor(seconds / 60)} min`,
     },
     printing: {
       title: "Impressão de comandas",
-      subtitle: "Deixe esta tela aberta no computador da impressora: cada pedido sai impresso sozinho.",
+      subtitle:
+        "Deixe esta tela aberta no computador da impressora: cada pedido sai impresso sozinho.",
       open: "Abrir a impressão de comandas",
-      openHint: "Para quem usa comanda de papel na cozinha, no computador do balcão.",
+      openHint:
+        "Para quem usa comanda de papel na cozinha, no computador do balcão.",
       back: "Voltar ao painel",
       loading: "Preparando a impressão…",
       live: "Ao vivo",
@@ -405,11 +447,15 @@ export const messages = {
       paper: "Largura do papel",
       papers: { "80": "80 mm (padrão)", "58": "58 mm" },
       test: "Imprimir uma comanda de teste",
-      printedToday: (n: number) => (n === 1 ? "1 comanda impressa nesta tela" : `${n} comandas impressas nesta tela`),
+      printedToday: (n: number) =>
+        n === 1
+          ? "1 comanda impressa nesta tela"
+          : `${n} comandas impressas nesta tela`,
       recent: "Impressas nas últimas 12 horas",
       recentEmpty: "Nenhuma comanda impressa ainda.",
       reprint: "Reimprimir",
-      reprintLabel: (table: string, number: number) => `Reimprimir a comanda da mesa ${table}, pedido nº ${number}`,
+      reprintLabel: (table: string, number: number) =>
+        `Reimprimir a comanda da mesa ${table}, pedido nº ${number}`,
       loadError: "Não foi possível falar com o servidor. Tentando de novo…",
       howTitle: "Para imprimir sem a janela de confirmação",
       howSteps: [
@@ -418,10 +464,12 @@ export const messages = {
         "Abra o Chrome por esse atalho, entre no painel e abra esta tela.",
         "Toque em “Imprimir uma comanda de teste”: ela deve sair direto, sem perguntar nada.",
       ],
-      howNote: "Sem esse ajuste, o Chrome mostra a janela de impressão a cada pedido, e alguém precisa confirmar.",
+      howNote:
+        "Sem esse ajuste, o Chrome mostra a janela de impressão a cada pedido, e alguém precisa confirmar.",
       ticket: {
         table: (label: string) => `MESA ${label}`,
-        order: (number: number, time: string) => `Pedido nº ${number} · ${time}`,
+        order: (number: number, time: string) =>
+          `Pedido nº ${number} · ${time}`,
         canceled: "*** CANCELADO ***",
         reprint: "REIMPRESSÃO",
         test: "COMANDA DE TESTE",
@@ -457,12 +505,15 @@ export const messages = {
     },
     approvals: {
       title: "Pedidos para confirmar",
-      subtitle: "Pedidos acima dos limites, ou todos, se a confirmação estiver ligada",
-      order: (table: string, number: number) => `Mesa ${table} · Pedido nº ${number}`,
+      subtitle:
+        "Pedidos acima dos limites, ou todos, se a confirmação estiver ligada",
+      order: (table: string, number: number) =>
+        `Mesa ${table} · Pedido nº ${number}`,
       approve: "Confirmar",
       reject: "Recusar",
       rejectTitle: (table: string) => `Recusar o pedido da mesa ${table}?`,
-      rejectText: "O pedido não vai para a cozinha nem para a conta. O cliente vê que foi recusado.",
+      rejectText:
+        "O pedido não vai para a cozinha nem para a conta. O cliente vê que foi recusado.",
       rejectConfirm: "Recusar pedido",
     },
     calls: {
@@ -473,13 +524,19 @@ export const messages = {
       loading: "Carregando os chamados…",
       loadError: "Não foi possível carregar os chamados. Tentando de novo…",
       table: "Mesa",
-      types: { WAITER: "Chamar garçom", BILL: "Pedir a conta", UNLOCK: "Liberar mesa", RODIZIO: "Quero o rodízio" },
+      types: {
+        WAITER: "Chamar garçom",
+        BILL: "Pedir a conta",
+        UNLOCK: "Liberar mesa",
+        RODIZIO: "Quero o rodízio",
+      },
       activateRodizio: "Ativar rodízio",
       payment: { PIX: "Pix", CARD: "Cartão", CASH: "Dinheiro" },
       waitingFor: (time: string) => `esperando há ${time}`,
       accept: "Aceitar",
       accepting: "Aceitando…",
-      inProgress: (name: string | null | undefined) => `Em atendimento · ${name ?? "equipe"}`,
+      inProgress: (name: string | null | undefined) =>
+        `Em atendimento · ${name ?? "equipe"}`,
       finish: "Concluir",
       finishing: "Concluindo…",
       kitchenOnly: "A cozinha acompanha a fila; quem aceita é o salão.",
@@ -497,7 +554,8 @@ export const messages = {
       reconnecting: "Reconectando…",
       enableSound: "Ativar som",
       soundOn: "Som ligado",
-      soundHint: "O navegador só toca som depois de um toque: ative para ouvir cada chamado novo.",
+      soundHint:
+        "O navegador só toca som depois de um toque: ative para ouvir cada chamado novo.",
       openTv: "Abrir Modo TV",
     },
     logout: "Sair",
@@ -518,14 +576,16 @@ export const messages = {
       remove: (network: string) => `Remover a rede ${network}`,
       useCurrent: "Usar o IP desta rede",
       current: (network: string) => `Você está na rede ${network}.`,
-      currentHint: "Abra esta tela conectado ao Wi-Fi do salão e toque em “Usar o IP desta rede”.",
+      currentHint:
+        "Abra esta tela conectado ao Wi-Fi do salão e toque em “Usar o IP desta rede”.",
       alreadyAdded: "Esta rede já está na lista.",
       add: "Adicionar",
       addLabel: "IP ou faixa (CIDR)",
       addPlaceholder: "189.45.212.18 ou 2804:14c:6a::/64",
       full: "Cadastre até 10 redes.",
       name: "Nome do Wi-Fi para os clientes (opcional)",
-      nameHint: "Aparece para o cliente que não conseguiu confirmar a presença. Nunca coloque a senha.",
+      nameHint:
+        "Aparece para o cliente que não conseguiu confirmar a presença. Nunca coloque a senha.",
     },
     location: {
       title: "Localização",
@@ -533,10 +593,13 @@ export const messages = {
       enable: "Conferir pela localização",
       useHere: "Usar a localização daqui",
       locating: "Pegando a localização…",
-      denied: "Sem permissão para a localização. Libere no navegador ou arraste o pino no mapa.",
+      denied:
+        "Sem permissão para a localização. Libere no navegador ou arraste o pino no mapa.",
       failed: "Não deu para pegar a localização agora. Arraste o pino no mapa.",
-      mapHint: "Arraste o pino (ou toque no mapa) até a entrada do restaurante.",
-      map: (radius: number) => `Mapa com o restaurante e o raio de ${radius} metros`,
+      mapHint:
+        "Arraste o pino (ou toque no mapa) até a entrada do restaurante.",
+      map: (radius: number) =>
+        `Mapa com o restaurante e o raio de ${radius} metros`,
       pin: "Local do restaurante",
       radius: (meters: number) => `Raio: ${meters} m`,
       point: (lat: string, lng: string) => `Ponto: ${lat}, ${lng}`,
@@ -571,7 +634,8 @@ export const messages = {
       enabled: "Pedido pelo celular",
       enabledHint: "Desligado, a mesa só chama o garçom e vê o cardápio.",
       approval: "Garçom confirma todo pedido antes da cozinha",
-      approvalHint: "Desligado (padrão), o pedido vai direto para a fila, salvo os acima dos limites.",
+      approvalHint:
+        "Desligado (padrão), o pedido vai direto para a fila, salvo os acima dos limites.",
       limits: "Limites automáticos",
       limitsHint: "Acima disso, o pedido espera o garçom confirmar.",
       maxAmount: "Valor por pedido",
@@ -586,20 +650,29 @@ export const messages = {
   },
   tabHistory: {
     title: "Comandas",
-    subtitle: "As comandas fechadas, com o que foi cobrado e como a mesa pagou.",
+    subtitle:
+      "As comandas fechadas, com o que foi cobrado e como a mesa pagou.",
     loading: "Carregando…",
     loadError: "Não foi possível carregar o histórico. Tente de novo.",
     period: "Período",
-    presets: { today: "Hoje", yesterday: "Ontem", week: "7 dias", month: "30 dias", custom: "Escolher datas" },
+    presets: {
+      today: "Hoje",
+      yesterday: "Ontem",
+      week: "7 dias",
+      month: "30 dias",
+      custom: "Escolher datas",
+    },
     from: "De",
     to: "Até",
     table: "Mesa",
     allTables: "Todas as mesas",
-    count: (n: number) => (n === 1 ? "1 comanda fechada" : `${n} comandas fechadas`),
+    count: (n: number) =>
+      n === 1 ? "1 comanda fechada" : `${n} comandas fechadas`,
     empty: "Nenhuma comanda fechada no período.",
     tableLabel: (label: string, sector: string) => `Mesa ${label} · ${sector}`,
     tableOption: (label: string) => `Mesa ${label}`,
-    open: (label: string, when: string) => `Comanda da mesa ${label}, fechada em ${when}`,
+    open: (label: string, when: string) =>
+      `Comanda da mesa ${label}, fechada em ${when}`,
     previous: "Anterior",
     next: "Próxima",
     pageOf: (page: number, pages: number) => `Página ${page} de ${pages}`,
@@ -659,7 +732,8 @@ export const messages = {
   },
   team: {
     title: "Equipe e aparelhos",
-    subtitle: "Dono e gerente entram com e-mail. Garçom e cozinha usam PIN num aparelho vinculado.",
+    subtitle:
+      "Dono e gerente entram com e-mail. Garçom e cozinha usam PIN num aparelho vinculado.",
     add: "Adicionar pessoa",
     columns: {
       person: "Pessoa",
@@ -691,10 +765,12 @@ export const messages = {
     reactivate: "Religar",
     reactivating: "Religando…",
     reactivateLabel: (name: string) => `Religar ${name}`,
-    reactivateError: (name: string) => `Não foi possível religar ${name}. Tente de novo em instantes.`,
+    reactivateError: (name: string) =>
+      `Não foi possível religar ${name}. Tente de novo em instantes.`,
     empty: "Ninguém na equipe ainda.",
     loading: "Carregando a equipe…",
-    loadError: "Não foi possível carregar a equipe. Tente de novo em instantes.",
+    loadError:
+      "Não foi possível carregar a equipe. Tente de novo em instantes.",
     noPermission: "Só o dono e o gerente cuidam da equipe.",
     pagination: {
       previous: "Anterior",
@@ -703,9 +779,11 @@ export const messages = {
     },
     form: {
       addTitle: "Adicionar pessoa",
-      addDescription: "A pessoa entra por PIN num aparelho vinculado ao restaurante. Combine o PIN com ela.",
+      addDescription:
+        "A pessoa entra por PIN num aparelho vinculado ao restaurante. Combine o PIN com ela.",
       editTitle: (name: string) => `Editar ${name}`,
-      editDescription: "Mude o papel ou crie um PIN novo. O que ficar em branco não muda.",
+      editDescription:
+        "Mude o papel ou crie um PIN novo. O que ficar em branco não muda.",
       name: "Nome",
       namePlaceholder: "Ex.: Carlos Souza",
       role: "Papel",
@@ -727,7 +805,8 @@ export const messages = {
     },
     confirm: {
       title: (name: string) => `Desligar ${name}?`,
-      description: "A pessoa deixa de entrar no restaurante. O histórico de pedidos e chamados dela continua guardado.",
+      description:
+        "A pessoa deixa de entrar no restaurante. O histórico de pedidos e chamados dela continua guardado.",
       cancel: "Cancelar",
       confirm: "Desligar",
       confirming: "Desligando…",
@@ -759,7 +838,8 @@ export const messages = {
     unlinkLabel: (name: string) => `Desvincular ${name}`,
     confirm: {
       title: (name: string) => `Desvincular ${name}?`,
-      description: "O aparelho deixa de valer para o PIN da equipe. Para usar de novo, é preciso vincular outra vez.",
+      description:
+        "O aparelho deixa de valer para o PIN da equipe. Para usar de novo, é preciso vincular outra vez.",
       cancel: "Cancelar",
       confirm: "Desvincular",
       confirming: "Desvinculando…",
@@ -768,13 +848,15 @@ export const messages = {
       title: "Vincular novo aparelho",
       code: "Código do aparelho",
       codePlaceholder: "6 números",
-      codeHint: "O código aparece no aparelho novo, na tela “Vincular este aparelho”.",
+      codeHint:
+        "O código aparece no aparelho novo, na tela “Vincular este aparelho”.",
       name: "Nome do aparelho",
       namePlaceholder: "Ex.: Celular do salão",
       type: "Para que serve",
       submit: "Vincular",
       submitting: "Vinculando…",
-      success: (name: string) => `${name} vinculado. Ele já deve mostrar que está pronto.`,
+      success: (name: string) =>
+        `${name} vinculado. Ele já deve mostrar que está pronto.`,
     },
     errors: {
       generic: "Não foi possível vincular agora. Tente de novo em instantes.",
@@ -783,7 +865,8 @@ export const messages = {
   },
   pairing: {
     title: "Vincular este aparelho ao restaurante",
-    subtitle: "Por segurança, o login rápido com PIN só funciona em aparelhos autorizados pelo gerente.",
+    subtitle:
+      "Por segurança, o login rápido com PIN só funciona em aparelhos autorizados pelo gerente.",
     codeLabel: "Código deste aparelho",
     codeAria: (code: string) => `Código ${code.split("").join(" ")}`,
     validFor: (time: string) => `Vale por ${time}`,
@@ -804,18 +887,22 @@ export const messages = {
     title: "Quem está entrando?",
     subtitle: "Toque no seu nome e digite o PIN.",
     team: "Equipe",
-    empty: "Ninguém da equipe pode entrar por PIN ainda. Peça ao gerente para cadastrar as pessoas com PIN.",
+    empty:
+      "Ninguém da equipe pode entrar por PIN ainda. Peça ao gerente para cadastrar as pessoas com PIN.",
     loading: "Carregando…",
-    loadError: "Não foi possível carregar a equipe. Tente de novo em instantes.",
+    loadError:
+      "Não foi possível carregar a equipe. Tente de novo em instantes.",
     retry: "Tentar de novo",
-    digits: (count: number) => (count === 1 ? "1 dígito digitado" : `${count} dígitos digitados`),
+    digits: (count: number) =>
+      count === 1 ? "1 dígito digitado" : `${count} dígitos digitados`,
     pickName: "Primeiro, toque no seu nome.",
     keys: {
       forgot: "Esqueci",
       forgotLabel: "Esqueci o PIN",
       backspace: "Apagar",
     },
-    forgotHelp: "Peça ao gerente um PIN novo: no painel, em Equipe e aparelhos, Editar.",
+    forgotHelp:
+      "Peça ao gerente um PIN novo: no painel, em Equipe e aparelhos, Editar.",
     submitting: "Entrando…",
     errors: {
       generic: "Não foi possível entrar agora. Tente de novo em instantes.",
@@ -823,7 +910,8 @@ export const messages = {
   },
   floor: {
     title: "Mesas e QR Codes",
-    subtitle: "Cada mesa tem um QR único. Trocar o QR de uma mesa não afeta as outras.",
+    subtitle:
+      "Cada mesa tem um QR único. Trocar o QR de uma mesa não afeta as outras.",
     newTable: "Nova mesa",
     sectors: "Setores",
     all: "Todas",
@@ -865,12 +953,16 @@ export const messages = {
       qrLoading: "Gerando o QR…",
       qrError: "Não foi possível mostrar o QR agora.",
       downloads: "Baixar",
-      downloadLabel: (format: string, label: string) => `Baixar ${format} da mesa ${label}`,
-      downloadHint: "PNG e SVG: só o QR Code, para a gráfica. PDF: o display pronto para imprimir.",
-      downloadSector: (sector: string) => `Baixar todos do setor ${sector} (PDF)`,
+      downloadLabel: (format: string, label: string) =>
+        `Baixar ${format} da mesa ${label}`,
+      downloadHint:
+        "PNG e SVG: só o QR Code, para a gráfica. PDF: o display pronto para imprimir.",
+      downloadSector: (sector: string) =>
+        `Baixar todos do setor ${sector} (PDF)`,
       downloading: "Preparando o arquivo…",
       edit: "Editar mesa",
-      rotateWarning: "Trocar o QR invalida o display impresso desta mesa. Use se alguém fotografou o código.",
+      rotateWarning:
+        "Trocar o QR invalida o display impresso desta mesa. Use se alguém fotografou o código.",
       rotate: (label: string) => `Trocar QR da mesa ${label}`,
       rotated: "QR trocado. Imprima o display de novo.",
     },
@@ -898,10 +990,12 @@ export const messages = {
     },
     confirm: {
       rotateTitle: (label: string) => `Trocar o QR da mesa ${label}?`,
-      rotateText: "O display impresso desta mesa para de funcionar na hora. Você vai precisar imprimir o novo.",
+      rotateText:
+        "O display impresso desta mesa para de funcionar na hora. Você vai precisar imprimir o novo.",
       rotate: "Trocar QR",
       deactivateSectorTitle: (name: string) => `Desativar o setor ${name}?`,
-      deactivateSectorText: "O setor some da lista. Só dá para desativar um setor sem mesas ativas.",
+      deactivateSectorText:
+        "O setor some da lista. Só dá para desativar um setor sem mesas ativas.",
       deactivate: "Desativar",
     },
     errors: {
@@ -918,9 +1012,11 @@ export const messages = {
     newCategory: "Nova categoria",
     renameCategory: "Renomear categoria",
     deactivateCategory: "Desativar categoria",
-    categoryCount: (count: number) => `${count} ${count === 1 ? "produto" : "produtos"}`,
+    categoryCount: (count: number) =>
+      `${count} ${count === 1 ? "produto" : "produtos"}`,
     loading: "Carregando o cardápio…",
-    loadError: "Não foi possível carregar o cardápio. Tente de novo em instantes.",
+    loadError:
+      "Não foi possível carregar o cardápio. Tente de novo em instantes.",
     start: {
       title: "Comece pelas categorias",
       text: "Categoria é uma aba do cardápio, como Entradas, Pratos quentes ou Bebidas. Depois, cadastre os produtos de cada uma.",
@@ -931,7 +1027,8 @@ export const messages = {
       `${count} ${count === 1 ? "produto encontrado" : "produtos encontrados"} em todas as categorias`,
     emptyCategory: "Nenhum produto nesta categoria ainda.",
     emptySearch: "Nenhum produto com esse nome.",
-    partial: (shown: number, total: number) => `Mostrando ${shown} de ${total}. Use a busca para achar os outros.`,
+    partial: (shown: number, total: number) =>
+      `Mostrando ${shown} de ${total}. Use a busca para achar os outros.`,
     columns: {
       order: "Ordem",
       product: "Produto",
@@ -943,7 +1040,13 @@ export const messages = {
     featured: "Destaque",
     promo: (price: string) => `Promoção ${price}`,
     appears: (aLaCarte: boolean, rodizio: boolean) =>
-      aLaCarte && rodizio ? "À la carte e rodízio" : aLaCarte ? "À la carte" : rodizio ? "Rodízio" : "Nenhum cardápio",
+      aLaCarte && rodizio
+        ? "À la carte e rodízio"
+        : aLaCarte
+          ? "À la carte"
+          : rodizio
+            ? "Rodízio"
+            : "Nenhum cardápio",
     media: (photos: number, videos: number) =>
       photos + videos === 0
         ? "—"
@@ -954,11 +1057,13 @@ export const messages = {
             .filter(Boolean)
             .join(" · "),
     availableLabel: (name: string) => `${name} disponível`,
-    soldOutHint: "Produto indisponível continua no cardápio do cliente como “Esgotado hoje” e não pode ser pedido.",
+    soldOutHint:
+      "Produto indisponível continua no cardápio do cliente como “Esgotado hoje” e não pode ser pedido.",
     reorder: {
       handle: (name: string) => `Mover ${name}`,
       hint: "Arraste pela alça, ou use as setas para cima e para baixo com ela selecionada.",
-      moved: (name: string, position: number, total: number) => `${name}: posição ${position} de ${total}.`,
+      moved: (name: string, position: number, total: number) =>
+        `${name}: posição ${position} de ${total}.`,
       searching: "Limpe a busca para mudar a ordem.",
     },
     categoryForm: {
@@ -971,8 +1076,10 @@ export const messages = {
       saving: "Salvando…",
     },
     confirm: {
-      deactivateCategoryTitle: (name: string) => `Desativar a categoria ${name}?`,
-      deactivateCategoryText: "A categoria some do cardápio. Só dá para desativar uma categoria sem produtos.",
+      deactivateCategoryTitle: (name: string) =>
+        `Desativar a categoria ${name}?`,
+      deactivateCategoryText:
+        "A categoria some do cardápio. Só dá para desativar uma categoria sem produtos.",
       deactivateProductTitle: (name: string) => `Desativar ${name}?`,
       deactivateProductText:
         "O produto sai do cardápio e desta lista. Se só acabou por hoje, use “Disponível hoje” em vez disso.",
@@ -997,14 +1104,16 @@ export const messages = {
       promoHint: "Deixe vazio para tirar a promoção.",
       invalidPrice: "Digite um valor em reais, como 27,90.",
       availableTitle: "Disponível hoje",
-      availableText: "Desligue quando acabar: o cliente vê “Esgotado hoje” e não consegue pedir.",
+      availableText:
+        "Desligue quando acabar: o cliente vê “Esgotado hoje” e não consegue pedir.",
       featuredTitle: "Destaque",
       featuredText: "Aparece em destaque no início do cardápio da mesa.",
       inRodizioTitle: (name: string) => `Incluído no ${name}`,
       inRodizioText: "Aparece sem preço na aba Rodízio.",
       inRodizioPaused: "Rodízio pausado: vale quando ele voltar.",
       aLaCarteTitle: "Aparece no cardápio à la carte",
-      aLaCarteText: "Desligue para um produto só do rodízio: ele fica só na aba Rodízio, sem preço.",
+      aLaCarteText:
+        "Desligue para um produto só do rodízio: ele fica só na aba Rodízio, sem preço.",
       onlyRodizio: "Só no rodízio",
       save: "Salvar",
       create: "Criar produto",
@@ -1019,16 +1128,20 @@ export const messages = {
       loadError: "Não foi possível carregar as fotos.",
       empty: "Nenhuma foto ainda. Produto com foto vende mais.",
       send: "Enviar foto ou vídeo",
-      sendHint: "Fotos JPG ou PNG até 8 MB · vídeos MP4, MOV ou WebM até 60 s e 200 MB (até 3).",
+      sendHint:
+        "Fotos JPG ou PNG até 8 MB · vídeos MP4, MOV ou WebM até 60 s e 200 MB (até 3).",
       drop: "Solte as fotos e vídeos aqui",
       cover: "Capa",
-      alt: (product: string, position: number) => `${product}, foto ${position}`,
+      alt: (product: string, position: number) =>
+        `${product}, foto ${position}`,
       handle: (position: number) => `Mover a foto ${position}`,
       remove: (position: number) => `Remover a foto ${position}`,
-      moved: (position: number, total: number) => `Foto movida para a posição ${position} de ${total}.`,
+      moved: (position: number, total: number) =>
+        `Foto movida para a posição ${position} de ${total}.`,
       sending: (name: string, percent: number) => `${name}: ${percent}%`,
       processing: (name: string) => `${name}: preparando os tamanhos…`,
-      sent: (count: number) => (count === 1 ? "Foto adicionada." : `${count} fotos adicionadas.`),
+      sent: (count: number) =>
+        count === 1 ? "Foto adicionada." : `${count} fotos adicionadas.`,
       wrongType: (name: string) => `${name}: envie uma foto JPG ou PNG.`,
       tooBig: (name: string) => `${name}: a foto precisa ter até 8 MB.`,
       full: (max: number) => `Cada produto pode ter até ${max} fotos.`,
@@ -1037,23 +1150,29 @@ export const messages = {
       confirm: "Remover",
       video: {
         send: "Enviar vídeo",
-        sendHint: "MP4, MOV ou WebM, até 60 segundos e 200 MB. Até 3 por produto.",
+        sendHint:
+          "MP4, MOV ou WebM, até 60 segundos e 200 MB. Até 3 por produto.",
         label: (position: number) => `Vídeo ${position}`,
         handle: (position: number) => `Mover o vídeo ${position}`,
         remove: (position: number) => `Remover o vídeo ${position}`,
         processing: "Convertendo…",
         failed: "Falhou",
-        failedDetail: (position: number, reason: string) => `Vídeo ${position}: ${reason}`,
-        duration: (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`,
-        sending: (name: string, percent: number) => `${name}: ${percent}% enviado`,
+        failedDetail: (position: number, reason: string) =>
+          `Vídeo ${position}: ${reason}`,
+        duration: (seconds: number) =>
+          `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`,
+        sending: (name: string, percent: number) =>
+          `${name}: ${percent}% enviado`,
         sent: "Vídeo enviado. Ele aparece na galeria assim que a conversão terminar.",
-        wrongType: (name: string) => `${name}: envie um vídeo MP4, MOV ou WebM.`,
+        wrongType: (name: string) =>
+          `${name}: envie um vídeo MP4, MOV ou WebM.`,
         tooBig: (name: string) => `${name}: o vídeo precisa ter até 200 MB.`,
         uploadFailed: (name: string, reason: string) =>
           `${name}: o serviço de vídeo não aceitou o envio (${reason}). Tente de novo; se continuar, avise o suporte com esta mensagem.`,
         full: "Cada produto pode ter até 3 vídeos.",
         confirmTitle: (position: number) => `Remover o vídeo ${position}?`,
-        confirmText: "O vídeo sai da galeria do produto e do cardápio, e é apagado do serviço de vídeo.",
+        confirmText:
+          "O vídeo sai da galeria do produto e do cardápio, e é apagado do serviço de vídeo.",
       },
     },
     errors: {
@@ -1065,7 +1184,8 @@ export const messages = {
     title: "Rodízios",
     subtitle: "Cobrança por pessoa na comanda. O cliente pede sem ver preço.",
     loading: "Carregando os rodízios…",
-    loadError: "Não foi possível carregar os rodízios. Tente de novo em instantes.",
+    loadError:
+      "Não foi possível carregar os rodízios. Tente de novo em instantes.",
     listLabel: "Rodízios",
     newRodizio: "Novo rodízio",
     newTitle: "Novo rodízio",
@@ -1079,7 +1199,8 @@ export const messages = {
     reactivate: "Reativar",
     reactivating: "Reativando…",
     status: { active: "Ativo", paused: "Pausado" },
-    pausedNotice: "Pausado: as mesas não podem pedir este rodízio. As regras ficam guardadas para quando ele voltar.",
+    pausedNotice:
+      "Pausado: as mesas não podem pedir este rodízio. As regras ficam guardadas para quando ele voltar.",
     name: "Nome que o cliente vê",
     namePlaceholder: "Ex.: Rodízio Japonês",
     description: "O que está incluído (opcional)",
@@ -1087,8 +1208,14 @@ export const messages = {
     descriptionHint: (used: number, max: number) => `${used} de ${max} letras`,
     type: "Como o pedido funciona",
     types: {
-      A_LA_MINUTE: { title: "À la minute", text: "Rodadas pelo celular → cozinha" },
-      PASSAGEM: { title: "Passagem", text: "Passadores + cartão verde/vermelho" },
+      A_LA_MINUTE: {
+        title: "À la minute",
+        text: "Rodadas pelo celular → cozinha",
+      },
+      PASSAGEM: {
+        title: "Passagem",
+        text: "Passadores + cartão verde/vermelho",
+      },
     },
     prices: {
       title: "Preço por pessoa",
@@ -1108,7 +1235,8 @@ export const messages = {
       to: "Até",
       price: "Preço",
       allDays: "Todos os dias",
-      untilMidnight: "Para passar da meia-noite, crie outro preço especial a partir de 00:00 no dia seguinte.",
+      untilMidnight:
+        "Para passar da meia-noite, crie outro preço especial a partir de 00:00 no dia seguinte.",
     },
     defaultTiers: ["Adulto", "Criança"],
     days: {
@@ -1123,7 +1251,11 @@ export const messages = {
     products: {
       title: "Produtos incluídos",
       count: (n: number) =>
-        n === 0 ? "Nenhum produto escolhido" : n === 1 ? "1 produto incluído" : `${n} produtos incluídos`,
+        n === 0
+          ? "Nenhum produto escolhido"
+          : n === 1
+            ? "1 produto incluído"
+            : `${n} produtos incluídos`,
       choose: "Escolher produtos",
       done: "Pronto",
       search: "Buscar produto",
@@ -1174,7 +1306,8 @@ export const messages = {
         text: "Texto no topo da aba Rodízio",
         placeholder: "Ex.: Sobras são cobradas à parte (R$ 5,00 por peça).",
       },
-      outOfRange: (min: number, max: number) => `Use um número de ${min} a ${max}.`,
+      outOfRange: (min: number, max: number) =>
+        `Use um número de ${min} a ${max}.`,
     },
     confirm: {
       title: (name: string) => `Pausar o ${name}?`,
@@ -1214,14 +1347,16 @@ export const messages = {
     },
     name: "Nome na página da mesa",
     color: "Cor principal",
-    colorHint: "Os tons de texto se ajustam para manter a leitura fácil em qualquer cor.",
+    colorHint:
+      "Os tons de texto se ajustam para manter a leitura fácil em qualquer cor.",
     theme: "Tema",
     themes: { DARK: "Escuro", LIGHT: "Claro" },
     instagram: "Instagram",
     instagramPlaceholder: "sakurasushi.sp",
     review: "Link de avaliação no Google",
     reviewPlaceholder: "https://g.page/r/…/review",
-    reviewHint: "No Google, abra o perfil do restaurante e use “Pedir avaliações”.",
+    reviewHint:
+      "No Google, abra o perfil do restaurante e use “Pedir avaliações”.",
     preview: {
       title: "Prévia ao vivo",
       table: "Mesa 04 · Salão principal",
@@ -1230,6 +1365,7 @@ export const messages = {
       callWaiter: "Chamar garçom",
       askBill: "Pedir a conta",
       menu: "Ver o cardápio",
+      chips: ["Destaques", "Entradas", "Bebidas"],
       follow: (handle: string) => `Siga no Instagram · @${handle}`,
       review: "Avalie no Google",
     },
@@ -1244,10 +1380,16 @@ export const messages = {
     perMonth: "/mês",
     perYear: (value: string) => `ou ${value} por ano`,
     customPricing: "Sob consulta",
-    tables: (n: number | null) => (n === null ? "Mesas ilimitadas" : `Até ${n} mesas`),
-    users: (n: number | null) => (n === null ? "Usuários ilimitados" : `Até ${n} usuários da equipe`),
+    tables: (n: number | null) =>
+      n === null ? "Mesas ilimitadas" : `Até ${n} mesas`,
+    users: (n: number | null) =>
+      n === null ? "Usuários ilimitados" : `Até ${n} usuários da equipe`,
     sectors: (n: number | null) =>
-      n === null ? "Setores ilimitados" : n === 1 ? "1 setor do salão" : `${n} setores do salão`,
+      n === null
+        ? "Setores ilimitados"
+        : n === 1
+          ? "1 setor do salão"
+          : `${n} setores do salão`,
     history: (days: number | null) =>
       days === null
         ? "Histórico ilimitado"
@@ -1295,18 +1437,26 @@ export const messages = {
       PENDING: "Assinatura pendente",
       SUSPENDED: "Suspensa",
     },
-    daysLeft: (days: number) => (days <= 0 ? "acaba hoje" : days === 1 ? "acaba amanhã" : `faltam ${days} dias`),
-    trialUntil: (date: string, left: string) => `Teste grátis até ${date} · ${left}`,
+    daysLeft: (days: number) =>
+      days <= 0
+        ? "acaba hoje"
+        : days === 1
+          ? "acaba amanhã"
+          : `faltam ${days} dias`,
+    trialUntil: (date: string, left: string) =>
+      `Teste grátis até ${date} · ${left}`,
     trialPlan: "Durante o teste, valem os limites do Pro.",
     paidUntil: (date: string) => `Paga até ${date}`,
-    pending: (date: string) => `O período venceu. A mesa continua chamando e pedindo até ${date}; depois disso, para.`,
+    pending: (date: string) =>
+      `O período venceu. A mesa continua chamando e pedindo até ${date}; depois disso, para.`,
     suspended: (date: string) =>
       `Desde ${date}, a mesa não chama nem pede pelo celular. O painel e a gestão continuam abrindo.`,
     usage: "Uso do plano",
     tables: "Mesas ativas",
     users: "Pessoas na equipe",
     sectors: "Setores",
-    of: (used: number, max: number | null) => (max === null ? `${used} · ilimitado` : `${used} de ${max}`),
+    of: (used: number, max: number | null) =>
+      max === null ? `${used} · ilimitado` : `${used} de ${max}`,
     videos: "Vídeos nos pratos",
     videosIncluded: "Incluídos",
     videosNotIncluded: "A partir do Pro",
@@ -1335,7 +1485,8 @@ export const messages = {
           : days === 1
             ? "Seu teste grátis acaba amanhã."
             : `Faltam ${days} dias do seu teste grátis.`,
-      pending: (date: string) => `Assinatura pendente: a mesa funciona até ${date}.`,
+      pending: (date: string) =>
+        `Assinatura pendente: a mesa funciona até ${date}.`,
       suspended: "Assinatura suspensa: a mesa não chama nem pede pelo celular.",
     },
     see: "Ver a assinatura",
@@ -1350,13 +1501,16 @@ export const messages = {
       disable: "Desativar",
       denied:
         "Os avisos estão bloqueados neste aparelho. Libere as notificações deste site nas configurações do navegador.",
-      needsInstall: "No iPhone, os avisos só chegam com o app instalado na tela de início.",
-      unsupported: "Este navegador não recebe avisos. No Android, use o Chrome; no iPhone, instale o app.",
+      needsInstall:
+        "No iPhone, os avisos só chegam com o app instalado na tela de início.",
+      unsupported:
+        "Este navegador não recebe avisos. No Android, use o Chrome; no iPhone, instale o app.",
       error: "Não foi possível ativar os avisos. Tente de novo.",
     },
     install: {
       title: "Instalar o app da equipe",
-      intro: "Com o app na tela de início, o painel abre em tela cheia e recebe os avisos das mesas.",
+      intro:
+        "Com o app na tela de início, o painel abre em tela cheia e recebe os avisos das mesas.",
       installed: "O app já está instalado neste aparelho.",
       button: "Instalar o app",
       android: "No Android (Chrome)",
