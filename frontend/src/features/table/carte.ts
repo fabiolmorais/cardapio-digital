@@ -17,9 +17,7 @@ export function aLaCarte(menu: PublicMenu): PublicMenu["categories"] {
 export function showcase(menu: PublicMenu) {
   const products = aLaCarte(menu).flatMap((c) => c.products);
   const byId = new Map(products.map((p) => [p.id, p]));
-  const mostOrdered = (menu.mostOrdered ?? []).flatMap(
-    (id) => byId.get(id) ?? [],
-  );
+  const mostOrdered = (menu.mostOrdered ?? []).flatMap((id) => byId.get(id) ?? []);
   return mostOrdered.length > 0
     ? { items: mostOrdered, mostOrdered: true }
     : {
