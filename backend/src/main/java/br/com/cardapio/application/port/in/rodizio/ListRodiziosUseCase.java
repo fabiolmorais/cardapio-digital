@@ -8,7 +8,7 @@ import br.com.cardapio.domain.rodizio.model.RodizioId;
 
 public interface ListRodiziosUseCase {
 
-    /** Os rodízios ativos, por nome. */
+    /** Todos os rodízios do cadastro, os ativos primeiro e depois os pausados, por nome. */
     ResultPage<Rodizio> list(EstablishmentId establishmentId, PageQuery page);
 
     Rodizio get(EstablishmentId establishmentId, RodizioId id);

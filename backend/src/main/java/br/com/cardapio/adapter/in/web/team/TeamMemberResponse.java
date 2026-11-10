@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.team.TeamMemberSummary;
 import br.com.cardapio.domain.account.model.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
@@ -13,10 +14,12 @@ record TeamMemberResponse(
         @Schema(requiredMode = REQUIRED) UUID id,
         @Schema(requiredMode = REQUIRED, example = "Carlos Souza") String name,
         @Schema(requiredMode = REQUIRED) Role role,
-        @Schema(requiredMode = REQUIRED, description = "false = desligado do restaurante") boolean active
+        @Schema(requiredMode = REQUIRED, description = "false = desligado do restaurante") boolean active,
+        @Schema(description = "Última entrada ou renovação da sessão neste restaurante; null se nunca entrou")
+        Instant lastAccessAt
 ) {
 
     static TeamMemberResponse from(TeamMemberSummary s) {
-        return new TeamMemberResponse(s.id().value(), s.name(), s.role(), s.active());
+        return new TeamMemberResponse(s.id().value(), s.name(), s.role(), s.active(), s.lastAccessAt());
     }
 }

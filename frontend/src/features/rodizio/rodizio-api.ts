@@ -17,9 +17,9 @@ function failure(response: Response | undefined, error: unknown): Error {
   return new Error(t.generic);
 }
 
-/** Os rodízios ativos, por nome (no máximo 10 por restaurante: uma página basta). */
+/** O cadastro dos rodízios: os ativos (no máximo 10) e depois os pausados, por nome. */
 export async function fetchRodizios(): Promise<Rodizio[]> {
-  const { data, error, response } = await api.GET("/api/v1/rodizios", { params: { query: { page: 0, size: 20 } } });
+  const { data, error, response } = await api.GET("/api/v1/rodizios", { params: { query: { page: 0, size: 100 } } });
   if (data) return data.content;
   throw failure(response, error);
 }
@@ -39,6 +39,23 @@ export async function updateRodizio(id: string, body: RodizioRequest): Promise<R
 export async function deactivateRodizio(id: string): Promise<void> {
   const { error, response } = await api.DELETE("/api/v1/rodizios/{id}", { params: { path: { id } } });
   if (!response.ok) throw failure(response, error);
+}
+
+/** Volta a oferecer o rodízio pausado. */
+export async function reactivateRodizio(id: string): Promise<Rodizio> {
+  const { data, error, response } = await api.POST("/api/v1/rodizios/{id}/reactivate", { params: { path: { id } } });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/** Em quais rodízios o produto fica (a chave "Incluído no rodízio" da tela do produto). */
+export async function setProductRodizios(productId: string, rodizioIds: string[]): Promise<string[]> {
+  const { data, error, response } = await api.PUT("/api/v1/products/{id}/rodizios", {
+    params: { path: { id: productId } },
+    body: { rodizioIds },
+  });
+  if (data) return data.rodizioIds;
+  throw failure(response, error);
 }
 
 export type RodizioQuote = Schemas["RodizioQuote"];

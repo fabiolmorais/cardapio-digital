@@ -5,6 +5,7 @@ import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.media.ProcessedImage;
 import br.com.cardapio.application.port.out.media.ProcessedLogo;
 import br.com.cardapio.application.port.out.media.SignedUpload;
+import br.com.cardapio.application.port.out.menu.MediaCount;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.video.HostedVideo;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
@@ -75,6 +76,19 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
     public int nextPosition(EstablishmentId establishmentId, ProductId productId) {
         return media.values().stream().filter(m -> m.productId().equals(productId))
                 .mapToInt(m -> m.position() + 1).max().orElse(0);
+    }
+
+    @Override
+    public java.util.Map<ProductId, MediaCount> countByProducts(EstablishmentId establishmentId,
+                                                                java.util.Collection<ProductId> productIds) {
+        java.util.Map<ProductId, MediaCount> counts = new java.util.HashMap<>();
+        media.values().stream()
+                .filter(m -> m.establishmentId().equals(establishmentId) && m.active()
+                        && m.status() != MediaStatus.FAILED && productIds.contains(m.productId()))
+                .forEach(m -> counts.merge(m.productId(),
+                        m.isVideo() ? new MediaCount(0, 1) : new MediaCount(1, 0),
+                        (a, b) -> new MediaCount(a.photos() + b.photos(), a.videos() + b.videos())));
+        return counts;
     }
 
     @Override

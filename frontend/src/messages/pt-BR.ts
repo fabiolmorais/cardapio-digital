@@ -219,7 +219,7 @@ export const messages = {
     aside: {
       headline: "O cliente pede pelo celular. A cozinha recebe na hora.",
       perksLabel: "Por que o OhChefe",
-    perks: [
+      perks: [
         "Chamar garçom, pedir a conta e pedido pelo celular em todos os planos",
         "Sem taxa por pedido: você paga só a assinatura",
         "Rodízio com rodadas pelo celular, sem preço por item",
@@ -540,6 +540,15 @@ export const messages = {
       pin: "Local do restaurante",
       radius: (meters: number) => `Raio: ${meters} m`,
       point: (lat: string, lng: string) => `Ponto: ${lat}, ${lng}`,
+      paste: "Link do Google Maps ou coordenadas",
+      pastePlaceholder: "Ex.: -23.55770, -46.63580",
+      pasteHint:
+        "No Google Maps, toque e segure na entrada do restaurante e copie as coordenadas (ou o endereço da página). No computador, a localização do navegador pode errar por quilômetros.",
+      usePasted: "Usar este ponto",
+      pasteInvalid:
+        "Não encontramos coordenadas aqui. Cole os números (ex.: -23.5577, -46.6358) ou o endereço completo do Maps.",
+      pasteShort:
+        "O link curto não traz o ponto. Abra o link, e copie o endereço completo da página ou as coordenadas.",
     },
     session: {
       title: "Sessão da mesa",
@@ -548,7 +557,12 @@ export const messages = {
       option: (minutes: number) => {
         const hours = Math.floor(minutes / 60);
         const rest = minutes % 60;
-        const text = hours === 0 ? `${rest} minutos` : rest === 0 ? `${hours} ${hours === 1 ? "hora" : "horas"}` : `${hours} h ${rest} min`;
+        const text =
+          hours === 0
+            ? `${rest} minutos`
+            : rest === 0
+              ? `${hours} ${hours === 1 ? "hora" : "horas"}`
+              : `${hours} h ${rest} min`;
         return `${text} sem uso`;
       },
     },
@@ -606,7 +620,8 @@ export const messages = {
     title: "Modo TV",
     loading: "Abrindo o Modo TV…",
     startTitle: "Ativar alertas sonoros",
-    startText: "O navegador só toca som depois de um toque na tela. Toque abaixo para ouvir cada chamado novo, com a tela cheia.",
+    startText:
+      "O navegador só toca som depois de um toque na tela. Toque abaixo para ouvir cada chamado novo, com a tela cheia.",
     start: "Ativar som e começar",
     startMuted: "Começar sem som",
     live: "Ao vivo",
@@ -651,7 +666,15 @@ export const messages = {
       role: "Papel",
       access: "Como entra",
       status: "Situação",
+      lastAccess: "Último acesso",
       actions: "Ações",
+    },
+    lastAccess: {
+      never: "—",
+      now: "Agora",
+      today: (time: string) => `Hoje, ${time}`,
+      yesterday: (time: string) => `Ontem, ${time}`,
+      other: (date: string, time: string) => `${date}, ${time}`,
     },
     access: {
       password: "E-mail e senha",
@@ -704,8 +727,7 @@ export const messages = {
     },
     confirm: {
       title: (name: string) => `Desligar ${name}?`,
-      description:
-        "A pessoa deixa de entrar no restaurante. O histórico de pedidos e chamados dela continua guardado.",
+      description: "A pessoa deixa de entrar no restaurante. O histórico de pedidos e chamados dela continua guardado.",
       cancel: "Cancelar",
       confirm: "Desligar",
       confirming: "Desligando…",
@@ -821,7 +843,15 @@ export const messages = {
       table: "Mesa",
       sector: "Setor",
       qr: "QR Code",
+      situation: "Situação agora",
       active: "Ativa",
+    },
+    situation: {
+      FREE: "Livre",
+      OCCUPIED: "Ocupada",
+      RODIZIO: "Rodízio",
+      BILL_REQUESTED: "Conta pedida",
+      INACTIVE: "Desativada",
     },
     tableName: (label: string) => `Mesa ${label}`,
     qrIssued: (date: string) => `Gerado em ${date}`,
@@ -897,7 +927,8 @@ export const messages = {
       action: "Criar a primeira categoria",
     },
     search: "Buscar produto",
-    searchResults: (count: number) => `${count} ${count === 1 ? "produto encontrado" : "produtos encontrados"} em todas as categorias`,
+    searchResults: (count: number) =>
+      `${count} ${count === 1 ? "produto encontrado" : "produtos encontrados"} em todas as categorias`,
     emptyCategory: "Nenhum produto nesta categoria ainda.",
     emptySearch: "Nenhum produto com esse nome.",
     partial: (shown: number, total: number) => `Mostrando ${shown} de ${total}. Use a busca para achar os outros.`,
@@ -905,10 +936,23 @@ export const messages = {
       order: "Ordem",
       product: "Produto",
       price: "Preço",
+      appears: "Aparece em",
+      media: "Mídia",
       available: "Disponível",
     },
     featured: "Destaque",
     promo: (price: string) => `Promoção ${price}`,
+    appears: (aLaCarte: boolean, rodizio: boolean) =>
+      aLaCarte && rodizio ? "À la carte e rodízio" : aLaCarte ? "À la carte" : rodizio ? "Rodízio" : "Nenhum cardápio",
+    media: (photos: number, videos: number) =>
+      photos + videos === 0
+        ? "—"
+        : [
+            photos ? `${photos} ${photos === 1 ? "foto" : "fotos"}` : "",
+            videos ? `${videos} ${videos === 1 ? "vídeo" : "vídeos"}` : "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
     availableLabel: (name: string) => `${name} disponível`,
     soldOutHint: "Produto indisponível continua no cardápio do cliente como “Esgotado hoje” e não pode ser pedido.",
     reorder: {
@@ -943,7 +987,8 @@ export const messages = {
       name: "Nome",
       namePlaceholder: "Ex.: Hot roll da casa",
       description: "Descrição",
-      descriptionHint: (length: number, max: number) => `Aparece no cardápio, abaixo do nome. ${length} de ${max} caracteres.`,
+      descriptionHint: (length: number, max: number) =>
+        `Aparece no cardápio, abaixo do nome. ${length} de ${max} caracteres.`,
       category: "Categoria",
       price: "Preço",
       promoPrice: "Preço promocional",
@@ -955,6 +1000,9 @@ export const messages = {
       availableText: "Desligue quando acabar: o cliente vê “Esgotado hoje” e não consegue pedir.",
       featuredTitle: "Destaque",
       featuredText: "Aparece em destaque no início do cardápio da mesa.",
+      inRodizioTitle: (name: string) => `Incluído no ${name}`,
+      inRodizioText: "Aparece sem preço na aba Rodízio.",
+      inRodizioPaused: "Rodízio pausado: vale quando ele voltar.",
       aLaCarteTitle: "Aparece no cardápio à la carte",
       aLaCarteText: "Desligue para um produto só do rodízio: ele fica só na aba Rodízio, sem preço.",
       onlyRodizio: "Só no rodízio",
@@ -970,9 +1018,9 @@ export const messages = {
       loading: "Carregando as fotos…",
       loadError: "Não foi possível carregar as fotos.",
       empty: "Nenhuma foto ainda. Produto com foto vende mais.",
-      send: "Enviar foto",
-      sendHint: "JPG ou PNG, até 8 MB. Dá para escolher várias.",
-      drop: "Solte as fotos aqui",
+      send: "Enviar foto ou vídeo",
+      sendHint: "Fotos JPG ou PNG até 8 MB · vídeos MP4, MOV ou WebM até 60 s e 200 MB (até 3).",
+      drop: "Solte as fotos e vídeos aqui",
       cover: "Capa",
       alt: (product: string, position: number) => `${product}, foto ${position}`,
       handle: (position: number) => `Mover a foto ${position}`,
@@ -1027,7 +1075,11 @@ export const messages = {
     create: "Criar rodízio",
     saving: "Salvando…",
     saved: "Rodízio salvo.",
-    deactivate: "Desativar",
+    deactivate: "Pausar",
+    reactivate: "Reativar",
+    reactivating: "Reativando…",
+    status: { active: "Ativo", paused: "Pausado" },
+    pausedNotice: "Pausado: as mesas não podem pedir este rodízio. As regras ficam guardadas para quando ele voltar.",
     name: "Nome que o cliente vê",
     namePlaceholder: "Ex.: Rodízio Japonês",
     description: "O que está incluído (opcional)",
@@ -1125,9 +1177,9 @@ export const messages = {
       outOfRange: (min: number, max: number) => `Use um número de ${min} a ${max}.`,
     },
     confirm: {
-      title: (name: string) => `Desativar o ${name}?`,
-      text: "Ele sai da lista e não pode mais ser ativado nas mesas. As mesas que já estão nele continuam até a conta.",
-      action: "Desativar",
+      title: (name: string) => `Pausar o ${name}?`,
+      text: "Ele fica na lista como pausado e não pode ser ativado nas mesas até você reativar. As mesas que já estão nele continuam até a conta.",
+      action: "Pausar",
     },
     errors: {
       generic: "Não foi possível salvar. Tente de novo em instantes.",
@@ -1193,12 +1245,15 @@ export const messages = {
     perYear: (value: string) => `ou ${value} por ano`,
     customPricing: "Sob consulta",
     tables: (n: number | null) => (n === null ? "Mesas ilimitadas" : `Até ${n} mesas`),
-    users: (n: number | null) =>
-      n === null ? "Usuários ilimitados" : `Até ${n} usuários da equipe`,
+    users: (n: number | null) => (n === null ? "Usuários ilimitados" : `Até ${n} usuários da equipe`),
     sectors: (n: number | null) =>
       n === null ? "Setores ilimitados" : n === 1 ? "1 setor do salão" : `${n} setores do salão`,
     history: (days: number | null) =>
-      days === null ? "Histórico ilimitado" : days >= 365 ? `Histórico de ${Math.round(days / 30)} meses` : `Histórico de ${days} dias`,
+      days === null
+        ? "Histórico ilimitado"
+        : days >= 365
+          ? `Histórico de ${Math.round(days / 30)} meses`
+          : `Histórico de ${days} dias`,
     included: "Chamar garçom, pedido pelo celular e comanda",
     features: {
       PRODUCT_VIDEOS: "Vídeos nos pratos",
@@ -1216,6 +1271,19 @@ export const messages = {
     },
   },
   subscription: {
+    meter: {
+      plan: (name: string) => `Plano ${name}`,
+      users: "Usuários no plano",
+      count: (kind: "tables" | "users", used: number, max: number) =>
+        kind === "tables" ? `${used} de ${max} mesas` : `${used} de ${max}`,
+      tablesLabel: "Mesas usadas no plano",
+      usersLabel: "Usuários usados no plano",
+      limit: (kind: "tables" | "users", max: number, plan: string) =>
+        kind === "tables"
+          ? `Você chegou ao limite de ${max} mesas do plano ${plan}. Para criar outra, desative uma mesa ou`
+          : `Você chegou ao limite de ${max} usuários do plano ${plan}. Para adicionar mais gente, desligue alguém ou`,
+      changePlan: "mude de plano.",
+    },
     title: "Assinatura",
     subtitle: "O plano do restaurante, o teste grátis e os limites.",
     loading: "Carregando a assinatura…",
@@ -1231,8 +1299,7 @@ export const messages = {
     trialUntil: (date: string, left: string) => `Teste grátis até ${date} · ${left}`,
     trialPlan: "Durante o teste, valem os limites do Pro.",
     paidUntil: (date: string) => `Paga até ${date}`,
-    pending: (date: string) =>
-      `O período venceu. A mesa continua chamando e pedindo até ${date}; depois disso, para.`,
+    pending: (date: string) => `O período venceu. A mesa continua chamando e pedindo até ${date}; depois disso, para.`,
     suspended: (date: string) =>
       `Desde ${date}, a mesa não chama nem pede pelo celular. O painel e a gestão continuam abrindo.`,
     usage: "Uso do plano",
@@ -1244,7 +1311,8 @@ export const messages = {
     videosIncluded: "Incluídos",
     videosNotIncluded: "A partir do Pro",
     choose: "Assinar ou mudar de plano",
-    chooseHint: "Escolha o plano e o ciclo. O pagamento é combinado com a gente; o plano passa a valer quando ele for confirmado.",
+    chooseHint:
+      "Escolha o plano e o ciclo. O pagamento é combinado com a gente; o plano passa a valer quando ele for confirmado.",
     cycles: { MONTHLY: "Mensal", ANNUAL: "Anual (2 meses grátis)" },
     cycleNames: { MONTHLY: "mensal", ANNUAL: "anual" },
     cycleLabel: "Ciclo de cobrança",
@@ -1262,7 +1330,11 @@ export const messages = {
     pickError: "Não foi possível salvar a escolha. Tente de novo.",
     banner: {
       trialEnding: (days: number) =>
-        days <= 0 ? "Seu teste grátis acaba hoje." : days === 1 ? "Seu teste grátis acaba amanhã." : `Faltam ${days} dias do seu teste grátis.`,
+        days <= 0
+          ? "Seu teste grátis acaba hoje."
+          : days === 1
+            ? "Seu teste grátis acaba amanhã."
+            : `Faltam ${days} dias do seu teste grátis.`,
       pending: (date: string) => `Assinatura pendente: a mesa funciona até ${date}.`,
       suspended: "Assinatura suspensa: a mesa não chama nem pede pelo celular.",
     },
@@ -1276,7 +1348,8 @@ export const messages = {
       enabling: "Ativando…",
       on: "Os avisos estão ligados neste aparelho.",
       disable: "Desativar",
-      denied: "Os avisos estão bloqueados neste aparelho. Libere as notificações deste site nas configurações do navegador.",
+      denied:
+        "Os avisos estão bloqueados neste aparelho. Libere as notificações deste site nas configurações do navegador.",
       needsInstall: "No iPhone, os avisos só chegam com o app instalado na tela de início.",
       unsupported: "Este navegador não recebe avisos. No Android, use o Chrome; no iPhone, instale o app.",
       error: "Não foi possível ativar os avisos. Tente de novo.",

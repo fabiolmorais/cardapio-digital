@@ -34,6 +34,21 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
     @Query(ACTIVE_MEMBERSHIP + " and e.id = :establishmentId")
     Optional<ActiveMembershipRow> findActive(@Param("userId") UUID userId, @Param("establishmentId") UUID establishmentId);
 
+    String TEAM_MEMBER_WITH_ACCESS = """
+            SELECT  m.id as id,
+                    m.userId as userId,
+                    m.establishmentId as establishmentId,
+                    m.role as role,
+                    m.pinHash as pinHash,
+                    m.active as active,
+                    u.name as name,
+                    (SELECT max(r.createdAt) FROM RefreshTokenJpaEntity r
+                      WHERE r.userId = m.userId AND r.establishmentId = m.establishmentId) as lastAccessAt
+            FROM MembershipJpaEntity m
+            JOIN UserJpaEntity u ON u.id = m.userId
+            WHERE m.establishmentId = :establishmentId
+            """;
+
     /** Vínculo + nome da pessoa numa consulta só (sem N+1). */
     String TEAM_MEMBER = """
             SELECT  m.id as id,
@@ -48,10 +63,13 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
             WHERE m.establishmentId = :establishmentId
             """;
 
-    /** Ativos primeiro, depois por nome; o id desempata para a paginação ficar estável. */
-    @Query(value = TEAM_MEMBER + " ORDER BY m.active DESC, lower(u.name), m.id",
+    /**
+     * Ativos primeiro, depois por nome; o id desempata para a paginação ficar estável. O último
+     * acesso é a sessão mais nova (login ou renovação) da pessoa neste restaurante.
+     */
+    @Query(value = TEAM_MEMBER_WITH_ACCESS + " ORDER BY m.active DESC, lower(u.name), m.id",
             countQuery = "SELECT count(m) FROM MembershipJpaEntity m WHERE m.establishmentId = :establishmentId")
-    Page<TeamMemberRow> findTeam(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+    Page<TeamMemberAccessRow> findTeam(@Param("establishmentId") UUID establishmentId, Pageable pageable);
 
     /** Quem pode entrar por PIN: ativos e que não são o dono. */
     @Query(value = TEAM_MEMBER + " AND m.active = true AND m.role <> 'OWNER' ORDER BY lower(u.name), m.id",

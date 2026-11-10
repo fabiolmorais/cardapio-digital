@@ -2,12 +2,12 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
+import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import {
@@ -27,6 +27,7 @@ import {
   type Sector,
 } from "./floor-api";
 import { ErrorText } from "@/features/subscription/error-text";
+import { PlanLimitBanner, PlanMeter } from "@/features/subscription/plan-meter";
 import { SectorFormDialog, TableFormDialog } from "./floor-dialogs";
 
 const t = messages.floor;
@@ -50,6 +51,15 @@ export function FloorManager() {
   const sectors = useQuery({ queryKey: ["sectors"], queryFn: fetchSectors, enabled: allowed });
   const tables = useQuery({ queryKey: ["tables"], queryFn: fetchTables, enabled: allowed });
 
+  // "Situação agora": chamado, pedido ou comanda mexeu, a lista busca as mesas de novo.
+  useEffect(() => {
+    if (!allowed) return;
+    return subscribeStaffEvents(
+      () => void queryClient.invalidateQueries({ queryKey: ["tables"] }),
+      () => {},
+    );
+  }, [allowed, queryClient]);
+
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -60,6 +70,8 @@ export function FloorManager() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["sectors"] }),
       queryClient.invalidateQueries({ queryKey: ["tables"] }),
+      // O uso do plano (o medidor "18 de 20 mesas") muda junto.
+      queryClient.invalidateQueries({ queryKey: ["subscription"] }),
     ]);
   }
   const close = (open: boolean) => !open && setDialog(null);
@@ -101,6 +113,11 @@ export function FloorManager() {
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
+        <PlanMeter
+          kind="tables"
+          role={session.establishment.role}
+          used={tableList.filter((table) => table.active).length}
+        />
         {sectorList.length > 0 && (
           <Button size="xl" onClick={() => setDialog({ kind: "new-table" })}>
             <Plus aria-hidden />
@@ -108,6 +125,8 @@ export function FloorManager() {
           </Button>
         )}
       </header>
+
+      <PlanLimitBanner kind="tables" role={session.establishment.role} />
 
       {notice && (
         <p role="status" className="text-sm text-success">
@@ -167,7 +186,7 @@ export function FloorManager() {
 
             {/* relative: o texto sr-only (absolute) fica dentro da caixa com rolagem (ver a tela da equipe). */}
             <div className="relative overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full min-w-[560px] border-collapse text-sm">
+              <table className="w-full min-w-[680px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
                     <th scope="col" className="px-4 py-3 font-semibold">
@@ -180,6 +199,9 @@ export function FloorManager() {
                       {t.columns.qr}
                     </th>
                     <th scope="col" className="px-4 py-3 font-semibold">
+                      {t.columns.situation}
+                    </th>
+                    <th scope="col" className="px-4 py-3 font-semibold">
                       {t.columns.active}
                     </th>
                   </tr>
@@ -187,7 +209,7 @@ export function FloorManager() {
                 <tbody>
                   {visible.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-6 text-muted-foreground">
+                      <td colSpan={5} className="px-4 py-6 text-muted-foreground">
                         {t.emptyTables}
                       </td>
                     </tr>
@@ -214,6 +236,9 @@ export function FloorManager() {
                       <td className="px-4 py-3 text-muted-foreground">{sectorName.get(table.sectorId) ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {t.qrIssued(day.format(new Date(table.tokenIssuedAt)))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <SituationBadge situation={table.situation} />
                       </td>
                       <td className="px-4 py-2">
                         <ActiveSwitch
@@ -404,9 +429,14 @@ function TablePanel({
     >
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{t.tableName(table.label)}</h2>
-        <Badge variant={table.active ? "secondary" : "outline"}>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            table.active ? "bg-success/15 text-success" : "border border-border text-muted-foreground",
+          )}
+        >
           {table.active ? t.panel.qrActive : t.panel.inactive}
-        </Badge>
+        </span>
       </div>
 
       {/* Prévia do display impresso (o PDF sai igual a isto). */}
@@ -478,5 +508,28 @@ function TablePanel({
         {t.panel.rotate(table.label)}
       </Button>
     </aside>
+  );
+}
+
+/** "Situação agora": um selo com ponto, nas cores do desenho 12.1. */
+const SITUATION_STYLE: Record<DiningTable["situation"], string> = {
+  FREE: "bg-success/15 text-success",
+  OCCUPIED: "bg-muted text-foreground",
+  RODIZIO: "bg-primary/15 text-brand-text",
+  BILL_REQUESTED: "bg-sky-400/15 text-sky-300",
+  INACTIVE: "bg-destructive/15 text-destructive",
+};
+
+function SituationBadge({ situation }: { situation: DiningTable["situation"] }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold",
+        SITUATION_STYLE[situation],
+      )}
+    >
+      <span aria-hidden className="size-1.5 rounded-full bg-current" />
+      {t.situation[situation]}
+    </span>
   );
 }

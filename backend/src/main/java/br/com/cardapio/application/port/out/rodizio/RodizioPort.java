@@ -18,6 +18,9 @@ public interface RodizioPort {
     /** Os rodízios ativos, por nome. */
     ResultPage<Rodizio> findActive(EstablishmentId establishmentId, PageQuery page);
 
+    /** O cadastro inteiro: os ativos primeiro, depois os pausados, por nome. */
+    ResultPage<Rodizio> findAll(EstablishmentId establishmentId, PageQuery page);
+
     long countActive(EstablishmentId establishmentId);
 
     /** Já existe um rodízio ativo com este nome (sem contar o exceptId, que é o que está sendo editado)? */

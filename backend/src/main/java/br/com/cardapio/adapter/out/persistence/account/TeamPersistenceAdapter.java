@@ -37,9 +37,9 @@ class TeamPersistenceAdapter implements TeamMemberPort {
     @Override
     public ResultPage<TeamMember> findTeam(EstablishmentId establishmentId, PageQuery page) {
         establishmentFilter.enable(establishmentId);
-        Page<TeamMemberRow> rows = memberships.findTeam(establishmentId.value(),
+        Page<TeamMemberAccessRow> rows = memberships.findTeam(establishmentId.value(),
                 PageRequest.of(page.page(), page.size()));
-        return new ResultPage<>(rows.map(AccountPersistenceMapper::toDomain).getContent(),
+        return new ResultPage<>(rows.map(row -> AccountPersistenceMapper.toDomain(row)).getContent(),
                 page.page(), page.size(), rows.getTotalElements());
     }
 

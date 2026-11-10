@@ -39,6 +39,11 @@ final class AccountPersistenceMapper {
                 e.isActive());
     }
 
+    static TeamMember toDomain(TeamMemberAccessRow row) {
+        TeamMember member = toDomain((TeamMemberRow) row);
+        return new TeamMember(member.membership(), member.name(), row.getLastAccessAt());
+    }
+
     static TeamMember toDomain(TeamMemberRow row) {
         Membership membership = new Membership(new MembershipId(row.getId()), new UserId(row.getUserId()),
                 new EstablishmentId(row.getEstablishmentId()), Role.valueOf(row.getRole()),

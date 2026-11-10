@@ -4,7195 +4,7336 @@
  */
 
 export interface paths {
-    "/api/v1/tables/{tableId}/rodizio/guests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Ajusta as pessoas do rodízio da mesa (até a conta) */
-        put: operations["changeRodizioGuests"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/subscription/plan-request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Escolhe o plano e o ciclo (vale depois do pagamento) */
-        put: operations["requestPlan"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/rodizios/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Um rodízio, com as faixas, os preços e os produtos */
-        get: operations["getRodizio"];
-        /** Troca o rodízio inteiro (faixas, preços, produtos, regras) */
-        put: operations["updateRodizio"];
-        post?: never;
-        /** Desativa o rodízio (o cadastro fica) */
-        delete: operations["deactivateRodizio"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/rodizio/card": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Vira o cartão do rodízio de passagem: verde (pode servir) ou vermelho (pausa) */
-        put: operations["turnRodizioCard"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{productId}/media-order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Nova ordem das fotos (todas, a primeira vira a capa) */
-        put: operations["reorderProductMedia"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Um produto, para a tela de edição */
-        get: operations["getProduct"];
-        /** Salva o formulário do produto (todos os campos; promoção vazia apaga a promoção) */
-        put: operations["updateProduct"];
-        post?: never;
-        /** Tira o produto do cardápio (o registro fica) */
-        delete: operations["deactivateProduct"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/presence-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A configuração de presença (vazia se nunca configurada) */
-        get: operations["getPresenceRule"];
-        /** Troca a configuração de presença inteira */
-        put: operations["updatePresenceRule"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As configurações de pedido (os padrões, se nunca mudadas) */
-        get: operations["getOrderSettings"];
-        /** Troca as configurações de pedido */
-        put: operations["updateOrderSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/menu-categories/{id}/product-order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Nova ordem dos produtos da categoria (todos os ativos, do primeiro ao último) */
-        put: operations["reorderProducts"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/menu-categories/order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Nova ordem das categorias (todas as ativas, da primeira à última) */
-        put: operations["reorderMenuCategories"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/establishment/brand": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A marca do restaurante e a paleta de cores */
-        get: operations["getBrand"];
-        /** Salva nome, cor, tema, Instagram e link de avaliação */
-        put: operations["updateBrand"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/team-members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Lista a equipe (ativos primeiro, depois por nome) */
-        get: operations["listTeamMembers"];
-        put?: never;
-        /** Cadastra uma pessoa na equipe */
-        post: operations["addTeamMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/team-members/{id}/reactivation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Religa uma pessoa desligada da equipe */
-        post: operations["reactivateTeamMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tabs/{id}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Fecha a comanda depois do pagamento: a mesa fica livre e os celulares saem */
-        post: operations["closeTab"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tables": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Mesas do restaurante (ou de um setor), ativas primeiro */
-        get: operations["listTables"];
-        put?: never;
-        /** Cria uma mesa num setor, já com o token do QR */
-        post: operations["createTable"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tables/{tableId}/rodizio": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Ativa o rodízio na mesa com as pessoas por faixa (abre a comanda, se preciso) */
-        post: operations["activateRodizio"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tables/{id}/token-rotation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Troca o QR da mesa: token novo, e o display impresso com o antigo para de funcionar */
-        post: operations["rotateTableToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/signup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cria a conta do restaurante (teste grátis) */
-        post: operations["signup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sectors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Setores ativos, na ordem de exibição, com a contagem de mesas */
-        get: operations["listSectors"];
-        put?: never;
-        /** Cria um setor (entra no fim da lista) */
-        post: operations["createSector"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/rodizios": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os rodízios ativos, por nome */
-        get: operations["listRodizios"];
-        put?: never;
-        /** Cria um rodízio */
-        post: operations["createRodizio"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/push/subscriptions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Inscreve este navegador nas notificações */
-        post: operations["subscribePush"];
-        /** Tira este navegador das notificações (ao sair, por exemplo) */
-        delete: operations["unsubscribePush"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Abre a sessão deste celular na mesa (ou renova a que ele já tem), no cookie table_session */
-        post: operations["startTableSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/rounds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Envia uma rodada do rodízio: os itens incluídos vão para a cozinha a preço zero */
-        post: operations["sendRound"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/presence": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confere se o celular está no salão: pela rede e, se vier, pela localização */
-        post: operations["checkPresence"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/orders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os pedidos da comanda aberta da mesa (de todos os celulares) e o total parcial */
-        get: operations["listTableOrders"];
-        put?: never;
-        /** Envia o carrinho: abre a comanda no primeiro pedido da mesa */
-        post: operations["placeOrder"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/calls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os chamados abertos da mesa (no máximo um de cada tipo) */
-        get: operations["listTableCalls"];
-        put?: never;
-        /** Chama o garçom ou pede a conta */
-        post: operations["requestCall"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Produtos ativos na ordem do cardápio, de uma categoria ou de todas, com busca pelo nome */
-        get: operations["listProducts"];
-        put?: never;
-        /** Cria um produto (entra no fim da categoria) */
-        post: operations["createProduct"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{productId}/videos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cria o vídeo (em conversão, no fim da galeria) e devolve como enviar o arquivo por TUS */
-        post: operations["startVideoUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{productId}/media": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As fotos e os vídeos do produto, na ordem (a primeira foto é a capa) */
-        get: operations["listProductMedia"];
-        put?: never;
-        /** Passo 2: o arquivo já foi enviado; confere a foto, gera os 3 tamanhos e a põe na galeria */
-        post: operations["addProductMedia"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{productId}/media/uploads": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Passo 1: pede a URL assinada para enviar uma foto */
-        post: operations["startMediaUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/print-jobs/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Pega a comanda para imprimir: os itens saem marcados como impressos e só esta estação os recebe */
-        post: operations["claimPrintJob"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/orders/{id}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Recusa: o pedido não vai para a cozinha nem para a conta */
-        post: operations["rejectOrder"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/orders/{id}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirma: o pedido vai para a cozinha */
-        post: operations["approveOrder"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-items/{id}/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Em preparo: a cozinha começou */
-        post: operations["startOrderItem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-items/{id}/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Pronto: saindo da cozinha (da fila ou do preparo) */
-        post: operations["readyOrderItem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-items/{id}/deliver": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Entregue: chegou à mesa */
-        post: operations["deliverOrderItem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-items/{id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancela o item, com o motivo que o cliente vê */
-        post: operations["cancelOrderItemByStaff"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/menu-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Categorias ativas, na ordem do cardápio, com a contagem de produtos */
-        get: operations["listMenuCategories"];
-        put?: never;
-        /** Cria uma categoria (entra no fim do cardápio) */
-        post: operations["createMenuCategory"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/establishment/logo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Passo 2: o arquivo já foi enviado; confere e troca a logo */
-        post: operations["setLogo"];
-        /** Tira a logo (a página volta a mostrar as iniciais) */
-        delete: operations["removeLogo"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/establishment/logo/uploads": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Passo 1: pede a URL assinada para enviar a logo */
-        post: operations["startLogoUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/devices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Aparelhos vinculados ao restaurante, por nome */
-        get: operations["listDevices"];
-        put?: never;
-        /** Vincula o aparelho cujo código aparece na tela dele */
-        post: operations["linkDevice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/device-pairings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Abre um pedido de vínculo e devolve o código para a tela */
-        post: operations["startDevicePairing"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/device-pairings/{id}/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** O aparelho pergunta se já foi vinculado; se sim, recebe o token no cookie device_token */
-        post: operations["claimDevicePairing"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calls/{id}/finish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Atendido: o chamado sai da fila */
-        post: operations["finishCall"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calls/{id}/decline": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Recusa um pedido de liberação: o celular não está no salão */
-        post: operations["declineCall"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calls/{id}/block-caller": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bloqueia o celular que abriu este chamado (um trote): ele não chama mais nesta visita */
-        post: operations["blockCaller"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calls/{id}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** "Estou indo": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa */
-        post: operations["acceptCall"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Troca o refresh token do cookie por um token de acesso novo */
-        post: operations["refreshSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/pin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Entra com PIN num aparelho vinculado (cookie device_token); devolve a mesma sessão do login */
-        post: operations["pinLogin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/password-reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Manda o link para redefinir a senha, se houver conta com este e-mail */
-        post: operations["requestPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/password-reset/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Troca a senha com o token do link e encerra as sessões */
-        post: operations["confirmPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Encerra a sessão e apaga o cookie do refresh token */
-        post: operations["logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Entra com e-mail e senha; devolve o token de acesso e grava o refresh token num cookie HttpOnly */
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/team-members/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Uma pessoa da equipe */
-        get: operations["getTeamMember"];
-        put?: never;
-        post?: never;
-        /** Desliga uma pessoa da equipe (o registro fica, para o histórico) */
-        delete: operations["deactivateTeamMember"];
-        options?: never;
-        head?: never;
-        /** Muda o papel e/ou o PIN de uma pessoa da equipe */
-        patch: operations["updateTeamMember"];
-        trace?: never;
-    };
-    "/api/v1/tables/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Renomeia, muda de setor, ativa ou desativa a mesa */
-        patch: operations["updateTable"];
-        trace?: never;
-    };
-    "/api/v1/sectors/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Desativa o setor (precisa estar sem mesas ativas) */
-        delete: operations["deactivateSector"];
-        options?: never;
-        head?: never;
-        /** Renomeia o setor */
-        patch: operations["renameSector"];
-        trace?: never;
-    };
-    "/api/v1/products/{id}/availability": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Disponível ou "Esgotado hoje" */
-        patch: operations["changeProductAvailability"];
-        trace?: never;
-    };
-    "/api/v1/menu-categories/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Desativa a categoria (precisa estar sem produtos) */
-        delete: operations["deactivateMenuCategory"];
-        options?: never;
-        head?: never;
-        /** Renomeia a categoria */
-        patch: operations["renameMenuCategory"];
-        trace?: never;
-    };
-    "/api/v1/tabs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** O histórico: as comandas fechadas no período (dias do restaurante), da mais nova à mais antiga */
-        get: operations["listClosedTabs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tabs/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Uma comanda com todos os pedidos (aberta ou fechada) */
-        get: operations["getTab"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tabs/open": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As comandas abertas, com o total e os itens a caminho, da mais antiga à mais nova */
-        get: operations["listOpenTabs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tables/{id}/display": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Baixa o QR Code (PNG ou SVG) ou o display pronto para imprimir (PDF) da mesa */
-        get: operations["downloadTableDisplay"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/subscription": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A assinatura deste restaurante, com o uso dos limites */
-        get: operations["getSubscription"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sectors/{id}/displays": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** PDF com o display de cada mesa ativa do setor */
-        get: operations["downloadSectorDisplays"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/rodizio-quotes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os rodízios ativos com o preço de cada faixa agora */
-        get: operations["quoteRodizios"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/push/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Se o push está ligado, e a chave pública VAPID */
-        get: operations["pushSettings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A mesa do QR Code: restaurante (com a marca), número e setor */
-        get: operations["getPublicTable"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/rodizios": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os rodízios do restaurante, com o preço de agora */
-        get: operations["listTableRodizios"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/menu": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** O cardápio do restaurante da mesa: categorias com produtos, preços e a foto de capa */
-        get: operations["getPublicMenu"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Avisos da mesa em tempo real: "ready" ao conectar, "call" quando um chamado dela muda */
-        get: operations["streamTableEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/print-jobs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As comandas que ainda não saíram na impressora, da mais antiga à mais nova */
-        get: operations["listPendingPrintJobs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/print-jobs/printed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As comandas impressas nas últimas 12 horas, da mais recente para a mais antiga (para reimprimir) */
-        get: operations["listPrintedJobs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Lista os planos de assinatura
-         * @description Público, sem autenticação. Retorna os planos ativos na ordem de exibição. Preços em centavos; campos nulos significam "sob consulta" (preço) ou "ilimitado" (limites).
-         */
-        get: operations["listPlans"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/passagem-tables": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** As mesas abertas no rodízio de passagem, as de cartão vermelho primeiro */
-        get: operations["listPassagemTables"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/passagem-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os cortes pedidos no rodízio de passagem, ainda a caminho, do mais antigo ao mais novo */
-        get: operations["listPassagemRequests"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/orders/awaiting-approval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os pedidos esperando a confirmação do garçom, do mais antigo ao mais novo */
-        get: operations["listWaitingOrders"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/order-items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Os itens a caminho dos pedidos que foram para a cozinha, do mais antigo ao mais novo */
-        get: operations["listKitchenQueue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Dados de quem está logado */
-        get: operations["getMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Avisos do restaurante em tempo real: "ready" ao conectar, "call" quando um chamado muda */
-        get: operations["streamStaffEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Chamados abertos, do mais antigo para o mais novo */
-        get: operations["listCallQueue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/device": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Este aparelho e o restaurante dele */
-        get: operations["getCurrentDevice"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/device/tv/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Avisos do restaurante na TV vinculada (sem login): "ready" e "call", como os da equipe */
-        get: operations["streamTvEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/device/tv/calls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A fila de chamados na TV vinculada (sem login, pelo cookie) */
-        get: operations["listTvCallQueue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/device/team-members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Quem pode entrar por PIN neste aparelho, por nome */
-        get: operations["listPinMembers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/order-items/{itemId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** O cliente cancela um item que ele pediu, enquanto está na fila */
-        delete: operations["cancelOrderItem"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/calls/{callId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Cancela um chamado aberto da mesa ("já resolvi") */
-        delete: operations["cancelCall"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/products/{productId}/media/{mediaId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Tira a foto da galeria */
-        delete: operations["removeProductMedia"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/devices/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Desvincula o aparelho; o token dele deixa de valer */
-        delete: operations["unlinkDevice"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  "/api/v1/tables/{tableId}/rodizio/guests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Ajusta as pessoas do rodízio da mesa (até a conta) */
+    put: operations["changeRodizioGuests"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/subscription/plan-request": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Escolhe o plano e o ciclo (vale depois do pagamento) */
+    put: operations["requestPlan"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/rodizios/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Um rodízio, com as faixas, os preços e os produtos */
+    get: operations["getRodizio"];
+    /** Troca o rodízio inteiro (faixas, preços, produtos, regras) */
+    put: operations["updateRodizio"];
+    post?: never;
+    /** Pausa o rodízio (o cadastro fica, para reativar) */
+    delete: operations["deactivateRodizio"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/rodizio/card": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Vira o cartão do rodízio de passagem: verde (pode servir) ou vermelho (pausa) */
+    put: operations["turnRodizioCard"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{productId}/media-order": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Nova ordem das fotos (todas, a primeira vira a capa) */
+    put: operations["reorderProductMedia"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Um produto, para a tela de edição */
+    get: operations["getProduct"];
+    /** Salva o formulário do produto (todos os campos; promoção vazia apaga a promoção) */
+    put: operations["updateProduct"];
+    post?: never;
+    /** Tira o produto do cardápio (o registro fica) */
+    delete: operations["deactivateProduct"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{id}/rodizios": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Em quais rodízios o produto fica (entra nos escolhidos e sai dos outros) */
+    put: operations["setProductRodizios"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/presence-rule": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A configuração de presença (vazia se nunca configurada) */
+    get: operations["getPresenceRule"];
+    /** Troca a configuração de presença inteira */
+    put: operations["updatePresenceRule"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-settings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As configurações de pedido (os padrões, se nunca mudadas) */
+    get: operations["getOrderSettings"];
+    /** Troca as configurações de pedido */
+    put: operations["updateOrderSettings"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/menu-categories/{id}/product-order": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Nova ordem dos produtos da categoria (todos os ativos, do primeiro ao último) */
+    put: operations["reorderProducts"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/menu-categories/order": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Nova ordem das categorias (todas as ativas, da primeira à última) */
+    put: operations["reorderMenuCategories"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/establishment/brand": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A marca do restaurante e a paleta de cores */
+    get: operations["getBrand"];
+    /** Salva nome, cor, tema, Instagram e link de avaliação */
+    put: operations["updateBrand"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/team-members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lista a equipe (ativos primeiro, depois por nome) */
+    get: operations["listTeamMembers"];
+    put?: never;
+    /** Cadastra uma pessoa na equipe */
+    post: operations["addTeamMember"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/team-members/{id}/reactivation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Religa uma pessoa desligada da equipe */
+    post: operations["reactivateTeamMember"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tabs/{id}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Fecha a comanda depois do pagamento: a mesa fica livre e os celulares saem */
+    post: operations["closeTab"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tables": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Mesas do restaurante (ou de um setor), ativas primeiro */
+    get: operations["listTables"];
+    put?: never;
+    /** Cria uma mesa num setor, já com o token do QR */
+    post: operations["createTable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tables/{tableId}/rodizio": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ativa o rodízio na mesa com as pessoas por faixa (abre a comanda, se preciso) */
+    post: operations["activateRodizio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tables/{id}/token-rotation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Troca o QR da mesa: token novo, e o display impresso com o antigo para de funcionar */
+    post: operations["rotateTableToken"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/signup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cria a conta do restaurante (teste grátis) */
+    post: operations["signup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sectors": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Setores ativos, na ordem de exibição, com a contagem de mesas */
+    get: operations["listSectors"];
+    put?: never;
+    /** Cria um setor (entra no fim da lista) */
+    post: operations["createSector"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/rodizios": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os rodízios ativos, por nome */
+    get: operations["listRodizios"];
+    put?: never;
+    /** Cria um rodízio */
+    post: operations["createRodizio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/rodizios/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Volta a oferecer o rodízio pausado */
+    post: operations["reactivateRodizio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push/subscriptions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Inscreve este navegador nas notificações */
+    post: operations["subscribePush"];
+    /** Tira este navegador das notificações (ao sair, por exemplo) */
+    delete: operations["unsubscribePush"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Abre a sessão deste celular na mesa (ou renova a que ele já tem), no cookie table_session */
+    post: operations["startTableSession"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/rounds": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Envia uma rodada do rodízio: os itens incluídos vão para a cozinha a preço zero */
+    post: operations["sendRound"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/presence": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confere se o celular está no salão: pela rede e, se vier, pela localização */
+    post: operations["checkPresence"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/orders": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os pedidos da comanda aberta da mesa (de todos os celulares) e o total parcial */
+    get: operations["listTableOrders"];
+    put?: never;
+    /** Envia o carrinho: abre a comanda no primeiro pedido da mesa */
+    post: operations["placeOrder"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/calls": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os chamados abertos da mesa (no máximo um de cada tipo) */
+    get: operations["listTableCalls"];
+    put?: never;
+    /** Chama o garçom ou pede a conta */
+    post: operations["requestCall"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Produtos ativos na ordem do cardápio, de uma categoria ou de todas, com busca pelo nome */
+    get: operations["listProducts"];
+    put?: never;
+    /** Cria um produto (entra no fim da categoria) */
+    post: operations["createProduct"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{productId}/videos": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cria o vídeo (em conversão, no fim da galeria) e devolve como enviar o arquivo por TUS */
+    post: operations["startVideoUpload"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{productId}/media": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As fotos e os vídeos do produto, na ordem (a primeira foto é a capa) */
+    get: operations["listProductMedia"];
+    put?: never;
+    /** Passo 2: o arquivo já foi enviado; confere a foto, gera os 3 tamanhos e a põe na galeria */
+    post: operations["addProductMedia"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{productId}/media/uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Passo 1: pede a URL assinada para enviar uma foto */
+    post: operations["startMediaUpload"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/print-jobs/claim": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pega a comanda para imprimir: os itens saem marcados como impressos e só esta estação os recebe */
+    post: operations["claimPrintJob"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/orders/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Recusa: o pedido não vai para a cozinha nem para a conta */
+    post: operations["rejectOrder"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/orders/{id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirma: o pedido vai para a cozinha */
+    post: operations["approveOrder"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-items/{id}/start": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Em preparo: a cozinha começou */
+    post: operations["startOrderItem"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-items/{id}/ready": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pronto: saindo da cozinha (da fila ou do preparo) */
+    post: operations["readyOrderItem"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-items/{id}/deliver": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Entregue: chegou à mesa */
+    post: operations["deliverOrderItem"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-items/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancela o item, com o motivo que o cliente vê */
+    post: operations["cancelOrderItemByStaff"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/menu-categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Categorias ativas, na ordem do cardápio, com a contagem de produtos */
+    get: operations["listMenuCategories"];
+    put?: never;
+    /** Cria uma categoria (entra no fim do cardápio) */
+    post: operations["createMenuCategory"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/establishment/logo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Passo 2: o arquivo já foi enviado; confere e troca a logo */
+    post: operations["setLogo"];
+    /** Tira a logo (a página volta a mostrar as iniciais) */
+    delete: operations["removeLogo"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/establishment/logo/uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Passo 1: pede a URL assinada para enviar a logo */
+    post: operations["startLogoUpload"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/devices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Aparelhos vinculados ao restaurante, por nome */
+    get: operations["listDevices"];
+    put?: never;
+    /** Vincula o aparelho cujo código aparece na tela dele */
+    post: operations["linkDevice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/device-pairings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Abre um pedido de vínculo e devolve o código para a tela */
+    post: operations["startDevicePairing"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/device-pairings/{id}/claim": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** O aparelho pergunta se já foi vinculado; se sim, recebe o token no cookie device_token */
+    post: operations["claimDevicePairing"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/calls/{id}/finish": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Atendido: o chamado sai da fila */
+    post: operations["finishCall"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/calls/{id}/decline": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Recusa um pedido de liberação: o celular não está no salão */
+    post: operations["declineCall"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/calls/{id}/block-caller": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Bloqueia o celular que abriu este chamado (um trote): ele não chama mais nesta visita */
+    post: operations["blockCaller"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/calls/{id}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** "Estou indo": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa */
+    post: operations["acceptCall"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Troca o refresh token do cookie por um token de acesso novo */
+    post: operations["refreshSession"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/pin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Entra com PIN num aparelho vinculado (cookie device_token); devolve a mesma sessão do login */
+    post: operations["pinLogin"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/password-reset": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Manda o link para redefinir a senha, se houver conta com este e-mail */
+    post: operations["requestPasswordReset"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/password-reset/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Troca a senha com o token do link e encerra as sessões */
+    post: operations["confirmPasswordReset"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Encerra a sessão e apaga o cookie do refresh token */
+    post: operations["logout"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Entra com e-mail e senha; devolve o token de acesso e grava o refresh token num cookie HttpOnly */
+    post: operations["login"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/team-members/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Uma pessoa da equipe */
+    get: operations["getTeamMember"];
+    put?: never;
+    post?: never;
+    /** Desliga uma pessoa da equipe (o registro fica, para o histórico) */
+    delete: operations["deactivateTeamMember"];
+    options?: never;
+    head?: never;
+    /** Muda o papel e/ou o PIN de uma pessoa da equipe */
+    patch: operations["updateTeamMember"];
+    trace?: never;
+  };
+  "/api/v1/tables/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Renomeia, muda de setor, ativa ou desativa a mesa */
+    patch: operations["updateTable"];
+    trace?: never;
+  };
+  "/api/v1/sectors/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Desativa o setor (precisa estar sem mesas ativas) */
+    delete: operations["deactivateSector"];
+    options?: never;
+    head?: never;
+    /** Renomeia o setor */
+    patch: operations["renameSector"];
+    trace?: never;
+  };
+  "/api/v1/products/{id}/availability": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Disponível ou "Esgotado hoje" */
+    patch: operations["changeProductAvailability"];
+    trace?: never;
+  };
+  "/api/v1/menu-categories/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Desativa a categoria (precisa estar sem produtos) */
+    delete: operations["deactivateMenuCategory"];
+    options?: never;
+    head?: never;
+    /** Renomeia a categoria */
+    patch: operations["renameMenuCategory"];
+    trace?: never;
+  };
+  "/api/v1/tabs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** O histórico: as comandas fechadas no período (dias do restaurante), da mais nova à mais antiga */
+    get: operations["listClosedTabs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tabs/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Uma comanda com todos os pedidos (aberta ou fechada) */
+    get: operations["getTab"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tabs/open": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As comandas abertas, com o total e os itens a caminho, da mais antiga à mais nova */
+    get: operations["listOpenTabs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tables/{id}/display": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Baixa o QR Code (PNG ou SVG) ou o display pronto para imprimir (PDF) da mesa */
+    get: operations["downloadTableDisplay"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/subscription": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A assinatura deste restaurante, com o uso dos limites */
+    get: operations["getSubscription"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sectors/{id}/displays": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** PDF com o display de cada mesa ativa do setor */
+    get: operations["downloadSectorDisplays"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/rodizio-quotes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os rodízios ativos com o preço de cada faixa agora */
+    get: operations["quoteRodizios"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push/settings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Se o push está ligado, e a chave pública VAPID */
+    get: operations["pushSettings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A mesa do QR Code: restaurante (com a marca), número e setor */
+    get: operations["getPublicTable"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/rodizios": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os rodízios do restaurante, com o preço de agora */
+    get: operations["listTableRodizios"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/menu": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** O cardápio do restaurante da mesa: categorias com produtos, preços e a foto de capa */
+    get: operations["getPublicMenu"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Avisos da mesa em tempo real: "ready" ao conectar, "call" quando um chamado dela muda */
+    get: operations["streamTableEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/print-jobs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As comandas que ainda não saíram na impressora, da mais antiga à mais nova */
+    get: operations["listPendingPrintJobs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/print-jobs/printed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As comandas impressas nas últimas 12 horas, da mais recente para a mais antiga (para reimprimir) */
+    get: operations["listPrintedJobs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/plans": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lista os planos de assinatura
+     * @description Público, sem autenticação. Retorna os planos ativos na ordem de exibição. Preços em centavos; campos nulos significam "sob consulta" (preço) ou "ilimitado" (limites).
+     */
+    get: operations["listPlans"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/passagem-tables": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** As mesas abertas no rodízio de passagem, as de cartão vermelho primeiro */
+    get: operations["listPassagemTables"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/passagem-requests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os cortes pedidos no rodízio de passagem, ainda a caminho, do mais antigo ao mais novo */
+    get: operations["listPassagemRequests"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/orders/awaiting-approval": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os pedidos esperando a confirmação do garçom, do mais antigo ao mais novo */
+    get: operations["listWaitingOrders"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/order-items": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os itens a caminho dos pedidos que foram para a cozinha, do mais antigo ao mais novo */
+    get: operations["listKitchenQueue"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Dados de quem está logado */
+    get: operations["getMe"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Avisos do restaurante em tempo real: "ready" ao conectar, "call" quando um chamado muda */
+    get: operations["streamStaffEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/calls": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Chamados abertos, do mais antigo para o mais novo */
+    get: operations["listCallQueue"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/device": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Este aparelho e o restaurante dele */
+    get: operations["getCurrentDevice"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/device/tv/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Avisos do restaurante na TV vinculada (sem login): "ready" e "call", como os da equipe */
+    get: operations["streamTvEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/device/tv/calls": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A fila de chamados na TV vinculada (sem login, pelo cookie) */
+    get: operations["listTvCallQueue"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/device/team-members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Quem pode entrar por PIN neste aparelho, por nome */
+    get: operations["listPinMembers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/order-items/{itemId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** O cliente cancela um item que ele pediu, enquanto está na fila */
+    delete: operations["cancelOrderItem"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/tables/{token}/calls/{callId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Cancela um chamado aberto da mesa ("já resolvi") */
+    delete: operations["cancelCall"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/products/{productId}/media/{mediaId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Tira a foto da galeria */
+    delete: operations["removeProductMedia"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/devices/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Desvincula o aparelho; o token dele deixa de valer */
+    delete: operations["unlinkDevice"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        RodizioGuestCount: {
-            /** @example Adulto */
-            tierName: string;
-            /**
-             * Format: int32
-             * @example 4
-             */
-            quantity: number;
-        };
-        RodizioGuestsRequest: {
-            guests: components["schemas"]["RodizioGuestCount"][];
-        };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
-        };
-        TableRodizio: {
-            /** Format: uuid */
-            rodizioId: string;
-            /** @example Rodízio Japonês */
-            name: string;
-            /** @enum {string} */
-            type: "A_LA_MINUTE" | "PASSAGEM";
-            /** @description Todas as faixas, mesmo as com 0 pessoas */
-            guests: components["schemas"]["TableRodizioGuest"][];
-            /**
-             * Format: int32
-             * @description Pessoas no rodízio, somando as faixas
-             */
-            people: number;
-            /**
-             * Format: int64
-             * @description Pessoas × preço: o que o rodízio soma na conta
-             */
-            totalCents: number;
-            /** Format: date-time */
-            startedAt: string;
-            /**
-             * Format: date-time
-             * @description O fim previsto (início + tempo limite); ausente sem tempo limite
-             */
-            endsAt?: string;
-            /**
-             * @description O cartão: SERVING (verde) ou PAUSED (vermelho)
-             * @enum {string}
-             */
-            status: "SERVING" | "PAUSED";
-            /**
-             * Format: date-time
-             * @description A última virada do cartão
-             */
-            statusChangedAt: string;
-        };
-        TableRodizioGuest: {
-            /** @example Adulto */
-            tierName: string;
-            /** Format: int32 */
-            quantity: number;
-            /**
-             * Format: int64
-             * @description O preço copiado na ativação
-             */
-            unitPriceCents: number;
-        };
-        /** @description O plano e o ciclo que o dono escolheu */
-        PlanRequestRequest: {
-            /** @example pro */
-            planCode: string;
-            /** @enum {string} */
-            billingCycle: "MONTHLY" | "ANNUAL";
-        };
-        /** @description Plano de assinatura */
-        Plan: {
-            /** Format: uuid */
-            id: string;
-            /** @example pro */
-            code: string;
-            /** @example Pro */
-            name: string;
-            /**
-             * Format: int64
-             * @description Preço mensal em centavos; nulo = sob consulta
-             */
-            monthlyPriceCents: number | null;
-            /**
-             * Format: int64
-             * @description Preço anual em centavos; nulo = sob consulta
-             */
-            annualPriceCents: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxTables: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxUsers: number | null;
-            /**
-             * Format: int32
-             * @description Nulo = ilimitado
-             */
-            maxSectors: number | null;
-            /**
-             * Format: int32
-             * @description Dias de histórico; nulo = ilimitado
-             */
-            historyDays: number | null;
-            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
-            /** @enum {string} */
-            support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
-        };
-        /** @description O plano escolhido, à espera do pagamento */
-        PlanRequest: {
-            /** @example pro */
-            planCode: string;
-            /** @example Pro */
-            planName: string;
-            /** @enum {string} */
-            billingCycle: "MONTHLY" | "ANNUAL";
-            /** Format: date-time */
-            requestedAt: string;
-        };
-        /** @description Quanto o restaurante usa agora (só os ativos); os limites estão no plano */
-        PlanUsage: {
-            /** Format: int64 */
-            tables: number;
-            /** Format: int64 */
-            users: number;
-            /** Format: int64 */
-            sectors: number;
-        };
-        /** @description A assinatura do restaurante: plano, situação, datas e uso dos limites */
-        Subscription: {
-            plan: components["schemas"]["Plan"];
-            /**
-             * @description TRIAL: teste grátis · ACTIVE: paga · PENDING: venceu, na tolerância (tudo funciona) ·
-             *     SUSPENDED: passou da tolerância (a mesa para de chamar e pedir)
-             * @enum {string}
-             */
-            standing: "TRIAL" | "ACTIVE" | "PENDING" | "SUSPENDED";
-            /**
-             * Format: date-time
-             * @description O fim do teste grátis ou do período pago
-             */
-            coveredUntil: string;
-            /**
-             * Format: date-time
-             * @description O fim da tolerância, depois de vencer
-             */
-            graceEndsAt: string;
-            usage: components["schemas"]["PlanUsage"];
-            /** @description O plano escolhido pelo dono, à espera do pagamento; null se não escolheu */
-            request: components["schemas"]["PlanRequest"];
-        };
-        RodizioRequest: {
-            /** @example Rodízio Japonês */
-            name: string;
-            /** @enum {string} */
-            type: "A_LA_MINUTE" | "PASSAGEM";
-            /** @description O que está incluído, para o cliente */
-            description?: string;
-            rules: components["schemas"]["RodizioRules"];
-            tiers: components["schemas"]["RodizioTierRequest"][];
-            /** @description Os produtos incluídos */
-            productIds: string[];
-        };
-        /** @description As regras opcionais: vazias, não valem (o padrão) */
-        RodizioRules: {
-            /**
-             * Format: int32
-             * @description Unidades de cada item numa rodada, por pessoa
-             */
-            maxPerItemPerRound?: number;
-            /**
-             * Format: int32
-             * @description Itens não entregues por pessoa antes de outra rodada
-             */
-            maxPendingPerGuest?: number;
-            /**
-             * Format: int32
-             * @description Minutos entre uma rodada e a seguinte
-             */
-            minRoundIntervalMinutes?: number;
-            /**
-             * Format: int32
-             * @description Duração do rodízio, em minutos
-             */
-            timeLimitMinutes?: number;
-            /** @description O aviso de taxa de desperdício */
-            wasteNotice?: string;
-        };
-        RodizioSpecialPriceRequest: {
-            /**
-             * @example [
-             *       "FRIDAY",
-             *       "SATURDAY"
-             *     ]
-             */
-            days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
-            /** @example 18:00 */
-            startsAt: string;
-            /** @example 23:59 */
-            endsAt: string;
-            /**
-             * Format: int64
-             * @example 14990
-             */
-            priceCents: number;
-        };
-        RodizioTierRequest: {
-            /** @example Adulto */
-            name: string;
-            /**
-             * Format: int64
-             * @example 12990
-             */
-            defaultPriceCents: number;
-            /** @description Os preços especiais por dia e horário */
-            prices: components["schemas"]["RodizioSpecialPriceRequest"][];
-        };
-        Rodizio: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @enum {string} */
-            type: "A_LA_MINUTE" | "PASSAGEM";
-            description: string;
-            rules: components["schemas"]["RodizioRulesView"];
-            tiers: components["schemas"]["RodizioTier"][];
-            productIds: string[];
-        };
-        RodizioRulesView: {
-            /** Format: int32 */
-            maxPerItemPerRound?: number;
-            /** Format: int32 */
-            maxPendingPerGuest?: number;
-            /** Format: int32 */
-            minRoundIntervalMinutes?: number;
-            /** Format: int32 */
-            timeLimitMinutes?: number;
-            wasteNotice?: string;
-        };
-        RodizioSpecialPrice: {
-            days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
-            /** @example 18:00 */
-            startsAt: string;
-            /** @example 23:59 */
-            endsAt: string;
-            /** Format: int64 */
-            priceCents: number;
-        };
-        RodizioTier: {
-            name: string;
-            /** Format: int64 */
-            defaultPriceCents: number;
-            prices: components["schemas"]["RodizioSpecialPrice"][];
-        };
-        RodizioCardRequest: {
-            /**
-             * @description SERVING: cartão verde (pode servir). PAUSED: vermelho (pausa)
-             * @enum {string}
-             */
-            status: "SERVING" | "PAUSED";
-        };
-        /** @description Todos os itens da lista, na ordem nova */
-        ReorderRequest: {
-            ids: string[];
-        };
-        ProductRequest: {
-            /** Format: uuid */
-            categoryId: string;
-            /** @example Hot roll da casa */
-            name: string;
-            /** @example Empanado na hora, com salmão e cream cheese. 4 peças. */
-            description?: string;
-            /**
-             * Format: int64
-             * @description Em centavos: 2790 = R$ 27,90
-             * @example 2790
-             */
-            priceCents: number;
-            /**
-             * Format: int64
-             * @description Em centavos, menor que o preço. Vazio: sem promoção
-             * @example 2490
-             */
-            promoPriceCents?: number;
-            featured: boolean;
-            /** @description false: aparece como "Esgotado hoje" */
-            available: boolean;
-            /** @description false: só do rodízio (fora do cardápio à la carte). Vazio: true */
-            aLaCarte?: boolean;
-        };
-        /** @description Produto do cardápio. Preços em centavos */
-        Product: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            categoryId: string;
-            /** @example Hot roll da casa */
-            name: string;
-            /** @description Vazia quando o dono não escreveu */
-            description: string;
-            /**
-             * Format: int64
-             * @example 2790
-             */
-            priceCents: number;
-            /**
-             * Format: int64
-             * @description null quando não há promoção
-             * @example 2490
-             */
-            promoPriceCents?: number;
-            featured: boolean;
-            available: boolean;
-            /** Format: int32 */
-            position: number;
-            /** @description false: só do rodízio */
-            aLaCarte: boolean;
-        };
-        PresenceLocation: {
-            /**
-             * Format: double
-             * @example -23.5577
-             */
-            latitude: number;
-            /**
-             * Format: double
-             * @example -46.6353
-             */
-            longitude: number;
-            /**
-             * Format: int32
-             * @description De 25 a 1000 metros
-             * @example 100
-             */
-            radiusMeters: number;
-        };
-        PresenceRuleRequest: {
-            /**
-             * @description IPs ou faixas CIDR da internet do salão (até 10)
-             * @example [
-             *       "189.45.212.18",
-             *       "2804:14c:6a::/64"
-             *     ]
-             */
-            networks: string[];
-            /**
-             * @description O nome do Wi-Fi do salão (sem a senha)
-             * @example Sakura Clientes
-             */
-            wifiName?: string;
-            /** @description O local e o raio; vazio para não usar a localização */
-            location?: components["schemas"]["PresenceLocation"];
-            /**
-             * Format: int32
-             * @description Quanto tempo sem uso a sessão da mesa aguenta (30 a 360); vazio mantém como está
-             * @example 120
-             */
-            sessionIdleMinutes?: number;
-        };
-        PresenceRule: {
-            /** @description As faixas, sempre com o tamanho ("189.45.212.18/32") */
-            networks: string[];
-            wifiName?: string;
-            location?: components["schemas"]["PresenceLocation"];
-            /** @description A rede de onde você está agora, para o botão "Usar o IP desta rede" */
-            currentNetwork?: string;
-            /**
-             * Format: int32
-             * @description Quanto tempo sem uso a sessão da mesa aguenta, em minutos
-             */
-            sessionIdleMinutes: number;
-        };
-        OrderSettingsRequest: {
-            /** @description Desligado, a mesa só chama o garçom e vê o cardápio */
-            orderingEnabled: boolean;
-            /** @description Todo pedido espera o garçom confirmar */
-            approvalRequired: boolean;
-            /**
-             * Format: int64
-             * @description Acima deste valor (em centavos), o pedido espera o garçom; vazio = sem limite
-             * @example 30000
-             */
-            maxAmountCents?: number;
-            /**
-             * Format: int32
-             * @description Acima desta quantidade de itens, também; vazio = sem limite
-             * @example 10
-             */
-            maxItems?: number;
-        };
-        OrderSettings: {
-            orderingEnabled: boolean;
-            approvalRequired: boolean;
-            /** Format: int64 */
-            maxAmountCents?: number;
-            /** Format: int32 */
-            maxItems?: number;
-        };
-        BrandRequest: {
-            /** @example Sakura Sushi */
-            name: string;
-            /** @enum {string} */
-            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
-            /** @enum {string} */
-            theme: "DARK" | "LIGHT";
-            /**
-             * @description O @, o nome ou o link do perfil
-             * @example @sakurasushi.sp
-             */
-            instagram?: string;
-            /**
-             * @description Link de avaliação do Google
-             * @example https://g.page/r/CbX0exemplo/review
-             */
-            googleReviewUrl?: string;
-        };
-        Brand: {
-            name: string;
-            /** @enum {string} */
-            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
-            /** @enum {string} */
-            theme: "DARK" | "LIGHT";
-            /** @description null quando não há logo (a tela mostra as iniciais) */
-            logo?: components["schemas"]["BrandLogo"];
-            /**
-             * @description O @, sem o "@"; null quando não informado
-             * @example sakurasushi.sp
-             */
-            instagram?: string;
-            /** @description null quando não informado */
-            googleReviewUrl?: string;
-            palette: components["schemas"]["PaletteColor"][];
-        };
-        /** @description A logo em PNG quadrado */
-        BrandLogo: {
-            /** @description 128 px */
-            small: string;
-            /** @description 512 px */
-            large: string;
-        };
-        PaletteColor: {
-            /** @enum {string} */
-            color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
-            /** @example Tomate */
-            label: string;
-            /**
-             * @description Fundo dos botões (texto branco por cima)
-             * @example #CC3F1C
-             */
-            primary: string;
-            /**
-             * @description Texto de destaque no tema escuro
-             * @example #FF8466
-             */
-            textOnDark: string;
-            /**
-             * @description Texto de destaque no tema claro
-             * @example #B8361A
-             */
-            textOnLight: string;
-        };
-        /** @description Cadastro de uma pessoa da equipe */
-        AddTeamMemberRequest: {
-            /** @example Carlos Souza */
-            name: string;
-            /**
-             * @description MANAGER, STAFF ou KITCHEN
-             * @enum {string}
-             */
-            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-            /**
-             * @description 6 números, sem sequências óbvias
-             * @example 258014
-             */
-            pin: string;
-        };
-        /** @description Pessoa da equipe do restaurante */
-        TeamMember: {
-            /** Format: uuid */
-            id: string;
-            /** @example Carlos Souza */
-            name: string;
-            /** @enum {string} */
-            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-            /** @description false = desligado do restaurante */
-            active: boolean;
-        };
-        CloseTabRequest: {
-            /**
-             * @description Como a mesa pagou
-             * @enum {string}
-             */
-            paymentMethod: "PIX" | "CARD" | "CASH";
-        };
-        StaffTab: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * Format: uuid
-             * @description A mesa (para ativar o rodízio ou ajustar as pessoas)
-             */
-            tableId: string;
-            tableLabel: string;
-            sectorName: string;
-            /** @enum {string} */
-            status: "OPEN" | "CLOSING" | "CLOSED";
-            /** Format: date-time */
-            openedAt: string;
-            /** Format: date-time */
-            closedAt?: string;
-            /**
-             * Format: int64
-             * @description Aberta: a soma de agora. Fechada: o que foi cobrado
-             */
-            totalCents: number;
-            /**
-             * @description Fechada: como a mesa pagou
-             * @enum {string}
-             */
-            paymentMethod?: "PIX" | "CARD" | "CASH";
-            /**
-             * @description Aberta, com a conta pedida: a forma que a mesa escolheu
-             * @enum {string}
-             */
-            billRequestedWith?: "PIX" | "CARD" | "CASH";
-            /** @description O rodízio da comanda (já somado no total); ausente se não houve */
-            rodizio?: components["schemas"]["TableRodizio"];
-            orders: components["schemas"]["StaffTabOrder"][];
-        };
-        StaffTabOrder: {
-            /** Format: uuid */
-            id: string;
-            /** Format: int32 */
-            number: number;
-            /** @enum {string} */
-            status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
-            /** Format: date-time */
-            createdAt: string;
-            items: components["schemas"]["TableOrderItem"][];
-        };
-        TableOrderItem: {
-            /** Format: uuid */
-            id: string;
-            productName: string;
-            /**
-             * Format: int64
-             * @description O preço copiado na hora do pedido
-             */
-            unitPriceCents: number;
-            /** Format: int32 */
-            quantity: number;
-            note?: string;
-            /** @enum {string} */
-            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
-            /** @description Por que foi cancelado */
-            cancelReason?: string;
-            /** @description Veio numa rodada do rodízio (preço zero) */
-            rodizio: boolean;
-        };
-        CreateTableRequest: {
-            /** @example 04 */
-            label: string;
-            /** Format: uuid */
-            sectorId: string;
-        };
-        /** @description Mesa do salão */
-        DiningTable: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            sectorId: string;
-            /** @example 04 */
-            label: string;
-            /** @description Vai na URL do QR Code: /m/{publicToken} */
-            publicToken: string;
-            /**
-             * Format: date-time
-             * @description Quando o QR atual foi gerado
-             */
-            tokenIssuedAt: string;
-            active: boolean;
-        };
-        ActivateRodizioRequest: {
-            /** Format: uuid */
-            rodizioId: string;
-            guests: components["schemas"]["RodizioGuestCount"][];
-        };
-        /** @description Cadastro self-service do restaurante */
-        SignupRequest: {
-            /** @example Sakura Sushi */
-            establishmentName: string;
-            /** @example Marina Tanaka */
-            ownerName: string;
-            /**
-             * @description CPF ou CNPJ, com ou sem pontuação
-             * @example 11.222.333/0001-81
-             */
-            document: string;
-            /** @example (11) 98765-4321 */
-            whatsapp: string;
-            /**
-             * Format: email
-             * @example marina@sakurasushi.com.br
-             */
-            email: string;
-            /** @description Mínimo de 10 caracteres, com letras e números */
-            password: string;
-            /** @description Aceite dos termos de uso e da política de privacidade */
-            acceptedTerms: boolean;
-        };
-        SignupResponse: {
-            /** Format: uuid */
-            organizationId: string;
-            /** Format: uuid */
-            establishmentId: string;
-            /** Format: uuid */
-            userId: string;
-            /** @example sakura-sushi */
-            slug: string;
-        };
-        SectorRequest: {
-            /** @example Deck */
-            name: string;
-        };
-        /** @description Setor do salão */
-        Sector: {
-            /** Format: uuid */
-            id: string;
-            /** @example Salão principal */
-            name: string;
-            /**
-             * Format: int32
-             * @description Ordem de exibição, a partir de 0
-             */
-            position: number;
-            /**
-             * Format: int64
-             * @description Mesas ativas no setor
-             */
-            activeTables: number;
-        };
-        PushSubscriptionKeys: {
-            /** @description A chave pública do navegador, em base64url */
-            p256dh: string;
-            /** @description O segredo do navegador, em base64url */
-            auth: string;
-        };
-        PushSubscriptionRequest: {
-            /** @description O endereço do serviço de push do navegador */
-            endpoint: string;
-            keys: components["schemas"]["PushSubscriptionKeys"];
-        };
-        TableSession: {
-            /**
-             * Format: date-time
-             * @description Vence se ficar este tempo sem uso
-             */
-            expiresAt: string;
-        };
-        PlaceOrderLine: {
-            /** Format: uuid */
-            productId: string;
-            /**
-             * Format: int32
-             * @example 2
-             */
-            quantity: number;
-            /**
-             * @description Observação do item
-             * @example sem cebolinha
-             */
-            note?: string;
-        };
-        PlaceOrderRequest: {
-            items: components["schemas"]["PlaceOrderLine"][];
-        };
-        TableOrder: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * Format: int32
-             * @description O número do pedido no dia
-             */
-            number: number;
-            /** @enum {string} */
-            status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
-            /** Format: date-time */
-            createdAt: string;
-            /** @description Foi este celular que mandou (só ele cancela os itens) */
-            mine: boolean;
-            items: components["schemas"]["TableOrderItem"][];
-        };
-        PresenceCheckRequest: {
-            /**
-             * Format: double
-             * @example -23.5577
-             */
-            latitude?: number;
-            /**
-             * Format: double
-             * @example -46.6353
-             */
-            longitude?: number;
-            /**
-             * Format: double
-             * @description Precisão informada pelo navegador, em metros
-             * @example 25
-             */
-            accuracyMeters?: number;
-        };
-        Presence: {
-            /** @description Pode chamar o garçom e pedir a conta */
-            present: boolean;
-            /**
-             * @description Como a presença foi provada; vazio enquanto não foi
-             * @enum {string}
-             */
-            method?: "WIFI" | "GPS" | "STAFF";
-            /** @description O restaurante marcou o local: vale oferecer a localização */
-            locationEnabled: boolean;
-            /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
-            wifiName?: string;
-            /** @description A equipe bloqueou os chamados deste celular */
-            blocked: boolean;
-        };
-        CallRequest: {
-            /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
-            /**
-             * @description Só no pedido de conta (BILL)
-             * @enum {string}
-             */
-            paymentMethod?: "PIX" | "CARD" | "CASH";
-        };
-        TableCall: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
-            /** @enum {string} */
-            paymentMethod?: "PIX" | "CARD" | "CASH";
-            /** @enum {string} */
-            status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            acceptedAt?: string;
-            /** @description Só o primeiro nome de quem aceitou */
-            waiterFirstName?: string;
-        };
-        /** @description O vídeo que o navegador vai enviar */
-        VideoUploadRequest: {
-            /** @example video/mp4 */
-            contentType: string;
-            /**
-             * Format: int64
-             * @description Tamanho em bytes (até 200 MB)
-             * @example 48331112
-             */
-            sizeBytes: number;
-        };
-        /** @description Envie o arquivo pelo protocolo TUS no endpoint, com estes cabeçalhos no POST de criação */
-        VideoUpload: {
-            /**
-             * Format: uuid
-             * @description A mídia já criada, em conversão
-             */
-            mediaId: string;
-            /** @description O endereço TUS do serviço de vídeo */
-            endpoint: string;
-            /** @description A autorização do envio deste vídeo */
-            headers: {
-                [key: string]: string;
-            };
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        AddMediaRequest: {
-            /**
-             * Format: uuid
-             * @description O uploadId recebido no primeiro passo
-             */
-            uploadId: string;
-        };
-        ProductMedia: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            type: "IMAGE" | "VIDEO";
-            /** Format: int32 */
-            position: number;
-            /**
-             * Format: int32
-             * @description Largura (da foto grande ou do vídeo); 0 no vídeo em conversão
-             */
-            width: number;
-            /**
-             * Format: int32
-             * @description Altura, idem
-             */
-            height: number;
-            /**
-             * @description Foto: sempre pronta. Vídeo: em conversão, pronto ou falhou
-             * @enum {string}
-             */
-            status: "PROCESSING" | "READY" | "FAILED";
-            /** @description Os tamanhos da foto; ausente no vídeo */
-            urls?: components["schemas"]["ProductMediaUrls"];
-            /** @description O vídeo pronto, para tocar */
-            video?: components["schemas"]["ProductMediaVideo"];
-            /** @description Por que o vídeo não ficou pronto */
-            failure?: string;
-        };
-        /** @description Um endereço por tamanho */
-        ProductMediaUrls: {
-            /** @description Quadrada, 240 px */
-            thumb: string;
-            /** @description Até 720 px no maior lado */
-            medium: string;
-            /** @description Até 1440 px no maior lado */
-            large: string;
-        };
-        ProductMediaVideo: {
-            /** @description O MP4 para tocar */
-            url: string;
-            /** @description A capa do vídeo, se o serviço gera uma */
-            poster?: string;
-            /** Format: int32 */
-            durationSeconds: number;
-        };
-        /** @description O arquivo que o navegador vai enviar */
-        MediaUploadRequest: {
-            /** @example image/jpeg */
-            contentType: string;
-            /**
-             * Format: int64
-             * @description Tamanho em bytes (até 8 MB)
-             * @example 2483112
-             */
-            sizeBytes: number;
-        };
-        /** @description Envie o arquivo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
-        MediaUpload: {
-            /** Format: uuid */
-            uploadId: string;
-            /** @description URL assinada, de uso único e curta validade */
-            url: string;
-            /** @example PUT */
-            method: string;
-            headers: {
-                [key: string]: string;
-            };
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        ClaimPrintJobRequest: {
-            /**
-             * Format: uuid
-             * @description O pedido da comanda
-             */
-            orderId: string;
-            /**
-             * @description A comanda do pedido (ORDER) ou a via "CANCELADO" (CANCELLATION)
-             * @enum {string}
-             */
-            kind: "ORDER" | "CANCELLATION";
-        };
-        /** @description Uma comanda para a impressora da cozinha */
-        PrintJob: {
-            /** Format: uuid */
-            orderId: string;
-            /** @enum {string} */
-            kind: "ORDER" | "CANCELLATION";
-            /**
-             * Format: int32
-             * @description O número do pedido no dia
-             */
-            orderNumber: number;
-            tableLabel: string;
-            sectorName: string;
-            /**
-             * Format: date-time
-             * @description Quando o pedido chegou; vazio se não há itens
-             */
-            orderedAt?: string;
-            /** @description Os itens desta via; vazio se outra estação já imprimiu */
-            items: components["schemas"]["PrintJobLine"][];
-        };
-        PrintJobLine: {
-            /** Format: uuid */
-            id: string;
-            productName: string;
-            /** Format: int32 */
-            quantity: number;
-            note?: string;
-            /** @description Veio numa rodada do rodízio */
-            rodizio: boolean;
-            /** @description O motivo, na via "CANCELADO" */
-            cancelReason?: string;
-        };
-        CancelItemRequest: {
-            /**
-             * @description O motivo, que o cliente vê
-             * @example Acabou o salmão
-             */
-            reason: string;
-        };
-        MenuCategoryRequest: {
-            /** @example Entradas */
-            name: string;
-        };
-        /** @description Categoria do cardápio */
-        MenuCategory: {
-            /** Format: uuid */
-            id: string;
-            /** @example Entradas */
-            name: string;
-            /** Format: int32 */
-            position: number;
-            /**
-             * Format: int64
-             * @description Quantos produtos ativos a categoria tem
-             */
-            activeProducts: number;
-        };
-        SetLogoRequest: {
-            /** Format: uuid */
-            uploadId: string;
-        };
-        LogoUploadRequest: {
-            /** @example image/png */
-            contentType: string;
-            /**
-             * Format: int64
-             * @description Tamanho em bytes (até 2 MB)
-             */
-            sizeBytes: number;
-        };
-        /** @description Envie a logo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
-        LogoUpload: {
-            /** Format: uuid */
-            uploadId: string;
-            url: string;
-            /** @example PUT */
-            method: string;
-            headers: {
-                [key: string]: string;
-            };
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        /** @description O gerente digita o código que aparece no aparelho novo */
-        LinkDeviceRequest: {
-            /** @example 482719 */
-            code: string;
-            /** @example Celular do salão */
-            name: string;
-            /** @enum {string} */
-            type: "WAITER" | "KITCHEN" | "TV";
-        };
-        /** @description Aparelho vinculado ao restaurante */
-        Device: {
-            /** Format: uuid */
-            id: string;
-            /** @example Celular do salão */
-            name: string;
-            /** @enum {string} */
-            type: "WAITER" | "KITCHEN" | "TV";
-            /** Format: date-time */
-            linkedAt: string;
-            /**
-             * Format: date-time
-             * @description Vazio: o aparelho ainda não buscou o token
-             */
-            lastSeenAt?: string;
-        };
-        /** @description Pedido de vínculo aberto pelo aparelho novo */
-        PairingStarted: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * @description Mostrar na tela do aparelho
-             * @example 482719
-             */
-            code: string;
-            /** @description Guardar no aparelho e mandar ao buscar o token; nunca mostrar */
-            secret: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        ClaimPairingRequest: {
-            /** @description O segredo recebido ao abrir o pedido */
-            secret: string;
-        };
-        /** @description PENDING: pergunte de novo em alguns segundos. LINKED: o token foi para o cookie device_token. */
-        ClaimPairingResponse: {
-            /** @enum {string} */
-            status: "PENDING" | "LINKED";
-            /** @description Só quando LINKED */
-            device?: components["schemas"]["Device"];
-            /**
-             * @description Só quando LINKED
-             * @example Sakura Sushi
-             */
-            establishmentName?: string;
-        };
-        StaffCall: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * Format: uuid
-             * @description A mesa (para ativar o rodízio a partir do chamado)
-             */
-            tableId: string;
-            tableLabel: string;
-            sectorName: string;
-            /** @enum {string} */
-            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
-            /** @enum {string} */
-            paymentMethod?: "PIX" | "CARD" | "CASH";
-            /** @enum {string} */
-            status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            acceptedAt?: string;
-            acceptedByName?: string;
-            /**
-             * @description Como a mesa provou a presença (Wi-Fi, GPS ou garçom); vazio no pedido de liberação
-             * @enum {string}
-             */
-            presenceMethod?: "WIFI" | "GPS" | "STAFF";
-        };
-        EstablishmentAccess: {
-            /** Format: uuid */
-            id: string;
-            /** @example Sakura Sushi */
-            name: string;
-            /** @example sakura-sushi */
-            slug: string;
-            /**
-             * @description O fuso do restaurante: os dias ("hoje", "ontem") são os dele
-             * @example America/Sao_Paulo
-             */
-            timeZone: string;
-            /** @enum {string} */
-            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-        };
-        LoginResponse: {
-            /** @description JWT para o cabeçalho Authorization: Bearer */
-            accessToken: string;
-            /** @example Bearer */
-            tokenType: string;
-            /** Format: date-time */
-            expiresAt: string;
-            /** Format: uuid */
-            userId: string;
-            userName: string;
-            establishment: components["schemas"]["EstablishmentAccess"];
-        };
-        /** @description Quem tocou no próprio nome e o PIN digitado */
-        PinLoginRequest: {
-            /** Format: uuid */
-            memberId: string;
-            /** @example 258014 */
-            pin: string;
-        };
-        /** @description O e-mail de quem esqueceu a senha */
-        PasswordResetRequest: {
-            /** @example marina@sakura.com */
-            email: string;
-        };
-        /** @description O token do link e a senha nova */
-        PasswordResetConfirmRequest: {
-            /** @description O token que veio no link do e-mail */
-            token: string;
-            /** @description Pelo menos 10 caracteres, com letra e número */
-            newPassword: string;
-        };
-        LoginRequest: {
-            /** @example marina@sakurasushi.com.br */
-            email: string;
-            password: string;
-        };
-        /** @description Só os campos enviados mudam */
-        UpdateTeamMemberRequest: {
-            /**
-             * @description Novo papel: MANAGER, STAFF ou KITCHEN
-             * @enum {string}
-             */
-            role?: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-            /**
-             * @description Novo PIN: 6 números
-             * @example 739105
-             */
-            pin?: string;
-        };
-        /** @description Só os campos enviados mudam */
-        UpdateTableRequest: {
-            /** @example 04 */
-            label?: string;
-            /**
-             * Format: uuid
-             * @description Mover para outro setor
-             */
-            sectorId?: string;
-            /** @description Ativar ou desativar a mesa */
-            active?: boolean;
-        };
-        AvailabilityRequest: {
-            /** @description false: "Esgotado hoje" */
-            available: boolean;
-        };
-        PageResponseTeamMember: {
-            content: components["schemas"]["TeamMember"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        ClosedTab: {
-            /** Format: uuid */
-            id: string;
-            tableLabel: string;
-            sectorName: string;
-            /** Format: date-time */
-            openedAt: string;
-            /** Format: date-time */
-            closedAt: string;
-            /**
-             * Format: int64
-             * @description O que foi cobrado
-             */
-            totalCents: number;
-            /** @enum {string} */
-            paymentMethod: "PIX" | "CARD" | "CASH";
-            /** @description Quem fechou */
-            closedByName?: string;
-        };
-        PageResponseClosedTab: {
-            content: components["schemas"]["ClosedTab"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        OpenTab: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tableId: string;
-            tableLabel: string;
-            sectorName: string;
-            /** Format: date-time */
-            openedAt: string;
-            /**
-             * Format: int64
-             * @description A soma dos itens não cancelados até agora
-             */
-            totalCents: number;
-            /**
-             * Format: int32
-             * @description Itens ainda a caminho (na fila, em preparo, prontos)
-             */
-            itemsOnTheWay: number;
-        };
-        PageResponseOpenTab: {
-            content: components["schemas"]["OpenTab"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseDiningTable: {
-            content: components["schemas"]["DiningTable"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseSector: {
-            content: components["schemas"]["Sector"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseRodizio: {
-            content: components["schemas"]["Rodizio"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseRodizioQuote: {
-            content: components["schemas"]["RodizioQuote"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        /** @description Um rodízio com o preço de cada faixa agora, no relógio do restaurante */
-        RodizioQuote: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @enum {string} */
-            type: "A_LA_MINUTE" | "PASSAGEM";
-            description: string;
-            tiers: components["schemas"]["RodizioQuoteTier"][];
-        };
-        RodizioQuoteTier: {
-            name: string;
-            /** Format: int64 */
-            priceCents: number;
-        };
-        PushSettings: {
-            /** @description false: o servidor está sem as chaves VAPID */
-            enabled: boolean;
-            /** @description A chave pública VAPID (base64url), para o navegador se inscrever */
-            publicKey?: string;
-        };
-        /** @description A aparência da página: só os tons da cor escolhida */
-        PublicBrand: {
-            /** @enum {string} */
-            theme: "DARK" | "LIGHT";
-            /**
-             * @description Fundo dos botões, com texto branco
-             * @example #CC3F1C
-             */
-            primary: string;
-            /**
-             * @description Texto de destaque no tema em uso
-             * @example #FF8466
-             */
-            accent: string;
-            /** @description null quando o restaurante usa as iniciais */
-            logo?: components["schemas"]["PublicLogo"];
-            /** @description O @, sem o "@"; null quando não informado */
-            instagram?: string;
-            /** @description null quando não informado */
-            googleReviewUrl?: string;
-        };
-        PublicLogo: {
-            /** @description 128 px */
-            small: string;
-            /** @description 512 px */
-            large: string;
-        };
-        /** @description A mesa do QR Code, para a página pública */
-        PublicTable: {
-            /** @example Sakura Sushi */
-            establishmentName: string;
-            /** @example 04 */
-            tableLabel: string;
-            /** @example Salão principal */
-            sectorName: string;
-            brand: components["schemas"]["PublicBrand"];
-            /** @description false: o atendimento pelo celular está pausado (assinatura suspensa); a página mostra o aviso no lugar dos botões de chamar e pedir */
-            serving: boolean;
-        };
-        /** @description Cada campo ausente: a regra está desligada */
-        RodizioLimits: {
-            /**
-             * Format: int32
-             * @description Unidades de cada item numa rodada, para a mesa toda
-             */
-            maxPerItem?: number;
-            /**
-             * Format: int32
-             * @description Quantos itens cabem agora, pelo limite de itens não entregues
-             */
-            room?: number;
-            /**
-             * Format: date-time
-             * @description Quando a próxima rodada libera (o intervalo entre rodadas)
-             */
-            nextRoundAt?: string;
-            /**
-             * Format: date-time
-             * @description O fim do rodízio (o tempo limite)
-             */
-            endsAt?: string;
-            /** @description O aviso de desperdício, para o topo da aba Rodízio */
-            wasteNotice?: string;
-        };
-        TableOrders: {
-            /** @description O restaurante aceita pedido pelo celular */
-            orderingEnabled: boolean;
-            /**
-             * Format: int64
-             * @description Os itens não cancelados mais o rodízio (pessoas × preço)
-             */
-            totalCents: number;
-            /** @description O rodízio da mesa; ausente se ela não está no rodízio */
-            rodizio?: components["schemas"]["TableRodizio"];
-            /** @description Os produtos incluídos no rodízio (a aba Rodízio) */
-            rodizioProductIds: string[];
-            /** @description As regras do rodízio ligadas, em números para a tela; ausente fora do rodízio */
-            rodizioLimits?: components["schemas"]["RodizioLimits"];
-            /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
-            orders: components["schemas"]["TableOrder"][];
-        };
-        PublicMenu: {
-            categories: components["schemas"]["PublicMenuCategory"][];
-        };
-        PublicMenuCategory: {
-            /** Format: uuid */
-            id: string;
-            /** @example Entradas */
-            name: string;
-            products: components["schemas"]["PublicMenuItem"][];
-        };
-        /** @description Preços em centavos */
-        PublicMenuItem: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @description Vazia quando o restaurante não escreveu */
-            description: string;
-            /**
-             * Format: int64
-             * @example 1990
-             */
-            priceCents: number;
-            /**
-             * Format: int64
-             * @description null quando não há promoção
-             * @example 1590
-             */
-            promoPriceCents?: number;
-            featured: boolean;
-            /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
-            available: boolean;
-            /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
-            aLaCarte: boolean;
-            /** @description A capa (a primeira foto); null quando o produto não tem foto */
-            photo?: components["schemas"]["PublicMenuPhoto"];
-            /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
-            media: components["schemas"]["PublicMenuMedia"][];
-        };
-        /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
-        PublicMenuMedia: {
-            /** @enum {string} */
-            type: "IMAGE" | "VIDEO";
-            /**
-             * Format: int32
-             * @description Largura, para a tela reservar o espaço
-             */
-            width: number;
-            /** Format: int32 */
-            height: number;
-            /** @description Os tamanhos da foto; null no vídeo */
-            image?: components["schemas"]["PublicMenuPhoto"];
-            /** @description O vídeo; null na foto */
-            video?: components["schemas"]["PublicMenuVideo"];
-        };
-        PublicMenuPhoto: {
-            /** @description Quadrada, 240 px */
-            thumb: string;
-            /** @description Até 720 px */
-            medium: string;
-            /** @description Até 1440 px */
-            large: string;
-        };
-        PublicMenuVideo: {
-            /** @description O MP4 para tocar */
-            url: string;
-            /** @description A capa do vídeo, se o serviço gera uma */
-            poster?: string;
-            /** Format: int32 */
-            durationSeconds: number;
-        };
-        SseEmitter: {
-            /** Format: int64 */
-            timeout?: number;
-        };
-        PageResponseProduct: {
-            content: components["schemas"]["Product"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseProductMedia: {
-            content: components["schemas"]["ProductMedia"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponsePrintJob: {
-            content: components["schemas"]["PrintJob"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponsePlan: {
-            content: components["schemas"]["Plan"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponsePassagemTable: {
-            content: components["schemas"]["PassagemTable"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        /** @description Uma mesa no rodízio de passagem, para os passadores */
-        PassagemTable: {
-            /** Format: uuid */
-            tableId: string;
-            /** @example 04 */
-            tableLabel: string;
-            sectorName: string;
-            /** @example Churrasco */
-            rodizioName: string;
-            /** Format: int32 */
-            people: number;
-            /**
-             * @description SERVING: cartão verde. PAUSED: vermelho
-             * @enum {string}
-             */
-            status: "SERVING" | "PAUSED";
-            /**
-             * Format: date-time
-             * @description A última virada do cartão
-             */
-            statusChangedAt: string;
-        };
-        PageResponsePassagemRequest: {
-            content: components["schemas"]["PassagemRequest"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        /** @description Um corte pedido pela mesa, para o passador levar */
-        PassagemRequest: {
-            /**
-             * Format: uuid
-             * @description O item do pedido (o passador entrega ou cancela por ele)
-             */
-            id: string;
-            /** @example 04 */
-            tableLabel: string;
-            sectorName: string;
-            /** @example Picanha */
-            productName: string;
-            /** Format: int32 */
-            quantity: number;
-            /**
-             * @description O ponto, ou outra observação da mesa
-             * @example Mal passada
-             */
-            note?: string;
-            /**
-             * Format: date-time
-             * @description Quando foi pedido
-             */
-            createdAt: string;
-        };
-        PageResponseWaitingOrder: {
-            content: components["schemas"]["WaitingOrder"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        WaitingOrder: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * Format: int32
-             * @description O número do pedido no dia
-             */
-            number: number;
-            tableLabel: string;
-            sectorName: string;
-            /** Format: date-time */
-            createdAt: string;
-            /**
-             * Format: int64
-             * @description A soma dos itens não cancelados
-             */
-            totalCents: number;
-            items: components["schemas"]["TableOrderItem"][];
-        };
-        KitchenItem: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            orderId: string;
-            /**
-             * Format: int32
-             * @description O número do pedido no dia
-             */
-            orderNumber: number;
-            tableLabel: string;
-            sectorName: string;
-            productName: string;
-            /** Format: int32 */
-            quantity: number;
-            note?: string;
-            /** @enum {string} */
-            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
-            /**
-             * Format: date-time
-             * @description Quando foi pedido
-             */
-            createdAt: string;
-            /**
-             * Format: date-time
-             * @description Quando a cozinha começou
-             */
-            preparingAt?: string;
-            /**
-             * Format: date-time
-             * @description Quando ficou pronto
-             */
-            readyAt?: string;
-        };
-        PageResponseKitchenItem: {
-            content: components["schemas"]["KitchenItem"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseMenuCategory: {
-            content: components["schemas"]["MenuCategory"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        Me: {
-            /** Format: uuid */
-            userId: string;
-            name: string;
-            /** @description Vazio para quem entra só por PIN (garçom, cozinha) */
-            email?: string;
-            establishment: components["schemas"]["EstablishmentAccess"];
-        };
-        PageResponseDevice: {
-            content: components["schemas"]["Device"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PageResponseStaffCall: {
-            content: components["schemas"]["StaffCall"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        /** @description O aparelho que está chamando e o restaurante dele */
-        CurrentDevice: {
-            device: components["schemas"]["Device"];
-            /** @example Sakura Sushi */
-            establishmentName: string;
-        };
-        PageResponsePinMember: {
-            content: components["schemas"]["PinMember"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        /** @description Pessoa que pode entrar por PIN neste aparelho */
-        PinMember: {
-            /** Format: uuid */
-            id: string;
-            /** @example Carlos Souza */
-            name: string;
-            /** @enum {string} */
-            role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-        };
+  schemas: {
+    RodizioGuestCount: {
+      /** @example Adulto */
+      tierName: string;
+      /**
+       * Format: int32
+       * @example 4
+       */
+      quantity: number;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    RodizioGuestsRequest: {
+      guests: components["schemas"]["RodizioGuestCount"][];
+    };
+    ProblemDetail: {
+      /** Format: uri */
+      type?: string;
+      title?: string;
+      /** Format: int32 */
+      status?: number;
+      detail?: string;
+      /** Format: uri */
+      instance?: string;
+      properties?: {
+        [key: string]: unknown;
+      };
+    };
+    TableRodizio: {
+      /** Format: uuid */
+      rodizioId: string;
+      /** @example Rodízio Japonês */
+      name: string;
+      /** @enum {string} */
+      type: "A_LA_MINUTE" | "PASSAGEM";
+      /** @description Todas as faixas, mesmo as com 0 pessoas */
+      guests: components["schemas"]["TableRodizioGuest"][];
+      /**
+       * Format: int32
+       * @description Pessoas no rodízio, somando as faixas
+       */
+      people: number;
+      /**
+       * Format: int64
+       * @description Pessoas × preço: o que o rodízio soma na conta
+       */
+      totalCents: number;
+      /** Format: date-time */
+      startedAt: string;
+      /**
+       * Format: date-time
+       * @description O fim previsto (início + tempo limite); ausente sem tempo limite
+       */
+      endsAt?: string;
+      /**
+       * @description O cartão: SERVING (verde) ou PAUSED (vermelho)
+       * @enum {string}
+       */
+      status: "SERVING" | "PAUSED";
+      /**
+       * Format: date-time
+       * @description A última virada do cartão
+       */
+      statusChangedAt: string;
+    };
+    TableRodizioGuest: {
+      /** @example Adulto */
+      tierName: string;
+      /** Format: int32 */
+      quantity: number;
+      /**
+       * Format: int64
+       * @description O preço copiado na ativação
+       */
+      unitPriceCents: number;
+    };
+    /** @description O plano e o ciclo que o dono escolheu */
+    PlanRequestRequest: {
+      /** @example pro */
+      planCode: string;
+      /** @enum {string} */
+      billingCycle: "MONTHLY" | "ANNUAL";
+    };
+    /** @description Plano de assinatura */
+    Plan: {
+      /** Format: uuid */
+      id: string;
+      /** @example pro */
+      code: string;
+      /** @example Pro */
+      name: string;
+      /**
+       * Format: int64
+       * @description Preço mensal em centavos; nulo = sob consulta
+       */
+      monthlyPriceCents: number | null;
+      /**
+       * Format: int64
+       * @description Preço anual em centavos; nulo = sob consulta
+       */
+      annualPriceCents: number | null;
+      /**
+       * Format: int32
+       * @description Nulo = ilimitado
+       */
+      maxTables: number | null;
+      /**
+       * Format: int32
+       * @description Nulo = ilimitado
+       */
+      maxUsers: number | null;
+      /**
+       * Format: int32
+       * @description Nulo = ilimitado
+       */
+      maxSectors: number | null;
+      /**
+       * Format: int32
+       * @description Dias de histórico; nulo = ilimitado
+       */
+      historyDays: number | null;
+      features: (
+        "PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT"
+      )[];
+      /** @enum {string} */
+      support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
+    };
+    /** @description O plano escolhido, à espera do pagamento */
+    PlanRequest: {
+      /** @example pro */
+      planCode: string;
+      /** @example Pro */
+      planName: string;
+      /** @enum {string} */
+      billingCycle: "MONTHLY" | "ANNUAL";
+      /** Format: date-time */
+      requestedAt: string;
+    };
+    /** @description Quanto o restaurante usa agora (só os ativos); os limites estão no plano */
+    PlanUsage: {
+      /** Format: int64 */
+      tables: number;
+      /** Format: int64 */
+      users: number;
+      /** Format: int64 */
+      sectors: number;
+    };
+    /** @description A assinatura do restaurante: plano, situação, datas e uso dos limites */
+    Subscription: {
+      plan: components["schemas"]["Plan"];
+      /**
+       * @description TRIAL: teste grátis · ACTIVE: paga · PENDING: venceu, na tolerância (tudo funciona) ·
+       *     SUSPENDED: passou da tolerância (a mesa para de chamar e pedir)
+       * @enum {string}
+       */
+      standing: "TRIAL" | "ACTIVE" | "PENDING" | "SUSPENDED";
+      /**
+       * Format: date-time
+       * @description O fim do teste grátis ou do período pago
+       */
+      coveredUntil: string;
+      /**
+       * Format: date-time
+       * @description O fim da tolerância, depois de vencer
+       */
+      graceEndsAt: string;
+      usage: components["schemas"]["PlanUsage"];
+      /** @description O plano escolhido pelo dono, à espera do pagamento; null se não escolheu */
+      request: components["schemas"]["PlanRequest"];
+    };
+    RodizioRequest: {
+      /** @example Rodízio Japonês */
+      name: string;
+      /** @enum {string} */
+      type: "A_LA_MINUTE" | "PASSAGEM";
+      /** @description O que está incluído, para o cliente */
+      description?: string;
+      rules: components["schemas"]["RodizioRules"];
+      tiers: components["schemas"]["RodizioTierRequest"][];
+      /** @description Os produtos incluídos */
+      productIds: string[];
+    };
+    /** @description As regras opcionais: vazias, não valem (o padrão) */
+    RodizioRules: {
+      /**
+       * Format: int32
+       * @description Unidades de cada item numa rodada, por pessoa
+       */
+      maxPerItemPerRound?: number;
+      /**
+       * Format: int32
+       * @description Itens não entregues por pessoa antes de outra rodada
+       */
+      maxPendingPerGuest?: number;
+      /**
+       * Format: int32
+       * @description Minutos entre uma rodada e a seguinte
+       */
+      minRoundIntervalMinutes?: number;
+      /**
+       * Format: int32
+       * @description Duração do rodízio, em minutos
+       */
+      timeLimitMinutes?: number;
+      /** @description O aviso de taxa de desperdício */
+      wasteNotice?: string;
+    };
+    RodizioSpecialPriceRequest: {
+      /**
+       * @example [
+       *       "FRIDAY",
+       *       "SATURDAY"
+       *     ]
+       */
+      days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
+      /** @example 18:00 */
+      startsAt: string;
+      /** @example 23:59 */
+      endsAt: string;
+      /**
+       * Format: int64
+       * @example 14990
+       */
+      priceCents: number;
+    };
+    RodizioTierRequest: {
+      /** @example Adulto */
+      name: string;
+      /**
+       * Format: int64
+       * @example 12990
+       */
+      defaultPriceCents: number;
+      /** @description Os preços especiais por dia e horário */
+      prices: components["schemas"]["RodizioSpecialPriceRequest"][];
+    };
+    Rodizio: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: "A_LA_MINUTE" | "PASSAGEM";
+      description: string;
+      rules: components["schemas"]["RodizioRulesView"];
+      tiers: components["schemas"]["RodizioTier"][];
+      productIds: string[];
+      /** @description false: pausado (as mesas não podem pedir) */
+      active: boolean;
+    };
+    RodizioRulesView: {
+      /** Format: int32 */
+      maxPerItemPerRound?: number;
+      /** Format: int32 */
+      maxPendingPerGuest?: number;
+      /** Format: int32 */
+      minRoundIntervalMinutes?: number;
+      /** Format: int32 */
+      timeLimitMinutes?: number;
+      wasteNotice?: string;
+    };
+    RodizioSpecialPrice: {
+      days: ("MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY")[];
+      /** @example 18:00 */
+      startsAt: string;
+      /** @example 23:59 */
+      endsAt: string;
+      /** Format: int64 */
+      priceCents: number;
+    };
+    RodizioTier: {
+      name: string;
+      /** Format: int64 */
+      defaultPriceCents: number;
+      prices: components["schemas"]["RodizioSpecialPrice"][];
+    };
+    RodizioCardRequest: {
+      /**
+       * @description SERVING: cartão verde (pode servir). PAUSED: vermelho (pausa)
+       * @enum {string}
+       */
+      status: "SERVING" | "PAUSED";
+    };
+    /** @description Todos os itens da lista, na ordem nova */
+    ReorderRequest: {
+      ids: string[];
+    };
+    ProductRequest: {
+      /** Format: uuid */
+      categoryId: string;
+      /** @example Hot roll da casa */
+      name: string;
+      /** @example Empanado na hora, com salmão e cream cheese. 4 peças. */
+      description?: string;
+      /**
+       * Format: int64
+       * @description Em centavos: 2790 = R$ 27,90
+       * @example 2790
+       */
+      priceCents: number;
+      /**
+       * Format: int64
+       * @description Em centavos, menor que o preço. Vazio: sem promoção
+       * @example 2490
+       */
+      promoPriceCents?: number;
+      featured: boolean;
+      /** @description false: aparece como "Esgotado hoje" */
+      available: boolean;
+      /** @description false: só do rodízio (fora do cardápio à la carte). Vazio: true */
+      aLaCarte?: boolean;
+    };
+    /** @description Produto do cardápio. Preços em centavos */
+    Product: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      categoryId: string;
+      /** @example Hot roll da casa */
+      name: string;
+      /** @description Vazia quando o dono não escreveu */
+      description: string;
+      /**
+       * Format: int64
+       * @example 2790
+       */
+      priceCents: number;
+      /**
+       * Format: int64
+       * @description null quando não há promoção
+       * @example 2490
+       */
+      promoPriceCents?: number;
+      featured: boolean;
+      available: boolean;
+      /** Format: int32 */
+      position: number;
+      /** @description false: só do rodízio */
+      aLaCarte: boolean;
+      /**
+       * Format: int32
+       * @description Fotos da galeria; só na lista (null nos outros casos)
+       */
+      photoCount?: number;
+      /**
+       * Format: int32
+       * @description Vídeos da galeria (sem os que falharam); só na lista
+       */
+      videoCount?: number;
+    };
+    /** @description Os rodízios em que o produto fica (vazio: em nenhum) */
+    ProductRodiziosRequest: {
+      rodizioIds: string[];
+    };
+    /** @description Os rodízios em que o produto ficou */
+    ProductRodizios: {
+      rodizioIds: string[];
+    };
+    PresenceLocation: {
+      /**
+       * Format: double
+       * @example -23.5577
+       */
+      latitude: number;
+      /**
+       * Format: double
+       * @example -46.6353
+       */
+      longitude: number;
+      /**
+       * Format: int32
+       * @description De 25 a 1000 metros
+       * @example 100
+       */
+      radiusMeters: number;
+    };
+    PresenceRuleRequest: {
+      /**
+       * @description IPs ou faixas CIDR da internet do salão (até 10)
+       * @example [
+       *       "189.45.212.18",
+       *       "2804:14c:6a::/64"
+       *     ]
+       */
+      networks: string[];
+      /**
+       * @description O nome do Wi-Fi do salão (sem a senha)
+       * @example Sakura Clientes
+       */
+      wifiName?: string;
+      /** @description O local e o raio; vazio para não usar a localização */
+      location?: components["schemas"]["PresenceLocation"];
+      /**
+       * Format: int32
+       * @description Quanto tempo sem uso a sessão da mesa aguenta (30 a 360); vazio mantém como está
+       * @example 120
+       */
+      sessionIdleMinutes?: number;
+    };
+    PresenceRule: {
+      /** @description As faixas, sempre com o tamanho ("189.45.212.18/32") */
+      networks: string[];
+      wifiName?: string;
+      location?: components["schemas"]["PresenceLocation"];
+      /** @description A rede de onde você está agora, para o botão "Usar o IP desta rede" */
+      currentNetwork?: string;
+      /**
+       * Format: int32
+       * @description Quanto tempo sem uso a sessão da mesa aguenta, em minutos
+       */
+      sessionIdleMinutes: number;
+    };
+    OrderSettingsRequest: {
+      /** @description Desligado, a mesa só chama o garçom e vê o cardápio */
+      orderingEnabled: boolean;
+      /** @description Todo pedido espera o garçom confirmar */
+      approvalRequired: boolean;
+      /**
+       * Format: int64
+       * @description Acima deste valor (em centavos), o pedido espera o garçom; vazio = sem limite
+       * @example 30000
+       */
+      maxAmountCents?: number;
+      /**
+       * Format: int32
+       * @description Acima desta quantidade de itens, também; vazio = sem limite
+       * @example 10
+       */
+      maxItems?: number;
+    };
+    OrderSettings: {
+      orderingEnabled: boolean;
+      approvalRequired: boolean;
+      /** Format: int64 */
+      maxAmountCents?: number;
+      /** Format: int32 */
+      maxItems?: number;
+    };
+    BrandRequest: {
+      /** @example Sakura Sushi */
+      name: string;
+      /** @enum {string} */
+      color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+      /** @enum {string} */
+      theme: "DARK" | "LIGHT";
+      /**
+       * @description O @, o nome ou o link do perfil
+       * @example @sakurasushi.sp
+       */
+      instagram?: string;
+      /**
+       * @description Link de avaliação do Google
+       * @example https://g.page/r/CbX0exemplo/review
+       */
+      googleReviewUrl?: string;
+    };
+    Brand: {
+      name: string;
+      /** @enum {string} */
+      color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+      /** @enum {string} */
+      theme: "DARK" | "LIGHT";
+      /** @description null quando não há logo (a tela mostra as iniciais) */
+      logo?: components["schemas"]["BrandLogo"];
+      /**
+       * @description O @, sem o "@"; null quando não informado
+       * @example sakurasushi.sp
+       */
+      instagram?: string;
+      /** @description null quando não informado */
+      googleReviewUrl?: string;
+      palette: components["schemas"]["PaletteColor"][];
+    };
+    /** @description A logo em PNG quadrado */
+    BrandLogo: {
+      /** @description 128 px */
+      small: string;
+      /** @description 512 px */
+      large: string;
+    };
+    PaletteColor: {
+      /** @enum {string} */
+      color: "TOMATO" | "WINE" | "MUSTARD" | "OLIVE" | "PETROL" | "INDIGO";
+      /** @example Tomate */
+      label: string;
+      /**
+       * @description Fundo dos botões (texto branco por cima)
+       * @example #CC3F1C
+       */
+      primary: string;
+      /**
+       * @description Texto de destaque no tema escuro
+       * @example #FF8466
+       */
+      textOnDark: string;
+      /**
+       * @description Texto de destaque no tema claro
+       * @example #B8361A
+       */
+      textOnLight: string;
+    };
+    /** @description Cadastro de uma pessoa da equipe */
+    AddTeamMemberRequest: {
+      /** @example Carlos Souza */
+      name: string;
+      /**
+       * @description MANAGER, STAFF ou KITCHEN
+       * @enum {string}
+       */
+      role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+      /**
+       * @description 6 números, sem sequências óbvias
+       * @example 258014
+       */
+      pin: string;
+    };
+    /** @description Pessoa da equipe do restaurante */
+    TeamMember: {
+      /** Format: uuid */
+      id: string;
+      /** @example Carlos Souza */
+      name: string;
+      /** @enum {string} */
+      role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+      /** @description false = desligado do restaurante */
+      active: boolean;
+      /**
+       * Format: date-time
+       * @description Última entrada ou renovação da sessão neste restaurante; null se nunca entrou
+       */
+      lastAccessAt?: string;
+    };
+    CloseTabRequest: {
+      /**
+       * @description Como a mesa pagou
+       * @enum {string}
+       */
+      paymentMethod: "PIX" | "CARD" | "CASH";
+    };
+    StaffTab: {
+      /** Format: uuid */
+      id: string;
+      /**
+       * Format: uuid
+       * @description A mesa (para ativar o rodízio ou ajustar as pessoas)
+       */
+      tableId: string;
+      tableLabel: string;
+      sectorName: string;
+      /** @enum {string} */
+      status: "OPEN" | "CLOSING" | "CLOSED";
+      /** Format: date-time */
+      openedAt: string;
+      /** Format: date-time */
+      closedAt?: string;
+      /**
+       * Format: int64
+       * @description Aberta: a soma de agora. Fechada: o que foi cobrado
+       */
+      totalCents: number;
+      /**
+       * @description Fechada: como a mesa pagou
+       * @enum {string}
+       */
+      paymentMethod?: "PIX" | "CARD" | "CASH";
+      /**
+       * @description Aberta, com a conta pedida: a forma que a mesa escolheu
+       * @enum {string}
+       */
+      billRequestedWith?: "PIX" | "CARD" | "CASH";
+      /** @description O rodízio da comanda (já somado no total); ausente se não houve */
+      rodizio?: components["schemas"]["TableRodizio"];
+      orders: components["schemas"]["StaffTabOrder"][];
+    };
+    StaffTabOrder: {
+      /** Format: uuid */
+      id: string;
+      /** Format: int32 */
+      number: number;
+      /** @enum {string} */
+      status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
+      /** Format: date-time */
+      createdAt: string;
+      items: components["schemas"]["TableOrderItem"][];
+    };
+    TableOrderItem: {
+      /** Format: uuid */
+      id: string;
+      productName: string;
+      /**
+       * Format: int64
+       * @description O preço copiado na hora do pedido
+       */
+      unitPriceCents: number;
+      /** Format: int32 */
+      quantity: number;
+      note?: string;
+      /** @enum {string} */
+      status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+      /** @description Por que foi cancelado */
+      cancelReason?: string;
+      /** @description Veio numa rodada do rodízio (preço zero) */
+      rodizio: boolean;
+    };
+    CreateTableRequest: {
+      /** @example 04 */
+      label: string;
+      /** Format: uuid */
+      sectorId: string;
+    };
+    /** @description Mesa do salão */
+    DiningTable: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      sectorId: string;
+      /** @example 04 */
+      label: string;
+      /** @description Vai na URL do QR Code: /m/{publicToken} */
+      publicToken: string;
+      /**
+       * Format: date-time
+       * @description Quando o QR atual foi gerado
+       */
+      tokenIssuedAt: string;
+      active: boolean;
+      /**
+       * @description Como a mesa está agora (comanda, conta pedida, rodízio)
+       * @enum {string}
+       */
+      situation: "FREE" | "OCCUPIED" | "RODIZIO" | "BILL_REQUESTED" | "INACTIVE";
+    };
+    ActivateRodizioRequest: {
+      /** Format: uuid */
+      rodizioId: string;
+      guests: components["schemas"]["RodizioGuestCount"][];
+    };
+    /** @description Cadastro self-service do restaurante */
+    SignupRequest: {
+      /** @example Sakura Sushi */
+      establishmentName: string;
+      /** @example Marina Tanaka */
+      ownerName: string;
+      /**
+       * @description CPF ou CNPJ, com ou sem pontuação
+       * @example 11.222.333/0001-81
+       */
+      document: string;
+      /** @example (11) 98765-4321 */
+      whatsapp: string;
+      /**
+       * Format: email
+       * @example marina@sakurasushi.com.br
+       */
+      email: string;
+      /** @description Mínimo de 10 caracteres, com letras e números */
+      password: string;
+      /** @description Aceite dos termos de uso e da política de privacidade */
+      acceptedTerms: boolean;
+    };
+    SignupResponse: {
+      /** Format: uuid */
+      organizationId: string;
+      /** Format: uuid */
+      establishmentId: string;
+      /** Format: uuid */
+      userId: string;
+      /** @example sakura-sushi */
+      slug: string;
+    };
+    SectorRequest: {
+      /** @example Deck */
+      name: string;
+    };
+    /** @description Setor do salão */
+    Sector: {
+      /** Format: uuid */
+      id: string;
+      /** @example Salão principal */
+      name: string;
+      /**
+       * Format: int32
+       * @description Ordem de exibição, a partir de 0
+       */
+      position: number;
+      /**
+       * Format: int64
+       * @description Mesas ativas no setor
+       */
+      activeTables: number;
+    };
+    PushSubscriptionKeys: {
+      /** @description A chave pública do navegador, em base64url */
+      p256dh: string;
+      /** @description O segredo do navegador, em base64url */
+      auth: string;
+    };
+    PushSubscriptionRequest: {
+      /** @description O endereço do serviço de push do navegador */
+      endpoint: string;
+      keys: components["schemas"]["PushSubscriptionKeys"];
+    };
+    TableSession: {
+      /**
+       * Format: date-time
+       * @description Vence se ficar este tempo sem uso
+       */
+      expiresAt: string;
+    };
+    PlaceOrderLine: {
+      /** Format: uuid */
+      productId: string;
+      /**
+       * Format: int32
+       * @example 2
+       */
+      quantity: number;
+      /**
+       * @description Observação do item
+       * @example sem cebolinha
+       */
+      note?: string;
+    };
+    PlaceOrderRequest: {
+      items: components["schemas"]["PlaceOrderLine"][];
+    };
+    TableOrder: {
+      /** Format: uuid */
+      id: string;
+      /**
+       * Format: int32
+       * @description O número do pedido no dia
+       */
+      number: number;
+      /** @enum {string} */
+      status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
+      /** Format: date-time */
+      createdAt: string;
+      /** @description Foi este celular que mandou (só ele cancela os itens) */
+      mine: boolean;
+      items: components["schemas"]["TableOrderItem"][];
+    };
+    PresenceCheckRequest: {
+      /**
+       * Format: double
+       * @example -23.5577
+       */
+      latitude?: number;
+      /**
+       * Format: double
+       * @example -46.6353
+       */
+      longitude?: number;
+      /**
+       * Format: double
+       * @description Precisão informada pelo navegador, em metros
+       * @example 25
+       */
+      accuracyMeters?: number;
+    };
+    Presence: {
+      /** @description Pode chamar o garçom e pedir a conta */
+      present: boolean;
+      /**
+       * @description Como a presença foi provada; vazio enquanto não foi
+       * @enum {string}
+       */
+      method?: "WIFI" | "GPS" | "STAFF";
+      /** @description O restaurante marcou o local: vale oferecer a localização */
+      locationEnabled: boolean;
+      /** @description O nome do Wi-Fi do salão, para sugerir ao cliente */
+      wifiName?: string;
+      /** @description A equipe bloqueou os chamados deste celular */
+      blocked: boolean;
+    };
+    CallRequest: {
+      /** @enum {string} */
+      type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
+      /**
+       * @description Só no pedido de conta (BILL)
+       * @enum {string}
+       */
+      paymentMethod?: "PIX" | "CARD" | "CASH";
+    };
+    TableCall: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
+      /** @enum {string} */
+      paymentMethod?: "PIX" | "CARD" | "CASH";
+      /** @enum {string} */
+      status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      acceptedAt?: string;
+      /** @description Só o primeiro nome de quem aceitou */
+      waiterFirstName?: string;
+    };
+    /** @description O vídeo que o navegador vai enviar */
+    VideoUploadRequest: {
+      /** @example video/mp4 */
+      contentType: string;
+      /**
+       * Format: int64
+       * @description Tamanho em bytes (até 200 MB)
+       * @example 48331112
+       */
+      sizeBytes: number;
+    };
+    /** @description Envie o arquivo pelo protocolo TUS no endpoint, com estes cabeçalhos no POST de criação */
+    VideoUpload: {
+      /**
+       * Format: uuid
+       * @description A mídia já criada, em conversão
+       */
+      mediaId: string;
+      /** @description O endereço TUS do serviço de vídeo */
+      endpoint: string;
+      /** @description A autorização do envio deste vídeo */
+      headers: {
+        [key: string]: string;
+      };
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    AddMediaRequest: {
+      /**
+       * Format: uuid
+       * @description O uploadId recebido no primeiro passo
+       */
+      uploadId: string;
+    };
+    ProductMedia: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      type: "IMAGE" | "VIDEO";
+      /** Format: int32 */
+      position: number;
+      /**
+       * Format: int32
+       * @description Largura (da foto grande ou do vídeo); 0 no vídeo em conversão
+       */
+      width: number;
+      /**
+       * Format: int32
+       * @description Altura, idem
+       */
+      height: number;
+      /**
+       * @description Foto: sempre pronta. Vídeo: em conversão, pronto ou falhou
+       * @enum {string}
+       */
+      status: "PROCESSING" | "READY" | "FAILED";
+      /** @description Os tamanhos da foto; ausente no vídeo */
+      urls?: components["schemas"]["ProductMediaUrls"];
+      /** @description O vídeo pronto, para tocar */
+      video?: components["schemas"]["ProductMediaVideo"];
+      /** @description Por que o vídeo não ficou pronto */
+      failure?: string;
+    };
+    /** @description Um endereço por tamanho */
+    ProductMediaUrls: {
+      /** @description Quadrada, 240 px */
+      thumb: string;
+      /** @description Até 720 px no maior lado */
+      medium: string;
+      /** @description Até 1440 px no maior lado */
+      large: string;
+    };
+    ProductMediaVideo: {
+      /** @description O MP4 para tocar */
+      url: string;
+      /** @description A capa do vídeo, se o serviço gera uma */
+      poster?: string;
+      /** Format: int32 */
+      durationSeconds: number;
+    };
+    /** @description O arquivo que o navegador vai enviar */
+    MediaUploadRequest: {
+      /** @example image/jpeg */
+      contentType: string;
+      /**
+       * Format: int64
+       * @description Tamanho em bytes (até 8 MB)
+       * @example 2483112
+       */
+      sizeBytes: number;
+    };
+    /** @description Envie o arquivo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
+    MediaUpload: {
+      /** Format: uuid */
+      uploadId: string;
+      /** @description URL assinada, de uso único e curta validade */
+      url: string;
+      /** @example PUT */
+      method: string;
+      headers: {
+        [key: string]: string;
+      };
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    ClaimPrintJobRequest: {
+      /**
+       * Format: uuid
+       * @description O pedido da comanda
+       */
+      orderId: string;
+      /**
+       * @description A comanda do pedido (ORDER) ou a via "CANCELADO" (CANCELLATION)
+       * @enum {string}
+       */
+      kind: "ORDER" | "CANCELLATION";
+    };
+    /** @description Uma comanda para a impressora da cozinha */
+    PrintJob: {
+      /** Format: uuid */
+      orderId: string;
+      /** @enum {string} */
+      kind: "ORDER" | "CANCELLATION";
+      /**
+       * Format: int32
+       * @description O número do pedido no dia
+       */
+      orderNumber: number;
+      tableLabel: string;
+      sectorName: string;
+      /**
+       * Format: date-time
+       * @description Quando o pedido chegou; vazio se não há itens
+       */
+      orderedAt?: string;
+      /** @description Os itens desta via; vazio se outra estação já imprimiu */
+      items: components["schemas"]["PrintJobLine"][];
+    };
+    PrintJobLine: {
+      /** Format: uuid */
+      id: string;
+      productName: string;
+      /** Format: int32 */
+      quantity: number;
+      note?: string;
+      /** @description Veio numa rodada do rodízio */
+      rodizio: boolean;
+      /** @description O motivo, na via "CANCELADO" */
+      cancelReason?: string;
+    };
+    CancelItemRequest: {
+      /**
+       * @description O motivo, que o cliente vê
+       * @example Acabou o salmão
+       */
+      reason: string;
+    };
+    MenuCategoryRequest: {
+      /** @example Entradas */
+      name: string;
+    };
+    /** @description Categoria do cardápio */
+    MenuCategory: {
+      /** Format: uuid */
+      id: string;
+      /** @example Entradas */
+      name: string;
+      /** Format: int32 */
+      position: number;
+      /**
+       * Format: int64
+       * @description Quantos produtos ativos a categoria tem
+       */
+      activeProducts: number;
+    };
+    SetLogoRequest: {
+      /** Format: uuid */
+      uploadId: string;
+    };
+    LogoUploadRequest: {
+      /** @example image/png */
+      contentType: string;
+      /**
+       * Format: int64
+       * @description Tamanho em bytes (até 2 MB)
+       */
+      sizeBytes: number;
+    };
+    /** @description Envie a logo com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
+    LogoUpload: {
+      /** Format: uuid */
+      uploadId: string;
+      url: string;
+      /** @example PUT */
+      method: string;
+      headers: {
+        [key: string]: string;
+      };
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    /** @description O gerente digita o código que aparece no aparelho novo */
+    LinkDeviceRequest: {
+      /** @example 482719 */
+      code: string;
+      /** @example Celular do salão */
+      name: string;
+      /** @enum {string} */
+      type: "WAITER" | "KITCHEN" | "TV";
+    };
+    /** @description Aparelho vinculado ao restaurante */
+    Device: {
+      /** Format: uuid */
+      id: string;
+      /** @example Celular do salão */
+      name: string;
+      /** @enum {string} */
+      type: "WAITER" | "KITCHEN" | "TV";
+      /** Format: date-time */
+      linkedAt: string;
+      /**
+       * Format: date-time
+       * @description Vazio: o aparelho ainda não buscou o token
+       */
+      lastSeenAt?: string;
+    };
+    /** @description Pedido de vínculo aberto pelo aparelho novo */
+    PairingStarted: {
+      /** Format: uuid */
+      id: string;
+      /**
+       * @description Mostrar na tela do aparelho
+       * @example 482719
+       */
+      code: string;
+      /** @description Guardar no aparelho e mandar ao buscar o token; nunca mostrar */
+      secret: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    ClaimPairingRequest: {
+      /** @description O segredo recebido ao abrir o pedido */
+      secret: string;
+    };
+    /** @description PENDING: pergunte de novo em alguns segundos. LINKED: o token foi para o cookie device_token. */
+    ClaimPairingResponse: {
+      /** @enum {string} */
+      status: "PENDING" | "LINKED";
+      /** @description Só quando LINKED */
+      device?: components["schemas"]["Device"];
+      /**
+       * @description Só quando LINKED
+       * @example Sakura Sushi
+       */
+      establishmentName?: string;
+    };
+    StaffCall: {
+      /** Format: uuid */
+      id: string;
+      /**
+       * Format: uuid
+       * @description A mesa (para ativar o rodízio a partir do chamado)
+       */
+      tableId: string;
+      tableLabel: string;
+      sectorName: string;
+      /** @enum {string} */
+      type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
+      /** @enum {string} */
+      paymentMethod?: "PIX" | "CARD" | "CASH";
+      /** @enum {string} */
+      status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      acceptedAt?: string;
+      acceptedByName?: string;
+      /**
+       * @description Como a mesa provou a presença (Wi-Fi, GPS ou garçom); vazio no pedido de liberação
+       * @enum {string}
+       */
+      presenceMethod?: "WIFI" | "GPS" | "STAFF";
+    };
+    EstablishmentAccess: {
+      /** Format: uuid */
+      id: string;
+      /** @example Sakura Sushi */
+      name: string;
+      /** @example sakura-sushi */
+      slug: string;
+      /**
+       * @description O fuso do restaurante: os dias ("hoje", "ontem") são os dele
+       * @example America/Sao_Paulo
+       */
+      timeZone: string;
+      /** @enum {string} */
+      role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+    };
+    LoginResponse: {
+      /** @description JWT para o cabeçalho Authorization: Bearer */
+      accessToken: string;
+      /** @example Bearer */
+      tokenType: string;
+      /** Format: date-time */
+      expiresAt: string;
+      /** Format: uuid */
+      userId: string;
+      userName: string;
+      establishment: components["schemas"]["EstablishmentAccess"];
+    };
+    /** @description Quem tocou no próprio nome e o PIN digitado */
+    PinLoginRequest: {
+      /** Format: uuid */
+      memberId: string;
+      /** @example 258014 */
+      pin: string;
+    };
+    /** @description O e-mail de quem esqueceu a senha */
+    PasswordResetRequest: {
+      /** @example marina@sakura.com */
+      email: string;
+    };
+    /** @description O token do link e a senha nova */
+    PasswordResetConfirmRequest: {
+      /** @description O token que veio no link do e-mail */
+      token: string;
+      /** @description Pelo menos 10 caracteres, com letra e número */
+      newPassword: string;
+    };
+    LoginRequest: {
+      /** @example marina@sakurasushi.com.br */
+      email: string;
+      password: string;
+    };
+    /** @description Só os campos enviados mudam */
+    UpdateTeamMemberRequest: {
+      /**
+       * @description Novo papel: MANAGER, STAFF ou KITCHEN
+       * @enum {string}
+       */
+      role?: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+      /**
+       * @description Novo PIN: 6 números
+       * @example 739105
+       */
+      pin?: string;
+    };
+    /** @description Só os campos enviados mudam */
+    UpdateTableRequest: {
+      /** @example 04 */
+      label?: string;
+      /**
+       * Format: uuid
+       * @description Mover para outro setor
+       */
+      sectorId?: string;
+      /** @description Ativar ou desativar a mesa */
+      active?: boolean;
+    };
+    AvailabilityRequest: {
+      /** @description false: "Esgotado hoje" */
+      available: boolean;
+    };
+    PageResponseTeamMember: {
+      content: components["schemas"]["TeamMember"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    ClosedTab: {
+      /** Format: uuid */
+      id: string;
+      tableLabel: string;
+      sectorName: string;
+      /** Format: date-time */
+      openedAt: string;
+      /** Format: date-time */
+      closedAt: string;
+      /**
+       * Format: int64
+       * @description O que foi cobrado
+       */
+      totalCents: number;
+      /** @enum {string} */
+      paymentMethod: "PIX" | "CARD" | "CASH";
+      /** @description Quem fechou */
+      closedByName?: string;
+    };
+    PageResponseClosedTab: {
+      content: components["schemas"]["ClosedTab"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    OpenTab: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      tableId: string;
+      tableLabel: string;
+      sectorName: string;
+      /** Format: date-time */
+      openedAt: string;
+      /**
+       * Format: int64
+       * @description A soma dos itens não cancelados até agora
+       */
+      totalCents: number;
+      /**
+       * Format: int32
+       * @description Itens ainda a caminho (na fila, em preparo, prontos)
+       */
+      itemsOnTheWay: number;
+    };
+    PageResponseOpenTab: {
+      content: components["schemas"]["OpenTab"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseDiningTable: {
+      content: components["schemas"]["DiningTable"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseSector: {
+      content: components["schemas"]["Sector"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseRodizio: {
+      content: components["schemas"]["Rodizio"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseRodizioQuote: {
+      content: components["schemas"]["RodizioQuote"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    /** @description Um rodízio com o preço de cada faixa agora, no relógio do restaurante */
+    RodizioQuote: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: "A_LA_MINUTE" | "PASSAGEM";
+      description: string;
+      tiers: components["schemas"]["RodizioQuoteTier"][];
+    };
+    RodizioQuoteTier: {
+      name: string;
+      /** Format: int64 */
+      priceCents: number;
+    };
+    PushSettings: {
+      /** @description false: o servidor está sem as chaves VAPID */
+      enabled: boolean;
+      /** @description A chave pública VAPID (base64url), para o navegador se inscrever */
+      publicKey?: string;
+    };
+    /** @description A aparência da página: só os tons da cor escolhida */
+    PublicBrand: {
+      /** @enum {string} */
+      theme: "DARK" | "LIGHT";
+      /**
+       * @description Fundo dos botões, com texto branco
+       * @example #CC3F1C
+       */
+      primary: string;
+      /**
+       * @description Texto de destaque no tema em uso
+       * @example #FF8466
+       */
+      accent: string;
+      /** @description null quando o restaurante usa as iniciais */
+      logo?: components["schemas"]["PublicLogo"];
+      /** @description O @, sem o "@"; null quando não informado */
+      instagram?: string;
+      /** @description null quando não informado */
+      googleReviewUrl?: string;
+    };
+    PublicLogo: {
+      /** @description 128 px */
+      small: string;
+      /** @description 512 px */
+      large: string;
+    };
+    /** @description A mesa do QR Code, para a página pública */
+    PublicTable: {
+      /** @example Sakura Sushi */
+      establishmentName: string;
+      /** @example 04 */
+      tableLabel: string;
+      /** @example Salão principal */
+      sectorName: string;
+      brand: components["schemas"]["PublicBrand"];
+      /** @description false: o atendimento pelo celular está pausado (assinatura suspensa); a página mostra o aviso no lugar dos botões de chamar e pedir */
+      serving: boolean;
+    };
+    /** @description Cada campo ausente: a regra está desligada */
+    RodizioLimits: {
+      /**
+       * Format: int32
+       * @description Unidades de cada item numa rodada, para a mesa toda
+       */
+      maxPerItem?: number;
+      /**
+       * Format: int32
+       * @description Quantos itens cabem agora, pelo limite de itens não entregues
+       */
+      room?: number;
+      /**
+       * Format: date-time
+       * @description Quando a próxima rodada libera (o intervalo entre rodadas)
+       */
+      nextRoundAt?: string;
+      /**
+       * Format: date-time
+       * @description O fim do rodízio (o tempo limite)
+       */
+      endsAt?: string;
+      /** @description O aviso de desperdício, para o topo da aba Rodízio */
+      wasteNotice?: string;
+    };
+    TableOrders: {
+      /** @description O restaurante aceita pedido pelo celular */
+      orderingEnabled: boolean;
+      /**
+       * Format: int64
+       * @description Os itens não cancelados mais o rodízio (pessoas × preço)
+       */
+      totalCents: number;
+      /** @description O rodízio da mesa; ausente se ela não está no rodízio */
+      rodizio?: components["schemas"]["TableRodizio"];
+      /** @description Os produtos incluídos no rodízio (a aba Rodízio) */
+      rodizioProductIds: string[];
+      /** @description As regras do rodízio ligadas, em números para a tela; ausente fora do rodízio */
+      rodizioLimits?: components["schemas"]["RodizioLimits"];
+      /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
+      orders: components["schemas"]["TableOrder"][];
+    };
+    PublicMenu: {
+      categories: components["schemas"]["PublicMenuCategory"][];
+    };
+    PublicMenuCategory: {
+      /** Format: uuid */
+      id: string;
+      /** @example Entradas */
+      name: string;
+      products: components["schemas"]["PublicMenuItem"][];
+    };
+    /** @description Preços em centavos */
+    PublicMenuItem: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @description Vazia quando o restaurante não escreveu */
+      description: string;
+      /**
+       * Format: int64
+       * @example 1990
+       */
+      priceCents: number;
+      /**
+       * Format: int64
+       * @description null quando não há promoção
+       * @example 1590
+       */
+      promoPriceCents?: number;
+      featured: boolean;
+      /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
+      available: boolean;
+      /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
+      aLaCarte: boolean;
+      /** @description A capa (a primeira foto); null quando o produto não tem foto */
+      photo?: components["schemas"]["PublicMenuPhoto"];
+      /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
+      media: components["schemas"]["PublicMenuMedia"][];
+    };
+    /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
+    PublicMenuMedia: {
+      /** @enum {string} */
+      type: "IMAGE" | "VIDEO";
+      /**
+       * Format: int32
+       * @description Largura, para a tela reservar o espaço
+       */
+      width: number;
+      /** Format: int32 */
+      height: number;
+      /** @description Os tamanhos da foto; null no vídeo */
+      image?: components["schemas"]["PublicMenuPhoto"];
+      /** @description O vídeo; null na foto */
+      video?: components["schemas"]["PublicMenuVideo"];
+    };
+    PublicMenuPhoto: {
+      /** @description Quadrada, 240 px */
+      thumb: string;
+      /** @description Até 720 px */
+      medium: string;
+      /** @description Até 1440 px */
+      large: string;
+    };
+    PublicMenuVideo: {
+      /** @description O MP4 para tocar */
+      url: string;
+      /** @description A capa do vídeo, se o serviço gera uma */
+      poster?: string;
+      /** Format: int32 */
+      durationSeconds: number;
+    };
+    SseEmitter: {
+      /** Format: int64 */
+      timeout?: number;
+    };
+    PageResponseProduct: {
+      content: components["schemas"]["Product"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseProductMedia: {
+      content: components["schemas"]["ProductMedia"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponsePrintJob: {
+      content: components["schemas"]["PrintJob"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponsePlan: {
+      content: components["schemas"]["Plan"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponsePassagemTable: {
+      content: components["schemas"]["PassagemTable"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    /** @description Uma mesa no rodízio de passagem, para os passadores */
+    PassagemTable: {
+      /** Format: uuid */
+      tableId: string;
+      /** @example 04 */
+      tableLabel: string;
+      sectorName: string;
+      /** @example Churrasco */
+      rodizioName: string;
+      /** Format: int32 */
+      people: number;
+      /**
+       * @description SERVING: cartão verde. PAUSED: vermelho
+       * @enum {string}
+       */
+      status: "SERVING" | "PAUSED";
+      /**
+       * Format: date-time
+       * @description A última virada do cartão
+       */
+      statusChangedAt: string;
+    };
+    PageResponsePassagemRequest: {
+      content: components["schemas"]["PassagemRequest"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    /** @description Um corte pedido pela mesa, para o passador levar */
+    PassagemRequest: {
+      /**
+       * Format: uuid
+       * @description O item do pedido (o passador entrega ou cancela por ele)
+       */
+      id: string;
+      /** @example 04 */
+      tableLabel: string;
+      sectorName: string;
+      /** @example Picanha */
+      productName: string;
+      /** Format: int32 */
+      quantity: number;
+      /**
+       * @description O ponto, ou outra observação da mesa
+       * @example Mal passada
+       */
+      note?: string;
+      /**
+       * Format: date-time
+       * @description Quando foi pedido
+       */
+      createdAt: string;
+    };
+    PageResponseWaitingOrder: {
+      content: components["schemas"]["WaitingOrder"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    WaitingOrder: {
+      /** Format: uuid */
+      id: string;
+      /**
+       * Format: int32
+       * @description O número do pedido no dia
+       */
+      number: number;
+      tableLabel: string;
+      sectorName: string;
+      /** Format: date-time */
+      createdAt: string;
+      /**
+       * Format: int64
+       * @description A soma dos itens não cancelados
+       */
+      totalCents: number;
+      items: components["schemas"]["TableOrderItem"][];
+    };
+    KitchenItem: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      orderId: string;
+      /**
+       * Format: int32
+       * @description O número do pedido no dia
+       */
+      orderNumber: number;
+      tableLabel: string;
+      sectorName: string;
+      productName: string;
+      /** Format: int32 */
+      quantity: number;
+      note?: string;
+      /** @enum {string} */
+      status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+      /**
+       * Format: date-time
+       * @description Quando foi pedido
+       */
+      createdAt: string;
+      /**
+       * Format: date-time
+       * @description Quando a cozinha começou
+       */
+      preparingAt?: string;
+      /**
+       * Format: date-time
+       * @description Quando ficou pronto
+       */
+      readyAt?: string;
+    };
+    PageResponseKitchenItem: {
+      content: components["schemas"]["KitchenItem"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseMenuCategory: {
+      content: components["schemas"]["MenuCategory"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    Me: {
+      /** Format: uuid */
+      userId: string;
+      name: string;
+      /** @description Vazio para quem entra só por PIN (garçom, cozinha) */
+      email?: string;
+      establishment: components["schemas"]["EstablishmentAccess"];
+    };
+    PageResponseDevice: {
+      content: components["schemas"]["Device"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PageResponseStaffCall: {
+      content: components["schemas"]["StaffCall"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    /** @description O aparelho que está chamando e o restaurante dele */
+    CurrentDevice: {
+      device: components["schemas"]["Device"];
+      /** @example Sakura Sushi */
+      establishmentName: string;
+    };
+    PageResponsePinMember: {
+      content: components["schemas"]["PinMember"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    /** @description Pessoa que pode entrar por PIN neste aparelho */
+    PinMember: {
+      /** Format: uuid */
+      id: string;
+      /** @example Carlos Souza */
+      name: string;
+      /** @enum {string} */
+      role: "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    changeRodizioGuests: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tableId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RodizioGuestsRequest"];
-            };
-        };
-        responses: {
-            /** @description Ajustado: os preços continuam os da ativação */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableRodizio"];
-                };
-            };
-            /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Mesa que não é deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A mesa não está no rodízio */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    requestPlan: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlanRequestRequest"];
-            };
-        };
-        responses: {
-            /** @description A assinatura, com o plano escolhido */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Subscription"];
-                };
-            };
-            /** @description Plano não encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Plano sob consulta (Enterprise) */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getRodizio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O rodízio */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rodizio"];
-                };
-            };
-            /** @description Não é um rodízio ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    updateRodizio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RodizioRequest"];
-            };
-        };
-        responses: {
-            /** @description Salvo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rodizio"];
-                };
-            };
-            /** @description Campo inválido */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um rodízio ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já existe outro rodízio com este nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deactivateRodizio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desativado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um rodízio deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    turnRodizioCard: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RodizioCardRequest"];
-            };
-        };
-        responses: {
-            /** @description O rodízio da mesa, com a cor nova */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableRodizio"];
-                };
-            };
-            /** @description Sem presença confirmada, ou celular bloqueado */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A mesa não está num rodízio de passagem */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    reorderProductMedia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderRequest"];
-            };
-        };
-        responses: {
-            /** @description Reordenadas */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A galeria mudou desde que a tela carregou */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getProduct: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O produto */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Product"];
-                };
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    updateProduct: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProductRequest"];
-            };
-        };
-        responses: {
-            /** @description Salvo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Product"];
-                };
-            };
-            /** @description Produto ou categoria não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deactivateProduct: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desativado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um produto deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getPresenceRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A configuração e a rede de onde você está */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PresenceRule"];
-                };
-            };
-        };
-    };
-    updatePresenceRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PresenceRuleRequest"];
-            };
-        };
-        responses: {
-            /** @description Salva */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PresenceRule"];
-                };
-            };
-            /** @description IP, local ou raio inválido */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getOrderSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description As configurações */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrderSettings"];
-                };
-            };
-        };
-    };
-    updateOrderSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrderSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Salvas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrderSettings"];
-                };
-            };
-        };
-    };
-    reorderProducts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderRequest"];
-            };
-        };
-        responses: {
-            /** @description Reordenados */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é uma categoria ativa deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A lista mudou desde que a tela carregou */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    reorderMenuCategories: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderRequest"];
-            };
-        };
-        responses: {
-            /** @description Reordenadas */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description A lista mudou desde que a tela carregou */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getBrand: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A marca */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Brand"];
-                };
-            };
-        };
-    };
-    updateBrand: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BrandRequest"];
-            };
-        };
-        responses: {
-            /** @description Salva */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Brand"];
-                };
-            };
-            /** @description Instagram ou link de avaliação inválido */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listTeamMembers: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página da equipe */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseTeamMember"];
-                };
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    addTeamMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddTeamMemberRequest"];
-            };
-        };
-        responses: {
-            /** @description Cadastrada */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamMember"];
-                };
-            };
-            /** @description Dados inválidos ou PIN fácil de adivinhar */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    reactivateTeamMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Religada (ou já estava ativa) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamMember"];
-                };
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está na equipe deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    closeTab: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CloseTabRequest"];
-            };
-        };
-        responses: {
-            /** @description Fechada, com o total cobrado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffTab"];
-                };
-            };
-            /** @description Não é uma comanda deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já fechada, ou com itens a caminho (a mensagem diz quais) */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listTables: {
-        parameters: {
-            query?: {
-                /** @description Só as mesas deste setor */
-                sectorId?: string;
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de mesas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDiningTable"];
-                };
-            };
-            /** @description Mesa ou setor não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    createTable: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTableRequest"];
-            };
-        };
-        responses: {
-            /** @description Criada */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiningTable"];
-                };
-            };
-            /** @description Mesa ou setor não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já existe uma mesa com esse nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    activateRodizio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tableId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ActivateRodizioRequest"];
-            };
-        };
-        responses: {
-            /** @description Ativado: o preço de agora foi copiado */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableRodizio"];
-                };
-            };
-            /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Mesa ou rodízio que não é deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A mesa já está num rodízio */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Rodízio de passagem (ainda não funciona na mesa) */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    rotateTableToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description QR trocado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiningTable"];
-                };
-            };
-            /** @description Mesa ou setor não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    signup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SignupRequest"];
-            };
-        };
-        responses: {
-            /** @description Conta criada */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SignupResponse"];
-                };
-            };
-            /** @description Dados inválidos */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description E-mail já cadastrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listSectors: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de setores */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseSector"];
-                };
-            };
-        };
-    };
-    createSector: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SectorRequest"];
-            };
-        };
-        responses: {
-            /** @description Criado */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Sector"];
-                };
-            };
-            /** @description Já existe um setor com esse nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listRodizios: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Rodízios por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página dos rodízios */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseRodizio"];
-                };
-            };
-        };
-    };
-    createRodizio: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RodizioRequest"];
-            };
-        };
-        responses: {
-            /** @description Criado */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rodizio"];
-                };
-            };
-            /** @description Campo inválido, preços especiais que se sobrepõem, ou produto que não é do cardápio */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já existe um rodízio com este nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O restaurante já tem 10 rodízios ativos */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    subscribePush: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PushSubscriptionRequest"];
-            };
-        };
-        responses: {
-            /** @description Inscrito */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Inscrição inválida, ou serviço de push desconhecido */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O push está desligado neste servidor */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    unsubscribePush: {
-        parameters: {
-            query: {
-                /** @description O endpoint da inscrição */
-                endpoint: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Removido */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Este navegador não está inscrito por esta pessoa */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    startTableSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sessão em uso; o cookie vai no Set-Cookie */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableSession"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    sendRound: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlaceOrderRequest"];
-            };
-        };
-        responses: {
-            /** @description Rodada enviada (direto para a cozinha ou parada na confirmação) */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableOrder"];
-                };
-            };
-            /** @description Sem presença confirmada, ou celular bloqueado */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A mesa não está no rodízio, ou um item não faz parte dele, esgotou ou saiu do cardápio */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Pedidos demais deste celular em pouco tempo */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    checkPresence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PresenceCheckRequest"];
-            };
-        };
-        responses: {
-            /** @description Como está a presença desta sessão */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Presence"];
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listTableOrders: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A comanda (vazia, se a mesa ainda não pediu) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableOrders"];
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    placeOrder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlaceOrderRequest"];
-            };
-        };
-        responses: {
-            /** @description Pedido feito (direto para a cozinha ou parado na confirmação) */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableOrder"];
-                };
-            };
-            /** @description Sem presença confirmada, ou celular bloqueado */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Pedido desligado, ou um item esgotou ou saiu do cardápio */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Pedidos demais deste celular em pouco tempo */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listTableCalls: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista curta, sem paginação: são no máximo dois */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableCall"][];
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    requestCall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CallRequest"];
-            };
-        };
-        responses: {
-            /** @description Já havia um chamado desse tipo aberto: volta o mesmo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableCall"];
-                };
-            };
-            /** @description Chamado aberto */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableCall"];
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listProducts: {
-        parameters: {
-            query?: {
-                /** @description Só os produtos desta categoria */
-                categoryId?: string;
-                /** @description Parte do nome, sem diferenciar maiúsculas */
-                q?: string;
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de produtos */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseProduct"];
-                };
-            };
-        };
-    };
-    createProduct: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProductRequest"];
-            };
-        };
-        responses: {
-            /** @description Criado */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Product"];
-                };
-            };
-            /** @description A categoria não é uma categoria ativa deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    startVideoUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideoUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description A mídia criada e a autorização do envio */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoUpload"];
-                };
-            };
-            /** @description Tipo ou tamanho não aceito (MP4, MOV ou WebM, até 200 MB) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O produto já tem 3 vídeos */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O produto já tem 8 fotos e vídeos */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listProductMedia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Toda a galeria, numa página só (são no máximo 8) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseProductMedia"];
-                };
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    addProductMedia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddMediaRequest"];
-            };
-        };
-        responses: {
-            /** @description Foto adicionada (no fim da galeria) */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProductMedia"];
-                };
-            };
-            /** @description O arquivo não é uma foto JPG ou PNG que dá para usar */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O arquivo não chegou, ou o produto já tem 8 fotos */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    startMediaUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MediaUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description Como enviar o arquivo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MediaUpload"];
-                };
-            };
-            /** @description Tipo ou tamanho não aceito */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O produto já tem 8 fotos */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    claimPrintJob: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClaimPrintJobRequest"];
-            };
-        };
-        responses: {
-            /** @description Os itens para imprimir (vazio: outra estação já imprimiu) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PrintJob"];
-                };
-            };
-            /** @description Não é um pedido deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    rejectOrder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recusado (os itens são cancelados) */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um pedido deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está esperando a confirmação */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    approveOrder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Confirmado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um pedido deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está esperando a confirmação */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    startOrderItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Em preparo */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um item deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está na fila, ou o pedido espera o garçom */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    readyOrderItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pronto */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um item deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já está pronto, entregue ou cancelado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deliverOrderItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Entregue */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um item deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já foi entregue ou cancelado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    cancelOrderItemByStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CancelItemRequest"];
-            };
-        };
-        responses: {
-            /** @description Cancelado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Sem motivo, ou motivo longo demais */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um item deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já foi entregue ou cancelado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listMenuCategories: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de categorias */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseMenuCategory"];
-                };
-            };
-        };
-    };
-    createMenuCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MenuCategoryRequest"];
-            };
-        };
-        responses: {
-            /** @description Criada */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MenuCategory"];
-                };
-            };
-            /** @description Já existe uma categoria com esse nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    setLogo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetLogoRequest"];
-            };
-        };
-        responses: {
-            /** @description Logo trocada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Brand"];
-                };
-            };
-            /** @description O arquivo não é uma imagem PNG ou JPG que dá para usar */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O arquivo não chegou */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    removeLogo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Logo removida */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Brand"];
-                };
-            };
-        };
-    };
-    startLogoUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LogoUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description Como enviar o arquivo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LogoUpload"];
-                };
-            };
-            /** @description Tipo ou tamanho não aceito */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listDevices: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de aparelhos */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDevice"];
-                };
-            };
-        };
-    };
-    linkDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LinkDeviceRequest"];
-            };
-        };
-        responses: {
-            /** @description Vinculado; o aparelho busca o token sozinho */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Device"];
-                };
-            };
-            /** @description Código fora do formato ou nome vazio */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Código não encontrado ou vencido */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    startDevicePairing: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pedido aberto */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PairingStarted"];
-                };
-            };
-        };
-    };
-    claimDevicePairing: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClaimPairingRequest"];
-            };
-        };
-        responses: {
-            /** @description PENDING ou LINKED */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClaimPairingResponse"];
-                };
-            };
-            /** @description Pedido desconhecido, vencido, segredo errado ou token já entregue */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    finishCall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Concluído */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffCall"];
-                };
-            };
-            /** @description Não é um chamado deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Ainda não foi aceito, ou já foi encerrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    declineCall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recusado (o chamado é cancelado) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffCall"];
-                };
-            };
-            /** @description Não é um chamado deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um pedido de liberação, ou já foi respondido */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    blockCaller: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Bloqueado; os chamados abertos dele foram cancelados */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um chamado deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    acceptCall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Aceito */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffCall"];
-                };
-            };
-            /** @description Não é um chamado deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Outra pessoa aceitou antes, ou o chamado já foi encerrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    refreshSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                refresh_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sessão renovada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponse"];
-                };
-            };
-            /** @description Sessão terminou; é preciso entrar de novo */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    pinLogin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                device_token?: string;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PinLoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Login feito */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponse"];
-                };
-            };
-            /** @description PIN incorreto, ou aparelho não vinculado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O aparelho é uma TV */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A pessoa não pode entrar por PIN neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Erros demais: PIN bloqueado por alguns minutos */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    requestPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetRequest"];
-            };
-        };
-        responses: {
-            /** @description Pedido recebido (a mesma resposta com ou sem conta) */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description E-mail fora do formato */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    confirmPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description Senha trocada */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Senha fraca */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Link vencido, já usado ou inexistente */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                refresh_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sessão encerrada */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Login feito */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponse"];
-                };
-            };
-            /** @description E-mail ou senha incorretos */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getTeamMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A pessoa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamMember"];
-                };
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está na equipe deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deactivateTeamMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desligada */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está na equipe deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    updateTeamMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTeamMemberRequest"];
-            };
-        };
-        responses: {
-            /** @description Alterada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamMember"];
-                };
-            };
-            /** @description Papel sem permissão para esta ação */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não está na equipe deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    updateTable: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTableRequest"];
-            };
-        };
-        responses: {
-            /** @description Alterada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiningTable"];
-                };
-            };
-            /** @description Mesa ou setor não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já existe uma mesa com esse nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deactivateSector: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desativado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description O setor ainda tem mesas ativas */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    renameSector: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SectorRequest"];
-            };
-        };
-        responses: {
-            /** @description Renomeado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Sector"];
-                };
-            };
-            /** @description Não é um setor ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    changeProductAvailability: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AvailabilityRequest"];
-            };
-        };
-        responses: {
-            /** @description Alterado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Product"];
-                };
-            };
-            /** @description Não é um produto ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    deactivateMenuCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desativada */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é uma categoria deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A categoria ainda tem produtos */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    renameMenuCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MenuCategoryRequest"];
-            };
-        };
-        responses: {
-            /** @description Renomeada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MenuCategory"];
-                };
-            };
-            /** @description Não é uma categoria ativa deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Já existe uma categoria com esse nome */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listClosedTabs: {
-        parameters: {
-            query: {
-                /**
-                 * @description Primeiro dia (AAAA-MM-DD), no calendário do restaurante
-                 * @example 2026-11-01
-                 */
-                from: string;
-                /**
-                 * @description Último dia (AAAA-MM-DD), incluído
-                 * @example 2026-11-03
-                 */
-                to: string;
-                /** @description Só desta mesa */
-                tableId?: string;
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Comandas por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página do histórico */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseClosedTab"];
-                };
-            };
-            /** @description Período invertido ou maior que um ano */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getTab: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A comanda */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffTab"];
-                };
-            };
-            /** @description Não é uma comanda deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listOpenTabs: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Comandas por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página das comandas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseOpenTab"];
-                };
-            };
-        };
-    };
-    downloadTableDisplay: {
-        parameters: {
-            query?: {
-                /** @description PNG ou SVG (só o QR) ou PDF (display completo) */
-                format?: "PNG" | "SVG" | "PDF";
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O arquivo */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "image/png": string;
-                    "image/svg+xml": string;
-                    "application/pdf": string;
-                };
-            };
-            /** @description Mesa ou setor não encontrado neste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getSubscription: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A assinatura */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Subscription"];
-                };
-            };
-        };
-    };
-    downloadSectorDisplays: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O PDF, uma mesa por página */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/pdf": string;
-                };
-            };
-            /** @description Não é um setor ativo deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O setor não tem mesas ativas */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    quoteRodizios: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Rodízios por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página dos rodízios */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseRodizioQuote"];
-                };
-            };
-        };
-    };
-    pushSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description As configurações */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PushSettings"];
-                };
-            };
-        };
-    };
-    getPublicTable: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Mesa encontrada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicTable"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listTableRodizios: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Rodízios por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página dos rodízios */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseRodizioQuote"];
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getPublicMenu: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O cardápio */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicMenu"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    streamTableEvents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Fluxo SSE; cada aviso traz só ids e status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
-                };
-            };
-        };
-    };
-    listPendingPrintJobs: {
-        parameters: {
-            query: {
-                /** @description ORDER: os pedidos novos; CANCELLATION: os itens cancelados depois de impressos */
-                kind: "ORDER" | "CANCELLATION";
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Comandas por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de comandas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePrintJob"];
-                };
-            };
-        };
-    };
-    listPrintedJobs: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Comandas por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de comandas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePrintJob"];
-                };
-            };
-        };
-    };
-    listPlans: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de planos */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePlan"];
-                };
-            };
-            /** @description Parâmetros de paginação inválidos */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listPassagemTables: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Mesas por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página das mesas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePassagemTable"];
-                };
-            };
-        };
-    };
-    listPassagemRequests: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Cortes por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página dos cortes */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePassagemRequest"];
-                };
-            };
-        };
-    };
-    listWaitingOrders: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Pedidos por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página dos pedidos */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseWaitingOrder"];
-                };
-            };
-        };
-    };
-    listKitchenQueue: {
-        parameters: {
-            query?: {
-                /** @description Só estes status (PENDING, PREPARING, READY); sem nada, os três */
-                status?: ("PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED")[];
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página da fila */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseKitchenItem"];
-                };
-            };
-            /** @description Status que não está na fila (entregue, cancelado) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Me"];
-                };
-            };
-        };
-    };
-    streamStaffEvents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Fluxo SSE; cada aviso traz só ids e status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    listCallQueue: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página da fila */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseStaffCall"];
-                };
-            };
-        };
-    };
-    getCurrentDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                device_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Aparelho vinculado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CurrentDevice"];
-                };
-            };
-            /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    streamTvEvents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                device_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Fluxo SSE; cada aviso traz só ids e status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-            /** @description Aparelho não vinculado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
-                };
-            };
-            /** @description O aparelho não é uma TV */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
-                };
-            };
-        };
-    };
-    listTvCallQueue: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                device_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página da fila */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseStaffCall"];
-                };
-            };
-            /** @description Aparelho não vinculado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O aparelho não é uma TV */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    listPinMembers: {
-        parameters: {
-            query?: {
-                /** @description Número da página, começando em 0 */
-                page?: number;
-                /** @description Itens por página (1 a 100) */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                device_token?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de pessoas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponsePinMember"];
-                };
-            };
-            /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O aparelho é uma TV */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    cancelOrderItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-                itemId: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cancelado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um item desta mesa */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description A cozinha já começou, ou o item é de outro celular */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    cancelCall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-                callId: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cancelado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Não é um chamado desta mesa */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description O chamado já foi encerrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    removeProductMedia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: string;
-                mediaId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Removida */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é uma foto deste produto */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    unlinkDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Desvinculado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Não é um aparelho deste restaurante */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
+  changeRodizioGuests: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RodizioGuestsRequest"];
+      };
+    };
+    responses: {
+      /** @description Ajustado: os preços continuam os da ativação */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableRodizio"];
+        };
+      };
+      /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Mesa que não é deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A mesa não está no rodízio */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  requestPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PlanRequestRequest"];
+      };
+    };
+    responses: {
+      /** @description A assinatura, com o plano escolhido */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Subscription"];
+        };
+      };
+      /** @description Plano não encontrado */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Plano sob consulta (Enterprise) */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description O rodízio */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Rodizio"];
+        };
+      };
+      /** @description Não é um rodízio ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  updateRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RodizioRequest"];
+      };
+    };
+    responses: {
+      /** @description Salvo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Rodizio"];
+        };
+      };
+      /** @description Campo inválido */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um rodízio ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe outro rodízio com este nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deactivateRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Pausado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um rodízio deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  turnRodizioCard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RodizioCardRequest"];
+      };
+    };
+    responses: {
+      /** @description O rodízio da mesa, com a cor nova */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableRodizio"];
+        };
+      };
+      /** @description Sem presença confirmada, ou celular bloqueado */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A mesa não está num rodízio de passagem */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  reorderProductMedia: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReorderRequest"];
+      };
+    };
+    responses: {
+      /** @description Reordenadas */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A galeria mudou desde que a tela carregou */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description O produto */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Product"];
+        };
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  updateProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ProductRequest"];
+      };
+    };
+    responses: {
+      /** @description Salvo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Product"];
+        };
+      };
+      /** @description Produto ou categoria não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deactivateProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Desativado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um produto deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  setProductRodizios: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ProductRodiziosRequest"];
+      };
+    };
+    responses: {
+      /** @description Os rodízios em que ele ficou */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProductRodizios"];
+        };
+      };
+      /** @description O produto ou algum rodízio não é deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getPresenceRule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A configuração e a rede de onde você está */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PresenceRule"];
+        };
+      };
+    };
+  };
+  updatePresenceRule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PresenceRuleRequest"];
+      };
+    };
+    responses: {
+      /** @description Salva */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PresenceRule"];
+        };
+      };
+      /** @description IP, local ou raio inválido */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getOrderSettings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description As configurações */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrderSettings"];
+        };
+      };
+    };
+  };
+  updateOrderSettings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["OrderSettingsRequest"];
+      };
+    };
+    responses: {
+      /** @description Salvas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrderSettings"];
+        };
+      };
+    };
+  };
+  reorderProducts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReorderRequest"];
+      };
+    };
+    responses: {
+      /** @description Reordenados */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é uma categoria ativa deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A lista mudou desde que a tela carregou */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  reorderMenuCategories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReorderRequest"];
+      };
+    };
+    responses: {
+      /** @description Reordenadas */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description A lista mudou desde que a tela carregou */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getBrand: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A marca */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Brand"];
+        };
+      };
+    };
+  };
+  updateBrand: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BrandRequest"];
+      };
+    };
+    responses: {
+      /** @description Salva */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Brand"];
+        };
+      };
+      /** @description Instagram ou link de avaliação inválido */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listTeamMembers: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página da equipe */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseTeamMember"];
+        };
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  addTeamMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddTeamMemberRequest"];
+      };
+    };
+    responses: {
+      /** @description Cadastrada */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamMember"];
+        };
+      };
+      /** @description Dados inválidos ou PIN fácil de adivinhar */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  reactivateTeamMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Religada (ou já estava ativa) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamMember"];
+        };
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está na equipe deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  closeTab: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CloseTabRequest"];
+      };
+    };
+    responses: {
+      /** @description Fechada, com o total cobrado */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StaffTab"];
+        };
+      };
+      /** @description Não é uma comanda deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já fechada, ou com itens a caminho (a mensagem diz quais) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listTables: {
+    parameters: {
+      query?: {
+        /** @description Só as mesas deste setor */
+        sectorId?: string;
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de mesas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseDiningTable"];
+        };
+      };
+      /** @description Mesa ou setor não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  createTable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateTableRequest"];
+      };
+    };
+    responses: {
+      /** @description Criada */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DiningTable"];
+        };
+      };
+      /** @description Mesa ou setor não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe uma mesa com esse nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  activateRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ActivateRodizioRequest"];
+      };
+    };
+    responses: {
+      /** @description Ativado: o preço de agora foi copiado */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableRodizio"];
+        };
+      };
+      /** @description Campo inválido, nenhuma pessoa, ou faixa que não existe */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Mesa ou rodízio que não é deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A mesa já está num rodízio */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Rodízio de passagem (ainda não funciona na mesa) */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  rotateTableToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description QR trocado */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DiningTable"];
+        };
+      };
+      /** @description Mesa ou setor não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  signup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SignupRequest"];
+      };
+    };
+    responses: {
+      /** @description Conta criada */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SignupResponse"];
+        };
+      };
+      /** @description Dados inválidos */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description E-mail já cadastrado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listSectors: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de setores */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseSector"];
+        };
+      };
+    };
+  };
+  createSector: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SectorRequest"];
+      };
+    };
+    responses: {
+      /** @description Criado */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Sector"];
+        };
+      };
+      /** @description Já existe um setor com esse nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listRodizios: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Rodízios por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página dos rodízios */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseRodizio"];
+        };
+      };
+    };
+  };
+  createRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RodizioRequest"];
+      };
+    };
+    responses: {
+      /** @description Criado */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Rodizio"];
+        };
+      };
+      /** @description Campo inválido, preços especiais que se sobrepõem, ou produto que não é do cardápio */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe um rodízio com este nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O restaurante já tem 10 rodízios ativos */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  reactivateRodizio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Ativo de novo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Rodizio"];
+        };
+      };
+      /** @description Não é um rodízio deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe um rodízio ativo com este nome, ou o limite de ativos */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  subscribePush: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PushSubscriptionRequest"];
+      };
+    };
+    responses: {
+      /** @description Inscrito */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Inscrição inválida, ou serviço de push desconhecido */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O push está desligado neste servidor */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  unsubscribePush: {
+    parameters: {
+      query: {
+        /** @description O endpoint da inscrição */
+        endpoint: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Removido */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Este navegador não está inscrito por esta pessoa */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  startTableSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sessão em uso; o cookie vai no Set-Cookie */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableSession"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  sendRound: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PlaceOrderRequest"];
+      };
+    };
+    responses: {
+      /** @description Rodada enviada (direto para a cozinha ou parada na confirmação) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableOrder"];
+        };
+      };
+      /** @description Sem presença confirmada, ou celular bloqueado */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A mesa não está no rodízio, ou um item não faz parte dele, esgotou ou saiu do cardápio */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Pedidos demais deste celular em pouco tempo */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  checkPresence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["PresenceCheckRequest"];
+      };
+    };
+    responses: {
+      /** @description Como está a presença desta sessão */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Presence"];
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listTableOrders: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A comanda (vazia, se a mesa ainda não pediu) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableOrders"];
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  placeOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PlaceOrderRequest"];
+      };
+    };
+    responses: {
+      /** @description Pedido feito (direto para a cozinha ou parado na confirmação) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableOrder"];
+        };
+      };
+      /** @description Sem presença confirmada, ou celular bloqueado */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Pedido desligado, ou um item esgotou ou saiu do cardápio */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Pedidos demais deste celular em pouco tempo */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listTableCalls: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lista curta, sem paginação: são no máximo dois */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableCall"][];
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  requestCall: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CallRequest"];
+      };
+    };
+    responses: {
+      /** @description Já havia um chamado desse tipo aberto: volta o mesmo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableCall"];
+        };
+      };
+      /** @description Chamado aberto */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TableCall"];
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listProducts: {
+    parameters: {
+      query?: {
+        /** @description Só os produtos desta categoria */
+        categoryId?: string;
+        /** @description Parte do nome, sem diferenciar maiúsculas */
+        q?: string;
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de produtos */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseProduct"];
+        };
+      };
+    };
+  };
+  createProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ProductRequest"];
+      };
+    };
+    responses: {
+      /** @description Criado */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Product"];
+        };
+      };
+      /** @description A categoria não é uma categoria ativa deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  startVideoUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VideoUploadRequest"];
+      };
+    };
+    responses: {
+      /** @description A mídia criada e a autorização do envio */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VideoUpload"];
+        };
+      };
+      /** @description Tipo ou tamanho não aceito (MP4, MOV ou WebM, até 200 MB) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O produto já tem 3 vídeos */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O produto já tem 8 fotos e vídeos */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listProductMedia: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Toda a galeria, numa página só (são no máximo 8) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseProductMedia"];
+        };
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  addProductMedia: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddMediaRequest"];
+      };
+    };
+    responses: {
+      /** @description Foto adicionada (no fim da galeria) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProductMedia"];
+        };
+      };
+      /** @description O arquivo não é uma foto JPG ou PNG que dá para usar */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O arquivo não chegou, ou o produto já tem 8 fotos */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  startMediaUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MediaUploadRequest"];
+      };
+    };
+    responses: {
+      /** @description Como enviar o arquivo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MediaUpload"];
+        };
+      };
+      /** @description Tipo ou tamanho não aceito */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O produto já tem 8 fotos */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  claimPrintJob: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ClaimPrintJobRequest"];
+      };
+    };
+    responses: {
+      /** @description Os itens para imprimir (vazio: outra estação já imprimiu) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PrintJob"];
+        };
+      };
+      /** @description Não é um pedido deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  rejectOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recusado (os itens são cancelados) */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um pedido deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está esperando a confirmação */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  approveOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Confirmado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um pedido deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está esperando a confirmação */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  startOrderItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Em preparo */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um item deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está na fila, ou o pedido espera o garçom */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  readyOrderItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Pronto */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um item deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já está pronto, entregue ou cancelado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deliverOrderItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Entregue */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um item deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já foi entregue ou cancelado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  cancelOrderItemByStaff: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CancelItemRequest"];
+      };
+    };
+    responses: {
+      /** @description Cancelado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Sem motivo, ou motivo longo demais */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um item deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já foi entregue ou cancelado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listMenuCategories: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de categorias */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseMenuCategory"];
+        };
+      };
+    };
+  };
+  createMenuCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MenuCategoryRequest"];
+      };
+    };
+    responses: {
+      /** @description Criada */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MenuCategory"];
+        };
+      };
+      /** @description Já existe uma categoria com esse nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  setLogo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetLogoRequest"];
+      };
+    };
+    responses: {
+      /** @description Logo trocada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Brand"];
+        };
+      };
+      /** @description O arquivo não é uma imagem PNG ou JPG que dá para usar */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O arquivo não chegou */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  removeLogo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Logo removida */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Brand"];
+        };
+      };
+    };
+  };
+  startLogoUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LogoUploadRequest"];
+      };
+    };
+    responses: {
+      /** @description Como enviar o arquivo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LogoUpload"];
+        };
+      };
+      /** @description Tipo ou tamanho não aceito */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listDevices: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de aparelhos */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseDevice"];
+        };
+      };
+    };
+  };
+  linkDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkDeviceRequest"];
+      };
+    };
+    responses: {
+      /** @description Vinculado; o aparelho busca o token sozinho */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Device"];
+        };
+      };
+      /** @description Código fora do formato ou nome vazio */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Código não encontrado ou vencido */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  startDevicePairing: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Pedido aberto */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PairingStarted"];
+        };
+      };
+    };
+  };
+  claimDevicePairing: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ClaimPairingRequest"];
+      };
+    };
+    responses: {
+      /** @description PENDING ou LINKED */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ClaimPairingResponse"];
+        };
+      };
+      /** @description Pedido desconhecido, vencido, segredo errado ou token já entregue */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  finishCall: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Concluído */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StaffCall"];
+        };
+      };
+      /** @description Não é um chamado deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Ainda não foi aceito, ou já foi encerrado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  declineCall: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recusado (o chamado é cancelado) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StaffCall"];
+        };
+      };
+      /** @description Não é um chamado deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um pedido de liberação, ou já foi respondido */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  blockCaller: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Bloqueado; os chamados abertos dele foram cancelados */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um chamado deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  acceptCall: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Aceito */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StaffCall"];
+        };
+      };
+      /** @description Não é um chamado deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Outra pessoa aceitou antes, ou o chamado já foi encerrado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  refreshSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        refresh_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sessão renovada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      /** @description Sessão terminou; é preciso entrar de novo */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  pinLogin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        device_token?: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PinLoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Login feito */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      /** @description PIN incorreto, ou aparelho não vinculado */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O aparelho é uma TV */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A pessoa não pode entrar por PIN neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Erros demais: PIN bloqueado por alguns minutos */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  requestPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasswordResetRequest"];
+      };
+    };
+    responses: {
+      /** @description Pedido recebido (a mesma resposta com ou sem conta) */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description E-mail fora do formato */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  confirmPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+      };
+    };
+    responses: {
+      /** @description Senha trocada */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Senha fraca */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Link vencido, já usado ou inexistente */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        refresh_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sessão encerrada */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Login feito */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      /** @description E-mail ou senha incorretos */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getTeamMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A pessoa */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamMember"];
+        };
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está na equipe deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deactivateTeamMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Desligada */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está na equipe deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  updateTeamMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateTeamMemberRequest"];
+      };
+    };
+    responses: {
+      /** @description Alterada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamMember"];
+        };
+      };
+      /** @description Papel sem permissão para esta ação */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não está na equipe deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  updateTable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateTableRequest"];
+      };
+    };
+    responses: {
+      /** @description Alterada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DiningTable"];
+        };
+      };
+      /** @description Mesa ou setor não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe uma mesa com esse nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deactivateSector: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Desativado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description O setor ainda tem mesas ativas */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  renameSector: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SectorRequest"];
+      };
+    };
+    responses: {
+      /** @description Renomeado */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Sector"];
+        };
+      };
+      /** @description Não é um setor ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  changeProductAvailability: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AvailabilityRequest"];
+      };
+    };
+    responses: {
+      /** @description Alterado */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Product"];
+        };
+      };
+      /** @description Não é um produto ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  deactivateMenuCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Desativada */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é uma categoria deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A categoria ainda tem produtos */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  renameMenuCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MenuCategoryRequest"];
+      };
+    };
+    responses: {
+      /** @description Renomeada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MenuCategory"];
+        };
+      };
+      /** @description Não é uma categoria ativa deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Já existe uma categoria com esse nome */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listClosedTabs: {
+    parameters: {
+      query: {
+        /**
+         * @description Primeiro dia (AAAA-MM-DD), no calendário do restaurante
+         * @example 2026-11-01
+         */
+        from: string;
+        /**
+         * @description Último dia (AAAA-MM-DD), incluído
+         * @example 2026-11-03
+         */
+        to: string;
+        /** @description Só desta mesa */
+        tableId?: string;
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Comandas por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página do histórico */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseClosedTab"];
+        };
+      };
+      /** @description Período invertido ou maior que um ano */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getTab: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A comanda */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StaffTab"];
+        };
+      };
+      /** @description Não é uma comanda deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listOpenTabs: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Comandas por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página das comandas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseOpenTab"];
+        };
+      };
+    };
+  };
+  downloadTableDisplay: {
+    parameters: {
+      query?: {
+        /** @description PNG ou SVG (só o QR) ou PDF (display completo) */
+        format?: "PNG" | "SVG" | "PDF";
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description O arquivo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "image/png": string;
+          "image/svg+xml": string;
+          "application/pdf": string;
+        };
+      };
+      /** @description Mesa ou setor não encontrado neste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getSubscription: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A assinatura */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Subscription"];
+        };
+      };
+    };
+  };
+  downloadSectorDisplays: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description O PDF, uma mesa por página */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/pdf": string;
+        };
+      };
+      /** @description Não é um setor ativo deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O setor não tem mesas ativas */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  quoteRodizios: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Rodízios por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página dos rodízios */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseRodizioQuote"];
+        };
+      };
+    };
+  };
+  pushSettings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description As configurações */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PushSettings"];
+        };
+      };
+    };
+  };
+  getPublicTable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Mesa encontrada */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicTable"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listTableRodizios: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Rodízios por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página dos rodízios */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseRodizioQuote"];
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getPublicMenu: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description O cardápio */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicMenu"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  streamTableEvents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Fluxo SSE; cada aviso traz só ids e status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": components["schemas"]["SseEmitter"];
+        };
+      };
+      /** @description QR inválido, trocado ou mesa desativada */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": components["schemas"]["SseEmitter"];
+        };
+      };
+    };
+  };
+  listPendingPrintJobs: {
+    parameters: {
+      query: {
+        /** @description ORDER: os pedidos novos; CANCELLATION: os itens cancelados depois de impressos */
+        kind: "ORDER" | "CANCELLATION";
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Comandas por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de comandas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePrintJob"];
+        };
+      };
+    };
+  };
+  listPrintedJobs: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Comandas por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de comandas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePrintJob"];
+        };
+      };
+    };
+  };
+  listPlans: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de planos */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePlan"];
+        };
+      };
+      /** @description Parâmetros de paginação inválidos */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listPassagemTables: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Mesas por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página das mesas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePassagemTable"];
+        };
+      };
+    };
+  };
+  listPassagemRequests: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Cortes por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página dos cortes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePassagemRequest"];
+        };
+      };
+    };
+  };
+  listWaitingOrders: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Pedidos por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página dos pedidos */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseWaitingOrder"];
+        };
+      };
+    };
+  };
+  listKitchenQueue: {
+    parameters: {
+      query?: {
+        /** @description Só estes status (PENDING, PREPARING, READY); sem nada, os três */
+        status?: ("PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED")[];
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página da fila */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseKitchenItem"];
+        };
+      };
+      /** @description Status que não está na fila (entregue, cancelado) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Me"];
+        };
+      };
+    };
+  };
+  streamStaffEvents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Fluxo SSE; cada aviso traz só ids e status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  listCallQueue: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página da fila */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseStaffCall"];
+        };
+      };
+    };
+  };
+  getCurrentDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        device_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Aparelho vinculado */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CurrentDevice"];
+        };
+      };
+      /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  streamTvEvents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        device_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Fluxo SSE; cada aviso traz só ids e status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+      /** @description Aparelho não vinculado */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": components["schemas"]["SseEmitter"];
+        };
+      };
+      /** @description O aparelho não é uma TV */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": components["schemas"]["SseEmitter"];
+        };
+      };
+    };
+  };
+  listTvCallQueue: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: {
+        device_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página da fila */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponseStaffCall"];
+        };
+      };
+      /** @description Aparelho não vinculado */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O aparelho não é uma TV */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  listPinMembers: {
+    parameters: {
+      query?: {
+        /** @description Número da página, começando em 0 */
+        page?: number;
+        /** @description Itens por página (1 a 100) */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: {
+        device_token?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de pessoas */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageResponsePinMember"];
+        };
+      };
+      /** @description Aparelho não vinculado (sem cookie, cookie desconhecido ou desvinculado) */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O aparelho é uma TV */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  cancelOrderItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+        itemId: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cancelado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um item desta mesa */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description A cozinha já começou, ou o item é de outro celular */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  cancelCall: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+        callId: string;
+      };
+      cookie?: {
+        table_session?: string;
+      };
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cancelado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Sem sessão válida nesta mesa */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Não é um chamado desta mesa */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description O chamado já foi encerrado */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  removeProductMedia: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: string;
+        mediaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Removida */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é uma foto deste produto */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  unlinkDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Desvinculado */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Não é um aparelho deste restaurante */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
 }

@@ -56,7 +56,6 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
   const [removing, setRemoving] = useState<{ photo: ProductMedia; position: number } | null>(null);
   const [videoSending, setVideoSending] = useState<{ name: string; percent: number } | null>(null);
   const inputId = useId();
-  const videoInputId = useId();
   const hintId = useId();
 
   const photos = media.data ?? [];
@@ -101,7 +100,9 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
         setSending((list) => list.map((item) => (item.key === key ? { ...item, percent } : item)));
       try {
         // Enviado o arquivo (100%), o back ainda confere e gera os tamanhos: "preparando…".
-        await uploadProductPhoto(productId, file, (fraction) => update(fraction < 1 ? Math.round(fraction * 100) : null));
+        await uploadProductPhoto(productId, file, (fraction) =>
+          update(fraction < 1 ? Math.round(fraction * 100) : null),
+        );
         sent++;
         await refresh();
       } catch (error) {
@@ -127,28 +128,41 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
       setNotice(tv.sent);
     } catch (error) {
       setErrors([
-        error instanceof TusError ? tv.uploadFailed(file.name, error.message) : `${file.name}: ${(error as Error).message}`,
+        error instanceof TusError
+          ? tv.uploadFailed(file.name, error.message)
+          : `${file.name}: ${(error as Error).message}`,
       ]);
     }
     setVideoSending(null);
     await refresh();
   }
 
-  function onPickVideo(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) void sendVideo(file);
-    event.target.value = "";
+  /**
+   * Um card só para foto e vídeo (desenho 12.3): o que é vídeo vai pelo envio de vídeo, um de cada
+   * vez; o resto, pelo de fotos (que recusa o que não é JPG nem PNG).
+   */
+  async function sendAll(files: File[]) {
+    const videos = files.filter((file) => file.type.startsWith("video/"));
+    const others = files.filter((file) => !file.type.startsWith("video/"));
+    if (others.length > 0) await send(others);
+    for (const video of videos) {
+      if (videosFull) {
+        setErrors((list) => [...list, tv.full]);
+        break;
+      }
+      await sendVideo(video);
+    }
   }
 
   function onPick(event: ChangeEvent<HTMLInputElement>) {
-    void send(Array.from(event.target.files ?? []));
-    event.target.value = ""; // a mesma foto pode ser escolhida de novo
+    void sendAll(Array.from(event.target.files ?? []));
+    event.target.value = ""; // o mesmo arquivo pode ser escolhido de novo
   }
 
   function onDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setDragOver(false);
-    void send(Array.from(event.dataTransfer.files));
+    void sendAll(Array.from(event.dataTransfer.files));
   }
 
   const busy = sending.length > 0 || videoSending !== null;
@@ -156,9 +170,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
   // O vídeo que falhou não conta no limite (como no back): dá para enviar outro no lugar.
   const videosFull = photos.filter((m) => m.type === "VIDEO" && m.status !== "FAILED").length >= MAX_VIDEOS;
   const cover = photos.findIndex((m) => m.type === "IMAGE");
-  const failed = photos
-    .map((m, index) => ({ m, position: index + 1 }))
-    .filter(({ m }) => m.status === "FAILED");
+  const failed = photos.map((m, index) => ({ m, position: index + 1 })).filter(({ m }) => m.status === "FAILED");
 
   return (
     <section
@@ -265,7 +277,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
           <input
             id={inputId}
             type="file"
-            accept={TYPES.join(",")}
+            accept={[...TYPES, ...VIDEO_TYPES].join(",")}
             multiple
             disabled={busy}
             onChange={onPick}
@@ -297,34 +309,14 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
         <div role="status" className="flex flex-col gap-1 text-sm">
           <span className="truncate">{tv.sending(videoSending.name, videoSending.percent)}</span>
           <span aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
-            <span className="block h-full bg-primary transition-[width]" style={{ width: `${videoSending.percent}%` }} />
+            <span
+              className="block h-full bg-primary transition-[width]"
+              style={{ width: `${videoSending.percent}%` }}
+            />
           </span>
         </div>
       )}
 
-      {!full && !videosFull && (
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            id={videoInputId}
-            type="file"
-            accept={VIDEO_TYPES.join(",")}
-            disabled={busy}
-            onChange={onPickVideo}
-            className="sr-only"
-          />
-          <label
-            htmlFor={videoInputId}
-            className={cn(
-              "flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border px-4 font-medium hover:bg-muted has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
-              busy && "pointer-events-none opacity-60",
-            )}
-          >
-            <Clapperboard aria-hidden className="size-5" />
-            {tv.send}
-          </label>
-          <span className="text-sm text-muted-foreground">{tv.sendHint}</span>
-        </div>
-      )}
       {!full && videosFull && <p className="text-sm text-muted-foreground">{tv.full}</p>}
 
       {failed.length > 0 && (

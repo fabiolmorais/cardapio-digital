@@ -90,7 +90,7 @@ class RodizioServicesTest {
     }
 
     @Test
-    void deactivatedOrFromAnotherRestaurantIsNotFound() {
+    void fromAnotherRestaurantIsNotFoundAndThePausedStaysInTheList() {
         Rodizio japones = manage.create(sakura, form("Japonês", Set.of()));
         EstablishmentId other = EstablishmentId.newId();
 
@@ -99,11 +99,13 @@ class RodizioServicesTest {
                 .isInstanceOf(RodizioNotFoundException.class);
         assertThatThrownBy(() -> manage.deactivate(other, japones.id())).isInstanceOf(RodizioNotFoundException.class);
 
+        // Pausado: continua no cadastro (abre, edita, aparece na lista), e volta com o reativar.
         manage.deactivate(sakura, japones.id());
         manage.deactivate(sakura, japones.id()); // de novo: tudo bem
-        assertThatThrownBy(() -> list.get(sakura, japones.id())).isInstanceOf(RodizioNotFoundException.class);
-        assertThatThrownBy(() -> manage.update(sakura, japones.id(), form("Japonês", Set.of())))
-                .isInstanceOf(RodizioNotFoundException.class);
-        assertThat(list.list(sakura, new PageQuery(0, 20)).content()).isEmpty();
+        assertThat(list.get(sakura, japones.id()).active()).isFalse();
+        assertThat(manage.update(sakura, japones.id(), form("Japonês", Set.of())).active()).isFalse();
+        assertThat(list.list(sakura, new PageQuery(0, 20)).content()).extracting(Rodizio::active).containsExactly(false);
+        assertThatThrownBy(() -> manage.reactivate(other, japones.id())).isInstanceOf(RodizioNotFoundException.class);
+        assertThat(manage.reactivate(sakura, japones.id()).active()).isTrue();
     }
 }

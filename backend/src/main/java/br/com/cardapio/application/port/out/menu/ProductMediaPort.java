@@ -5,7 +5,9 @@ import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ProductMediaPort {
@@ -33,4 +35,10 @@ public interface ProductMediaPort {
      * dele. Quem chama é o webhook, protegido por um token secreto.
      */
     Optional<ProductMedia> findByVideoId(String videoId);
+
+    /**
+     * Quantas fotos e vídeos cada produto tem (sem os removidos nem os vídeos que falharam), numa
+     * consulta só. Produto sem mídia não aparece no mapa.
+     */
+    Map<ProductId, MediaCount> countByProducts(EstablishmentId establishmentId, Collection<ProductId> productIds);
 }

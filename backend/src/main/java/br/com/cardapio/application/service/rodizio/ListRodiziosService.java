@@ -21,13 +21,13 @@ public class ListRodiziosService implements ListRodiziosUseCase {
     @Override
     @Transactional(readOnly = true)
     public ResultPage<Rodizio> list(EstablishmentId establishmentId, PageQuery page) {
-        return rodizios.findActive(establishmentId, page);
+        return rodizios.findAll(establishmentId, page);
     }
 
-    /** Desativado também é "não encontrado": ele saiu da lista. */
+    /** O pausado também abre: o dono pode editar e reativar. */
     @Override
     @Transactional(readOnly = true)
     public Rodizio get(EstablishmentId establishmentId, RodizioId id) {
-        return rodizios.find(establishmentId, id).filter(Rodizio::active).orElseThrow(RodizioNotFoundException::new);
+        return rodizios.find(establishmentId, id).orElseThrow(RodizioNotFoundException::new);
     }
 }

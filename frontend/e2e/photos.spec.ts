@@ -9,7 +9,13 @@ async function productWithoutPhotos(request: APIRequestContext) {
   const category = await request.post(`${API_URL}/api/v1/menu-categories`, { headers, data: { name: "Entradas" } });
   const product = await request.post(`${API_URL}/api/v1/products`, {
     headers,
-    data: { categoryId: (await category.json()).id, name: "Guioza", priceCents: 2990, featured: false, available: true },
+    data: {
+      categoryId: (await category.json()).id,
+      name: "Guioza",
+      priceCents: 2990,
+      featured: false,
+      available: true,
+    },
   });
   expect(product.status()).toBe(201);
   return { email, productId: (await product.json()).id as string };
@@ -50,7 +56,7 @@ test("dono envia, ordena e remove fotos do produto", async ({ page, request }) =
 
   // Duas fotos de uma vez: vão uma por vez, com progresso, e a primeira vira a capa.
   const fotos = [await photo(page, "vermelha.jpg", "#c0392b"), await photo(page, "azul.jpg", "#2c3e50")];
-  await gallery(page).getByLabel("Enviar foto").setInputFiles(fotos);
+  await gallery(page).getByLabel("Enviar foto ou vídeo").setInputFiles(fotos);
   // Prazo maior só aqui: em desenvolvimento as fotos vão ao R2 de verdade, e o back ainda baixa
   // cada uma, gera os três tamanhos e envia de volta (perto de 5 s por foto). No CI, com o S3Mock,
   // leva menos de 1 s.
@@ -88,7 +94,7 @@ test("arquivo que não é JPG ou PNG é recusado antes de enviar", async ({ page
   await page.goto(`/admin/cardapio/produtos/${productId}`);
 
   await gallery(page)
-    .getByLabel("Enviar foto")
+    .getByLabel("Enviar foto ou vídeo")
     .setInputFiles({ name: "cardapio.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
   await expect(gallery(page).getByRole("alert")).toHaveText("cardapio.pdf: envie uma foto JPG ou PNG.");
   await expect(gallery(page)).toContainText("Nenhuma foto ainda");

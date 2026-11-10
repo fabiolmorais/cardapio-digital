@@ -128,6 +128,47 @@ class FloorControllerTest {
     }
 
     @Test
+    void theListShowsHowEachTableIsNow() throws Exception {
+        String salao = createSector(sakura.token(), "Salão");
+        String livre = tableId(sakura.token(), salao, "01");
+        String ocupada = tableId(sakura.token(), salao, "02");
+        String conta = tableId(sakura.token(), salao, "03");
+        String rodizio = tableId(sakura.token(), salao, "04");
+        String desativada = tableId(sakura.token(), salao, "05");
+        assertThat(send("PATCH", sakura.token(), TABLES + "/" + desativada, "{\"active\":false}")).hasStatusOk();
+
+        UUID establishment = sakura.establishmentId();
+        UUID tabOcupada = openTab(establishment, ocupada, "OPEN");
+        openTab(establishment, conta, "CLOSING");
+        UUID tabRodizio = openTab(establishment, rodizio, "OPEN");
+        MvcTestResult japones = send("POST", sakura.token(), "/api/v1/rodizios", """
+                {"name":"Japonês","type":"A_LA_MINUTE","rules":{},
+                 "tiers":[{"name":"Adulto","defaultPriceCents":12990,"prices":[]}],"productIds":[]}""");
+        jdbc.update("""
+                INSERT INTO tab_rodizio (id, establishment_id, tab_id, rodizio_id, rodizio_name, activated_by, started_at,
+                                         status_changed_at)
+                VALUES (?, ?, ?, ?, 'Japonês', ?, now(), now())""", UUID.randomUUID(), establishment, tabRodizio,
+                UUID.fromString(json(japones, "$.id")), sakura.userId());
+
+        MvcTestResult list = send("GET", sakura.token(), TABLES + "?sectorId=" + salao, null);
+        assertThat(list).bodyJson().extractingPath("$.content[*].situation").asArray()
+                .containsExactly("FREE", "OCCUPIED", "BILL_REQUESTED", "RODIZIO", "INACTIVE");
+
+        // Comanda fechada: a mesa volta a ficar livre.
+        jdbc.update("UPDATE tab SET status = 'CLOSED', closed_at = now(), total_cents = 0, payment_method = 'PIX' WHERE id = ?", tabOcupada);
+        assertThat(send("GET", sakura.token(), TABLES + "?sectorId=" + salao, null)).bodyJson()
+                .extractingPath("$.content[1].situation").isEqualTo("FREE");
+        assertThat(livre).isNotBlank();
+    }
+
+    private UUID openTab(UUID establishmentId, String tableId, String status) {
+        UUID id = UUID.randomUUID();
+        jdbc.update("INSERT INTO tab (id, establishment_id, table_id, status, opened_at) VALUES (?, ?, ?, ?, now())",
+                id, establishmentId, UUID.fromString(tableId), status);
+        return id;
+    }
+
+    @Test
     void repeatedNamesGet409() throws Exception {
         String salao = createSector(sakura.token(), "Salão");
         tableId(sakura.token(), salao, "04");

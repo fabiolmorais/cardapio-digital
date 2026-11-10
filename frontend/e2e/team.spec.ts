@@ -27,6 +27,8 @@ test("dono cadastra, edita, desliga e religa alguém da equipe", async ({ page, 
 
   // O dono já aparece na lista, sem botões (ninguém altera o dono).
   await expect(row(page, "Marina Tanaka")).toContainText("Dono");
+  // A dona acabou de entrar: o último acesso é "Agora".
+  await expect(row(page, "Marina Tanaka")).toContainText("Agora");
   await expect(row(page, "Marina Tanaka").getByRole("button")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Adicionar pessoa" }).click();

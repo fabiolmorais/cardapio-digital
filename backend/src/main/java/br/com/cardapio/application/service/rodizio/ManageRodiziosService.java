@@ -4,7 +4,11 @@ import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.RodizioForm;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.menu.exception.ProductNotFoundException;
+import br.com.cardapio.domain.menu.model.Product;
+import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.rodizio.exception.RodizioLimitReachedException;
 import br.com.cardapio.domain.rodizio.exception.RodizioNameTakenException;
 import br.com.cardapio.domain.rodizio.exception.RodizioNotFoundException;
@@ -14,6 +18,10 @@ import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ManageRodiziosService implements ManageRodiziosUseCase {
 
@@ -43,8 +51,8 @@ public class ManageRodiziosService implements ManageRodiziosUseCase {
     @Override
     @Transactional
     public Rodizio update(EstablishmentId establishmentId, RodizioId id, RodizioForm form) {
-        Rodizio current = rodizios.find(establishmentId, id).filter(Rodizio::active)
-                .orElseThrow(RodizioNotFoundException::new);
+        // O pausado também se edita (o nome só não pode repetir o de um ativo).
+        Rodizio current = rodizios.find(establishmentId, id).orElseThrow(RodizioNotFoundException::new);
         checkNameAndProducts(establishmentId, form, id);
         Rodizio edited = current.edit(form.name(), form.type(), form.description(), form.rules(), form.tiers(),
                 form.productIds());
@@ -59,6 +67,49 @@ public class ManageRodiziosService implements ManageRodiziosUseCase {
         if (current.active()) {
             rodizios.save(current.deactivate());
         }
+    }
+
+    @Override
+    @Transactional
+    public Rodizio reactivate(EstablishmentId establishmentId, RodizioId id) {
+        Rodizio current = rodizios.find(establishmentId, id).orElseThrow(RodizioNotFoundException::new);
+        if (current.active()) {
+            return current;
+        }
+        if (rodizios.countActive(establishmentId) >= Rodizio.MAX_PER_ESTABLISHMENT) {
+            throw new RodizioLimitReachedException();
+        }
+        if (rodizios.activeNameExists(establishmentId, current.name(), id)) {
+            throw new RodizioNameTakenException(current.name());
+        }
+        Rodizio reactivated = current.reactivate();
+        rodizios.save(reactivated);
+        return reactivated;
+    }
+
+    @Override
+    @Transactional
+    public Set<RodizioId> setProductRodizios(EstablishmentId establishmentId, ProductId productId,
+                                             Set<RodizioId> rodizioIds) {
+        Product product = products.find(establishmentId, productId).filter(Product::active)
+                .orElseThrow(ProductNotFoundException::new);
+        List<Rodizio> all = rodizios.findAll(establishmentId, new PageQuery(0, PageQuery.MAX_SIZE)).content();
+        Set<RodizioId> known = all.stream().map(Rodizio::id).collect(Collectors.toSet());
+        // Um id que não é rodízio deste restaurante (de outro, ou inventado): 404, sem mexer em nada.
+        if (!known.containsAll(rodizioIds)) {
+            throw new RodizioNotFoundException();
+        }
+        Set<RodizioId> included = new HashSet<>();
+        for (Rodizio rodizio : all) {
+            boolean wanted = rodizioIds.contains(rodizio.id());
+            if (wanted) {
+                included.add(rodizio.id());
+            }
+            if (wanted != rodizio.productIds().contains(product.id())) {
+                rodizios.save(rodizio.withProduct(product.id(), wanted));
+            }
+        }
+        return included;
     }
 
     /**

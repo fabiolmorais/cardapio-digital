@@ -108,12 +108,25 @@ class RodizioController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
-    @Operation(operationId = "deactivateRodizio", summary = "Desativa o rodízio (o cadastro fica)")
-    @ApiResponse(responseCode = "204", description = "Desativado")
+    @Operation(operationId = "deactivateRodizio", summary = "Pausa o rodízio (o cadastro fica, para reativar)")
+    @ApiResponse(responseCode = "204", description = "Pausado")
     @ApiResponse(responseCode = "404", description = "Não é um rodízio deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     ResponseEntity<Void> deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         manageRodizios.deactivate(AuthenticatedUser.from(jwt).establishmentId(), new RodizioId(id));
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reactivate")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(operationId = "reactivateRodizio", summary = "Volta a oferecer o rodízio pausado")
+    @ApiResponse(responseCode = "200", description = "Ativo de novo")
+    @ApiResponse(responseCode = "404", description = "Não é um rodízio deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Já existe um rodízio ativo com este nome, ou o limite de ativos",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    RodizioResponse reactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return RodizioResponse.from(manageRodizios.reactivate(AuthenticatedUser.from(jwt).establishmentId(),
+                new RodizioId(id)));
     }
 }
