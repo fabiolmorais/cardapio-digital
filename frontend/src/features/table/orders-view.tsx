@@ -76,7 +76,11 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
       )}
 
       {data && all.length > 0 && (
-        <div role="group" aria-label={t.views} className="grid grid-cols-2 gap-1 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) p-1">
+        <div
+          role="group"
+          aria-label={t.views}
+          className="grid grid-cols-2 gap-1 rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) p-1"
+        >
           {(["onTheWay", "history"] as const).map((v) => (
             <button
               key={v}
@@ -127,7 +131,10 @@ function Order({ order, busy, onCancel }: { order: TableOrder; busy: string | nu
   const waiting = order.status === "PENDING_APPROVAL";
   const rejected = order.status === "REJECTED";
   return (
-    <section aria-label={title} className="flex flex-col gap-1 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-3.5">
+    <section
+      aria-label={title}
+      className="flex flex-col gap-1 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-3.5"
+    >
       <div className="flex justify-between gap-2 text-sm text-(--mesa-muted)">
         <h2>{title}</h2>
         <span>{order.mine ? t.mine : t.other}</span>
@@ -172,7 +179,10 @@ function Order({ order, busy, onCancel }: { order: TableOrder; busy: string | nu
               {!canceled && !waiting && (
                 <span aria-hidden className="flex gap-1">
                   {STEPS.map((s, i) => (
-                    <span key={s} className={cn("h-1 flex-1 rounded-full bg-(--mesa-stroke)", i <= step && "bg-(--brand-text)")} />
+                    <span
+                      key={s}
+                      className={cn("h-1 flex-1 rounded-full bg-(--mesa-stroke)", i <= step && "bg-(--brand-text)")}
+                    />
                   ))}
                 </span>
               )}
@@ -182,7 +192,10 @@ function Order({ order, busy, onCancel }: { order: TableOrder; busy: string | nu
                   disabled={busy !== null}
                   aria-label={t.cancelNamed(item.productName)}
                   onClick={() => onCancel(item.id)}
-                  className={cn("h-10 w-fit rounded-lg text-sm font-semibold text-(--brand-text) disabled:opacity-60", focus)}
+                  className={cn(
+                    "h-10 w-fit rounded-lg text-sm font-semibold text-(--brand-text) disabled:opacity-60",
+                    focus,
+                  )}
                 >
                   {busy === item.id ? t.canceling : t.cancel}
                 </button>

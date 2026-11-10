@@ -66,7 +66,11 @@ export function PassagemCard({ token, rodizio }: { token: string; rodizio: NonNu
             paused ? "text-[#15803D]" : "text-[#B91C1C]",
           )}
         >
-          {paused ? <Play aria-hidden className="size-4 fill-current" /> : <Pause aria-hidden className="size-4 fill-current" />}
+          {paused ? (
+            <Play aria-hidden className="size-4 fill-current" />
+          ) : (
+            <Pause aria-hidden className="size-4 fill-current" />
+          )}
           {busy ? t.card.turning : paused ? t.card.resume : t.card.pause}
         </button>
       </div>

@@ -16,7 +16,8 @@ async function restaurant(request: APIRequestContext, rule: object | null) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   if (rule) await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: rule });
-  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
   const sector = await post("/api/v1/sectors", { name: "Salão principal" });
   const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
   return { qr: table.publicToken as string, email };
@@ -29,7 +30,25 @@ async function ownerPanel(browser: Browser, email: string) {
   return { page, close: () => context.close() };
 }
 
-test("sem confirmar a presença, a mesa pede liberação e o garçom libera na hora", async ({ page, request, browser }) => {
+test("a chegada em tela cheia deixa ver só o cardápio, e a trava fica no meio da página", async ({ page, request }) => {
+  const { qr } = await restaurant(request, null);
+  await page.goto(`/m/${qr}`);
+
+  const chegada = page.getByRole("dialog", { name: "Não conseguimos confirmar que você está no salão" });
+  await expect(chegada).toBeVisible();
+  await chegada.getByRole("button", { name: "Ver só o cardápio" }).click();
+  await expect(chegada).toBeHidden();
+  // A página da mesa, com a trava no meio (para pedir a liberação depois), e não volta a tela cheia.
+  await expect(page.getByRole("heading", { name: "Não conseguimos confirmar que você está no salão" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("sem confirmar a presença, a mesa pede liberação e o garçom libera na hora", async ({
+  page,
+  request,
+  browser,
+}) => {
   const { qr, email } = await restaurant(request, null);
   await page.goto(`/m/${qr}`);
 
@@ -112,7 +131,9 @@ test("longe do restaurante, a localização não basta", async ({ request, brows
     await phone.goto(`/m/${qr}`);
     await phone.getByRole("button", { name: /Usar minha localização/ }).click();
 
-    await expect(phone.getByRole("alert").filter({ hasText: "Sua localização ficou fora do restaurante" })).toBeVisible();
+    await expect(
+      phone.getByRole("alert").filter({ hasText: "Sua localização ficou fora do restaurante" }),
+    ).toBeVisible();
     await expect(phone.getByRole("button", { name: /Chamar garçom/ })).toHaveCount(0);
   } finally {
     await context.close();

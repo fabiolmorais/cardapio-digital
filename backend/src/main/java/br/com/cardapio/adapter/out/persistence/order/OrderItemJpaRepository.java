@@ -98,4 +98,17 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
                AND i.status IN ('PENDING', 'PREPARING', 'READY') AND r.rodizioType = 'PASSAGEM'
             """)
     Page<KitchenItemRow> findPassagemQueue(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /** Os produtos mais pedidos desde `since` (quantidade somada), sem cancelados nem rodízio. */
+    @Query(value = """
+            SELECT i.product_id FROM order_item i
+             WHERE i.establishment_id = :establishmentId AND i.created_at >= :since
+               AND i.status <> 'CANCELED' AND i.tab_rodizio_id IS NULL
+             GROUP BY i.product_id
+             ORDER BY sum(i.quantity) DESC, i.product_id
+             LIMIT :max
+            """, nativeQuery = true)
+    List<UUID> findMostOrdered(@Param("establishmentId") UUID establishmentId,
+                                                   @Param("since") Instant since,
+                                                   @Param("max") int max);
 }

@@ -125,6 +125,53 @@ class TablePageTest {
     }
 
     @Test
+    void theMostOrderedComeFromTheLastThirtyDaysAndNeedAtLeastThree() throws Exception {
+        String entradas = json(send("POST", sakura.ownerToken(), "/api/v1/menu-categories", "{\"name\":\"Entradas\"}"), "$.id");
+        String guioza = product(sakura, entradas, "Guioza", 2990, null);
+        String sunomono = product(sakura, entradas, "Sunomono", 1990, null);
+        String temaki = product(sakura, entradas, "Temaki", 3290, null);
+        String edamame = product(sakura, entradas, "Edamame", 1990, null);
+
+        // Poucos pratos pedidos ainda: a lista não diz nada.
+        UUID order = order();
+        item(order, guioza, 5, "DELIVERED", "now()");
+        item(order, sunomono, 1, "DELIVERED", "now()");
+        assertThat(send("GET", null, "/api/v1/public/tables/" + sakura.qr() + "/menu", null)).bodyJson()
+                .extractingPath("$.mostOrdered").asArray().isEmpty();
+
+        // Três pedidos no mês: entram, do mais pedido ao menos. O cancelado e o de 40 dias atrás não contam.
+        item(order, temaki, 3, "PENDING", "now()");
+        item(order, edamame, 20, "CANCELED", "now()");
+        item(order, edamame, 20, "DELIVERED", "now() - interval '40 days'");
+        assertThat(send("GET", null, "/api/v1/public/tables/" + sakura.qr() + "/menu", null)).bodyJson()
+                .extractingPath("$.mostOrdered").asArray().containsExactly(guioza, temaki, sunomono);
+    }
+
+    /** Um pedido da mesa 04 numa comanda aberta, direto no banco (o fluxo do pedido está em OrderFlowTest). */
+    private UUID order() {
+        mvc.post().uri("/api/v1/public/tables/" + sakura.qr() + "/session").exchange(); // abre a sessão da mesa
+        UUID table = UUID.fromString(sakura.tableId());
+        UUID establishment = jdbc.queryForObject("SELECT establishment_id FROM dining_table WHERE id = ?", UUID.class, table);
+        UUID session = jdbc.queryForObject("SELECT id FROM table_session WHERE table_id = ? LIMIT 1", UUID.class, table);
+        UUID tab = UUID.randomUUID();
+        jdbc.update("INSERT INTO tab (id, establishment_id, table_id, status, opened_at) VALUES (?, ?, ?, 'OPEN', now())",
+                tab, establishment, table);
+        UUID order = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO customer_order (id, establishment_id, tab_id, table_id, session_id, number, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 1, 'SENT', now())""", order, establishment, tab, table, session);
+        return order;
+    }
+
+    private void item(UUID order, String product, int quantity, String status, String createdAt) {
+        jdbc.update("""
+                INSERT INTO order_item (id, establishment_id, order_id, position, product_id, product_name,
+                                        unit_price_cents, quantity, status, created_at)
+                SELECT ?, o.establishment_id, o.id, 0, ?, 'x', 100, ?, ?, %s FROM customer_order o WHERE o.id = ?
+                """.formatted(createdAt), UUID.randomUUID(), UUID.fromString(product), quantity, status, order);
+    }
+
+    @Test
     void theSessionLivesInAnHttpOnlyCookieAndIsResumed() throws Exception {
         String uri = "/api/v1/public/tables/" + sakura.qr() + "/session";
 

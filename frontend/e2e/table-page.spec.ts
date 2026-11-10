@@ -8,7 +8,8 @@ import { API_URL, apiLogin, createAccount } from "./support/account";
 async function sakura(request: APIRequestContext) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
-  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
   await request.put(`${API_URL}/api/v1/establishment/brand`, {
     headers,
     data: {
@@ -101,6 +102,20 @@ test("o cardápio tem as seções, o de/por, o esgotado e a busca sem acento", a
   await expect(ceviche).toHaveAttribute("aria-disabled", "true");
   await expect(ceviche).toContainText("Esgotado hoje");
   await expect(page.getByText("Prato antigo")).toHaveCount(0);
+
+  // A categoria tocada fica selecionada (branca) e a lista vai até ela.
+  const categorias = page.getByRole("navigation", { name: "Categorias" });
+  await expect(categorias.getByRole("link", { name: "Entradas" })).toHaveAttribute("aria-current", "true");
+  await categorias.getByRole("link", { name: "Sobremesas" }).click();
+  await expect(categorias.getByRole("link", { name: "Sobremesas" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("heading", { name: "Sobremesas", level: 2 })).toBeInViewport();
+
+  // Prato sem vídeo: tocar nele abre o detalhe (3.2), com a quantidade e o "Adicionar".
+  await page.getByRole("button", { name: "Ver Guioza" }).click();
+  const detalhe = page.getByRole("dialog", { name: "Guioza" });
+  await expect(detalhe.getByRole("button", { name: /^Adicionar/ })).toContainText("R$ 29,90");
+  await detalhe.getByRole("button", { name: "Fechar" }).click();
+  await expect(detalhe).toBeHidden();
 
   // A busca não liga para acento nem maiúscula, e procura também na descrição.
   const search = page.getByRole("searchbox", { name: "Buscar no cardápio" });

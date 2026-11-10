@@ -1,5 +1,9 @@
 package br.com.cardapio.application.service.menu;
 
+import java.util.Set;
+import java.time.Clock;
+import br.com.cardapio.domain.menu.model.MostOrdered;
+import br.com.cardapio.application.port.out.menu.PopularProductsPort;
 import br.com.cardapio.application.port.in.menu.GetPublicMenuUseCase;
 import br.com.cardapio.application.port.in.menu.PublicMenu;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
@@ -38,9 +42,14 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
     private final ProductMediaPort media;
     private final MediaStoragePort storage;
     private final VideoHostingPort videos;
+    private final PopularProductsPort popular;
+    private final Clock clock;
 
     public GetPublicMenuService(DiningTablePort tables, MenuCategoryPort categories, ProductPort products,
-                                ProductMediaPort media, MediaStoragePort storage, VideoHostingPort videos) {
+                                ProductMediaPort media, MediaStoragePort storage, VideoHostingPort videos,
+                                PopularProductsPort popular, Clock clock) {
+        this.popular = popular;
+        this.clock = clock;
         this.tables = tables;
         this.categories = categories;
         this.products = products;
@@ -57,7 +66,8 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         // A consulta já vem em ordem (produto, posição): o groupingBy mantém a ordem de cada galeria.
         Map<ProductId, List<ProductMedia>> galleries = media.findReadyGalleries(establishmentId).stream()
                 .collect(Collectors.groupingBy(ProductMedia::productId));
-        Map<MenuCategoryId, List<PublicMenu.Item>> byCategory = products.findAllActive(establishmentId).stream()
+        List<Product> all = products.findAllActive(establishmentId);
+        Map<MenuCategoryId, List<PublicMenu.Item>> byCategory = all.stream()
                 .collect(Collectors.groupingBy(Product::categoryId,
                         Collectors.mapping(p -> item(p, galleries.getOrDefault(p.id(), List.of())),
                                 Collectors.toList())));
@@ -66,7 +76,14 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
                 .filter(c -> byCategory.containsKey(c.id()))
                 .map(c -> new PublicMenu.Category(c.id(), c.name(), byCategory.get(c.id())))
                 .toList();
-        return new PublicMenu(visible);
+        // Só entra nos mais pedidos o que está numa categoria visível e dá para pedir agora.
+        Set<MenuCategoryId> shown = visible.stream().map(PublicMenu.Category::id).collect(Collectors.toSet());
+        Set<ProductId> orderable = all.stream()
+                .filter(p -> p.available() && p.details().aLaCarte() && shown.contains(p.categoryId()))
+                .map(Product::id).collect(Collectors.toSet());
+        List<ProductId> mostOrdered = MostOrdered.pick(popular.findMostOrdered(establishmentId,
+                clock.instant().minus(MostOrdered.WINDOW), MostOrdered.MAX * 3), orderable);
+        return new PublicMenu(visible, mostOrdered);
     }
 
     private PublicMenu.Item item(Product product, List<ProductMedia> gallery) {

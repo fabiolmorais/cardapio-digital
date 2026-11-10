@@ -6,16 +6,7 @@ import { useEffect, useId, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
-import {
-  clearCart,
-  MAX_NOTE,
-  MAX_QUANTITY,
-  setNote,
-  setQuantity,
-  useCart,
-  useHydrated,
-  type CartLine,
-} from "./cart";
+import { clearCart, MAX_NOTE, MAX_QUANTITY, setNote, setQuantity, useCart, useHydrated, type CartLine } from "./cart";
 import { listOrders, placeOrder, timeOf, type TableOrder } from "./table-orders";
 
 const t = tablePage.cart;
@@ -23,7 +14,10 @@ const t = tablePage.cart;
 const focus = "focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
 const primary =
   "flex h-14 w-full items-center justify-center rounded-2xl bg-(--brand) font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none disabled:opacity-70";
-const secondary = cn("flex h-12 w-full items-center justify-center rounded-2xl text-sm font-semibold text-(--mesa-muted)", focus);
+const secondary = cn(
+  "flex h-12 w-full items-center justify-center rounded-2xl text-sm font-semibold text-(--mesa-muted)",
+  focus,
+);
 
 /**
  * "Seu pedido" (desenho Carrinho): as linhas com quantidade e observação, o total e "Enviar pedido
@@ -73,7 +67,10 @@ export function CartView({ token, tableLabel }: { token: string; tableLabel: str
         <Link
           href={menu}
           aria-label={t.back}
-          className={cn("flex size-11 items-center justify-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass)", focus)}
+          className={cn(
+            "flex size-11 items-center justify-center rounded-full border border-(--mesa-stroke) bg-(--mesa-glass)",
+            focus,
+          )}
         >
           <ChevronLeft aria-hidden className="size-5" />
         </Link>
@@ -183,7 +180,11 @@ function Line({ token, line }: { token: string; line: CartLine }) {
               }}
               className="h-10 min-w-0 flex-1 rounded-xl border border-(--mesa-stroke) bg-(--mesa-bg) px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-(--brand)"
             />
-            <button type="button" onClick={saveNote} className={cn("h-10 rounded-xl px-3 text-sm font-semibold text-(--brand-text)", focus)}>
+            <button
+              type="button"
+              onClick={saveNote}
+              className={cn("h-10 rounded-xl px-3 text-sm font-semibold text-(--brand-text)", focus)}
+            >
               {t.saveNote}
             </button>
           </div>
@@ -215,7 +216,11 @@ function Line({ token, line }: { token: string; line: CartLine }) {
               onClick={() => setQuantity(token, line.key, line.quantity - 1)}
               className={round}
             >
-              {line.quantity === 1 ? <Trash2 aria-hidden className="size-4" /> : <Minus aria-hidden className="size-4" />}
+              {line.quantity === 1 ? (
+                <Trash2 aria-hidden className="size-4" />
+              ) : (
+                <Minus aria-hidden className="size-4" />
+              )}
             </button>
             <span className="w-7 text-center font-bold" aria-live="polite">
               {line.quantity}
