@@ -1869,6 +1869,12 @@ export interface components {
             available: boolean;
             /** @description false: só do rodízio (fora do cardápio à la carte). Vazio: true */
             aLaCarte?: boolean;
+            /**
+             * Format: int32
+             * @description Quantas pessoas o prato serve (1 a 20). Vazio: não informado
+             * @example 2
+             */
+            serves?: number;
         };
         /** @description Produto do cardápio. Preços em centavos */
         Product: {
@@ -1897,6 +1903,12 @@ export interface components {
             position: number;
             /** @description false: só do rodízio */
             aLaCarte: boolean;
+            /**
+             * Format: int32
+             * @description Quantas pessoas o prato serve; null quando não informado
+             * @example 2
+             */
+            serves?: number;
             /**
              * Format: int32
              * @description Fotos da galeria; só na lista (null nos outros casos)
@@ -2974,6 +2986,12 @@ export interface components {
             available: boolean;
             /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
             aLaCarte: boolean;
+            /**
+             * Format: int32
+             * @description Quantas pessoas o prato serve; null quando não informado
+             * @example 2
+             */
+            serves?: number;
             /** @description A capa (a primeira foto); null quando o produto não tem foto */
             photo?: components["schemas"]["PublicMenuPhoto"];
             /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */

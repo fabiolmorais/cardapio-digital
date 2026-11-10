@@ -31,10 +31,13 @@ public record PublicMenu(List<Category> categories, List<ProductId> mostOrdered)
      * @param photoUrls       os tamanhos da capa (a primeira foto); vazio quando o produto não tem foto
      * @param media           a galeria pronta, em ordem: fotos e vídeos (o Reels do prato)
      */
-    /** @param aLaCarte false: só do rodízio (a mesa mostra só na aba Rodízio) */
+    /**
+     * @param aLaCarte false: só do rodízio (a mesa mostra só na aba Rodízio)
+     * @param serves   quantas pessoas o prato serve; null quando não informado
+     */
     public record Item(ProductId id, String name, String description, long priceCents, Long promoPriceCents,
-                       boolean featured, boolean available, boolean aLaCarte, Map<ImageVariant, String> photoUrls,
-                       List<Media> media) {
+                       boolean featured, boolean available, boolean aLaCarte, Integer serves,
+                       Map<ImageVariant, String> photoUrls, List<Media> media) {
 
         public Item {
             photoUrls = Map.copyOf(photoUrls);

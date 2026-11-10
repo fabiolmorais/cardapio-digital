@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.menu.ProductForm;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -27,10 +28,12 @@ record ProductRequest(
         @Schema(requiredMode = REQUIRED) @NotNull Boolean featured,
         @Schema(requiredMode = REQUIRED, description = "false: aparece como \"Esgotado hoje\"") @NotNull Boolean available,
         @Schema(description = "false: só do rodízio (fora do cardápio à la carte). Vazio: true")
-        Boolean aLaCarte
+        Boolean aLaCarte,
+        @Schema(description = "Quantas pessoas o prato serve (1 a 20). Vazio: não informado", example = "2")
+        @Min(1) @Max(20) Integer serves
 ) {
     ProductForm toForm() {
         return new ProductForm(new MenuCategoryId(categoryId), name, description, priceCents, promoPriceCents,
-                featured, available, aLaCarte == null || aLaCarte);
+                featured, available, aLaCarte == null || aLaCarte, serves);
     }
 }

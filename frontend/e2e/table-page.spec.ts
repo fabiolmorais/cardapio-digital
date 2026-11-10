@@ -29,7 +29,7 @@ async function sakura(request: APIRequestContext) {
   await post("/api/v1/menu-categories", { name: "Vazia" });
   const product = (categoryId: string, name: string, priceCents: number, extra: object = {}) =>
     post("/api/v1/products", { categoryId, name, priceCents, featured: false, available: true, ...extra });
-  await product(entradas.id, "Guioza", 2990, { description: "Pastel japonês selado na chapa." });
+  await product(entradas.id, "Guioza", 2990, { description: "Pastel japonês selado na chapa.", serves: 2 });
   await product(entradas.id, "Sunomono", 1990, { promoPriceCents: 1590, featured: true });
   const ceviche = await product(entradas.id, "Ceviche", 3490);
   await request.patch(`${API_URL}/api/v1/products/${ceviche.id}/availability`, { headers, data: { available: false } });
@@ -128,6 +128,10 @@ test("o cardápio tem as seções, o de/por, o esgotado e a busca sem acento", a
   await page.getByRole("button", { name: "Ver Guioza" }).click();
   const detalhe = page.getByRole("dialog", { name: "Guioza" });
   await expect(detalhe.getByRole("button", { name: /^Adicionar/ })).toContainText("R$ 29,90");
+  // Quantas pessoas o prato serve, quando o restaurante informa (o Sunomono não informa).
+  await expect(detalhe).toContainText("Serve 2 pessoas");
+  await expect(entradas.getByRole("article").filter({ hasText: "Guioza" })).toContainText("Serve 2 pessoas");
+  await expect(sunomono).not.toContainText("Serve");
   await detalhe.getByRole("button", { name: "Fechar" }).click();
   await expect(detalhe).toBeHidden();
 

@@ -29,6 +29,7 @@ import {
 import { ErrorText } from "@/features/subscription/error-text";
 import { PlanLimitBanner, PlanMeter } from "@/features/subscription/plan-meter";
 import { SectorFormDialog, TableFormDialog } from "./floor-dialogs";
+import { Notice } from "@/components/notice";
 
 const t = messages.floor;
 const day = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
@@ -502,7 +503,7 @@ function TablePanel({
       <Button variant="outline" size="xl" onClick={() => onEdit(table)}>
         {t.panel.edit}
       </Button>
-      <p className="rounded-xl bg-amber-500/10 px-4 py-3 text-sm">{t.panel.rotateWarning}</p>
+      <Notice tone="warning">{t.panel.rotateWarning}</Notice>
       <Button variant="destructive" size="xl" onClick={() => onRotate(table)}>
         <RefreshCw aria-hidden />
         {t.panel.rotate(table.label)}

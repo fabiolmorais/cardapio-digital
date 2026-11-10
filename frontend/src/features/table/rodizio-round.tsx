@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Flame, Minus, Plus, TriangleAlert } from "lucide-react";
+import { Clock, Flame, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
@@ -8,6 +8,7 @@ import { useCart } from "./cart";
 import { MenuItemCard } from "./menu-item";
 import type { MenuItem } from "./table-data";
 import { placeOrder, timeOf, type TableOrders } from "./table-orders";
+import { MesaNotice } from "./mesa-notice";
 
 const t = tablePage.rodizio;
 const focus = "focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
@@ -124,12 +125,7 @@ export function RodizioRound({
           </p>
         )
       )}
-      {limits?.wasteNotice && (
-        <p className="flex items-start gap-2.5 rounded-2xl bg-amber-500/15 px-4 py-3 text-sm">
-          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-500" />
-          {limits.wasteNotice}
-        </p>
-      )}
+      {limits?.wasteNotice && <MesaNotice tone="warning">{limits.wasteNotice}</MesaNotice>}
       {limits?.maxPerItem != null && <p className="text-sm text-(--mesa-muted)">{t.maxPerItem(limits.maxPerItem)}</p>}
 
       {items.length === 0 && <p className="text-(--mesa-muted)">{t.empty}</p>}

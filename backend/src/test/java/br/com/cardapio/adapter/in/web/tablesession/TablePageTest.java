@@ -122,6 +122,21 @@ class TablePageTest {
         assertThat(json(menu, "$.categories[0].products[1].available")).isEqualTo("false");
         assertThat(json(menu, "$.categories[0].products[1].promoPriceCents")).isEqualTo("1590");
         assertThat(json(menu, "$.categories[0].products[0].photo")).isEqualTo("null");
+        assertThat(json(menu, "$.categories[0].products[0].serves")).isEqualTo("null");
+    }
+
+    @Test
+    void theClientSeesHowManyPeopleTheDishServes() throws Exception {
+        String combinados = json(send("POST", sakura.ownerToken(), "/api/v1/menu-categories",
+                "{\"name\":\"Combinados\"}"), "$.id");
+        send("POST", sakura.ownerToken(), "/api/v1/products", """
+                {"categoryId":"%s","name":"Combinado Sakura","priceCents":8990,"featured":false,"available":true,
+                 "serves":2}
+                """.formatted(combinados));
+
+        MvcTestResult menu = send("GET", null, "/api/v1/public/tables/" + sakura.qr() + "/menu", null);
+
+        assertThat(json(menu, "$.categories[0].products[0].serves")).isEqualTo("2");
     }
 
     @Test

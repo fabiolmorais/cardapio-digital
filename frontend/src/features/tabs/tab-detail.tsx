@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { clock } from "./open-tabs";
 import { closeTab, fetchTab, type PaymentMethod, type StaffTab } from "./tabs-api";
+import { Notice } from "@/components/notice";
 
 const t = messages.panel.tab;
 const tp = messages.panel.calls.payment;
@@ -105,9 +106,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
             </span>
           </span>
           <h2 className="text-2xl font-bold">{t.closedTitle}</h2>
-          <p className="font-semibold">
-            {t.paidWith(tp[tab.paymentMethod ?? "PIX"], formatCents(tab.totalCents))}
-          </p>
+          <p className="font-semibold">{t.paidWith(tp[tab.paymentMethod ?? "PIX"], formatCents(tab.totalCents))}</p>
           <p className="max-w-sm text-muted-foreground">{t.closedText(tab.tableLabel)}</p>
           <Link href="/painel" className={cn(buttonVariants({ variant: "outline" }), "h-12 w-full max-w-sm")}>
             {t.back}
@@ -158,9 +157,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           <Button
             variant="outline"
             className="h-11 self-start"
-            onClick={() =>
-              setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel, current: tab.rodizio })
-            }
+            onClick={() => setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel, current: tab.rodizio })}
           >
             {t.adjustGuests}
           </Button>
@@ -240,10 +237,9 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
       </fieldset>
 
       {onTheWay.length > 0 && (
-        <p className="flex gap-2.5 rounded-xl bg-amber-500/15 p-3.5 text-sm">
-          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+        <Notice tone="warning">
           {t.onTheWayWarning(onTheWay.map((i) => `${i.quantity}× ${i.productName}`).join(", "))}
-        </p>
+        </Notice>
       )}
       {close.error && (
         <p role="alert" className="text-sm text-destructive">

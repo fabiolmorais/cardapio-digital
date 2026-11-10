@@ -58,7 +58,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
     </header>
   );
   const alert = error && (
-    <p role="alert" className="text-sm font-medium text-(--brand-text)">
+    <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
       {error}
     </p>
   );

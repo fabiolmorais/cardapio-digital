@@ -170,7 +170,7 @@ function Board() {
                               className={cn(
                                 "font-mono text-lg font-semibold tabular-nums",
                                 level === "ok" && "text-success",
-                                level === "warn" && "text-amber-700 dark:text-amber-400",
+                                level === "warn" && "text-warning",
                                 level === "late" && "text-destructive",
                               )}
                             >
@@ -191,7 +191,7 @@ function Board() {
                               <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
                                 <span className="font-semibold">{item.productName}</span>
                                 {item.note && (
-                                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-sm font-semibold text-amber-700 dark:text-amber-400">
+                                  <span className="rounded-md bg-warning/15 px-2 py-0.5 text-sm font-semibold text-warning">
                                     {item.note}
                                   </span>
                                 )}

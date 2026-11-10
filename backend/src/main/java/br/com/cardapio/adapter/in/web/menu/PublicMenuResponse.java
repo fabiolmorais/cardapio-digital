@@ -41,6 +41,8 @@ record PublicMenuResponse(
             @Schema(requiredMode = REQUIRED, description = "false: \"Esgotado hoje\" (aparece, mas não pode ser pedido)") boolean available,
             @Schema(requiredMode = REQUIRED, description = "false: só do rodízio (só na aba Rodízio, sem preço)")
             boolean aLaCarte,
+            @Schema(description = "Quantas pessoas o prato serve; null quando não informado", example = "2")
+            Integer serves,
             @Schema(description = "A capa (a primeira foto); null quando o produto não tem foto") Photo photo,
             @Schema(requiredMode = REQUIRED, description = "A galeria pronta, em ordem: fotos e vídeos (o Reels)")
             List<Media> media
@@ -77,7 +79,7 @@ record PublicMenuResponse(
         return new PublicMenuResponse(menu.categories().stream()
                 .map(c -> new Category(c.id().value(), c.name(), c.products().stream()
                         .map(p -> new Item(p.id().value(), p.name(), p.description(), p.priceCents(),
-                                p.promoPriceCents(), p.featured(), p.available(), p.aLaCarte(), photo(p.photoUrls()),
+                                p.promoPriceCents(), p.featured(), p.available(), p.aLaCarte(), p.serves(), photo(p.photoUrls()),
                                 p.media().stream().map(PublicMenuResponse::media).toList()))
                         .toList()))
                 .toList(), menu.mostOrdered().stream().map(ProductId::value).toList());

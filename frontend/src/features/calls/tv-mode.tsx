@@ -190,7 +190,7 @@ function TvBoard({
                     className={cn(
                       "rounded-2xl px-5 py-3 font-mono text-4xl font-bold tabular-nums",
                       level === "ok" && "text-success",
-                      level === "warn" && "text-amber-400",
+                      level === "warn" && "text-warning",
                       level === "late" && "text-destructive",
                       level === "taken" && "text-muted-foreground",
                     )}

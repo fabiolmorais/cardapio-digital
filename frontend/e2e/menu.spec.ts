@@ -128,6 +128,32 @@ test("editar, esgotar e buscar produtos", async ({ page, request }) => {
   await expect(productNames(page)).toHaveText(["Sunomono"]);
 });
 
+test("informar quantas pessoas o prato serve é opcional", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  const token = await apiLogin(request, email);
+  const combinados = await apiCategory(request, token, "Combinados");
+  await apiProduct(request, token, combinados, "Combinado Sakura", 8990);
+  await loginThroughForm(page, email);
+  await openMenu(page);
+
+  // Sem informar, o campo vem em "Não informar".
+  await page.getByRole("link", { name: "Combinado Sakura" }).click();
+  const serves = field(page, "Serve quantas pessoas (opcional)");
+  await expect(serves).toHaveText(/Não informar/);
+  await choose(page, serves, "2 pessoas");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("heading", { name: "Cardápio", level: 1 })).toBeVisible();
+
+  // Volta com o que foi salvo, e dá para tirar a informação de novo.
+  await page.getByRole("link", { name: "Combinado Sakura" }).click();
+  await expect(serves).toHaveText(/2 pessoas/);
+  await choose(page, serves, "Não informar");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("heading", { name: "Cardápio", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Combinado Sakura" }).click();
+  await expect(serves).toHaveText(/Não informar/);
+});
+
 test("reordenar arrastando ou pelo teclado", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);

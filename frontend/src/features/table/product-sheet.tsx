@@ -207,7 +207,7 @@ function SheetBody({
 
         {/* O texto num card de vidro que sobe sobre a foto (desenho 3.2). */}
         <section className="relative mx-3 -mt-14 flex flex-col gap-3.5 rounded-[28px] border border-(--mesa-stroke) bg-(--mesa-bar) p-5 shadow-[0_20px_50px_rgba(0,0,0,.35)] backdrop-blur-xl">
-          {(item.featured || off !== null) && (
+          {(item.featured || off !== null || item.serves != null) && (
             <div className="flex flex-wrap gap-2">
               {item.featured && (
                 <span className="rounded-full bg-(--brand)/20 px-2.5 py-1 text-xs font-semibold text-(--brand-text)">
@@ -216,6 +216,11 @@ function SheetBody({
               )}
               {off !== null && (
                 <span className="rounded-full bg-(--brand) px-2.5 py-1 text-xs font-bold text-white">{t.off(off)}</span>
+              )}
+              {item.serves != null && (
+                <span className="rounded-full bg-(--mesa-info-soft) px-2.5 py-1 text-xs font-semibold text-(--mesa-info)">
+                  {t.serves(item.serves)}
+                </span>
               )}
             </div>
           )}
@@ -247,7 +252,7 @@ function SheetBody({
             />
           </div>
           {full && (
-            <p role="alert" className="text-sm font-medium text-(--brand-text)">
+            <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
               {t.full}
             </p>
           )}

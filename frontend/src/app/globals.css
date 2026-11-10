@@ -8,6 +8,8 @@
   --color-background: var(--background);
   --color-brand-text: var(--brand-text);
   --color-success: var(--success);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -77,6 +79,9 @@
   --radius: 0.625rem;
   --brand-text: #b8361a;
   --success: #15803d;
+  /* Avisos (como no desenho): azul = informativo, amarelo = atenção; vermelho = --destructive. */
+  --info: #1d4ed8;
+  --warning: #a16207;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -111,6 +116,8 @@
   --ring: #ff8466;
   --brand-text: #ff8466;
   --success: #4ade80;
+  --info: #7db4ff;
+  --warning: #fbbf24;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

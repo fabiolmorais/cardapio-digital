@@ -122,6 +122,7 @@ export const tablePage = {
     noResults: (text: string) => `Nada encontrado para “${text}”.`,
     results: (count: number) => (count === 1 ? "1 item encontrado" : `${count} itens encontrados`),
     soldOut: "Esgotado hoje",
+    serves: (count: number) => (count === 1 ? "Serve 1 pessoa" : `Serve ${count} pessoas`),
     off: (percent: number) => `−${percent}%`,
     promoPrice: "preço promocional:",
     normalPrice: "preço normal:",
@@ -145,6 +146,7 @@ export const tablePage = {
       seconds ? `Ver vídeo · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : "Ver vídeo",
     featured: "Destaque",
     off: (percent: number) => `-${percent}%`,
+    serves: (count: number) => (count === 1 ? "Serve 1 pessoa" : `Serve ${count} pessoas`),
   },
   cartBar: {
     see: "Ver pedido",
