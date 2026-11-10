@@ -2,13 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Star } from "lucide-react";
-import {
-  useId,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useId, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,14 +13,7 @@ import { useSession } from "@/lib/auth/use-session";
 import { tableThemeVars } from "@/lib/table-theme";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import {
-  fetchBrand,
-  removeLogo,
-  updateBrand,
-  uploadLogo,
-  type Brand,
-  type BrandRequest,
-} from "./brand-api";
+import { fetchBrand, removeLogo, updateBrand, uploadLogo, type Brand, type BrandRequest } from "./brand-api";
 
 const t = messages.brand;
 /** As mesmas regras do back (LogoFile), só para avisar antes de enviar. */
@@ -36,18 +23,11 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 /** Marca e aparência (desenho 12.7): o formulário à esquerda e a prévia ao vivo no celular à direita. */
 export function BrandEditor() {
   const { status, session } = useSession();
-  const allowed =
-    status === "authenticated" && canManageTeam(session.establishment.role);
-  const brand = useQuery({
-    queryKey: ["brand"],
-    queryFn: fetchBrand,
-    enabled: allowed,
-  });
+  const allowed = status === "authenticated" && canManageTeam(session.establishment.role);
+  const brand = useQuery({ queryKey: ["brand"], queryFn: fetchBrand, enabled: allowed });
 
   if (status !== "authenticated" || (allowed && brand.isPending)) {
-    return (
-      <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>
-    );
+    return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
   }
   if (!allowed) {
     return (
@@ -79,10 +59,7 @@ function BrandForm({ brand }: { brand: Brand }) {
   const [notice, setNotice] = useState<string | null>(null);
   const id = useId();
 
-  const set = <K extends keyof BrandRequest>(
-    key: K,
-    value: BrandRequest[K],
-  ) => {
+  const set = <K extends keyof BrandRequest>(key: K, value: BrandRequest[K]) => {
     setNotice(null);
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -119,30 +96,16 @@ function BrandForm({ brand }: { brand: Brand }) {
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
-        <Button
-          type="submit"
-          form={`${id}form`}
-          size="xl"
-          disabled={save.isPending}
-        >
+        <Button type="submit" form={`${id}form`} size="xl" disabled={save.isPending}>
           {save.isPending ? t.saving : t.save}
         </Button>
       </header>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:max-w-3xl">
-          <LogoField
-            brand={brand}
-            name={form.name}
-            color={selected.primary}
-            onChanged={keep}
-          />
+          <LogoField brand={brand} name={form.name} color={selected.primary} onChanged={keep} />
 
-          <form
-            id={`${id}form`}
-            onSubmit={onSubmit}
-            className="flex flex-col gap-5"
-          >
+          <form id={`${id}form`} onSubmit={onSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${id}name`} className="text-muted-foreground">
                 {t.name}
@@ -159,9 +122,7 @@ function BrandForm({ brand }: { brand: Brand }) {
             </div>
 
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium text-muted-foreground">
-                {t.color}
-              </legend>
+              <legend className="mb-2 text-sm font-medium text-muted-foreground">{t.color}</legend>
               <div className="flex flex-wrap gap-2.5">
                 {palette.map((c) => (
                   <label
@@ -188,9 +149,7 @@ function BrandForm({ brand }: { brand: Brand }) {
             </fieldset>
 
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium text-muted-foreground">
-                {t.theme}
-              </legend>
+              <legend className="mb-2 text-sm font-medium text-muted-foreground">{t.theme}</legend>
               <div className="grid grid-cols-2 gap-3">
                 {(["DARK", "LIGHT"] as const).map((theme) => (
                   <label
@@ -220,10 +179,7 @@ function BrandForm({ brand }: { brand: Brand }) {
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor={`${id}instagram`}
-                  className="text-muted-foreground"
-                >
+                <Label htmlFor={`${id}instagram`} className="text-muted-foreground">
                   {t.instagram}
                 </Label>
                 <div className="relative">
@@ -245,10 +201,7 @@ function BrandForm({ brand }: { brand: Brand }) {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor={`${id}review`}
-                  className="text-muted-foreground"
-                >
+                <Label htmlFor={`${id}review`} className="text-muted-foreground">
                   {t.review}
                 </Label>
                 <Input
@@ -257,27 +210,18 @@ function BrandForm({ brand }: { brand: Brand }) {
                   maxLength={300}
                   autoComplete="off"
                   value={form.googleReviewUrl ?? ""}
-                  onChange={(event) =>
-                    set("googleReviewUrl", event.target.value)
-                  }
+                  onChange={(event) => set("googleReviewUrl", event.target.value)}
                   placeholder={t.reviewPlaceholder}
                   aria-describedby={`${id}review-hint`}
                   className="h-12 rounded-xl px-4 text-base"
                 />
-                <span
-                  id={`${id}review-hint`}
-                  className="text-sm text-muted-foreground"
-                >
+                <span id={`${id}review-hint`} className="text-sm text-muted-foreground">
                   {t.reviewHint}
                 </span>
               </div>
             </div>
 
-            <p
-              role="alert"
-              aria-live="assertive"
-              className="min-h-5 text-sm text-destructive"
-            >
+            <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
               {save.error?.message ?? ""}
             </p>
             {notice && (
@@ -289,16 +233,12 @@ function BrandForm({ brand }: { brand: Brand }) {
         </div>
 
         <aside className="flex w-full flex-col items-center gap-3 lg:w-auto lg:shrink-0">
-          <span className="text-sm text-muted-foreground">
-            {t.preview.title}
-          </span>
+          <span className="text-sm text-muted-foreground">{t.preview.title}</span>
           <PhonePreview
             name={form.name}
             theme={form.theme}
             primary={selected.primary}
-            accent={
-              form.theme === "DARK" ? selected.textOnDark : selected.textOnLight
-            }
+            accent={form.theme === "DARK" ? selected.textOnDark : selected.textOnLight}
             logo={brand.logo?.small}
             instagram={previewHandle(form.instagram ?? "")}
             review={Boolean(form.googleReviewUrl?.trim())}
@@ -331,9 +271,7 @@ function LogoField({
       if (file.size > LOGO_MAX_BYTES) throw new Error(t.logo.tooBig);
       setPercent(0);
       // Enviado o arquivo (100%), o back ainda confere e gera os tamanhos: "preparando…".
-      return uploadLogo(file, (fraction) =>
-        setPercent(fraction < 1 ? Math.round(fraction * 100) : null),
-      );
+      return uploadLogo(file, (fraction) => setPercent(fraction < 1 ? Math.round(fraction * 100) : null));
     },
     onSuccess: (saved) => {
       onChanged(saved);
@@ -362,10 +300,7 @@ function LogoField({
   const error = send.error ?? remove.error;
 
   return (
-    <section
-      aria-labelledby={`${inputId}title`}
-      className="flex flex-wrap items-center gap-4"
-    >
+    <section aria-labelledby={`${inputId}title`} className="flex flex-wrap items-center gap-4">
       <BrandLogo
         logo={brand.logo?.large}
         name={name}
@@ -374,10 +309,7 @@ function LogoField({
         className="size-18 text-2xl"
       />
       <div className="flex min-w-0 flex-col gap-2">
-        <h2
-          id={`${inputId}title`}
-          className="text-sm font-medium text-muted-foreground"
-        >
+        <h2 id={`${inputId}title`} className="text-sm font-medium text-muted-foreground">
           {t.logo.title}
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -399,12 +331,7 @@ function LogoField({
             {brand.logo ? t.logo.replace : t.logo.send}
           </label>
           {brand.logo && (
-            <Button
-              variant="ghost"
-              className="h-10 px-3"
-              disabled={busy}
-              onClick={() => remove.mutate()}
-            >
+            <Button variant="ghost" className="h-10 px-3" disabled={busy} onClick={() => remove.mutate()}>
               {t.logo.useInitials}
             </Button>
           )}
@@ -461,20 +388,10 @@ function PhonePreview({
     >
       <div className="flex flex-col gap-4 px-4 py-5">
         <div className="flex items-center gap-2.5">
-          <BrandLogo
-            logo={logo}
-            name={name}
-            color={primary}
-            alt=""
-            className="size-9 text-xs"
-          />
+          <BrandLogo logo={logo} name={name} color={primary} alt="" className="size-9 text-xs" />
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-semibold">
-              {name || " "}
-            </span>
-            <span className="text-[11px] text-(--mesa-muted)">
-              {t.preview.table}
-            </span>
+            <span className="truncate text-sm font-semibold">{name || " "}</span>
+            <span className="text-[11px] text-(--mesa-muted)">{t.preview.table}</span>
           </span>
         </div>
         <span className="text-[26px] leading-[29px] font-bold tracking-tight">
@@ -497,9 +414,7 @@ function PhonePreview({
               key={name}
               className={cn(
                 "flex h-8 shrink-0 items-center rounded-full border px-3 text-xs font-semibold",
-                i === 0
-                  ? "border-transparent bg-(--brand) text-white"
-                  : "border-(--brand-text)/30 bg-(--brand)/15",
+                i === 0 ? "border-transparent bg-(--brand) text-white" : "border-(--brand-text)/30 bg-(--brand)/15",
               )}
             >
               {name}
@@ -512,17 +427,11 @@ function PhonePreview({
         {(instagram || review) && (
           <div className="mt-2 flex flex-col gap-2">
             {instagram && (
-              <PreviewLink
-                icon={<span className="text-base font-bold">@</span>}
-              >
+              <PreviewLink icon={<span className="text-base font-bold">@</span>}>
                 {t.preview.follow(instagram)}
               </PreviewLink>
             )}
-            {review && (
-              <PreviewLink icon={<Star className="size-4" />}>
-                {t.preview.review}
-              </PreviewLink>
-            )}
+            {review && <PreviewLink icon={<Star className="size-4" />}>{t.preview.review}</PreviewLink>}
           </div>
         )}
       </div>
@@ -531,19 +440,10 @@ function PhonePreview({
 }
 
 /** Uma linha de link da página da mesa (Instagram, Google), em miniatura. */
-function PreviewLink({
-  icon,
-  children,
-}: {
-  icon: ReactNode;
-  children: ReactNode;
-}) {
+function PreviewLink({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <span className="flex h-11 items-center gap-2.5 rounded-[14px] border border-(--mesa-stroke) bg-(--mesa-glass) px-3 text-[13px] font-medium">
-      <span
-        aria-hidden
-        className="flex size-5 items-center justify-center text-(--brand-text)"
-      >
+      <span aria-hidden className="flex size-5 items-center justify-center text-(--brand-text)">
         {icon}
       </span>
       <span className="min-w-0 flex-1 truncate">{children}</span>

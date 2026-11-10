@@ -155,21 +155,11 @@ function SheetBody({
               <UtensilsCrossed aria-hidden className="size-10" />
             </span>
           ) : reelsHref ? (
-            <Link
-              href={reelsHref}
-              prefetch={false}
-              aria-label={t.openReels(item.name)}
-              className="block size-full"
-            >
+            <Link href={reelsHref} prefetch={false} aria-label={t.openReels(item.name)} className="block size-full">
               {gallery}
             </Link>
           ) : onPhoto ? (
-            <button
-              type="button"
-              onClick={onPhoto}
-              aria-label={t.backToReels}
-              className="block size-full"
-            >
+            <button type="button" onClick={onPhoto} aria-label={t.backToReels} className="block size-full">
               {gallery}
             </button>
           ) : (
@@ -183,39 +173,25 @@ function SheetBody({
             type="button"
             onClick={onDone}
             aria-label={t.close}
-            className={cn(
-              overPhoto,
-              "absolute top-6 left-5 w-11 justify-center px-0",
-            )}
+            className={cn(overPhoto, "absolute top-6 left-5 w-11 justify-center px-0")}
           >
             <ArrowLeft aria-hidden className="size-5" />
           </button>
           {video &&
             (reelsHref || onPhoto) &&
             (reelsHref ? (
-              <Link
-                href={reelsHref}
-                prefetch={false}
-                className={cn(overPhoto, "absolute top-6 right-5")}
-              >
+              <Link href={reelsHref} prefetch={false} className={cn(overPhoto, "absolute top-6 right-5")}>
                 <Play aria-hidden className="size-4 fill-current" />
                 {t.seeVideo(video.durationSeconds ?? null)}
               </Link>
             ) : (
-              <button
-                type="button"
-                onClick={onPhoto}
-                className={cn(overPhoto, "absolute top-6 right-5")}
-              >
+              <button type="button" onClick={onPhoto} className={cn(overPhoto, "absolute top-6 right-5")}>
                 <Play aria-hidden className="size-4 fill-current" />
                 {t.seeVideo(video.durationSeconds ?? null)}
               </button>
             ))}
           {photos.length > 1 && (
-            <span
-              aria-hidden
-              className="absolute inset-x-0 bottom-[72px] flex justify-center gap-1.5"
-            >
+            <span aria-hidden className="absolute inset-x-0 bottom-[72px] flex justify-center gap-1.5">
               {photos.map((src, i) => (
                 <span
                   key={src}
@@ -239,35 +215,22 @@ function SheetBody({
                 </span>
               )}
               {off !== null && (
-                <span className="rounded-full bg-(--brand) px-2.5 py-1 text-xs font-bold text-white">
-                  {t.off(off)}
-                </span>
+                <span className="rounded-full bg-(--brand) px-2.5 py-1 text-xs font-bold text-white">{t.off(off)}</span>
               )}
             </div>
           )}
           <div className="flex items-start justify-between gap-3">
-            <h2
-              id={`${id}name`}
-              className="text-[26px] leading-[31px] font-bold tracking-tight"
-            >
+            <h2 id={`${id}name`} className="text-[26px] leading-[31px] font-bold tracking-tight">
               {item.name}
             </h2>
             <span className="flex flex-col items-end pt-1">
               {item.promoPriceCents != null && (
-                <s className="text-xs text-(--mesa-muted)">
-                  {formatCents(item.priceCents)}
-                </s>
+                <s className="text-xs text-(--mesa-muted)">{formatCents(item.priceCents)}</s>
               )}
-              <span className="text-xl font-bold whitespace-nowrap text-(--brand-text)">
-                {formatCents(price)}
-              </span>
+              <span className="text-xl font-bold whitespace-nowrap text-(--brand-text)">{formatCents(price)}</span>
             </span>
           </div>
-          {item.description && (
-            <p className="text-[15px] leading-[22px] text-(--mesa-muted)">
-              {item.description}
-            </p>
-          )}
+          {item.description && <p className="text-[15px] leading-[22px] text-(--mesa-muted)">{item.description}</p>}
           <div aria-hidden className="h-px bg-(--mesa-stroke)" />
           <div className="flex flex-col gap-2">
             <label htmlFor={`${id}note`} className="font-semibold">
