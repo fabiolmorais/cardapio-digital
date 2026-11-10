@@ -39,11 +39,6 @@ jobs:
           cache: maven
       - name: Build, testes (Testcontainers) e ArchUnit
         run: ./mvnw -B verify
-      - uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: backend/target/backend-*.jar
-          retention-days: 1
 
   frontend:
     runs-on: ubuntu-latest
@@ -64,8 +59,9 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
 
+  # Roda ao mesmo tempo que os outros jobs: gera o próprio .jar (sem os testes, que já rodam no job
+  # backend) em vez de esperar o backend terminar. Nada vai para a main sem os dois verdes.
   e2e:
-    needs: [backend, frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Imagem oficial do Playwright: já traz o Chromium e as bibliotecas do sistema, sem apt no CI.
@@ -116,6 +112,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
+          cache: maven
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -127,10 +124,9 @@ jobs:
           PW=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
           test "$PW" = "1.64.1" \
             || (echo "Playwright $PW no package-lock: atualize a imagem do container do job e2e" && exit 1)
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend-jar
-          path: backend-jar
+      - name: Gera o .jar do back-end (sem os testes)
+        working-directory: backend
+        run: ./mvnw -B -Dmaven.test.skip=true package
       - name: Gera chaves VAPID só para este teste
         # O web push precisa de um par de chaves; geradas na hora, nenhuma fica no repositório.
         run: |
@@ -144,7 +140,7 @@ jobs:
           '
       - name: Sobe o back-end
         run: |
-          nohup java -jar backend-jar/backend-*.jar > backend.log 2>&1 &
+          nohup java -jar backend/target/backend-*.jar > backend.log 2>&1 &
           for i in $(seq 1 60); do curl -sf localhost:8080/actuator/health && exit 0; sleep 2; done
           cat backend.log; exit 1
       - name: Confere se os tipos do front batem com a API
