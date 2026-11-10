@@ -21,6 +21,7 @@ export function MenuItemCard({
   reelsHref,
   onOpen,
   price,
+  anchor = true,
 }: {
   item: MenuItem;
   action?: ReactNode;
@@ -29,12 +30,14 @@ export function MenuItemCard({
   onOpen?: () => void;
   /** No lugar do preço (a aba Rodízio não mostra preço). */
   price?: ReactNode;
+  /** Com o id `produto-<id>` (para o link do início). Falso na vitrine, que repete o prato. */
+  anchor?: boolean;
 }) {
   const hasVideo = item.media.some((m) => m.type === "VIDEO");
   const off = discountPercent(item);
   return (
     <article
-      id={`produto-${item.id}`}
+      id={anchor ? `produto-${item.id}` : undefined}
       aria-disabled={!item.available || undefined}
       className="flex scroll-mt-24 gap-3.5 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-2.5"
     >
@@ -135,12 +138,25 @@ export function MenuItemCard({
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
         <span className="flex items-center gap-2">
-          <h3 className={cn("font-semibold", !item.available && "text-(--mesa-muted)")}>{item.name}</h3>
+          <h3
+            className={cn(
+              "font-semibold",
+              !item.available && "text-(--mesa-muted)",
+            )}
+          >
+            {item.name}
+          </h3>
           {item.available && off !== null && price === undefined && (
-            <span className="rounded-md bg-(--brand) px-1.5 py-0.5 text-[11px] font-bold text-white">{t.off(off)}</span>
+            <span className="rounded-md bg-(--brand) px-1.5 py-0.5 text-[11px] font-bold text-white">
+              {t.off(off)}
+            </span>
           )}
         </span>
-        {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
+        {item.description && (
+          <p className="line-clamp-2 text-sm text-(--mesa-muted)">
+            {item.description}
+          </p>
+        )}
         <span className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-1">
           {item.available && price !== undefined ? (
             price
