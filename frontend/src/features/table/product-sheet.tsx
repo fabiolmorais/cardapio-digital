@@ -218,7 +218,7 @@ function SheetBody({
                 <span className="rounded-full bg-(--brand) px-2.5 py-1 text-xs font-bold text-white">{t.off(off)}</span>
               )}
               {item.serves != null && (
-                <span className="rounded-full border border-(--mesa-stroke) px-2.5 py-1 text-xs font-semibold text-(--mesa-muted)">
+                <span className="rounded-full bg-(--mesa-info-soft) px-2.5 py-1 text-xs font-semibold text-(--mesa-info)">
                   {t.serves(item.serves)}
                 </span>
               )}
@@ -252,7 +252,7 @@ function SheetBody({
             />
           </div>
           {full && (
-            <p role="alert" className="text-sm font-medium text-(--brand-text)">
+            <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
               {t.full}
             </p>
           )}

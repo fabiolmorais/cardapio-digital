@@ -56,7 +56,7 @@ export function OpenTabs() {
                   <span
                     className={cn(
                       "truncate text-sm",
-                      tab.itemsOnTheWay > 0 ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground",
+                      tab.itemsOnTheWay > 0 ? "text-warning" : "text-muted-foreground",
                     )}
                   >
                     {tab.itemsOnTheWay > 0 ? t.onTheWay(tab.itemsOnTheWay) : t.allDelivered} · {tab.sectorName} ·{" "}

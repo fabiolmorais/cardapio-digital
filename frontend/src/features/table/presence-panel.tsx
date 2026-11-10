@@ -34,7 +34,7 @@ export function PresencePanel({ token, state }: { token: string; state: TableSta
         role="alert"
         className="flex flex-col gap-3 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-5"
       >
-        <span className="flex size-12 items-center justify-center rounded-full bg-red-500/15 text-red-400">
+        <span className="flex size-12 items-center justify-center rounded-full bg-(--mesa-danger-soft) text-(--mesa-danger)">
           <Ban aria-hidden className="size-6" />
         </span>
         <h2 className="text-xl font-bold tracking-tight">{t.blockedTitle}</h2>
@@ -76,7 +76,7 @@ export function PresencePanel({ token, state }: { token: string; state: TableSta
       aria-labelledby="presenca"
       className="flex flex-col gap-4 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-5"
     >
-      <span className="flex size-12 items-center justify-center rounded-full bg-amber-400/15 text-amber-400">
+      <span className="flex size-12 items-center justify-center rounded-full bg-(--mesa-warn-soft) text-(--mesa-warn)">
         <Lock aria-hidden className="size-6" />
       </span>
       <div className="flex flex-col gap-1.5">
@@ -110,7 +110,7 @@ export function PresencePanel({ token, state }: { token: string; state: TableSta
       )}
 
       {error && (
-        <p role="alert" className="text-sm font-medium text-(--brand-text)">
+        <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
           {error}
         </p>
       )}
@@ -288,7 +288,7 @@ export function ArrivalGate({
           </span>
         </header>
         <div className="flex flex-1 flex-col justify-end gap-6">
-          <span className="flex size-16 items-center justify-center rounded-full bg-amber-400/15 text-amber-400">
+          <span className="flex size-16 items-center justify-center rounded-full bg-(--mesa-warn-soft) text-(--mesa-warn)">
             <Lock aria-hidden className="size-7" />
           </span>
           <div className="flex flex-col gap-2.5">
@@ -320,7 +320,7 @@ export function ArrivalGate({
             </div>
           )}
           {error && (
-            <p role="alert" className="text-sm font-medium text-(--brand-text)">
+            <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
               {error}
             </p>
           )}

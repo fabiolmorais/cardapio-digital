@@ -1,10 +1,10 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { canSeeSubscription, useSubscription } from "./subscription-api";
+import { Notice } from "@/components/notice";
 
 const t = messages.subscription.meter;
 
@@ -36,7 +36,7 @@ export function PlanMeter({ kind, role, used: counted }: { kind: "tables" | "use
         className="h-1.5 overflow-hidden rounded-full bg-muted"
       >
         <div
-          className={cn("h-full rounded-full", full ? "bg-amber-400" : "bg-primary")}
+          className={cn("h-full rounded-full", full ? "bg-warning" : "bg-primary")}
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -55,17 +55,11 @@ export function PlanLimitBanner({ kind, role }: { kind: "tables" | "users"; role
   const used = kind === "tables" ? data.usage.tables : data.usage.users;
   if (max === null || max === undefined || used < max) return null;
   return (
-    <p
-      role="status"
-      className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
-    >
-      <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-400" />
-      <span>
-        {t.limit(kind, max, data.plan.name)}{" "}
-        <Link href="/admin/assinatura" className="font-semibold text-amber-300 underline underline-offset-4">
-          {t.changePlan}
-        </Link>
-      </span>
-    </p>
+    <Notice tone="warning" role="status">
+      {t.limit(kind, max, data.plan.name)}{" "}
+      <Link href="/admin/assinatura" className="font-semibold text-warning underline underline-offset-4">
+        {t.changePlan}
+      </Link>
+    </Notice>
   );
 }

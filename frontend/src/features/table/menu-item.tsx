@@ -142,7 +142,7 @@ export function MenuItemCard({
         </span>
         {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
         {item.serves != null && (
-          <span className="flex items-center gap-1 text-xs font-medium text-(--mesa-muted)">
+          <span className="flex items-center gap-1 text-xs font-medium text-(--mesa-info)">
             <Users aria-hidden className="size-3.5" />
             {t.serves(item.serves)}
           </span>
@@ -151,7 +151,7 @@ export function MenuItemCard({
           {item.available && price !== undefined ? (
             price
           ) : !item.available ? (
-            <span className="rounded-md border border-(--mesa-stroke) px-2 py-0.5 text-xs font-semibold text-(--mesa-muted)">
+            <span className="rounded-full bg-(--mesa-danger-soft) px-2.5 py-0.5 text-xs font-semibold text-(--mesa-danger)">
               {t.soldOut}
             </span>
           ) : item.promoPriceCents != null ? (

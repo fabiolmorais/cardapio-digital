@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, Clock, Info, MessageCircle, Minus, Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { Check, ChevronLeft, Clock, MessageCircle, Minus, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { formatCents } from "@/lib/format";
@@ -8,6 +8,7 @@ import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { clearCart, MAX_NOTE, MAX_QUANTITY, setNote, setQuantity, useCart, useHydrated, type CartLine } from "./cart";
 import { listOrders, placeOrder, timeOf, type TableOrder } from "./table-orders";
+import { MesaNotice } from "./mesa-notice";
 
 const t = tablePage.cart;
 
@@ -108,10 +109,7 @@ export function CartView({ token, tableLabel }: { token: string; tableLabel: str
             ))}
           </ul>
 
-          <p className="flex gap-3 rounded-2xl bg-(--mesa-glass) p-4 text-sm">
-            <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-(--brand-text)" />
-            {ordering ? t.info : t.disabled}
-          </p>
+          <MesaNotice tone={ordering ? "info" : "warning"}>{ordering ? t.info : t.disabled}</MesaNotice>
 
           <section className="flex flex-col gap-3 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
             <div className="flex justify-between text-sm text-(--mesa-muted)">
@@ -123,7 +121,7 @@ export function CartView({ token, tableLabel }: { token: string; tableLabel: str
               <span className="text-2xl font-bold">{formatCents(totalCents)}</span>
             </div>
             {error && (
-              <p role="alert" className="text-sm font-medium text-(--brand-text)">
+              <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
                 {error}
               </p>
             )}

@@ -169,7 +169,7 @@ export function CallQueue({ role }: { role: Role }) {
                     className={cn(
                       "font-mono text-sm font-semibold tabular-nums",
                       level === "ok" && "text-success",
-                      level === "warn" && "text-amber-700 dark:text-amber-400",
+                      level === "warn" && "text-warning",
                       level === "late" && "text-destructive",
                     )}
                   >
