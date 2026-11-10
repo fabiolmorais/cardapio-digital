@@ -92,7 +92,8 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         Map<ImageVariant, String> cover = gallery.stream().filter(m -> !m.isVideo()).findFirst()
                 .map(this::imageUrls).orElse(Map.of());
         return new PublicMenu.Item(product.id(), d.name(), d.description(), d.price().cents(),
-                d.onSale() ? d.promoPrice().cents() : null, d.featured(), product.available(), d.aLaCarte(), cover,
+                d.onSale() ? d.promoPrice().cents() : null, d.featured(), product.available(), d.aLaCarte(), d.serves(),
+                cover,
                 gallery.stream().map(this::media).toList());
     }
 

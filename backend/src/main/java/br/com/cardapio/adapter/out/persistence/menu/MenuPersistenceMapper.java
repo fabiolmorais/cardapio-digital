@@ -34,13 +34,13 @@ final class MenuPersistenceMapper {
         ProductDetails d = p.details();
         return new ProductJpaEntity(p.id().value(), p.establishmentId().value(), p.categoryId().value(), d.name(),
                 d.description(), d.price().cents(), d.onSale() ? d.promoPrice().cents() : null, d.featured(),
-                p.available(), p.position(), p.active(), d.aLaCarte());
+                p.available(), p.position(), p.active(), d.aLaCarte(), d.serves());
     }
 
     static Product toDomain(ProductJpaEntity e) {
         ProductDetails details = new ProductDetails(e.getName(), e.getDescription(), Money.ofCents(e.getPriceCents()),
                 e.getPromoPriceCents() == null ? null : Money.ofCents(e.getPromoPriceCents()), e.isFeatured(),
-                e.isALaCarte());
+                e.isALaCarte(), e.getServes());
         return new Product(new ProductId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
                 new MenuCategoryId(e.getCategoryId()), details, e.isAvailable(), e.getPosition(), e.isActive());
     }

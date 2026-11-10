@@ -15,6 +15,8 @@ public record ProductSummary(
         boolean available,
         int position,
         boolean aLaCarte,
+        /** Quantas pessoas o prato serve; null quando não informado. */
+        Integer serves,
         /** Fotos e vídeos da galeria: só a lista conta; nos outros casos, null. */
         Integer photoCount,
         Integer videoCount
@@ -24,12 +26,13 @@ public record ProductSummary(
         var details = product.details();
         return new ProductSummary(product.id(), product.categoryId(), details.name(), details.description(),
                 details.price().cents(), details.onSale() ? details.promoPrice().cents() : null,
-                details.featured(), product.available(), product.position(), details.aLaCarte(), null, null);
+                details.featured(), product.available(), product.position(), details.aLaCarte(), details.serves(), null,
+                null);
     }
 
     /** O mesmo produto, com a contagem da galeria (a lista do admin mostra "3 fotos · 1 vídeo"). */
     public ProductSummary withMedia(int photos, int videos) {
         return new ProductSummary(id, categoryId, name, description, priceCents, promoPriceCents, featured, available,
-                position, aLaCarte, photos, videos);
+                position, aLaCarte, serves, photos, videos);
     }
 }

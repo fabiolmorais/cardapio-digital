@@ -33,6 +33,11 @@ const t = messages.menu.product;
 const DESCRIPTION_MAX = 300;
 
 /** Editar produto (desenho 12.3). Sem productId, é o cadastro de um produto novo. */
+/** Até quantas pessoas o prato pode servir (o back confere o mesmo teto). */
+const SERVES_MAX = 20;
+// O valor da opção "Não informar" (o campo de escolha não aceita valor vazio).
+const NOT_INFORMED = "none";
+
 export function ProductEditor({ productId, initialCategoryId }: { productId?: string; initialCategoryId?: string }) {
   const { status, session } = useSession();
   const allowed = status === "authenticated" && canManageTeam(session.establishment.role);
@@ -123,6 +128,8 @@ function ProductForm({
   const [available, setAvailable] = useState(product?.available ?? true);
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [aLaCarte, setALaCarte] = useState(product?.aLaCarte ?? true);
+  // Quantas pessoas o prato serve: opcional ("" = não informar).
+  const [serves, setServes] = useState(product?.serves != null ? String(product.serves) : "");
   // "Incluído no Rodízio X": uma chave por rodízio. Até a pessoa mexer, vale o que o cadastro diz.
   const rodizios = useQuery({ queryKey: ["rodizios"], queryFn: fetchRodizios });
   const [picked, setPicked] = useState<Set<string> | null>(null);
@@ -178,6 +185,8 @@ function ProductForm({
       featured,
       available,
       aLaCarte,
+      // Sem a informação, o campo não vai: no PUT, isso apaga o que havia.
+      ...(serves ? { serves: Number(serves) } : {}),
     });
   }
 
@@ -281,6 +290,27 @@ function ProductForm({
               invalid={promoInvalid}
               hint={t.promoHint}
             />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}serves`} className="text-muted-foreground">
+                {`${t.serves} (${t.optional})`}
+              </Label>
+              <Select
+                id={`${id}serves`}
+                value={serves || NOT_INFORMED}
+                onValueChange={(value) => setServes(value === NOT_INFORMED ? "" : value)}
+                options={[
+                  { value: NOT_INFORMED, label: t.servesNone },
+                  ...Array.from({ length: SERVES_MAX }, (_, i) => ({
+                    value: String(i + 1),
+                    label: t.servesOption(i + 1),
+                  })),
+                ]}
+              />
+              <span className="text-sm text-muted-foreground">{t.servesHint}</span>
+            </div>
           </div>
 
           <div className="border-t border-border" />

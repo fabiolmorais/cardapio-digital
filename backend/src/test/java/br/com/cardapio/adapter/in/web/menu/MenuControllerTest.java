@@ -125,6 +125,35 @@ class MenuControllerTest {
         MvcTestResult one = send("GET", sakura.token(), PRODUCTS + "/" + json(hotRoll, "$.id"), null);
         assertThat(one).bodyJson().extractingPath("$.promoPriceCents").isEqualTo(2490);
         assertThat(one).bodyJson().extractingPath("$.featured").isEqualTo(true);
+        assertThat(one).bodyJson().extractingPath("$.serves").isNull();
+    }
+
+    @Test
+    void howManyPeopleTheDishServesIsOptional() throws Exception {
+        String combinados = category(sakura.token(), "Combinados");
+
+        MvcTestResult created = send("POST", sakura.token(), PRODUCTS, """
+                {"categoryId":"%s","name":"Combinado Sakura","priceCents":8990,"featured":false,"available":true,
+                 "serves":2}
+                """.formatted(combinados));
+        assertThat(created).hasStatus(HttpStatus.CREATED);
+        assertThat(created).bodyJson().extractingPath("$.serves").isEqualTo(2);
+        String id = json(created, "$.id");
+        assertThat(send("GET", sakura.token(), PRODUCTS, null)).bodyJson().extractingPath("$.content[0].serves")
+                .isEqualTo(2);
+
+        // Editar sem o campo apaga a informação: o formulário substitui tudo.
+        MvcTestResult cleared = send("PUT", sakura.token(), PRODUCTS + "/" + id, """
+                {"categoryId":"%s","name":"Combinado Sakura","priceCents":8990,"featured":false,"available":true}
+                """.formatted(combinados));
+        assertThat(cleared).bodyJson().extractingPath("$.serves").isNull();
+
+        MvcTestResult tooMany = send("PUT", sakura.token(), PRODUCTS + "/" + id, """
+                {"categoryId":"%s","name":"Combinado Sakura","priceCents":8990,"featured":false,"available":true,
+                 "serves":21}
+                """.formatted(combinados));
+        assertThat(tooMany).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(tooMany).bodyJson().extractingPath("$.fields").asArray().containsExactly("serves");
     }
 
     @Test

@@ -63,4 +63,17 @@ class ProductDetailsTest {
                 .extracting(ProductDetails::name, ProductDetails::description)
                 .containsExactly("Guioza", "6 unidades");
     }
+
+    @Test
+    void howManyPeopleItServesIsOptionalAndBetweenOneAndTwenty() {
+        Money price = Money.ofCents(8990);
+        assertThat(new ProductDetails("Combinado", "", price, null, false).serves()).isNull();
+        assertThat(new ProductDetails("Combinado", "", price, null, false, true, 2).serves()).isEqualTo(2);
+        assertThat(new ProductDetails("Barca", "", price, null, false, true, 20).serves()).isEqualTo(20);
+        assertThatThrownBy(() -> new ProductDetails("Barca", "", price, null, false, true, 21))
+                .isInstanceOf(InvalidValueException.class)
+                .hasMessage("O prato serve de 1 a 20 pessoas");
+        assertThatThrownBy(() -> new ProductDetails("Combinado", "", price, null, false, true, 0))
+                .isInstanceOf(InvalidValueException.class);
+    }
 }

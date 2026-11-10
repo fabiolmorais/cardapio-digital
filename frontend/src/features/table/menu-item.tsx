@@ -1,4 +1,4 @@
-import { Play, UtensilsCrossed } from "lucide-react";
+import { Play, Users, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatCents } from "@/lib/format";
@@ -141,6 +141,12 @@ export function MenuItemCard({
           )}
         </span>
         {item.description && <p className="line-clamp-2 text-sm text-(--mesa-muted)">{item.description}</p>}
+        {item.serves != null && (
+          <span className="flex items-center gap-1 text-xs font-medium text-(--mesa-muted)">
+            <Users aria-hidden className="size-3.5" />
+            {t.serves(item.serves)}
+          </span>
+        )}
         <span className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-1">
           {item.available && price !== undefined ? (
             price
