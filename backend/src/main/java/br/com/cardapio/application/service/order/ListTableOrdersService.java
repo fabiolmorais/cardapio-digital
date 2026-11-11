@@ -5,6 +5,8 @@ import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.in.order.TableOrders;
 import br.com.cardapio.application.port.in.rodizio.TableRodizio;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.media.MediaStoragePort;
+import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
@@ -13,7 +15,10 @@ import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.tablesession.TableVisits;
+import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
 import br.com.cardapio.domain.order.model.OrderSettings;
@@ -28,9 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 public class ListTableOrdersService implements ListTableOrdersUseCase {
 
@@ -41,11 +49,22 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
     private final OrderPort orders;
     private final TabRodizioPort tabRodizios;
     private final RodizioPort rodizios;
+    private final ProductMediaPort media;
+    private final MediaStoragePort storage;
     private final Clock clock;
 
+    /** Sem as fotos dos produtos (os itens vêm sem miniatura): para os testes que não são sobre elas. */
     public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                                   TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
                                   Clock clock) {
+        this(tables, sessions, settings, tabs, orders, tabRodizios, rodizios, null, null, clock);
+    }
+
+    public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
+                                  TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
+                                  ProductMediaPort media, MediaStoragePort storage, Clock clock) {
+        this.media = media;
+        this.storage = storage;
         this.tables = tables;
         this.sessions = sessions;
         this.settings = settings;
@@ -66,7 +85,14 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
         boolean enabled = settings.find(establishmentId).orElseGet(() -> OrderSettings.defaults(establishmentId, now))
                 .orderingEnabled();
         Optional<Tab> open = tabs.findOpen(establishmentId, visit.table().id());
-        List<OrderWithItems> found = open.map(tab -> orders.findByTab(establishmentId, tab.id())).orElse(List.of());
+        // Só a visita atual: se a comanda ficou aberta de outro dia (ninguém fechou a conta), quem
+        // sentou agora não vê os pedidos de antes. A comanda inteira continua no painel da equipe.
+        Instant visitStart = sessions.findVisitStart(establishmentId, visit.table().id(), now)
+                .orElse(visit.session().createdAt());
+        List<OrderWithItems> found = open.map(tab -> orders.findByTab(establishmentId, tab.id())).orElse(List.of())
+                .stream()
+                .filter(o -> !o.order().createdAt().isBefore(visitStart))
+                .toList();
         TabRodizio rodizio = open.flatMap(tab -> tabRodizios.findByTab(establishmentId, tab.id())).orElse(null);
         // Os produtos incluídos e as regras vêm do cadastro de agora (a aba Rodízio mostra o que dá
         // para pedir, e até quanto).
@@ -84,6 +110,20 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .reduce(Money.ZERO, Money::plus)
                 .plus(rodizio == null ? Money.ZERO : rodizio.total());
         return new TableOrders(enabled, total, rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
-                found.stream().map(o -> TableOrder.from(o, visit.session().id())).toList());
+                found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId))).toList());
+    }
+
+    /** A miniatura da primeira foto de cada produto (a capa, como no cardápio). */
+    private Function<ProductId, String> thumbs(EstablishmentId establishmentId) {
+        if (media == null) {
+            return product -> null;
+        }
+        Map<ProductId, String> covers = new HashMap<>();
+        for (ProductMedia m : media.findReadyGalleries(establishmentId)) {
+            if (!m.isVideo()) {
+                covers.putIfAbsent(m.productId(), storage.publicUrl(m.fileOf(ImageVariant.THUMB)));
+            }
+        }
+        return covers::get;
     }
 }

@@ -2258,6 +2258,8 @@ export interface components {
             cancelReason?: string;
             /** @description Veio numa rodada do rodízio (preço zero) */
             rodizio: boolean;
+            /** @description Miniatura da foto do produto; vazio se ele não tem foto */
+            thumbUrl?: string;
         };
         CreateTableRequest: {
             /** @example 04 */

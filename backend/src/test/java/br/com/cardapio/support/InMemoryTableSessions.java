@@ -84,6 +84,13 @@ public final class InMemoryTableSessions implements TableSessionPort {
     }
 
     @Override
+    public Optional<Instant> findVisitStart(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
+        return saved.values().stream()
+                .filter(s -> s.establishmentId().equals(establishmentId) && s.isFor(tableId) && s.isActive(now))
+                .map(TableSession::createdAt).min(Comparator.naturalOrder());
+    }
+
+    @Override
     public Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId) {
         return find(establishmentId, sessionId).map(TableSession::tableId);
     }

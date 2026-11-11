@@ -82,8 +82,7 @@ test("cada pedido sai impresso uma vez, vai para em preparo, e o cancelamento sa
     expect(printed).toContain("1x Sunomono");
 
     // Impressa, a comanda põe os itens em preparo, e a mesa vê.
-    const mine = page.getByRole("region", { name: /Pedido nº 1/ });
-    await expect(mine.getByText("Em preparo")).toHaveCount(2, { timeout: 5000 });
+    await expect(page.getByRole("article").filter({ hasText: "Em preparo" })).toHaveCount(2, { timeout: 5000 });
 
     // O garçom cancela um item já impresso: sai a via "CANCELADO", com o motivo.
     const queue = await (await request.get(`${API_URL}/api/v1/order-items`, { headers })).json();
@@ -97,6 +96,9 @@ test("cada pedido sai impresso uma vez, vai para em preparo, e o cancelamento sa
         [...(await balcao.prints()), ...(await outra.prints())].filter((p) => p.includes("*** CANCELADO ***")),
       )
       .toEqual([expect.stringContaining("motivo: Acabou o pepino")]);
+    // A mesa vê o aviso do prato cancelado pela equipe, com o motivo (desenho 4.3).
+    await expect(page.getByText("Sunomono cancelado pela equipe:")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Acabou o pepino\. O valor não entra na conta\./)).toBeVisible();
 
     // A reimpressão, pela lista das impressas.
     await balcao.page.getByRole("button", { name: "Reimprimir a comanda da mesa 04, pedido nº 1" }).click();
@@ -118,7 +120,7 @@ test("pausada, a estação guarda os pedidos e imprime ao voltar", async ({ page
     // Pausada: nada sai, e o item continua na fila.
     await page.waitForTimeout(3000);
     expect(await balcao.prints()).toEqual([]);
-    await expect(page.getByRole("region", { name: /Pedido nº 1/ })).toContainText("Na fila");
+    await expect(page.getByRole("article", { name: "1× Guioza" })).toContainText("Na fila");
 
     await balcao.page.getByRole("button", { name: "Voltar a imprimir" }).click();
     await expect.poll(balcao.prints).toEqual([expect.stringContaining("1x Guioza")]);

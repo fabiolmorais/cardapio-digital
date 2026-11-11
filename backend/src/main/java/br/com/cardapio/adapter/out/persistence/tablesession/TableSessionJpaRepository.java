@@ -37,6 +37,14 @@ interface TableSessionJpaRepository extends JpaRepository<TableSessionJpaEntity,
             """)
     int unblock(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
 
+    @Query("""
+            SELECT min(s.createdAt) FROM TableSessionJpaEntity s
+             WHERE s.establishmentId = :establishmentId AND s.tableId = :tableId
+               AND s.endedAt IS NULL AND s.expiresAt > :now
+            """)
+    Optional<Instant> findVisitStart(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId,
+                                     @Param("now") Instant now);
+
     @Query("SELECT s.tableId FROM TableSessionJpaEntity s WHERE s.id = :id AND s.establishmentId = :establishmentId")
     Optional<UUID> findTableId(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
 

@@ -53,8 +53,8 @@ test("a mesa vê o total, pede a conta, e o garçom fecha a comanda", async ({ p
   await order(page, qr, ["Guioza", "Sunomono"]);
 
   // "A caminho" mostra o que ainda não chegou; depois da entrega, fica vazio, e o histórico guarda tudo.
-  await expect(page.getByRole("button", { name: "A caminho" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("region", { name: /Pedido nº 1/ })).toContainText("Na fila");
+  await expect(page.getByRole("button", { name: "A caminho (2)" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("article", { name: "1× Guioza" })).toContainText("Na fila");
   await deliverAll(request, headers);
   await expect(page.getByText("Nada a caminho")).toBeVisible({ timeout: 3000 });
   await page.getByRole("button", { name: "Histórico" }).click();

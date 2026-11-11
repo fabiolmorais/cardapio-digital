@@ -9,6 +9,7 @@ import { cn } from "cn";
 import { clearCart, MAX_NOTE, MAX_QUANTITY, setNote, setQuantity, useCart, useHydrated, type CartLine } from "./cart";
 import { listOrders, placeOrder, timeOf, type TableOrder } from "./table-orders";
 import { MesaNotice } from "./mesa-notice";
+import { ItemThumb, StatusBadge } from "./order-status";
 
 const t = tablePage.cart;
 
@@ -29,7 +30,8 @@ export function CartView({ token, tableLabel }: { token: string; tableLabel: str
   const hydrated = useHydrated();
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState<TableOrder | null>(null);
+  // O pedido enviado, com a miniatura de cada item (o carrinho tem a foto; a resposta do envio, não).
+  const [sent, setSent] = useState<{ order: TableOrder; thumbs: Map<string, string | null> } | null>(null);
   const [ordering, setOrdering] = useState(true);
   const menu = `/m/${token}/cardapio`;
 
@@ -50,15 +52,20 @@ export function CartView({ token, tableLabel }: { token: string; tableLabel: str
     setError(null);
     try {
       const order = await placeOrder(token, lines);
+      const thumbs = new Map(lines.map((line) => [line.name, line.thumb]));
       clearCart(token);
-      setSent(order);
+      setSent({ order, thumbs });
     } catch (e) {
       setError((e as Error).message);
     }
     setSending(false);
   }
 
-  if (sent) return <Sent token={token} order={sent} />;
+  // "Pedido enviado!" só enquanto o carrinho está vazio: com itens novos (depois do "Pedir mais
+  // alguma coisa"), a tela volta a ser o carrinho, com o resumo do pedido novo.
+  if (sent && lines.length === 0) {
+    return <Sent token={token} order={sent.order} thumbs={sent.thumbs} onMore={() => setSent(null)} />;
+  }
   // O carrinho mora no celular: até lê-lo, não mostra "vazio".
   if (!hydrated) return <p className="text-(--mesa-muted)">{tablePage.loading}</p>;
 
@@ -239,35 +246,72 @@ function Line({ token, line }: { token: string; line: CartLine }) {
   );
 }
 
-/** "Pedido enviado!" (desenho Pedido enviado), ou "aguardando o garçom" acima dos limites. */
-function Sent({ token, order }: { token: string; order: TableOrder }) {
+/**
+ * "Pedido enviado!" (desenho 4.2): o check verde pulsando, o número e a hora, e cada item com a
+ * foto e a tag do passo. Acima dos limites, "aguardando o garçom", em amarelo.
+ */
+function Sent({
+  token,
+  order,
+  thumbs,
+  onMore,
+}: {
+  token: string;
+  order: TableOrder;
+  thumbs: Map<string, string | null>;
+  onMore: () => void;
+}) {
   const waiting = order.status === "PENDING_APPROVAL";
   const count = order.items.reduce((sum, item) => sum + item.quantity, 0);
   return (
     <>
-      <section role="status" className="flex flex-col items-center gap-5 pt-8 text-center">
-        <span className="flex size-28 items-center justify-center rounded-full bg-(--mesa-glass)">
-          <span className="flex size-18 items-center justify-center rounded-full bg-(--brand) text-white">
-            {waiting ? <Clock aria-hidden className="size-8" /> : <Check aria-hidden className="size-9" />}
+      <section role="status" className="flex flex-col items-center gap-6 pt-8 text-center">
+        <span
+          className={cn(
+            "relative flex size-32 items-center justify-center rounded-full",
+            waiting ? "bg-(--mesa-warn-soft)" : "bg-(--mesa-ok-soft)",
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-0 animate-ping rounded-full opacity-30 motion-reduce:hidden",
+              waiting ? "bg-(--mesa-warn)" : "bg-(--mesa-ok)",
+            )}
+          />
+          <span
+            className={cn(
+              "relative flex size-20 items-center justify-center rounded-full text-[#0F0D0C]",
+              waiting ? "bg-(--mesa-warn)" : "bg-(--mesa-ok) shadow-[0_16px_36px_rgba(74,222,128,.30)]",
+            )}
+          >
+            {waiting ? (
+              <Clock aria-hidden className="size-9" strokeWidth={2.4} />
+            ) : (
+              <Check aria-hidden className="size-10" strokeWidth={2.6} />
+            )}
           </span>
         </span>
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">
-            {t.number(order.number, timeOf(order.createdAt))}
-          </span>
-          <h1 className="text-3xl font-bold tracking-tight">{waiting ? t.waitingTitle : t.sentTitle}</h1>
-          <p className="text-(--mesa-muted)">{waiting ? t.waitingText : t.sentText(count)}</p>
+        <div className="flex flex-col gap-2.5">
+          <span className="text-[13px] text-(--mesa-muted)">{t.number(order.number, timeOf(order.createdAt))}</span>
+          <h1 className="text-[32px] leading-[38px] font-bold tracking-tight">
+            {waiting ? t.waitingTitle : t.sentTitle}
+          </h1>
+          <p className="text-[15px] text-(--mesa-muted)">{waiting ? t.waitingText : t.sentText(count)}</p>
         </div>
       </section>
-      <ul className="flex flex-col rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-1.5">
+      <ul className="flex flex-col rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-1.5">
         {order.items.map((item) => (
-          <li key={item.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-            <span className="flex-1">
+          <li key={item.id} className="flex items-center gap-3 p-2.5 text-sm">
+            <ItemThumb src={thumbs.get(item.productName)} size="sm" />
+            <span className="flex-1 text-left">
               {item.quantity}× {item.productName}
             </span>
-            <span className="rounded-full border border-(--mesa-stroke) px-2.5 py-0.5 text-xs font-semibold">
-              {waiting ? tablePage.orders.orderStatus.PENDING_APPROVAL : tablePage.orders.status[item.status]}
-            </span>
+            {waiting ? (
+              <StatusBadge tone="PENDING">{tablePage.orders.orderStatus.PENDING_APPROVAL}</StatusBadge>
+            ) : (
+              <StatusBadge tone={item.status}>{tablePage.orders.status[item.status]}</StatusBadge>
+            )}
           </li>
         ))}
       </ul>
@@ -275,7 +319,7 @@ function Sent({ token, order }: { token: string; order: TableOrder }) {
         <Link href={`/m/${token}/pedidos`} className={primary}>
           {t.follow}
         </Link>
-        <Link href={`/m/${token}/cardapio`} className={secondary}>
+        <Link href={`/m/${token}/cardapio`} onClick={onMore} className={secondary}>
           {t.more}
         </Link>
       </div>
