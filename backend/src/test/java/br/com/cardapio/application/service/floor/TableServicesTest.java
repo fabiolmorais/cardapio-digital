@@ -5,6 +5,7 @@ import br.com.cardapio.application.port.in.floor.TableSummary;
 import br.com.cardapio.application.port.in.floor.UpdateTableCommand;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
+import br.com.cardapio.domain.floor.exception.SectorInactiveException;
 import br.com.cardapio.domain.floor.exception.SectorNotFoundException;
 import br.com.cardapio.domain.floor.exception.TableLabelTakenException;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
@@ -90,8 +91,9 @@ class TableServicesTest {
 
         assertThatThrownBy(() -> update.update(new UpdateTableCommand(sakura, table.id(), null, elsewhere.id(), null)))
                 .isInstanceOf(SectorNotFoundException.class);
+        // Setor desativado: a mensagem diz qual e o que fazer (antes, "Setor não encontrado").
         assertThatThrownBy(() -> update.update(new UpdateTableCommand(sakura, table.id(), null, deck.id(), null)))
-                .isInstanceOf(SectorNotFoundException.class);
+                .isInstanceOf(SectorInactiveException.class).hasMessageContaining("Deck");
         assertThatThrownBy(() -> createTable(elsewhere, "99")).isInstanceOf(SectorNotFoundException.class);
     }
 

@@ -517,6 +517,7 @@ export const messages = {
       live: "Ao vivo",
       reconnecting: "Reconectando…",
       enableSound: "Ativar som",
+      disableSound: "Desligar som",
       soundOn: "Som ligado",
       soundHint: "O navegador só toca som depois de um toque: ative para ouvir cada chamado novo.",
       openTv: "Abrir Modo TV",
@@ -874,6 +875,11 @@ export const messages = {
     newSector: "Novo setor",
     renameSector: "Renomear setor",
     deactivateSector: "Desativar setor",
+    inactiveSector: (name: string) => `${name} · desativado`,
+    inactiveSectorNotice: "Este setor está desativado. Reative para voltar a usar as mesas dele.",
+    reactivateSector: "Reativar setor",
+    reactivating: "Reativando…",
+    reactivated: (name: string) => `Setor ${name} reativado. Agora dá para ativar as mesas dele.`,
     loading: "Carregando o salão…",
     loadError: "Não foi possível carregar o salão. Tente de novo em instantes.",
     start: {
@@ -944,7 +950,8 @@ export const messages = {
       rotateText: "O display impresso desta mesa para de funcionar na hora. Você vai precisar imprimir o novo.",
       rotate: "Trocar QR",
       deactivateSectorTitle: (name: string) => `Desativar o setor ${name}?`,
-      deactivateSectorText: "O setor some da lista. Só dá para desativar um setor sem mesas ativas.",
+      deactivateSectorText:
+        "O setor fica marcado como desativado, e dá para reativá-lo depois. Só dá para desativar um setor sem mesas ativas.",
       deactivate: "Desativar",
     },
     errors: {

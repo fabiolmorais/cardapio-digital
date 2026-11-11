@@ -57,9 +57,11 @@ class SectorPersistenceAdapter implements SectorPort {
     }
 
     @Override
-    public ResultPage<SectorOverview> findActive(EstablishmentId establishmentId, PageQuery page) {
+    public ResultPage<SectorOverview> findAll(EstablishmentId establishmentId, boolean includeInactive,
+                                              PageQuery page) {
         establishmentFilter.enable(establishmentId);
-        Page<SectorRow> rows = sectors.findActive(establishmentId.value(), PageRequest.of(page.page(), page.size()));
+        Page<SectorRow> rows = sectors.findAll(establishmentId.value(), includeInactive,
+                PageRequest.of(page.page(), page.size()));
         return new ResultPage<>(rows.map(FloorPersistenceMapper::toDomain).getContent(),
                 page.page(), page.size(), rows.getTotalElements());
     }

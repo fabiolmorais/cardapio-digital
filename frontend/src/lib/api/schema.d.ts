@@ -343,11 +343,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Setores ativos, na ordem de exibição, com a contagem de mesas */
+        /** Setores ativos, na ordem de exibição, com a contagem de mesas (e os desativados, se pedir) */
         get: operations["listSectors"];
         put?: never;
         /** Cria um setor (entra no fim da lista) */
         post: operations["createSector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sectors/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reativa o setor: as mesas dele podem voltar a ser ativadas */
+        post: operations["activateSector"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2328,6 +2345,8 @@ export interface components {
              * @description Mesas ativas no setor
              */
             activeTables: number;
+            /** @description false: desativado (só vem com includeInactive) */
+            active: boolean;
         };
         PushSubscriptionKeys: {
             /** @description A chave pública do navegador, em base64url */
@@ -4453,6 +4472,8 @@ export interface operations {
                 page?: number;
                 /** @description Itens por página (1 a 100) */
                 size?: number;
+                /** @description true: também os setores desativados, depois dos ativos (para reativar) */
+                includeInactive?: boolean;
             };
             header?: never;
             path?: never;
@@ -4494,6 +4515,46 @@ export interface operations {
                 };
             };
             /** @description Já existe um setor com esse nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    activateSector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reativado (ou já estava ativo) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sector"];
+                };
+            };
+            /** @description Não é um setor deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Já existe um setor ativo com esse nome */
             409: {
                 headers: {
                     [name: string]: unknown;

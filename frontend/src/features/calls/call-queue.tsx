@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Tv, Volume2 } from "lucide-react";
+import { Ban, Tv } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -21,7 +21,7 @@ import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-di
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { enableSound, playChime } from "./alert-sound";
+import { playChime } from "./alert-sound";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import {
   acceptCall,
@@ -33,6 +33,7 @@ import {
   unblockPhone,
   type StaffCall,
 } from "./calls-api";
+import { SoundToggle } from "./sound-toggle";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
@@ -111,17 +112,7 @@ export function CallQueue({ role }: { role: Role }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {soundOn ? (
-          <span className="flex h-9 items-center gap-1.5 rounded-lg bg-muted px-3 text-sm font-medium">
-            <Volume2 aria-hidden className="size-4" />
-            {t.soundOn}
-          </span>
-        ) : (
-          <Button variant="outline" onClick={() => void enableSound()}>
-            <Volume2 aria-hidden />
-            {t.enableSound}
-          </Button>
-        )}
+        <SoundToggle />
         {canManageTeam(role) && (
           <Link href="/painel/tv" className={buttonVariants({ variant: "outline" })}>
             <Tv aria-hidden />

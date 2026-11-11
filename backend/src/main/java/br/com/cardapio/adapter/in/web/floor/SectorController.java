@@ -2,6 +2,7 @@ package br.com.cardapio.adapter.in.web.floor;
 
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
+import br.com.cardapio.application.port.in.floor.ActivateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.CreateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.DeactivateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.ListSectorsUseCase;
@@ -45,15 +46,17 @@ class SectorController {
     private final RenameSectorUseCase renameSector;
     private final DeactivateSectorUseCase deactivateSector;
     private final RenderSectorDisplaysUseCase renderDisplays;
+    private final ActivateSectorUseCase activateSector;
 
     SectorController(ListSectorsUseCase listSectors, CreateSectorUseCase createSector,
                      RenameSectorUseCase renameSector, DeactivateSectorUseCase deactivateSector,
-                     RenderSectorDisplaysUseCase renderDisplays) {
+                     RenderSectorDisplaysUseCase renderDisplays, ActivateSectorUseCase activateSector) {
         this.listSectors = listSectors;
         this.createSector = createSector;
         this.renameSector = renameSector;
         this.deactivateSector = deactivateSector;
         this.renderDisplays = renderDisplays;
+        this.activateSector = activateSector;
     }
 
     private static EstablishmentId establishment(Jwt jwt) {
@@ -61,15 +64,19 @@ class SectorController {
     }
 
     @GetMapping
-    @Operation(operationId = "listSectors", summary = "Setores ativos, na ordem de exibição, com a contagem de mesas")
+    @Operation(operationId = "listSectors",
+            summary = "Setores ativos, na ordem de exibição, com a contagem de mesas (e os desativados, se pedir)")
     @ApiResponse(responseCode = "200", description = "Página de setores")
     PageResponse<SectorResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Número da página, começando em 0")
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Itens por página (1 a 100)")
-            @RequestParam(defaultValue = "50") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
-        return PageResponse.from(listSectors.list(establishment(jwt), new PageQuery(page, size)), SectorResponse::from);
+            @RequestParam(defaultValue = "50") @Min(1) @Max(PageQuery.MAX_SIZE) int size,
+            @Parameter(description = "true: também os setores desativados, depois dos ativos (para reativar)")
+            @RequestParam(defaultValue = "false") boolean includeInactive) {
+        return PageResponse.from(listSectors.list(establishment(jwt), includeInactive, new PageQuery(page, size)),
+                SectorResponse::from);
     }
 
     @PostMapping
@@ -101,6 +108,17 @@ class SectorController {
     ResponseEntity<Void> deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         deactivateSector.deactivate(establishment(jwt), new SectorId(id));
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/activate")
+    @Operation(operationId = "activateSector", summary = "Reativa o setor: as mesas dele podem voltar a ser ativadas")
+    @ApiResponse(responseCode = "200", description = "Reativado (ou já estava ativo)")
+    @ApiResponse(responseCode = "404", description = "Não é um setor deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Já existe um setor ativo com esse nome",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    SectorResponse activate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return SectorResponse.from(activateSector.activate(establishment(jwt), new SectorId(id)));
     }
 
     @GetMapping("/{id}/displays")

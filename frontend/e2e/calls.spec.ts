@@ -110,13 +110,16 @@ test("a mesa pede a conta, troca a forma de pagamento e o painel mostra a escolh
   await expect(page.getByRole("link", { name: /Pedir a conta/ })).toContainText("Conta solicitada");
 });
 
-test("o painel liga o som e mostra que está ao vivo", async ({ request, browser }) => {
+test("o painel liga e desliga o som e mostra que está ao vivo", async ({ request, browser }) => {
   const { email } = await restaurant(request);
   const panel = await ownerPanel(browser, email);
   try {
     await expect(panel.page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
     await panel.page.getByRole("button", { name: "Ativar som" }).click();
-    await expect(panel.page.getByText("Som ligado")).toBeVisible();
+    const off = panel.page.getByRole("button", { name: "Desligar som" });
+    await expect(off).toHaveAttribute("aria-pressed", "true");
+    await off.click();
+    await expect(panel.page.getByRole("button", { name: "Ativar som" })).toHaveAttribute("aria-pressed", "false");
   } finally {
     await panel.close();
   }

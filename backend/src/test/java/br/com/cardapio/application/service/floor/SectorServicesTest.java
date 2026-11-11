@@ -23,7 +23,27 @@ class SectorServicesTest {
     private final CreateSectorService create = new CreateSectorService(fakes, subscriptions);
     private final RenameSectorService rename = new RenameSectorService(fakes);
     private final DeactivateSectorService deactivate = new DeactivateSectorService(fakes);
+    private final ActivateSectorService activate = new ActivateSectorService(fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();
+
+    @Test
+    void aDeactivatedSectorComesBackAfterTheActiveOnesAndCanBeReactivated() {
+        SectorSummary deck = create.create(sakura, "Deck");
+        create.create(sakura, "Salão");
+        deactivate.deactivate(sakura, deck.id());
+
+        assertThat(list.list(sakura, new PageQuery(0, 20)).content()).extracting(SectorSummary::name)
+                .containsExactly("Salão");
+        assertThat(list.list(sakura, true, new PageQuery(0, 20)).content())
+                .extracting(SectorSummary::name, SectorSummary::active)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("Salão", true),
+                        org.assertj.core.groups.Tuple.tuple("Deck", false));
+
+        assertThat(activate.activate(sakura, deck.id()).active()).isTrue();
+        assertThat(activate.activate(sakura, deck.id()).active()).isTrue(); // de novo: tudo bem
+        assertThatThrownBy(() -> activate.activate(EstablishmentId.newId(), deck.id()))
+                .isInstanceOf(SectorNotFoundException.class);
+    }
 
     @Test
     void newSectorsGoToTheEndOfTheList() {

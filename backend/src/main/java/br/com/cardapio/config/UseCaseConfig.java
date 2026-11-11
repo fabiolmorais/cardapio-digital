@@ -25,6 +25,7 @@ import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
 import br.com.cardapio.application.port.in.device.ListDevicesUseCase;
 import br.com.cardapio.application.port.in.device.StartPairingUseCase;
 import br.com.cardapio.application.port.in.device.UnlinkDeviceUseCase;
+import br.com.cardapio.application.port.in.floor.ActivateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.CreateSectorUseCase;
 import br.com.cardapio.application.port.in.floor.CreateTableUseCase;
 import br.com.cardapio.application.port.in.floor.DeactivateSectorUseCase;
@@ -153,6 +154,7 @@ import br.com.cardapio.application.service.device.LinkDeviceService;
 import br.com.cardapio.application.service.device.ListDevicesService;
 import br.com.cardapio.application.service.device.StartPairingService;
 import br.com.cardapio.application.service.device.UnlinkDeviceService;
+import br.com.cardapio.application.service.floor.ActivateSectorService;
 import br.com.cardapio.application.service.floor.CreateSectorService;
 import br.com.cardapio.application.service.floor.CreateTableService;
 import br.com.cardapio.application.service.floor.DeactivateSectorService;
@@ -383,6 +385,11 @@ class UseCaseConfig {
     @Bean
     DeactivateSectorUseCase deactivateSectorUseCase(SectorPort sectorPort) {
         return new DeactivateSectorService(sectorPort);
+    }
+
+    @Bean
+    ActivateSectorUseCase activateSectorUseCase(SectorPort sectorPort) {
+        return new ActivateSectorService(sectorPort);
     }
 
     @Bean

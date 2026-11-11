@@ -151,7 +151,12 @@ export function TableFormDialog({
               id="table-sector"
               name="sectorId"
               required
-              defaultValue={table?.sectorId ?? defaultSectorId ?? sectors[0]?.id}
+              // Mesa de setor desativado: sugere um ativo (é para onde ela pode ir).
+              defaultValue={
+                (sectors.some((sector) => sector.id === table?.sectorId) ? table?.sectorId : undefined) ??
+                defaultSectorId ??
+                sectors[0]?.id
+              }
               options={sectors.map((sector) => ({ value: sector.id, label: sector.name }))}
             />
           </div>

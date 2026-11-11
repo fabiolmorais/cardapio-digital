@@ -16,8 +16,11 @@ public interface SectorPort {
     /** Vazio se o setor não existe ou é de outro restaurante. */
     Optional<Sector> find(EstablishmentId establishmentId, SectorId id);
 
-    /** Setores ativos, na ordem de exibição, com a contagem de mesas ativas. */
-    ResultPage<SectorOverview> findActive(EstablishmentId establishmentId, PageQuery page);
+    /**
+     * Setores na ordem de exibição, com a contagem de mesas ativas. Com includeInactive, também os
+     * desativados, depois dos ativos (para a tela poder reativá-los).
+     */
+    ResultPage<SectorOverview> findAll(EstablishmentId establishmentId, boolean includeInactive, PageQuery page);
 
     /** Já existe outro setor ativo com este nome (sem diferenciar maiúsculas)? exceptId: o próprio, ao renomear. */
     boolean activeNameExists(EstablishmentId establishmentId, String name, SectorId exceptId);

@@ -12,9 +12,10 @@ record SectorResponse(
         @Schema(requiredMode = REQUIRED) UUID id,
         @Schema(requiredMode = REQUIRED, example = "Salão principal") String name,
         @Schema(requiredMode = REQUIRED, description = "Ordem de exibição, a partir de 0") int position,
-        @Schema(requiredMode = REQUIRED, description = "Mesas ativas no setor") long activeTables
+        @Schema(requiredMode = REQUIRED, description = "Mesas ativas no setor") long activeTables,
+        @Schema(requiredMode = REQUIRED, description = "false: desativado (só vem com includeInactive)") boolean active
 ) {
     static SectorResponse from(SectorSummary s) {
-        return new SectorResponse(s.id().value(), s.name(), s.position(), s.activeTables());
+        return new SectorResponse(s.id().value(), s.name(), s.position(), s.activeTables(), s.active());
     }
 }

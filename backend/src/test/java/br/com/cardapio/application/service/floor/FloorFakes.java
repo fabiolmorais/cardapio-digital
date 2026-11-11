@@ -56,10 +56,11 @@ final class FloorFakes implements SectorPort, DiningTablePort, RandomTokenGenera
     }
 
     @Override
-    public ResultPage<SectorOverview> findActive(EstablishmentId establishmentId, PageQuery page) {
+    public ResultPage<SectorOverview> findAll(EstablishmentId establishmentId, boolean includeInactive,
+                                              PageQuery page) {
         List<SectorOverview> all = sectors.values().stream()
-                .filter(s -> s.establishmentId().equals(establishmentId) && s.active())
-                .sorted(Comparator.comparingInt(Sector::position))
+                .filter(s -> s.establishmentId().equals(establishmentId) && (s.active() || includeInactive))
+                .sorted(Comparator.comparing((Sector s) -> !s.active()).thenComparingInt(Sector::position))
                 .map(s -> new SectorOverview(s, countActiveTables(establishmentId, s.id())))
                 .toList();
         return new ResultPage<>(all, page.page(), page.size(), all.size());
