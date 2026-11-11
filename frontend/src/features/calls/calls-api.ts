@@ -35,6 +35,19 @@ export async function acceptCall(id: string): Promise<StaffCall> {
   return data;
 }
 
+/**
+ * "Liberar": o garçom digita o código que aparece no celular de quem pediu. Só aquele celular
+ * fica liberado. Código errado: 422, com a frase do back.
+ */
+export async function releaseCall(id: string, code: string): Promise<StaffCall> {
+  const { data, error, response } = await api.POST("/api/v1/calls/{id}/release", {
+    params: { path: { id } },
+    body: { code },
+  });
+  if (!data) throw problem(error, response.status);
+  return data;
+}
+
 /** "Recusar" um pedido de liberação: o celular não está no salão. */
 export async function declineCall(id: string): Promise<StaffCall> {
   const { data, error, response } = await api.POST("/api/v1/calls/{id}/decline", { params: { path: { id } } });

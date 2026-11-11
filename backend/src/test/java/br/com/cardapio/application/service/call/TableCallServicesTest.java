@@ -66,7 +66,7 @@ class TableCallServicesTest {
     }
 
     private RequestedCall request(String session, CallType type, PaymentMethod method) {
-        return new RequestCallService(tables, sessions, calls, subscriptions, published::add, clock)
+        return new RequestCallService(tables, sessions, calls, subscriptions, published::add, length -> "4719", clock)
                 .request(new RequestCallCommand(QR_04, session, type, method));
     }
 
@@ -162,6 +162,28 @@ class TableCallServicesTest {
         assertThat(unlock.created()).isTrue();
         assertThat(unlock.call().type()).isEqualTo(CallType.UNLOCK);
         assertThat(calls.saved).hasSize(1);
+    }
+
+    @Test
+    void eachPhoneHasItsOwnUnlockRequestAndOnlyItSeesTheCode() {
+        sessions.given(sakura, mesa04.id(), "celular-de-casa", NOW);
+        sessions.given(sakura, mesa04.id(), "celular-no-salao", NOW);
+
+        RequestedCall fromHome = request("celular-de-casa", CallType.UNLOCK, null);
+        RequestedCall inTheRoom = request("celular-no-salao", CallType.UNLOCK, null);
+
+        // Dois pedidos, um de cada celular (antes, o segundo recebia o do primeiro).
+        assertThat(inTheRoom.created()).isTrue();
+        assertThat(inTheRoom.call().id()).isNotEqualTo(fromHome.call().id());
+        assertThat(inTheRoom.call().releaseCode()).isEqualTo("4719");
+        // Pedir de novo devolve o mesmo pedido do celular.
+        assertThat(request("celular-no-salao", CallType.UNLOCK, null).call().id()).isEqualTo(inTheRoom.call().id());
+
+        // A lista da mesa mostra a cada celular só o próprio pedido de liberação.
+        var list = new ListTableCallsService(tables, sessions, calls, clock);
+        assertThat(list.list(QR_04, "celular-no-salao")).singleElement()
+                .satisfies(call -> assertThat(call.id()).isEqualTo(inTheRoom.call().id()));
+        assertThat(list.list(QR_04, "celular-04")).isEmpty();
     }
 
     @Test

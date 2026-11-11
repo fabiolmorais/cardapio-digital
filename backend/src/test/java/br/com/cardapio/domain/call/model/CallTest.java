@@ -3,6 +3,7 @@ package br.com.cardapio.domain.call.model;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.exception.CallStateException;
+import br.com.cardapio.domain.call.exception.WrongReleaseCodeException;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
@@ -86,21 +87,33 @@ class CallTest {
     }
 
     @Test
-    void theUnlockRequestIsReleasedOrDeclinedInOneTouch() {
-        Call request = open(CallType.UNLOCK, PaymentMethod.PIX);
+    void theUnlockRequestIsReleasedWithTheCodeOnThePhoneOrDeclined() {
+        Call request = Call.openUnlock(EstablishmentId.newId(), DiningTableId.newId(), TableSessionId.newId(), "0472",
+                NOW);
 
-        Call released = request.release(carlos, NOW.plusSeconds(20));
+        Call released = request.release(carlos, " 0472 ", NOW.plusSeconds(20));
         Call declined = request.decline(NOW.plusSeconds(20));
 
         assertThat(request.paymentMethod()).isNull();
+        assertThat(request.releaseCode()).isEqualTo("0472");
         assertThat(released.status()).isEqualTo(CallStatus.DONE);
         assertThat(released.acceptedBy()).isEqualTo(carlos);
         assertThat(released.doneAt()).isEqualTo(NOW.plusSeconds(20));
         assertThat(declined.status()).isEqualTo(CallStatus.CANCELED);
+        assertThatThrownBy(() -> request.release(carlos, "0473", NOW)).isInstanceOf(WrongReleaseCodeException.class);
+        assertThatThrownBy(() -> request.release(carlos, null, NOW)).isInstanceOf(WrongReleaseCodeException.class);
         assertThatThrownBy(() -> request.accept(carlos, NOW)).isInstanceOf(CallStateException.class);
         assertThatThrownBy(() -> released.decline(NOW)).isInstanceOf(CallStateException.class);
-        assertThatThrownBy(() -> open(CallType.WAITER, null).release(carlos, NOW))
+        assertThatThrownBy(() -> open(CallType.WAITER, null).release(carlos, "0472", NOW))
                 .isInstanceOf(CallStateException.class);
+    }
+
+    @Test
+    void onlyTheUnlockRequestHasACodeAndAnOpenOneAlwaysHasIt() {
+        assertThat(open(CallType.WAITER, null).releaseCode()).isNull();
+        assertThatThrownBy(() -> open(CallType.UNLOCK, null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Call.openUnlock(EstablishmentId.newId(), DiningTableId.newId(),
+                TableSessionId.newId(), "12a4", NOW)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

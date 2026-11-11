@@ -485,6 +485,16 @@ export const messages = {
       kitchenOnly: "A cozinha acompanha a fila; quem aceita é o salão.",
       release: "Liberar mesa",
       releasing: "Liberando…",
+      releaseDialog: {
+        title: (table: string) => `Liberar o celular da mesa ${table}`,
+        description:
+          "Vá até a mesa e peça para ver o celular de quem pediu. Digite o código de 4 números que aparece na tela dele.",
+        code: "Código do celular",
+        placeholder: "4 números",
+        confirm: "Liberar",
+        cancel: "Cancelar",
+        invalid: "Digite os 4 números do código.",
+      },
       decline: "Recusar",
       notPresent: "Presença não confirmada",
       block: "Bloquear este celular",

@@ -37,4 +37,6 @@ public interface CallRow {
     String getAcceptedByName();
 
     String getPresenceMethod();
+
+    String getReleaseCode();
 }

@@ -37,7 +37,7 @@ class CallPersistenceAdapter implements CallPort {
     @Override
     public boolean insertIfNoneOpen(Call c) {
         return calls.insertIfNoneOpen(c.id().value(), c.establishmentId().value(), c.tableId().value(),
-                c.sessionId().value(), c.type().name(), name(c.paymentMethod()), c.createdAt()) == 1;
+                c.sessionId().value(), c.type().name(), name(c.paymentMethod()), c.createdAt(), c.releaseCode()) == 1;
     }
 
     @Override
@@ -105,7 +105,8 @@ class CallPersistenceAdapter implements CallPort {
                 new DiningTableId(e.getTableId()), new TableSessionId(e.getSessionId()), CallType.valueOf(e.getType()),
                 e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()),
                 CallStatus.valueOf(e.getStatus()), e.getCreatedAt(), e.getAcceptedAt(),
-                e.getAcceptedBy() == null ? null : new UserId(e.getAcceptedBy()), e.getDoneAt(), e.getCanceledAt());
+                e.getAcceptedBy() == null ? null : new UserId(e.getAcceptedBy()), e.getDoneAt(), e.getCanceledAt(),
+                e.getReleaseCode());
     }
 
     private static CallView toView(CallRow r) {
@@ -113,7 +114,8 @@ class CallPersistenceAdapter implements CallPort {
                 new DiningTableId(r.getTableId()), new TableSessionId(r.getSessionId()), CallType.valueOf(r.getType()),
                 r.getPaymentMethod() == null ? null : PaymentMethod.valueOf(r.getPaymentMethod()),
                 CallStatus.valueOf(r.getStatus()), r.getCreatedAt(), r.getAcceptedAt(),
-                r.getAcceptedBy() == null ? null : new UserId(r.getAcceptedBy()), r.getDoneAt(), r.getCanceledAt());
+                r.getAcceptedBy() == null ? null : new UserId(r.getAcceptedBy()), r.getDoneAt(), r.getCanceledAt(),
+                r.getReleaseCode());
         return new CallView(call, r.getTableLabel(), r.getSectorName(), r.getAcceptedByName(),
                 r.getPresenceMethod() == null ? null : PresenceMethod.valueOf(r.getPresenceMethod()));
     }

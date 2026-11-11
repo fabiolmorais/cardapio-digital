@@ -8,9 +8,11 @@ import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
+import br.com.cardapio.application.port.out.security.RandomCodeGenerator;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.application.service.tablesession.TableVisits;
+import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallStateException;
 import br.com.cardapio.domain.call.exception.TooManyCallsException;
@@ -32,15 +34,18 @@ public class RequestCallService implements RequestCallUseCase {
     private final CallPort calls;
     private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
+    private final RandomCodeGenerator codes;
     private final Clock clock;
 
     public RequestCallService(DiningTablePort tables, TableSessionPort sessions, CallPort calls,
-                              SubscriptionPort subscriptions, EventPublisherPort events, Clock clock) {
+                              SubscriptionPort subscriptions, EventPublisherPort events, RandomCodeGenerator codes,
+                              Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.calls = calls;
         this.subscriptions = subscriptions;
         this.events = events;
+        this.codes = codes;
         this.clock = clock;
     }
 
@@ -69,7 +74,8 @@ public class RequestCallService implements RequestCallUseCase {
         }
 
         // Já há um aberto deste tipo? É ele que volta (no máximo, com a forma de pagamento nova).
-        Optional<Call> open = calls.findOpen(establishmentId, visit.table().id(), command.type());
+        // A liberação é de cada celular: só conta o aberto por ele mesmo.
+        Optional<Call> open = findOpen(establishmentId, visit, command.type());
         if (open.isPresent()) {
             return new RequestedCall(view(changePaymentIfNeeded(open.get(), command)), false);
         }
@@ -79,15 +85,27 @@ public class RequestCallService implements RequestCallUseCase {
                 >= Call.MAX_NEW_PER_MINUTE) {
             throw new TooManyCallsException();
         }
-        Call call = Call.open(establishmentId, visit.table().id(), visit.session().id(), command.type(),
-                command.paymentMethod(), now);
+        Call call = command.type() == CallType.UNLOCK
+                ? Call.openUnlock(establishmentId, visit.table().id(), visit.session().id(),
+                        codes.digits(Call.RELEASE_CODE_LENGTH), now)
+                : Call.open(establishmentId, visit.table().id(), visit.session().id(), command.type(),
+                        command.paymentMethod(), now);
         if (calls.insertIfNoneOpen(call)) {
             events.publish(CallChanged.of(call, now));
             return new RequestedCall(view(call), true);
         }
         // Dois toques ao mesmo tempo: o outro gravou primeiro. Devolve o dele.
-        Call theirs = calls.findOpen(establishmentId, visit.table().id(), command.type()).orElseThrow();
+        Call theirs = findOpen(establishmentId, visit, command.type()).orElseThrow();
         return new RequestedCall(view(theirs), false);
+    }
+
+    private Optional<Call> findOpen(EstablishmentId establishmentId, TableVisits.Visit visit, CallType type) {
+        if (type == CallType.UNLOCK) {
+            return calls.findOpenBySession(establishmentId, visit.session().id()).stream()
+                    .filter(call -> call.type() == CallType.UNLOCK)
+                    .findFirst();
+        }
+        return calls.findOpen(establishmentId, visit.table().id(), type);
     }
 
     private Call changePaymentIfNeeded(Call open, RequestCallCommand command) {

@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.in.brand.SetLogoUseCase;
 import br.com.cardapio.application.port.in.brand.StartLogoUploadUseCase;
 import br.com.cardapio.application.port.in.brand.UpdateBrandUseCase;
 import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
+import br.com.cardapio.application.port.in.call.ReleaseCallUseCase;
 import br.com.cardapio.application.port.in.call.BlockCallerUseCase;
 import br.com.cardapio.application.port.in.call.CancelCallUseCase;
 import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
@@ -139,6 +140,7 @@ import br.com.cardapio.application.service.call.BlockCallerService;
 import br.com.cardapio.application.service.call.CancelCallService;
 import br.com.cardapio.application.service.call.DeclineCallService;
 import br.com.cardapio.application.service.call.FinishCallService;
+import br.com.cardapio.application.service.call.ReleaseCallService;
 import br.com.cardapio.application.service.call.ListCallQueueService;
 import br.com.cardapio.application.service.call.ListTableCallsService;
 import br.com.cardapio.application.service.call.ListTvCallQueueService;
@@ -576,9 +578,10 @@ class UseCaseConfig {
     @Bean
     RequestCallUseCase requestCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                           CallPort callPort, SubscriptionPort subscriptionPort,
-                                          EventPublisherPort eventPublisherPort, Clock clock) {
+                                          EventPublisherPort eventPublisherPort,
+                                          RandomCodeGenerator randomCodeGenerator, Clock clock) {
         return new RequestCallService(diningTablePort, tableSessionPort, callPort, subscriptionPort, eventPublisherPort,
-                clock);
+                randomCodeGenerator, clock);
     }
 
     @Bean
@@ -599,9 +602,14 @@ class UseCaseConfig {
     }
 
     @Bean
-    AcceptCallUseCase acceptCallUseCase(CallPort callPort, TableSessionPort tableSessionPort,
-                                        EventPublisherPort eventPublisherPort, Clock clock) {
-        return new AcceptCallService(callPort, tableSessionPort, eventPublisherPort, clock);
+    AcceptCallUseCase acceptCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
+        return new AcceptCallService(callPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    ReleaseCallUseCase releaseCallUseCase(CallPort callPort, TableSessionPort tableSessionPort,
+                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ReleaseCallService(callPort, tableSessionPort, eventPublisherPort, clock);
     }
 
     @Bean

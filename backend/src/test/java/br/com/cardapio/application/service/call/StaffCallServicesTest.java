@@ -7,6 +7,7 @@ import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallNotFoundException;
 import br.com.cardapio.domain.call.exception.CallStateException;
+import br.com.cardapio.domain.call.exception.WrongReleaseCodeException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
@@ -42,7 +43,7 @@ class StaffCallServicesTest {
     private final UserId carlos = UserId.newId();
 
     private AcceptCallService accept() {
-        return new AcceptCallService(calls, sessions, published::add, clock);
+        return new AcceptCallService(calls, published::add, clock);
     }
 
     private FinishCallService finish() {
@@ -119,31 +120,64 @@ class StaffCallServicesTest {
         assertThat(new ListCallQueueService(calls).list(other, new PageQuery(0, 50)).content()).isEmpty();
     }
 
+    /** O código que aparece no celular de quem pediu a liberação. */
+    private static final String CODE = "4719";
+
+    private ReleaseCallService release() {
+        return new ReleaseCallService(calls, sessions, published::add, clock);
+    }
+
     /** Um pedido de liberação de um celular que não provou a presença, e um vizinho de mesa na mesma situação. */
     private Call unlockRequest(DiningTableId mesa) {
         TableSession phone = sessions.given(sakura, mesa, "celular-de-fora", NOW);
         sessions.given(sakura, mesa, "celular-do-amigo", NOW);
-        Call call = Call.open(sakura, mesa, phone.id(), CallType.UNLOCK, null, NOW);
+        Call call = Call.openUnlock(sakura, mesa, phone.id(), CODE, NOW);
         calls.insertIfNoneOpen(call);
         return call;
     }
 
     @Test
-    void releasingTheTableUnlocksEveryPhoneAtItAndClosesTheRequest() {
+    void releasingWithTheCodeUnlocksOnlyThePhoneThatAskedAndClosesTheRequest() {
         DiningTableId mesa04 = DiningTableId.newId();
         Call call = unlockRequest(mesa04);
-        sessions.given(sakura, DiningTableId.newId(), "outra-mesa", NOW);
 
-        StaffCall released = accept().accept(sakura, call.id(), carlos);
+        StaffCall released = release().release(sakura, call.id(), carlos, CODE);
 
         assertThat(released.status()).isEqualTo(CallStatus.DONE);
-        for (String phone : new String[]{"celular-de-fora", "celular-do-amigo"}) {
-            assertThat(sessions.byToken(phone).presenceMethod()).as(phone).isEqualTo(PresenceMethod.STAFF);
-            assertThat(sessions.byToken(phone).unlockedBy()).isEqualTo(carlos);
-        }
-        assertThat(sessions.byToken("outra-mesa").isPresent()).isFalse();
+        assertThat(sessions.byToken("celular-de-fora").presenceMethod()).isEqualTo(PresenceMethod.STAFF);
+        assertThat(sessions.byToken("celular-de-fora").unlockedBy()).isEqualTo(carlos);
+        // Quem abriu o QR na mesma mesa sem pedir (de casa, por exemplo) continua travado.
+        assertThat(sessions.byToken("celular-do-amigo").isPresent()).isFalse();
         assertThat(published).singleElement().isInstanceOfSatisfying(CallChanged.class,
                 event -> assertThat(event.status()).isEqualTo(CallStatus.DONE));
+    }
+
+    @Test
+    void aWrongCodeReleasesNothingAndTheRequestStaysOpen() {
+        Call call = unlockRequest(DiningTableId.newId());
+
+        assertThatThrownBy(() -> release().release(sakura, call.id(), carlos, "0000"))
+                .isInstanceOf(WrongReleaseCodeException.class);
+
+        assertThat(sessions.byToken("celular-de-fora").isPresent()).isFalse();
+        assertThat(calls.saved.get(call.id()).status()).isEqualTo(CallStatus.PENDING);
+        assertThat(published).isEmpty();
+    }
+
+    @Test
+    void anUnlockRequestIsNotAcceptedWithoutTheCode() {
+        Call call = unlockRequest(DiningTableId.newId());
+
+        assertThatThrownBy(() -> accept().accept(sakura, call.id(), carlos)).isInstanceOf(CallStateException.class);
+        assertThat(sessions.byToken("celular-de-fora").isPresent()).isFalse();
+    }
+
+    @Test
+    void anotherRestaurantCannotRelease() {
+        Call call = unlockRequest(DiningTableId.newId());
+
+        assertThatThrownBy(() -> release().release(EstablishmentId.newId(), call.id(), carlos, CODE))
+                .isInstanceOf(CallNotFoundException.class);
     }
 
     @Test

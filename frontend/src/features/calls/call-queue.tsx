@@ -3,15 +3,26 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Ban, Tv, Volume2 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
 import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
-import { acceptCall, blockCaller, declineCall, finishCall, type StaffCall } from "./calls-api";
+import { acceptCall, blockCaller, declineCall, finishCall, releaseCall, type StaffCall } from "./calls-api";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
@@ -50,6 +61,7 @@ export function CallQueue({ role }: { role: Role }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [blocking, setBlocking] = useState<StaffCall | null>(null);
+  const [releasing, setReleasing] = useState<StaffCall | null>(null);
   const [activating, setActivating] = useState<RodizioTarget | null>(null);
   const canAct = role !== "KITCHEN";
 
@@ -78,7 +90,10 @@ export function CallQueue({ role }: { role: Role }) {
         <span className="text-sm text-muted-foreground">{t.order}</span>
         <span
           role="status"
-          className={cn("ml-auto flex items-center gap-1.5 text-sm", connected ? "text-success" : "text-muted-foreground")}
+          className={cn(
+            "ml-auto flex items-center gap-1.5 text-sm",
+            connected ? "text-success" : "text-muted-foreground",
+          )}
         >
           <span aria-hidden className={cn("size-2 rounded-full", connected ? "bg-success" : "bg-muted-foreground")} />
           {connected ? t.live : t.reconnecting}
@@ -158,7 +173,9 @@ export function CallQueue({ role }: { role: Role }) {
               >
                 <div className="flex items-center gap-3">
                   <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-muted leading-none">
-                    <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{t.table}</span>
+                    <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                      {t.table}
+                    </span>
                     <span className="text-lg font-bold">{call.tableLabel}</span>
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -192,8 +209,8 @@ export function CallQueue({ role }: { role: Role }) {
                 )}
                 {call.status === "PENDING" && canAct && unlock && (
                   <div className="flex gap-2">
-                    <Button className="h-11 flex-1" disabled={busy !== null} onClick={() => act(call.id, acceptCall)}>
-                      {busy === call.id ? t.releasing : t.release}
+                    <Button className="h-11 flex-1" disabled={busy !== null} onClick={() => setReleasing(call)}>
+                      {t.release}
                     </Button>
                     <Button
                       variant="outline"
@@ -241,6 +258,11 @@ export function CallQueue({ role }: { role: Role }) {
       )}
 
       <RodizioDialog target={activating} onClose={() => setActivating(null)} />
+      <ReleaseDialog
+        call={releasing}
+        onClose={() => setReleasing(null)}
+        onReleased={() => queryClient.invalidateQueries({ queryKey: ["call-queue"] })}
+      />
       <ConfirmDialog
         open={blocking !== null}
         onOpenChange={(open) => !open && setBlocking(null)}
@@ -254,5 +276,91 @@ export function CallQueue({ role }: { role: Role }) {
         }}
       />
     </section>
+  );
+}
+
+/**
+ * "Liberar mesa": o garçom digita o código que aparece no celular de quem pediu. É a prova de que
+ * ele viu o celular na mesa; quem pediu de casa não tem como mostrar a tela.
+ */
+function ReleaseDialog({
+  call,
+  onClose,
+  onReleased,
+}: {
+  call: StaffCall | null;
+  onClose: () => void;
+  onReleased: () => Promise<unknown>;
+}) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const r = t.releaseDialog;
+
+  function close() {
+    setCode("");
+    setError(null);
+    onClose();
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!call) return;
+    if (!/^\d{4}$/.test(code)) {
+      setError(r.invalid);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await releaseCall(call.id, code);
+      await onReleased();
+      close();
+    } catch (e) {
+      setError((e as Error).message);
+      await onReleased(); // a fila mostra se o pedido foi cancelado ou respondido por outra pessoa
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={call !== null} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto p-6 sm:max-w-md">
+        <form onSubmit={submit} className="flex flex-col gap-5">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{call ? r.title(call.tableLabel) : ""}</DialogTitle>
+            <DialogDescription>{r.description}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="release-code" className="text-muted-foreground">
+              {r.code}
+            </Label>
+            <Input
+              id="release-code"
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              autoComplete="off"
+              autoFocus
+              placeholder={r.placeholder}
+              aria-describedby="release-code-error"
+              className="h-14 rounded-xl px-4 text-center font-mono text-2xl tracking-[0.5em] placeholder:font-sans placeholder:text-base placeholder:tracking-normal"
+            />
+            <p id="release-code-error" role="alert" className="min-h-5 text-sm text-destructive">
+              {error ?? ""}
+            </p>
+          </div>
+          <DialogFooter className="-mx-6 -mb-6 gap-2 px-6 pb-6">
+            <DialogClose render={<Button type="button" variant="outline" size="lg" className="h-11 px-4" />}>
+              {r.cancel}
+            </DialogClose>
+            <Button type="submit" size="lg" className="h-11 px-4" disabled={busy}>
+              {busy ? t.releasing : r.confirm}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

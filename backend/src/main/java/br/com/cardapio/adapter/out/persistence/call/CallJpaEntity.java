@@ -50,6 +50,10 @@ class CallJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "canceled_at")
     private Instant canceledAt;
 
+    /** Gravado na inserção (insertIfNoneOpen) e nunca alterado: o UPDATE não mexe nele. */
+    @Column(name = "release_code")
+    private String releaseCode;
+
     protected CallJpaEntity() {
     }
 
@@ -64,4 +68,5 @@ class CallJpaEntity extends EstablishmentScopedEntity {
     UUID getAcceptedBy() { return acceptedBy; }
     Instant getDoneAt() { return doneAt; }
     Instant getCanceledAt() { return canceledAt; }
+    String getReleaseCode() { return releaseCode; }
 }

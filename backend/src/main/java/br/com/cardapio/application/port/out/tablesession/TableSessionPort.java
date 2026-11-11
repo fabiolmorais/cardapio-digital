@@ -21,10 +21,11 @@ public interface TableSessionPort {
     Optional<TableSession> findByTokenHash(TokenHash tokenHash);
 
     /**
-     * "Liberar esta mesa": confirma a presença (pelo garçom) de todas as sessões ativas da mesa que
-     * ainda não tinham. Quem está sentado junto e abriu o QR também é liberado. Devolve quantas.
+     * "Liberar": confirma a presença (pelo garçom) só da sessão de quem pediu, se ela ainda estiver
+     * ativa, sem presença e sem bloqueio. Liberar a mesa inteira deixaria passar junto um celular
+     * que abriu o QR de longe. Devolve false se não havia o que liberar.
      */
-    int unlockTable(EstablishmentId establishmentId, DiningTableId tableId, UserId by, Instant now);
+    boolean unlockSession(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now);
 
     /**
      * "Bloquear este celular". false se a sessão não é do restaurante ou já estava bloqueada.

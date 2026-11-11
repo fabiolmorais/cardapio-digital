@@ -50,16 +50,15 @@ public final class InMemoryTableSessions implements TableSessionPort {
     }
 
     @Override
-    public int unlockTable(EstablishmentId establishmentId, DiningTableId tableId, UserId by, Instant now) {
-        int unlocked = 0;
+    public boolean unlockSession(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now) {
         for (TableSession session : Map.copyOf(saved).values()) {
-            if (session.establishmentId().equals(establishmentId) && session.isFor(tableId) && session.isActive(now)
-                    && !session.isPresent() && !session.isBlocked()) {
+            if (session.id().equals(sessionId) && session.establishmentId().equals(establishmentId)
+                    && session.isActive(now) && !session.isPresent() && !session.isBlocked()) {
                 save(session.unlock(by, now));
-                unlocked++;
+                return true;
             }
         }
-        return unlocked;
+        return false;
     }
 
     @Override

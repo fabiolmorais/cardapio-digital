@@ -174,30 +174,66 @@ class PresenceTest {
                 .content("{\"type\":\"BILL\",\"paymentMethod\":\"PIX\"}").exchange()).hasStatus(HttpStatus.CREATED);
     }
 
+    private MvcTestResult release(String token, String callId, String code) {
+        return send("POST", token, "/api/v1/calls/" + callId + "/release", "{\"code\":\"%s\"}".formatted(code));
+    }
+
+    private MvcTestResult tableCalls(Cookie phone) {
+        return mvc.get().uri(sakura.table("/calls")).cookie(phone).exchange();
+    }
+
     @Test
-    void withoutAnyProofTheWaiterUnlocksTheWholeTable() throws Exception {
+    void withoutAnyProofTheWaiterReleasesOnlyThePhoneThatShowsTheCode() throws Exception {
         Cookie phone = phone();
-        Cookie friend = phone();
+        Cookie fromHome = phone();
         assertThat(json(presence(phone, QUATRO_G, null), "$.present")).isEqualTo("false");
         assertThat(call(phone, "WAITER")).hasStatus(HttpStatus.FORBIDDEN);
 
         MvcTestResult unlock = call(phone, "UNLOCK");
         assertThat(unlock).hasStatus(HttpStatus.CREATED);
+        String code = json(unlock, "$.releaseCode");
+        assertThat(code).matches("\\d{4}");
         MvcTestResult queue = send("GET", sakura.owner(), "/api/v1/calls", null);
         assertThat(json(queue, "$.content[0].type")).isEqualTo("UNLOCK");
         assertThat(json(queue, "$.content[0].presenceMethod")).isEqualTo("null");
+        // A equipe não recebe o código: precisa ver na tela do cliente.
+        assertThat(queue.getResponse().getContentAsString()).doesNotContain("releaseCode");
 
-        MvcTestResult released = send("POST", sakura.owner(), "/api/v1/calls/" + json(unlock, "$.id") + "/accept",
-                null);
+        // Quem abriu o QR de casa não vê o pedido (nem o código) de quem está no salão.
+        assertThat(tableCalls(fromHome)).bodyJson().extractingPath("$").asArray().isEmpty();
+        assertThat(tableCalls(phone)).bodyJson().extractingPath("$[0].releaseCode").isEqualTo(code);
+
+        String id = json(unlock, "$.id");
+        assertThat(send("POST", sakura.owner(), "/api/v1/calls/" + id + "/accept", null))
+                .hasStatus(HttpStatus.CONFLICT);
+        String wrong = code.equals("0000") ? "1111" : "0000";
+        assertThat(release(sakura.owner(), id, wrong)).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(release(sakura.owner(), id, "12")).hasStatus(HttpStatus.BAD_REQUEST);
+
+        MvcTestResult released = release(sakura.owner(), id, code);
         assertThat(released).hasStatusOk();
         assertThat(json(released, "$.status")).isEqualTo("DONE");
 
-        // Os dois celulares da mesa ficam liberados, e a liberação mostra quem liberou.
-        for (Cookie c : new Cookie[]{phone, friend}) {
-            assertThat(json(presence(c, QUATRO_G, null), "$.method")).isEqualTo("STAFF");
-        }
-        assertThat(call(friend, "WAITER")).hasStatus(HttpStatus.CREATED);
+        // Só o celular que mostrou o código fica liberado; o de casa continua travado.
+        assertThat(json(presence(phone, QUATRO_G, null), "$.method")).isEqualTo("STAFF");
+        assertThat(json(presence(fromHome, QUATRO_G, null), "$.present")).isEqualTo("false");
+        assertThat(call(fromHome, "WAITER")).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(call(phone, "WAITER")).hasStatus(HttpStatus.CREATED);
         assertThat(call(phone, "UNLOCK")).hasStatus(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void twoPhonesAtTheSameTableEachGetTheirOwnRequestAndCode() throws Exception {
+        Cookie inTheRoom = phone();
+        Cookie fromHome = phone();
+
+        String theirs = json(call(fromHome, "UNLOCK"), "$.id");
+        MvcTestResult mine = call(inTheRoom, "UNLOCK");
+
+        assertThat(mine).hasStatus(HttpStatus.CREATED);
+        assertThat(json(mine, "$.id")).isNotEqualTo(theirs);
+        assertThat(send("GET", sakura.owner(), "/api/v1/calls", null)).bodyJson()
+                .extractingPath("$.totalElements").isEqualTo(2);
     }
 
     @Test
@@ -239,8 +275,7 @@ class PresenceTest {
                 }).exchange();
         assertThat(json(theirs, "$.present")).isEqualTo("false");
         String unlock = json(call(phone(), "UNLOCK"), "$.id");
-        assertThat(send("POST", other.owner(), "/api/v1/calls/" + unlock + "/accept", null))
-                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(release(other.owner(), unlock, "0000")).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("POST", other.owner(), "/api/v1/calls/" + unlock + "/decline", null))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
