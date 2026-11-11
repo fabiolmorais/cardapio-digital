@@ -12,8 +12,11 @@ export type PaymentMethod = NonNullable<CallRequest["paymentMethod"]>;
 export type Presence = components["schemas"]["Presence"];
 type Position = { latitude: number; longitude: number; accuracyMeters: number };
 
-/** O canal de tempo real avisa quando um chamado da mesa muda, e quando o garçom fecha a conta. */
-const CALL_EVENTS = ["call", "tab"] as const;
+/**
+ * O canal de tempo real avisa quando um chamado da mesa muda, quando o garçom fecha a conta e
+ * quando a equipe bloqueia ou desbloqueia um celular da mesa (presence).
+ */
+const CALL_EVENTS = ["call", "tab", "presence"] as const;
 
 /**
  * As chamadas da mesa, com fetch direto (como a sessão): o cliente da API do painel traria junto

@@ -1,7 +1,10 @@
 package br.com.cardapio.adapter.out.persistence.tablesession;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.tablesession.BlockedPhoneView;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
@@ -9,6 +12,8 @@ import br.com.cardapio.domain.shared.model.TokenHash;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -58,6 +63,28 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
     public boolean block(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now) {
         establishmentFilter.enable(establishmentId);
         return sessions.block(sessionId.value(), establishmentId.value(), by.value(), now) == 1;
+    }
+
+    @Override
+    public Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId) {
+        establishmentFilter.enable(establishmentId);
+        return sessions.findTableId(sessionId.value(), establishmentId.value()).map(DiningTableId::new);
+    }
+
+    @Override
+    public boolean unblock(EstablishmentId establishmentId, TableSessionId sessionId) {
+        establishmentFilter.enable(establishmentId);
+        return sessions.unblock(sessionId.value(), establishmentId.value()) == 1;
+    }
+
+    @Override
+    public ResultPage<BlockedPhoneView> findBlocked(EstablishmentId establishmentId, Instant now, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<BlockedPhoneRow> rows = sessions.findBlocked(establishmentId.value(), now,
+                PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(r -> new BlockedPhoneView(new TableSessionId(r.getId()),
+                new DiningTableId(r.getTableId()), r.getTableLabel(), r.getSectorName(), r.getBlockedAt(),
+                r.getBlockedByName())).getContent(), page.page(), page.size(), rows.getTotalElements());
     }
 
     /** Sem o filtro por restaurante: é a limpeza do sistema inteiro. */

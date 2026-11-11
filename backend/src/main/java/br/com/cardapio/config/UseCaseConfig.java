@@ -208,6 +208,7 @@ import br.com.cardapio.application.service.rodizio.ListRodiziosService;
 import br.com.cardapio.application.service.rodizio.ManageRodiziosService;
 import br.com.cardapio.application.service.rodizio.QuoteRodiziosService;
 import br.com.cardapio.application.service.rodizio.TurnRodizioCardService;
+import br.com.cardapio.application.service.tablesession.BlockedPhonesService;
 import br.com.cardapio.application.service.tablesession.EndExpiredSessionsService;
 import br.com.cardapio.application.service.tablesession.StartTableSessionService;
 import br.com.cardapio.application.service.team.AddTeamMemberService;
@@ -604,6 +605,13 @@ class UseCaseConfig {
     @Bean
     AcceptCallUseCase acceptCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
         return new AcceptCallService(callPort, eventPublisherPort, clock);
+    }
+
+    /** Um bean só atende à lista de bloqueados e ao desbloquear (o BlockedPhonesService implementa os dois). */
+    @Bean
+    BlockedPhonesService blockedPhonesService(TableSessionPort tableSessionPort, EventPublisherPort eventPublisherPort,
+                                              Clock clock) {
+        return new BlockedPhonesService(tableSessionPort, eventPublisherPort, clock);
     }
 
     @Bean

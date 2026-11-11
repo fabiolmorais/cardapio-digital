@@ -1,5 +1,7 @@
 package br.com.cardapio.application.port.out.tablesession;
 
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
@@ -31,6 +33,15 @@ public interface TableSessionPort {
      * "Bloquear este celular". false se a sessão não é do restaurante ou já estava bloqueada.
      */
     boolean block(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now);
+
+    /** A mesa da sessão, se ela for deste restaurante. */
+    Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId);
+
+    /** "Desbloquear este celular". false se a sessão não é do restaurante ou não estava bloqueada. */
+    boolean unblock(EstablishmentId establishmentId, TableSessionId sessionId);
+
+    /** Os bloqueados com a sessão ainda aberta (nem encerrada nem vencida), do bloqueio mais recente. */
+    ResultPage<BlockedPhoneView> findBlocked(EstablishmentId establishmentId, Instant now, PageQuery page);
 
     /**
      * Encerra (ended_at) as sessões que venceram por falta de uso. É uma tarefa do sistema, de

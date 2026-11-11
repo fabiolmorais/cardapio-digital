@@ -14,6 +14,7 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.event.DomainEvent;
+import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
@@ -218,7 +219,9 @@ class StaffCallServicesTest {
         assertThat(calls.saved.get(waiter.id()).status()).isEqualTo(CallStatus.CANCELED);
         assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.CANCELED);
         assertThat(calls.saved.get(theirs.id()).status()).isEqualTo(CallStatus.PENDING);
-        assertThat(published).hasSize(2);
+        // Os dois chamados cancelados e o aviso do bloqueio (a lista de bloqueados do painel se atualiza).
+        assertThat(published).hasSize(3).filteredOn(PhoneBlockChanged.class::isInstance).singleElement()
+                .isInstanceOfSatisfying(PhoneBlockChanged.class, e -> assertThat(e.blocked()).isTrue());
     }
 
     @Test

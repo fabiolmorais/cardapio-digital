@@ -8,7 +8,8 @@ test.describe.configure({ timeout: 60_000 });
 async function restaurant(request: APIRequestContext) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
-  const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
   // Trava de presença: o navegador do teste chega pela rede local, que vira "o Wi-Fi do salão".
   await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
   const sector = await post("/api/v1/sectors", { name: "Salão principal" });
@@ -71,7 +72,11 @@ test("a mesa cancela o chamado e ele sai do painel", async ({ page, request, bro
   }
 });
 
-test("a mesa pede a conta, troca a forma de pagamento e o painel mostra a escolha", async ({ page, request, browser }) => {
+test("a mesa pede a conta, troca a forma de pagamento e o painel mostra a escolha", async ({
+  page,
+  request,
+  browser,
+}) => {
   const { qr, email } = await restaurant(request);
   await page.goto(`/m/${qr}`);
   await page.getByRole("link", { name: /Pedir a conta/ }).click();
@@ -166,7 +171,11 @@ test("a TV vinculada abre o Modo TV sozinha, sem login nem PIN", async ({ page, 
   }
 });
 
-test("a equipe bloqueia o celular de um trote, e ele vê o aviso na hora", async ({ page, request, browser }) => {
+test("a equipe bloqueia o celular de um trote, ele vê o aviso na hora, e o desbloqueio devolve os botões", async ({
+  page,
+  request,
+  browser,
+}) => {
   const { qr, email } = await restaurant(request);
   await page.goto(`/m/${qr}`);
   await page.getByRole("button", { name: /Chamar garçom/ }).click();
@@ -184,6 +193,13 @@ test("a equipe bloqueia o celular de um trote, e ele vê o aviso na hora", async
       timeout: 5000,
     });
     await expect(page.getByRole("button", { name: /Chamar garçom/ })).toHaveCount(0);
+
+    // Foi engano: o painel lista o celular bloqueado, e o desbloqueio chega na hora ao celular.
+    const blocked = panel.page.getByRole("listitem", { name: "Mesa 04 · Salão principal" });
+    await expect(blocked).toContainText("Bloqueado por");
+    await blocked.getByRole("button", { name: "Desbloquear o celular da mesa 04" }).click();
+    await expect(panel.page.getByRole("heading", { name: /Celulares bloqueados/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Chamar garçom/ })).toBeVisible({ timeout: 5000 });
   } finally {
     await panel.close();
   }

@@ -10,6 +10,7 @@ import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.exception.CallNotFoundException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallId;
+import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -38,7 +39,9 @@ public class BlockCallerService implements BlockCallerUseCase {
     public void block(EstablishmentId establishmentId, CallId callId, UserId by) {
         Call call = calls.find(establishmentId, callId).orElseThrow(CallNotFoundException::new);
         Instant now = clock.instant();
-        sessions.block(establishmentId, call.sessionId(), by, now);
+        if (sessions.block(establishmentId, call.sessionId(), by, now)) {
+            events.publish(new PhoneBlockChanged(establishmentId, call.tableId(), call.sessionId(), true, now));
+        }
         for (Call open : calls.findOpenBySession(establishmentId, call.sessionId())) {
             Call canceled = open.cancel(now);
             // Se mudou no meio do caminho (outro garçom concluiu), fica como está.

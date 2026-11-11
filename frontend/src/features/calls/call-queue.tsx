@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Tv, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -22,7 +22,17 @@ import { canManageTeam } from "@/features/team/team-rules";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
-import { acceptCall, blockCaller, declineCall, finishCall, releaseCall, type StaffCall } from "./calls-api";
+import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
+import {
+  acceptCall,
+  blockCaller,
+  declineCall,
+  fetchBlockedPhones,
+  finishCall,
+  releaseCall,
+  unblockPhone,
+  type StaffCall,
+} from "./calls-api";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
 const t = messages.panel.calls;
@@ -257,6 +267,8 @@ export function CallQueue({ role }: { role: Role }) {
         </ul>
       )}
 
+      {canAct && <BlockedPhones now={now} />}
+
       <RodizioDialog target={activating} onClose={() => setActivating(null)} />
       <ReleaseDialog
         call={releasing}
@@ -273,6 +285,7 @@ export function CallQueue({ role }: { role: Role }) {
           if (!blocking) return;
           await blockCaller(blocking.id);
           await queryClient.invalidateQueries({ queryKey: ["call-queue"] });
+          await queryClient.invalidateQueries({ queryKey: ["blocked-phones"] });
         }}
       />
     </section>
@@ -362,5 +375,96 @@ function ReleaseDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const minutesFormat = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+
+/** "agora", "há 5 minutos", "há 2 horas". */
+function ago(iso: string, now: number) {
+  const minutes = Math.round((Date.parse(iso) - now) / 60_000);
+  if (minutes > -1) return t.blocked.now;
+  if (minutes > -60) return minutesFormat.format(minutes, "minute");
+  return minutesFormat.format(Math.round(minutes / 60), "hour");
+}
+
+/**
+ * Os celulares bloqueados pela equipe, com o "Desbloquear". O bloqueio cancela os chamados do
+ * celular, então ele some da fila: é aqui que se desfaz um bloqueio por engano. Só aparece quando
+ * há algum; o tempo real avisa quando alguém bloqueia ou desbloqueia (em qualquer aparelho).
+ */
+function BlockedPhones({ now }: { now: number }) {
+  const queryClient = useQueryClient();
+  const blocked = useQuery({ queryKey: ["blocked-phones"], queryFn: fetchBlockedPhones, retry: false });
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const b = t.blocked;
+
+  useEffect(
+    () =>
+      subscribeStaffEvents(
+        (event) => {
+          if (event.name === "ready" || event.name === "phone") {
+            void queryClient.invalidateQueries({ queryKey: ["blocked-phones"] });
+          }
+        },
+        () => {},
+      ),
+    [queryClient],
+  );
+
+  async function unblock(id: string) {
+    setBusy(id);
+    setError(null);
+    try {
+      await unblockPhone(id);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["blocked-phones"] });
+    setBusy(null);
+  }
+
+  const phones = blocked.data ?? [];
+  if (phones.length === 0) return null;
+
+  return (
+    <section aria-labelledby="bloqueados" className="flex flex-col gap-2.5 border-t border-border pt-4">
+      <h3 id="bloqueados" className="font-semibold">
+        {b.title} <span className="text-sm font-normal text-muted-foreground">{phones.length}</span>
+      </h3>
+      <p className="text-sm text-muted-foreground">{b.hint}</p>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <ul className="flex flex-col gap-2">
+        {phones.map((phone) => (
+          <li
+            key={phone.id}
+            aria-label={b.item(phone.tableLabel, phone.sectorName)}
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+          >
+            <Ban aria-hidden className="size-5 shrink-0 text-destructive" />
+            <span className="flex min-w-40 flex-1 flex-col">
+              <span className="font-medium">{b.item(phone.tableLabel, phone.sectorName)}</span>
+              <span className="text-sm text-muted-foreground">
+                {b.by(phone.blockedByName, ago(phone.blockedAt, now))}
+              </span>
+            </span>
+            <Button
+              variant="outline"
+              className="h-11"
+              aria-label={b.unblockLabel(phone.tableLabel)}
+              disabled={busy !== null}
+              onClick={() => void unblock(phone.id)}
+            >
+              {busy === phone.id ? b.unblocking : b.unblock}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

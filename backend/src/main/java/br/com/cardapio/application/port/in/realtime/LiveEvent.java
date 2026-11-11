@@ -5,6 +5,7 @@ import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
+import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
 
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +38,9 @@ public record LiveEvent(String name, Map<String, String> data) {
             case RodizioChanged r -> Optional.of(new LiveEvent("rodizio", Map.of(
                     "tabId", r.tabId().value().toString(),
                     "tableId", r.tableId().value().toString())));
+            case PhoneBlockChanged p -> Optional.of(new LiveEvent("phone", Map.of(
+                    "tableId", p.tableId().value().toString(),
+                    "blocked", String.valueOf(p.blocked()))));
             default -> Optional.empty();
         };
     }
@@ -53,6 +57,8 @@ public record LiveEvent(String name, Map<String, String> data) {
                     "status", c.status().name())));
             case TabClosed t -> Optional.of(new LiveEvent("tab", Map.of("tabId", t.tabId().value().toString())));
             case RodizioChanged r -> Optional.of(new LiveEvent("rodizio", Map.of("tabId", r.tabId().value().toString())));
+            // Sem dizer qual celular: cada um da mesa confere de novo a própria presença.
+            case PhoneBlockChanged p -> Optional.of(new LiveEvent("presence", Map.of()));
             default -> Optional.empty();
         };
     }
