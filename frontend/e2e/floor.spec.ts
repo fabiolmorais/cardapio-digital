@@ -61,7 +61,10 @@ test("dono monta o salão: setores, mesas e troca de QR", async ({ page, request
   await expect(page.getByRole("button", { name: "Salão principal · 2" })).toBeVisible();
 });
 
-test("setor com mesas ativas não pode ser desativado", async ({ page, request }) => {
+test("setor com mesas ativas não pode ser desativado; desativado, aparece marcado e volta com as mesas", async ({
+  page,
+  request,
+}) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
   await openFloor(page);
@@ -79,5 +82,25 @@ test("setor com mesas ativas não pode ser desativado", async ({ page, request }
   await expect(page.getByRole("switch", { name: "Mesa D1 ativa" })).toHaveAttribute("aria-checked", "false");
   await page.getByRole("button", { name: "Desativar setor" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Desativar" }).click();
-  await expect(page.getByRole("heading", { name: "Comece pelos setores" })).toBeVisible();
+
+  // O setor não some: fica marcado como desativado, e a mesa mostra o nome dele.
+  const deck = page.getByRole("button", { name: "Deck · desativado" });
+  await expect(deck).toBeVisible();
+  await expect(page.getByRole("row", { name: /Mesa D1/ })).toContainText("Deck");
+  await expect(page.getByRole("button", { name: "Nova mesa" })).toHaveCount(0);
+
+  // Ativar a mesa explica o que fazer, em vez de "Setor não encontrado".
+  await page.getByRole("switch", { name: "Mesa D1 ativa" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "O setor Deck está desativado" })).toContainText(
+    "Reative o setor ou mova a mesa",
+  );
+
+  await deck.click();
+  await expect(page.getByText("Este setor está desativado.")).toBeVisible();
+  await page.getByRole("button", { name: "Reativar setor" }).click();
+  await expect(page.getByRole("status")).toContainText("Setor Deck reativado.");
+  await expect(page.getByRole("button", { name: "Deck · 0" })).toBeVisible();
+
+  await page.getByRole("switch", { name: "Mesa D1 ativa" }).click();
+  await expect(page.getByRole("switch", { name: "Mesa D1 ativa" })).toHaveAttribute("aria-checked", "true");
 });

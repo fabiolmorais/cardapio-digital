@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.service.plan.PlanAllowances;
+import br.com.cardapio.domain.floor.exception.SectorInactiveException;
 import br.com.cardapio.domain.floor.exception.SectorNotFoundException;
 import br.com.cardapio.domain.floor.exception.TableLabelTakenException;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
@@ -51,9 +52,11 @@ public class UpdateTableService implements UpdateTableUseCase {
         }
         // Mesa ativa precisa estar num setor ativo deste restaurante (vale para mover e para reativar).
         if (table.active()) {
-            sectors.find(command.establishmentId(), table.sectorId())
-                    .filter(Sector::active)
+            Sector sector = sectors.find(command.establishmentId(), table.sectorId())
                     .orElseThrow(SectorNotFoundException::new);
+            if (!sector.active()) {
+                throw new SectorInactiveException(sector.name());
+            }
         }
 
         tables.save(table);

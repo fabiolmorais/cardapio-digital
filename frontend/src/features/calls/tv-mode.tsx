@@ -8,6 +8,7 @@ import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { enableSound, playChime } from "./alert-sound";
+import { SoundToggle } from "./sound-toggle";
 import { elapsed, useNow } from "./call-queue";
 import type { StaffCall } from "./calls-api";
 import { staffSource, tvDeviceSource, useLiveCalls, useSoundOn, type LiveCallsSource } from "./use-live-calls";
@@ -137,6 +138,7 @@ function TvBoard({
           </span>
         </div>
         <span className="font-mono text-7xl font-bold tabular-nums">{clock}</span>
+        <SoundToggle size="lg" className="h-14 px-5 text-lg" />
         {exitHref && (
           <Link
             href={exitHref}

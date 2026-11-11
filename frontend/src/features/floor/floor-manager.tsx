@@ -11,6 +11,7 @@ import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import {
+  activateSector,
   createSector,
   createTable,
   deactivateSector,
@@ -66,6 +67,7 @@ export function FloorManager() {
   const [dialog, setDialog] = useState<DialogState>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const [reactivating, setReactivating] = useState(false);
 
   async function refresh() {
     await Promise.all([
@@ -99,11 +101,27 @@ export function FloorManager() {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
   }
 
+  // Os desativados vêm no fim: aparecem marcados, para reativar, mas não servem para mesa nova.
   const sectorList = sectors.data;
+  const activeSectors = sectorList.filter((s) => s.active);
   const tableList = tables.data;
   const activeFilter = sectorList.some((s) => s.id === sectorFilter) ? sectorFilter : null;
   const filterSector = sectorList.find((s) => s.id === activeFilter);
   const sectorName = new Map(sectorList.map((s) => [s.id, s.name]));
+
+  async function reactivate(sector: Sector) {
+    setReactivating(true);
+    setFailure(null);
+    setNotice(null);
+    try {
+      await activateSector(sector.id);
+      setNotice(t.reactivated(sector.name));
+    } catch (e) {
+      setFailure((e as Error).message);
+    }
+    await refresh();
+    setReactivating(false);
+  }
   const visible = tableList.filter((table) => !activeFilter || table.sectorId === activeFilter);
   const selected = tableList.find((table) => table.id === selectedId) ?? null;
 
@@ -119,7 +137,7 @@ export function FloorManager() {
           role={session.establishment.role}
           used={tableList.filter((table) => table.active).length}
         />
-        {sectorList.length > 0 && (
+        {activeSectors.length > 0 && (
           <Button size="xl" onClick={() => setDialog({ kind: "new-table" })}>
             <Plus aria-hidden />
             {t.newTable}
@@ -156,8 +174,13 @@ export function FloorManager() {
                 {t.sectorCount(t.all, tableList.filter((x) => x.active).length)}
               </SectorPill>
               {sectorList.map((sector) => (
-                <SectorPill key={sector.id} on={sector.id === activeFilter} onClick={() => setSectorFilter(sector.id)}>
-                  {t.sectorCount(sector.name, sector.activeTables)}
+                <SectorPill
+                  key={sector.id}
+                  on={sector.id === activeFilter}
+                  inactive={!sector.active}
+                  onClick={() => setSectorFilter(sector.id)}
+                >
+                  {sector.active ? t.sectorCount(sector.name, sector.activeTables) : t.inactiveSector(sector.name)}
                 </SectorPill>
               ))}
               <Button variant="ghost" className="h-10 px-3" onClick={() => setDialog({ kind: "new-sector" })}>
@@ -166,7 +189,16 @@ export function FloorManager() {
               </Button>
             </div>
 
-            {filterSector && (
+            {filterSector && !filterSector.active && (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3">
+                <p className="mr-auto text-sm">{t.inactiveSectorNotice}</p>
+                <Button className="h-10 px-3" disabled={reactivating} onClick={() => void reactivate(filterSector)}>
+                  {reactivating ? t.reactivating : t.reactivateSector}
+                </Button>
+              </div>
+            )}
+
+            {filterSector?.active && (
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -292,9 +324,9 @@ export function FloorManager() {
         key={dialog?.kind === "edit-table" ? dialog.table.id : `new-table-${activeFilter}`}
         open={dialog?.kind === "new-table" || dialog?.kind === "edit-table"}
         onOpenChange={close}
-        sectors={sectorList}
+        sectors={activeSectors}
         table={dialog?.kind === "edit-table" ? dialog.table : undefined}
-        defaultSectorId={activeFilter ?? undefined}
+        defaultSectorId={filterSector?.active ? filterSector.id : undefined}
         onSave={async ({ label, sectorId }) => {
           if (dialog?.kind === "edit-table") {
             await updateTable(dialog.table.id, { label, sectorId });
@@ -335,7 +367,17 @@ export function FloorManager() {
   );
 }
 
-function SectorPill({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+function SectorPill({
+  on,
+  inactive = false,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  inactive?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
@@ -343,6 +385,7 @@ function SectorPill({ on, onClick, children }: { on: boolean; onClick: () => voi
       onClick={onClick}
       className={cn(
         "h-10 rounded-xl border border-border px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        inactive && !on && "border-dashed text-muted-foreground",
         on && "border-transparent bg-foreground text-background hover:bg-foreground/90",
       )}
     >

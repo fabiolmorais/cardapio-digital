@@ -11,7 +11,10 @@ import java.util.UUID;
 
 interface SectorJpaRepository extends JpaRepository<SectorJpaEntity, UUID> {
 
-    /** Setores ativos com a contagem de mesas ativas numa subconsulta: uma ida ao banco só (sem N+1). */
+    /**
+     * Setores (os ativos e, com includeInactive, os desativados depois) com a contagem de mesas
+     * ativas numa subconsulta: uma ida ao banco só (sem N+1).
+     */
     @Query(value = """
             SELECT s.id AS id, s.establishmentId AS establishmentId, s.name AS name,
                    s.position AS position, s.active AS active,
@@ -19,14 +22,15 @@ interface SectorJpaRepository extends JpaRepository<SectorJpaEntity, UUID> {
                      WHERE t.sectorId = s.id AND t.active = true) AS activeTables
               FROM SectorJpaEntity s
              WHERE s.establishmentId = :establishmentId
-               AND s.active = true
-             ORDER BY s.position, s.id
+               AND (s.active = true OR :includeInactive = true)
+             ORDER BY s.active DESC, s.position, s.id
             """,
             countQuery = """
             SELECT count(s) FROM SectorJpaEntity s
-             WHERE s.establishmentId = :establishmentId AND s.active = true
+             WHERE s.establishmentId = :establishmentId AND (s.active = true OR :includeInactive = true)
             """)
-    Page<SectorRow> findActive(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+    Page<SectorRow> findAll(@Param("establishmentId") UUID establishmentId,
+                            @Param("includeInactive") boolean includeInactive, Pageable pageable);
 
     Optional<SectorJpaEntity> findByIdAndEstablishmentId(UUID id, UUID establishmentId);
 

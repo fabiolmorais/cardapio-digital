@@ -4,6 +4,7 @@
  * O navegador só deixa uma página tocar som depois de um toque nela. Por isso o som começa
  * desligado, e o botão "Ativar som" chama enableSound() dentro do toque: é ali que o
  * AudioContext é criado e liberado. Depois disso, playChime() toca sozinho a cada chamado.
+ * "Desligar som" (disableSound) pausa o AudioContext: o alerta fica mudo até ativar de novo.
  */
 let context: AudioContext | null = null;
 const listeners = new Set<() => void>();
@@ -28,6 +29,16 @@ export async function enableSound(): Promise<boolean> {
   }
   listeners.forEach((listener) => listener());
   return isSoundOn();
+}
+
+/** "Desligar som": pausa o áudio da página; os alertas ficam mudos até ativar de novo. */
+export async function disableSound(): Promise<void> {
+  try {
+    await context?.suspend();
+  } catch {
+    // Sem Web Audio, não havia som para desligar.
+  }
+  listeners.forEach((listener) => listener());
 }
 
 /** "Ding-dong": duas notas curtas, fáceis de ouvir num salão barulhento. */

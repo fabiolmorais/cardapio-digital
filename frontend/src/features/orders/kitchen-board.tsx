@@ -1,13 +1,13 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ChefHat, ChevronLeft, Volume2, X } from "lucide-react";
+import { ChefHat, ChevronLeft, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { enableSound, playChime } from "@/features/calls/alert-sound";
+import { playChime } from "@/features/calls/alert-sound";
+import { SoundToggle } from "@/features/calls/sound-toggle";
 import { elapsed, useNow } from "@/features/calls/call-queue";
-import { useSoundOn } from "@/features/calls/use-live-calls";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
@@ -62,7 +62,6 @@ function Board() {
     () => fetchKitchenQueue(),
     useCallback(() => playChime(), []),
   );
-  const soundOn = useSoundOn();
   const now = useNow();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,17 +93,7 @@ function Board() {
           <h1 className="text-xl font-bold">{t.title}</h1>
           <span className="text-sm text-muted-foreground">{t.subtitle}</span>
         </span>
-        {soundOn ? (
-          <span className="flex h-9 items-center gap-1.5 rounded-lg bg-muted px-3 text-sm font-medium">
-            <Volume2 aria-hidden className="size-4" />
-            {tc.soundOn}
-          </span>
-        ) : (
-          <Button variant="outline" onClick={() => void enableSound()}>
-            <Volume2 aria-hidden />
-            {tc.enableSound}
-          </Button>
-        )}
+        <SoundToggle />
         <span
           role="status"
           className={cn("flex items-center gap-1.5 text-sm", connected ? "text-success" : "text-muted-foreground")}

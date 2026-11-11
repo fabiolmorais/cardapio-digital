@@ -17,9 +17,19 @@ function failure(response: Response | undefined, error: unknown): Error {
   return new Error(t.generic);
 }
 
+/** Os setores, com os desativados no fim (active: false): a tela mostra e deixa reativar. */
 export async function fetchSectors(): Promise<Sector[]> {
-  const { data, error, response } = await api.GET("/api/v1/sectors", { params: { query: { page: 0, size: 100 } } });
+  const { data, error, response } = await api.GET("/api/v1/sectors", {
+    params: { query: { page: 0, size: 100, includeInactive: true } },
+  });
   if (data) return data.content;
+  throw failure(response, error);
+}
+
+/** "Reativar setor": as mesas dele podem voltar a ser ativadas. */
+export async function activateSector(id: string): Promise<Sector> {
+  const { data, error, response } = await api.POST("/api/v1/sectors/{id}/activate", { params: { path: { id } } });
+  if (data) return data;
   throw failure(response, error);
 }
 

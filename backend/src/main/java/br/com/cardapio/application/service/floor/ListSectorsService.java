@@ -18,7 +18,7 @@ public class ListSectorsService implements ListSectorsUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public ResultPage<SectorSummary> list(EstablishmentId establishmentId, PageQuery page) {
-        return sectors.findActive(establishmentId, page).map(SectorSummary::from);
+    public ResultPage<SectorSummary> list(EstablishmentId establishmentId, boolean includeInactive, PageQuery page) {
+        return sectors.findAll(establishmentId, includeInactive, page).map(SectorSummary::from);
     }
 }

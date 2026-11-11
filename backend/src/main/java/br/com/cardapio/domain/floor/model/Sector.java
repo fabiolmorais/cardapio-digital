@@ -33,6 +33,11 @@ public record Sector(SectorId id, EstablishmentId establishmentId, String name, 
         return new Sector(id, establishmentId, name, position, false);
     }
 
+    /** "Reativar setor": volta para a lista (e as mesas dele podem ser reativadas). */
+    public Sector activate() {
+        return new Sector(id, establishmentId, name, position, true);
+    }
+
     private static String validName(String name) {
         if (name == null || name.isBlank()) {
             throw new InvalidValueException("Dê um nome ao setor, como \"Salão principal\"");

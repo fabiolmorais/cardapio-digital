@@ -216,6 +216,47 @@ class FloorControllerTest {
                 .bodyJson().extractingPath("$.active").isEqualTo(true);
     }
 
+    /**
+     * O caso do Deck (bug de 11/11/2026): as mesas foram desativadas e depois o setor. A tela não
+     * mostrava o setor, e reativar a mesa dava "Setor não encontrado", sem saída.
+     */
+    @Test
+    void aDeactivatedSectorShowsUpOnRequestAndCanBeReactivatedWithItsTables() throws Exception {
+        String deck = createSector(sakura.token(), "Deck");
+        String table = tableId(sakura.token(), deck, "D1");
+        send("PATCH", sakura.token(), TABLES + "/" + table, "{\"active\":false}");
+        assertThat(send("DELETE", sakura.token(), SECTORS + "/" + deck, null)).hasStatus(HttpStatus.NO_CONTENT);
+
+        // A mesa não volta sozinha: a mensagem diz o que fazer.
+        MvcTestResult blocked = send("PATCH", sakura.token(), TABLES + "/" + table, "{\"active\":true}");
+        assertThat(blocked).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(json(blocked, "$.detail")).isEqualTo(
+                "O setor Deck está desativado. Reative o setor ou mova a mesa para outro setor.");
+
+        // A lista normal só tem os ativos; pedindo, vêm os desativados, marcados.
+        assertThat(send("GET", sakura.token(), SECTORS, null)).bodyJson().extractingPath("$.totalElements")
+                .isEqualTo(0);
+        MvcTestResult all = send("GET", sakura.token(), SECTORS + "?includeInactive=true", null);
+        assertThat(all).bodyJson().extractingPath("$.content[0].name").isEqualTo("Deck");
+        assertThat(all).bodyJson().extractingPath("$.content[0].active").isEqualTo(false);
+
+        MvcTestResult reactivated = send("POST", sakura.token(), SECTORS + "/" + deck + "/activate", null);
+        assertThat(reactivated).hasStatusOk();
+        assertThat(reactivated).bodyJson().extractingPath("$.active").isEqualTo(true);
+        assertThat(send("PATCH", sakura.token(), TABLES + "/" + table, "{\"active\":true}"))
+                .bodyJson().extractingPath("$.active").isEqualTo(true);
+    }
+
+    @Test
+    void reactivatingASectorWhoseNameWasTakenGets409() throws Exception {
+        String deck = createSector(sakura.token(), "Deck");
+        send("DELETE", sakura.token(), SECTORS + "/" + deck, null);
+        createSector(sakura.token(), "Deck");
+
+        assertThat(send("POST", sakura.token(), SECTORS + "/" + deck + "/activate", null))
+                .hasStatus(HttpStatus.CONFLICT);
+    }
+
     @Test
     void rotatingTheTokenReplacesTheOldOne() throws Exception {
         String salao = createSector(sakura.token(), "Salão");
@@ -253,6 +294,10 @@ class FloorControllerTest {
         assertThat(createTable(other.token(), salao, "77")).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("PATCH", other.token(), SECTORS + "/" + salao, "{\"name\":\"Meu\"}")).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(send("DELETE", other.token(), SECTORS + "/" + salao, null)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.token(), SECTORS + "/" + salao + "/activate", null))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("GET", other.token(), SECTORS + "?includeInactive=true", null))
+                .bodyJson().extractingPath("$.totalElements").isEqualTo(0);
         assertThat(send("GET", other.token(), TABLES, null)).bodyJson().extractingPath("$.totalElements").isEqualTo(0);
         assertThat(send("GET", other.token(), TABLES + "?sectorId=" + salao, null))
                 .bodyJson().extractingPath("$.totalElements").isEqualTo(0);
