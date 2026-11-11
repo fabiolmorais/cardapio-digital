@@ -1,13 +1,17 @@
 "use client";
 
-import { Ban, ChevronRight, LoaderCircle, Lock, MapPin, UserCheck, Wifi } from "lucide-react";
+import { Ban, ChevronRight, LoaderCircle, Lock, MapPin, UserCheck, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
+import { cn } from "cn";
 import { cancelCall, requestCall, type useTableCalls } from "./table-calls";
 
 const t = tablePage.presence;
 
 type TableState = ReturnType<typeof useTableCalls>;
+
+const retryButton =
+  "h-12 rounded-2xl bg-(--brand) px-6 font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none";
 
 /**
  * A trava de presença na tela da mesa (desenhos Verificando presença, Presença não confirmada e
@@ -15,9 +19,27 @@ type TableState = ReturnType<typeof useTableCalls>;
  * salão; o cardápio continua aberto. Devolve null quando a presença está confirmada.
  */
 export function PresencePanel({ token, state }: { token: string; state: TableState }) {
-  const { presence, present, unlock, busy, error, run, locate, recheck } = state;
+  const { presence, present, unreachable, retry, unlock, busy, error, run, locate, recheck } = state;
 
   if (present) return null;
+
+  if (!presence && unreachable) {
+    return (
+      <section
+        role="alert"
+        className="flex flex-col items-start gap-3 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-5"
+      >
+        <span className="flex size-12 items-center justify-center rounded-full bg-(--mesa-warn-soft) text-(--mesa-warn)">
+          <WifiOff aria-hidden className="size-6" />
+        </span>
+        <h2 className="text-xl font-bold tracking-tight">{t.unreachableTitle}</h2>
+        <p className="text-sm text-(--mesa-muted)">{t.unreachableText}</p>
+        <button type="button" onClick={retry} className={retryButton}>
+          {t.retry}
+        </button>
+      </section>
+    );
+  }
 
   if (!presence) {
     return (
@@ -184,7 +206,7 @@ export function ArrivalGate({
   /** A trava no meio da página, para depois do "Ver só o cardápio" (ou com o celular bloqueado). */
   fallback: ReactNode;
 }) {
-  const { presence, present, unlock, busy, error, run, locate, recheck } = state;
+  const { presence, present, unreachable, retry, unlock, busy, error, run, locate, recheck } = state;
   const stored = useSyncExternalStore(
     noop,
     () => {
@@ -213,6 +235,37 @@ export function ArrivalGate({
 
   const screen =
     "fixed inset-0 z-50 flex flex-col overflow-y-auto bg-(--mesa-bg) px-5 pt-8 pb-[max(env(safe-area-inset-bottom),24px)] text-(--mesa-fg)";
+
+  // Não conseguiu falar com o restaurante (sem rede, servidor fora): tentar de novo ou só o cardápio.
+  if (!presence && unreachable) {
+    return (
+      <div role="dialog" aria-modal="true" aria-labelledby="chegada" className={screen}>
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 text-center">
+          <span className="flex size-16 items-center justify-center rounded-full bg-(--mesa-warn-soft) text-(--mesa-warn)">
+            <WifiOff aria-hidden className="size-7" />
+          </span>
+          <div role="alert" className="flex flex-col gap-2.5">
+            <h1 id="chegada" className="text-[26px] leading-[31px] font-bold tracking-tight">
+              {t.unreachableTitle}
+            </h1>
+            <p className="text-[15px] text-(--mesa-muted)">{t.unreachableText}</p>
+          </div>
+          <div className="flex w-full flex-col gap-2">
+            <button type="button" onClick={retry} className={cn(retryButton, "h-13")}>
+              {t.retry}
+            </button>
+            <button
+              type="button"
+              onClick={onlyMenu}
+              className="h-13 rounded-2xl font-semibold focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+            >
+              {t.onlyMenu}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 1.1: conferindo.
   if (!presence) {

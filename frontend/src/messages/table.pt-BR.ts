@@ -51,6 +51,9 @@ export const tablePage = {
     fewSeconds: "Leva só alguns segundos. Sem app, sem login, sem cadastro.",
     waitingFor: (time: string) => `Aguardando há ${time}`,
     onlyMenu: "Ver só o cardápio",
+    unreachableTitle: "Não conseguimos falar com o restaurante",
+    unreachableText: "A conexão falhou. Tente de novo em instantes. O cardápio continua liberado.",
+    retry: "Tentar de novo",
     blockedTitle: "Chamados bloqueados neste celular",
     blockedText:
       "A equipe do restaurante bloqueou os chamados deste celular. Fale com um garçom. O cardápio continua liberado.",
