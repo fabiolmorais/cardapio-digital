@@ -3,6 +3,7 @@ package br.com.cardapio.domain.call.model;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.exception.CallStateException;
+import br.com.cardapio.domain.call.exception.WrongReleaseCodeException;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
@@ -16,6 +17,9 @@ import java.util.Objects;
  *
  * @param paymentMethod só no pedido de conta (BILL); null no "chamar garçom"
  * @param acceptedBy    quem aceitou; null enquanto ninguém aceitou
+ * @param releaseCode   só no pedido de liberação (UNLOCK): os 4 números que aparecem no celular de
+ *                      quem pediu e que o garçom digita ao liberar. É a prova de que ele olhou o
+ *                      celular na mesa: quem pede de casa não tem como mostrar a tela ao garçom.
  */
 public record Call(
         CallId id,
@@ -29,7 +33,8 @@ public record Call(
         Instant acceptedAt,
         UserId acceptedBy,
         Instant doneAt,
-        Instant canceledAt
+        Instant canceledAt,
+        String releaseCode
 ) {
 
     /**
@@ -37,6 +42,9 @@ public record Call(
      * conta (ele não duplica); o que este limite segura é abrir e cancelar sem parar.
      */
     public static final int MAX_NEW_PER_MINUTE = 5;
+
+    /** Quantos números tem o código da liberação. */
+    public static final int RELEASE_CODE_LENGTH = 4;
 
     public Call {
         Objects.requireNonNull(id);
@@ -52,12 +60,28 @@ public record Call(
         if (type != CallType.BILL) {
             paymentMethod = null; // só a conta tem forma de pagamento
         }
+        if (type == CallType.UNLOCK) {
+            // Os encerrados antes do código (até a V32) não têm; aberto, sempre tem.
+            boolean valid = releaseCode != null && releaseCode.matches("\\d{" + RELEASE_CODE_LENGTH + "}");
+            if (!valid && status.isOpen()) {
+                throw new IllegalArgumentException("o pedido de liberação precisa de um código de 4 números");
+            }
+        } else {
+            releaseCode = null; // só a liberação tem código
+        }
     }
 
     public static Call open(EstablishmentId establishmentId, DiningTableId tableId, TableSessionId sessionId,
                             CallType type, PaymentMethod paymentMethod, Instant now) {
         return new Call(CallId.newId(), establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.PENDING,
-                now, null, null, null, null);
+                now, null, null, null, null, null);
+    }
+
+    /** "Pedir liberação ao garçom": o pedido nasce com o código que o celular de quem pediu mostra. */
+    public static Call openUnlock(EstablishmentId establishmentId, DiningTableId tableId, TableSessionId sessionId,
+                                  String releaseCode, Instant now) {
+        return new Call(CallId.newId(), establishmentId, tableId, sessionId, CallType.UNLOCK, null,
+                CallStatus.PENDING, now, null, null, null, null, releaseCode);
     }
 
     public boolean isOpen() {
@@ -68,7 +92,7 @@ public record Call(
     public Call withPaymentMethod(PaymentMethod newMethod) {
         requireOpen();
         return new Call(id, establishmentId, tableId, sessionId, type, Objects.requireNonNull(newMethod), status,
-                createdAt, acceptedAt, acceptedBy, doneAt, canceledAt);
+                createdAt, acceptedAt, acceptedBy, doneAt, canceledAt, releaseCode);
     }
 
     /** "Toque para atender": só um garçom fica com o chamado. A liberação usa o release. */
@@ -81,7 +105,7 @@ public record Call(
         }
         requireOpen();
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.IN_PROGRESS,
-                createdAt, now, Objects.requireNonNull(by), doneAt, canceledAt);
+                createdAt, now, Objects.requireNonNull(by), doneAt, canceledAt, releaseCode);
     }
 
     /** "Concluir": o garçom foi até a mesa. Só depois de aceitar (alguém precisa ter ficado com ele). */
@@ -92,24 +116,28 @@ public record Call(
                     : "Este chamado já foi encerrado");
         }
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
-                createdAt, acceptedAt, acceptedBy, now, canceledAt);
+                createdAt, acceptedAt, acceptedBy, now, canceledAt, releaseCode);
     }
 
     /**
-     * "Liberar mesa": no pedido de liberação não há "estou indo" e depois "atendido". O garçom
-     * olha a mesa e libera com um toque, e o chamado termina ali (aceito e concluído juntos).
+     * "Liberar": no pedido de liberação não há "estou indo" e depois "atendido". O garçom vai até a
+     * mesa, digita o código que o celular de quem pediu mostra, e o chamado termina ali (aceito e
+     * concluído juntos). Código errado: nada muda, e ele pode tentar de novo.
      */
-    public Call release(UserId by, Instant now) {
+    public Call release(UserId by, String typedCode, Instant now) {
         requirePendingUnlock();
+        if (typedCode == null || !releaseCode.equals(typedCode.trim())) {
+            throw new WrongReleaseCodeException();
+        }
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
-                createdAt, now, Objects.requireNonNull(by), now, canceledAt);
+                createdAt, now, Objects.requireNonNull(by), now, canceledAt, releaseCode);
     }
 
     /** "Recusar": o garçom não libera (o celular não está no salão). O chamado é cancelado. */
     public Call decline(Instant now) {
         requirePendingUnlock();
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.CANCELED,
-                createdAt, acceptedAt, acceptedBy, doneAt, now);
+                createdAt, acceptedAt, acceptedBy, doneAt, now, releaseCode);
     }
 
     private void requirePendingUnlock() {
@@ -133,14 +161,14 @@ public record Call(
         requireOpen();
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
                 createdAt, acceptedAt != null ? acceptedAt : now, acceptedBy != null ? acceptedBy : by, now,
-                canceledAt);
+                canceledAt, releaseCode);
     }
 
     /** A mesa desistiu (antes ou depois de alguém aceitar). */
     public Call cancel(Instant now) {
         requireOpen();
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.CANCELED,
-                createdAt, acceptedAt, acceptedBy, doneAt, now);
+                createdAt, acceptedAt, acceptedBy, doneAt, now, releaseCode);
     }
 
     /**
@@ -150,7 +178,13 @@ public record Call(
     public Call closeWithTab(Instant now) {
         requireOpen();
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
-                createdAt, acceptedAt, acceptedBy, now, canceledAt);
+                createdAt, acceptedAt, acceptedBy, now, canceledAt, releaseCode);
+    }
+
+    /** O código da liberação é um segredo de curta duração: nunca vai para o log. */
+    @Override
+    public String toString() {
+        return "Call[id=" + id + ", tableId=" + tableId + ", type=" + type + ", status=" + status + "]";
     }
 
     private void requireOpen() {

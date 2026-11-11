@@ -44,7 +44,7 @@ test("a chegada em tela cheia deixa ver só o cardápio, e a trava fica no meio 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("sem confirmar a presença, a mesa pede liberação e o garçom libera na hora", async ({
+test("sem confirmar a presença, a mesa mostra o código e o garçom libera digitando ele", async ({
   page,
   request,
   browser,
@@ -58,12 +58,25 @@ test("sem confirmar a presença, a mesa pede liberação e o garçom libera na h
   await expect(page.getByRole("button", { name: /Usar minha localização/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Pedir liberação ao garçom" }).click();
   await expect(page.getByRole("status")).toContainText("Pedido de liberação enviado");
+  const code = await page.getByTestId("release-code").getAttribute("data-code");
+  expect(code).toMatch(/^\d{4}$/);
 
   const panel = await ownerPanel(browser, email);
   try {
     const call = panel.page.getByRole("listitem", { name: "Liberar mesa · Mesa 04" });
     await expect(call).toContainText("Presença não confirmada");
+    await expect(call).not.toContainText(code!); // o painel não mostra o código: o garçom vê no celular
     await call.getByRole("button", { name: "Liberar mesa" }).click();
+
+    // Código errado: o pedido continua aberto.
+    const dialog = panel.page.getByRole("dialog", { name: "Liberar o celular da mesa 04" });
+    await dialog.getByLabel("Código do celular").fill(code === "0000" ? "1111" : "0000");
+    await dialog.getByRole("button", { name: "Liberar", exact: true }).click();
+    await expect(dialog.getByRole("alert")).toContainText("O código não confere");
+
+    await dialog.getByLabel("Código do celular").fill(code!);
+    await dialog.getByRole("button", { name: "Liberar", exact: true }).click();
+    await expect(dialog).toBeHidden();
     await expect(panel.page.getByText("Nenhum chamado aberto")).toBeVisible();
 
     // A mesa fica sabendo pelo tempo real: os botões aparecem, e o chamado mostra "Liberada pelo garçom".
@@ -74,6 +87,51 @@ test("sem confirmar a presença, a mesa pede liberação e o garçom libera na h
     );
   } finally {
     await panel.close();
+  }
+});
+
+test("quem abre o QR de longe não vê o código de quem está na mesa, e não é liberado junto", async ({
+  request,
+  browser,
+}) => {
+  const { qr, email } = await restaurant(request, null);
+  const inTheRoom = await browser.newContext({ locale: "pt-BR" });
+  const fromHome = await browser.newContext({ locale: "pt-BR" });
+  const panel = await ownerPanel(browser, email);
+  try {
+    const home = await fromHome.newPage();
+    await home.goto(`/m/${qr}`);
+    await home.getByRole("button", { name: "Pedir liberação ao garçom" }).click();
+    const homeCode = await home.getByTestId("release-code").getAttribute("data-code");
+
+    const room = await inTheRoom.newPage();
+    await room.goto(`/m/${qr}`);
+    await room.getByRole("button", { name: "Pedir liberação ao garçom" }).click();
+    const roomCode = room.getByTestId("release-code");
+    await expect(roomCode).toBeVisible();
+    const code = await roomCode.getAttribute("data-code");
+
+    // Dois pedidos na fila, um de cada celular.
+    const calls = panel.page.getByRole("listitem", { name: "Liberar mesa · Mesa 04" });
+    await expect(calls).toHaveCount(2);
+
+    // O garçom vai à mesa e digita o código do celular que está lá. Tenta no pedido mais novo.
+    await calls.last().getByRole("button", { name: "Liberar mesa" }).click();
+    const dialog = panel.page.getByRole("dialog", { name: "Liberar o celular da mesa 04" });
+    await dialog.getByLabel("Código do celular").fill(code!);
+    await dialog.getByRole("button", { name: "Liberar", exact: true }).click();
+    await expect(dialog).toBeHidden();
+
+    await expect(room.getByRole("button", { name: /Chamar garçom/ })).toBeVisible({ timeout: 5000 });
+    // O de casa continua esperando, com o pedido dele ainda aberto (o garçom pode recusar).
+    await home.reload();
+    await expect(home.getByTestId("release-code")).toHaveAttribute("data-code", homeCode!);
+    await expect(home.getByRole("button", { name: /Chamar garçom/ })).toHaveCount(0);
+    await expect(calls).toHaveCount(1);
+  } finally {
+    await panel.close();
+    await inTheRoom.close();
+    await fromHome.close();
   }
 });
 

@@ -14,18 +14,18 @@ interface TableSessionJpaRepository extends JpaRepository<TableSessionJpaEntity,
     Optional<TableSessionJpaEntity> findByTokenHash(String tokenHash);
 
     /**
-     * "Liberar esta mesa": as sessões ativas da mesa sem presença ganham a do garçom, num UPDATE só.
-     * As bloqueadas pela equipe ficam de fora.
+     * "Liberar": a sessão de quem pediu ganha a presença do garçom, se ainda estiver ativa e sem
+     * presença. A bloqueada pela equipe fica de fora.
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE TableSessionJpaEntity s
                SET s.presenceMethod = 'STAFF', s.presenceConfirmedAt = :now, s.unlockedBy = :by
-             WHERE s.establishmentId = :establishmentId AND s.tableId = :tableId
+             WHERE s.id = :id AND s.establishmentId = :establishmentId
                AND s.presenceMethod IS NULL AND s.blockedAt IS NULL AND s.endedAt IS NULL AND s.expiresAt > :now
             """)
-    int unlockTable(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId,
-                    @Param("by") UUID by, @Param("now") Instant now);
+    int unlockSession(@Param("establishmentId") UUID establishmentId, @Param("id") UUID id,
+                      @Param("by") UUID by, @Param("now") Instant now);
 
     /** "Bloquear este celular": 1 se bloqueou, 0 se não é do restaurante ou já estava bloqueada. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)

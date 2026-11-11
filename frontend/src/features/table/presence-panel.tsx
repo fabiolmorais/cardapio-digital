@@ -81,6 +81,7 @@ export function PresencePanel({ token, state }: { token: string; state: TableSta
           <h2 className="text-xl font-bold tracking-tight">{t.releaseTitle}</h2>
           <p className="text-sm text-(--mesa-muted)">{t.releaseText}</p>
         </div>
+        <ReleaseCode code={unlock.releaseCode} />
         <button
           type="button"
           disabled={busy !== null}
@@ -310,6 +311,7 @@ export function ArrivalGate({
             {t.releaseTitle}
           </h1>
           <p className="text-[15px] text-(--mesa-muted)">{t.releaseText}</p>
+          <ReleaseCode code={unlock.releaseCode} />
           <span
             role="timer"
             className="rounded-full border border-(--mesa-stroke) px-3.5 py-1.5 text-[13px] text-(--mesa-muted)"
@@ -395,6 +397,36 @@ export function ArrivalGate({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * O código que o cliente mostra ao garçom para liberar o celular. Grande, para o garçom ler de
+ * pé, ao lado da mesa. É a prova de que o celular está no salão: de casa, não há a quem mostrar.
+ */
+function ReleaseCode({ code }: { code: string | undefined }) {
+  if (!code) return null;
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-xs font-semibold tracking-wide text-(--mesa-muted) uppercase">{t.releaseCodeLabel}</span>
+      <div
+        role="img"
+        aria-label={t.releaseCodeAria(code)}
+        data-testid="release-code"
+        data-code={code}
+        className="flex gap-2"
+      >
+        {code.split("").map((digit, index) => (
+          <span
+            key={index}
+            aria-hidden
+            className="flex h-16 w-13 items-center justify-center rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) font-mono text-[32px] font-bold"
+          >
+            {digit}
+          </span>
+        ))}
       </div>
     </div>
   );

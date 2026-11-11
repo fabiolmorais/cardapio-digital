@@ -34,7 +34,9 @@ export const tablePage = {
     askRelease: "Pedir liberação ao garçom",
     sending: "Enviando…",
     releaseTitle: "Pedido de liberação enviado",
-    releaseText: "Um garçom vai confirmar sua mesa em instantes. Você não precisa fazer nada.",
+    releaseText: "Um garçom vem até a sua mesa. Mostre este código para ele liberar o seu celular.",
+    releaseCodeLabel: "Código para o garçom",
+    releaseCodeAria: (code: string) => `Código para o garçom: ${code.split("").join(" ")}`,
     cancelRelease: "Cancelar pedido de liberação",
     outside:
       "Sua localização ficou fora do restaurante, ou imprecisa. Tente de novo perto da janela ou peça ao garçom.",

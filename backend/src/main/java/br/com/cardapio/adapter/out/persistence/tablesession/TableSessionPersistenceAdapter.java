@@ -49,9 +49,9 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
     }
 
     @Override
-    public int unlockTable(EstablishmentId establishmentId, DiningTableId tableId, UserId by, Instant now) {
+    public boolean unlockSession(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now) {
         establishmentFilter.enable(establishmentId);
-        return sessions.unlockTable(establishmentId.value(), tableId.value(), by.value(), now);
+        return sessions.unlockSession(establishmentId.value(), sessionId.value(), by.value(), now) == 1;
     }
 
     @Override

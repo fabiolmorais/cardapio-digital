@@ -19,10 +19,12 @@ record TableCallResponse(
         @Schema(requiredMode = REQUIRED) CallStatus status,
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         Instant acceptedAt,
-        @Schema(description = "Só o primeiro nome de quem aceitou") String waiterFirstName
+        @Schema(description = "Só o primeiro nome de quem aceitou") String waiterFirstName,
+        @Schema(description = "Só no pedido de liberação deste celular: o código para mostrar ao garçom",
+                example = "4719") String releaseCode
 ) {
     static TableCallResponse from(TableCall c) {
         return new TableCallResponse(c.id().value(), c.type(), c.paymentMethod(), c.status(), c.createdAt(),
-                c.acceptedAt(), c.waiterFirstName());
+                c.acceptedAt(), c.waiterFirstName(), c.releaseCode());
     }
 }

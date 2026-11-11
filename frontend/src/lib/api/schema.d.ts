@@ -805,6 +805,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Libera o celular que pediu, com o código que aparece na tela dele (o garçom confere na mesa) */
+        post: operations["releaseCall"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{id}/finish": {
         parameters: {
             query?: never;
@@ -865,7 +882,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** "Estou indo": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa */
+        /** "Estou indo": o chamado fica com quem aceitou (o pedido de liberação usa o release) */
         post: operations["acceptCall"];
         delete?: never;
         options?: never;
@@ -2386,6 +2403,11 @@ export interface components {
             acceptedAt?: string;
             /** @description Só o primeiro nome de quem aceitou */
             waiterFirstName?: string;
+            /**
+             * @description Só no pedido de liberação deste celular: o código para mostrar ao garçom
+             * @example 4719
+             */
+            releaseCode?: string;
         };
         /** @description O vídeo que o navegador vai enviar */
         VideoUploadRequest: {
@@ -2659,6 +2681,11 @@ export interface components {
              * @example Sakura Sushi
              */
             establishmentName?: string;
+        };
+        /** @description O código que aparece no celular de quem pediu a liberação */
+        ReleaseCallRequest: {
+            /** @example 4719 */
+            code: string;
         };
         StaffCall: {
             /** Format: uuid */
@@ -5741,6 +5768,68 @@ export interface operations {
             };
             /** @description Pedido desconhecido, vencido, segredo errado ou token já entregue */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    releaseCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReleaseCallRequest"];
+            };
+        };
+        responses: {
+            /** @description Liberado: só o celular que pediu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffCall"];
+                };
+            };
+            /** @description Código fora do formato (4 números) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um pedido de liberação, ou já foi respondido */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O código não confere com o do celular */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

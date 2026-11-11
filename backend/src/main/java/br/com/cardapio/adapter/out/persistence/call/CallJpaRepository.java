@@ -15,21 +15,24 @@ import java.util.UUID;
 interface CallJpaRepository extends JpaRepository<CallJpaEntity, UUID> {
 
     /**
-     * Grava o chamado, a menos que o índice "um aberto por tipo por mesa" já tenha um: aí o banco
+     * Grava o chamado, a menos que um dos índices "um aberto por tipo por mesa" (ou, na liberação,
+     * "um aberto por celular") já tenha um: aí o banco
      * simplesmente não grava (DO NOTHING) e devolve 0 linhas. Diferente de deixar o erro do índice
      * estourar, a transação continua boa, e o caso de uso ainda pode ler o chamado que já existia.
      * O CAST diz ao banco o tipo do pagamento, que pode vir nulo.
      */
     @Modifying
     @Query(nativeQuery = true, value = """
-            INSERT INTO call (id, establishment_id, table_id, session_id, type, payment_method, status, created_at)
+            INSERT INTO call (id, establishment_id, table_id, session_id, type, payment_method, status, created_at,
+                              release_code)
             VALUES (:id, :establishmentId, :tableId, :sessionId, :type, CAST(:paymentMethod AS VARCHAR), 'PENDING',
-                    :createdAt)
-            ON CONFLICT (table_id, type) WHERE status IN ('PENDING', 'IN_PROGRESS') DO NOTHING
+                    :createdAt, CAST(:releaseCode AS VARCHAR))
+            ON CONFLICT DO NOTHING
             """)
     int insertIfNoneOpen(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
                          @Param("tableId") UUID tableId, @Param("sessionId") UUID sessionId, @Param("type") String type,
-                         @Param("paymentMethod") String paymentMethod, @Param("createdAt") Instant createdAt);
+                         @Param("paymentMethod") String paymentMethod, @Param("createdAt") Instant createdAt,
+                         @Param("releaseCode") String releaseCode);
 
     /**
      * Grava a mudança só se o status ainda for o esperado. Devolve quantas linhas mudaram: 1 ou 0.
@@ -78,7 +81,7 @@ interface CallJpaRepository extends JpaRepository<CallJpaEntity, UUID> {
                    c.type AS type, c.paymentMethod AS paymentMethod, c.status AS status, c.createdAt AS createdAt,
                    c.acceptedAt AS acceptedAt, c.acceptedBy AS acceptedBy, c.doneAt AS doneAt,
                    c.canceledAt AS canceledAt, t.label AS tableLabel, s.name AS sectorName, u.name AS acceptedByName,
-                   ts.presenceMethod AS presenceMethod
+                   ts.presenceMethod AS presenceMethod, c.releaseCode AS releaseCode
               FROM CallJpaEntity c
               JOIN DiningTableJpaEntity t ON t.id = c.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId

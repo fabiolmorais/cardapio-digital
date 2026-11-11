@@ -33,8 +33,10 @@ public class InMemoryCalls implements CallPort {
 
     @Override
     public boolean insertIfNoneOpen(Call call) {
-        boolean taken = saved.values().stream().anyMatch(c -> c.isOpen() && c.tableId().equals(call.tableId())
-                && c.type() == call.type());
+        // Como os índices do banco: um aberto por tipo por mesa; na liberação, um aberto por celular.
+        boolean taken = saved.values().stream().anyMatch(c -> c.isOpen() && c.type() == call.type()
+                && (call.type() == CallType.UNLOCK ? c.sessionId().equals(call.sessionId())
+                        : c.tableId().equals(call.tableId())));
         if (!taken) {
             saved.put(call.id(), call);
         }

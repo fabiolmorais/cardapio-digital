@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.in.call.BlockCallerUseCase;
 import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
 import br.com.cardapio.application.port.in.call.FinishCallUseCase;
 import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
+import br.com.cardapio.application.port.in.call.ReleaseCallUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.call.model.CallId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ProblemDetail;
@@ -40,15 +42,18 @@ class StaffCallController {
     private final AcceptCallUseCase acceptCall;
     private final FinishCallUseCase finishCall;
     private final DeclineCallUseCase declineCall;
+    private final ReleaseCallUseCase releaseCall;
     private final BlockCallerUseCase blockCaller;
 
     StaffCallController(ListCallQueueUseCase listQueue, AcceptCallUseCase acceptCall, FinishCallUseCase finishCall,
-                        DeclineCallUseCase declineCall, BlockCallerUseCase blockCaller) {
+                        DeclineCallUseCase declineCall, BlockCallerUseCase blockCaller,
+                        ReleaseCallUseCase releaseCall) {
         this.listQueue = listQueue;
         this.acceptCall = acceptCall;
         this.finishCall = finishCall;
         this.declineCall = declineCall;
         this.blockCaller = blockCaller;
+        this.releaseCall = releaseCall;
     }
 
     @GetMapping
@@ -69,7 +74,7 @@ class StaffCallController {
     @PostMapping("/{id}/accept")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
     @Operation(operationId = "acceptCall",
-            summary = "\"Estou indo\": o chamado fica com quem aceitou. No pedido de liberação, libera a mesa")
+            summary = "\"Estou indo\": o chamado fica com quem aceitou (o pedido de liberação usa o release)")
     @ApiResponse(responseCode = "200", description = "Aceito")
     @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
@@ -90,6 +95,26 @@ class StaffCallController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     StaffCallResponse finish(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return StaffCallResponse.from(finishCall.finish(AuthenticatedUser.from(jwt).establishmentId(), new CallId(id)));
+    }
+
+    @PostMapping("/{id}/release")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "releaseCall",
+            summary = "Libera o celular que pediu, com o código que aparece na tela dele (o garçom confere na mesa)")
+    @ApiResponse(responseCode = "200", description = "Liberado: só o celular que pediu")
+    @ApiResponse(responseCode = "400", description = "Código fora do formato (4 números)",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Não é um pedido de liberação, ou já foi respondido",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "O código não confere com o do celular",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    StaffCallResponse release(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                              @Valid @RequestBody ReleaseCallRequest request) {
+        var user = AuthenticatedUser.from(jwt);
+        return StaffCallResponse.from(releaseCall.release(user.establishmentId(), new CallId(id), user.userId(),
+                request.code()));
     }
 
     @PostMapping("/{id}/decline")
