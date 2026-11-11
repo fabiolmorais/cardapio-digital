@@ -40,10 +40,10 @@ public class ClaimPairingService implements ClaimPairingUseCase {
                 .filter(p -> !p.isClaimed())
                 .orElseThrow(PairingNotFoundException::new);
 
+        if (pairing.expiredForClaim(now)) {
+            throw new PairingNotFoundException();
+        }
         if (!pairing.isLinked()) {
-            if (pairing.isExpired(now)) {
-                throw new PairingNotFoundException();
-            }
             return new ClaimResult.Pending();
         }
 

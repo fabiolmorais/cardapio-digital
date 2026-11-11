@@ -7,6 +7,8 @@ export type DevicePage = Schemas["PageResponseDevice"];
 export type PairingStarted = Schemas["PairingStarted"];
 export type ClaimPairingResponse = Schemas["ClaimPairingResponse"];
 export type LinkDeviceRequest = Schemas["LinkDeviceRequest"];
+export type DeviceInvite = Schemas["DeviceInvite"];
+export type InviteDeviceRequest = Schemas["InviteDeviceRequest"];
 
 const t = messages.devices.errors;
 
@@ -55,9 +57,22 @@ export async function linkDevice(body: LinkDeviceRequest): Promise<Device> {
   throw failure(response, error);
 }
 
+/** O QR Code que vincula o aparelho novo sem digitar nada: ele só escaneia. */
+export async function inviteDevice(body: InviteDeviceRequest): Promise<DeviceInvite> {
+  const { data, error, response } = await api.POST("/api/v1/devices/invites", { body });
+  if (data) return data;
+  throw failure(response, error);
+}
+
 export async function unlinkDevice(id: string): Promise<void> {
   const { error, response } = await api.DELETE("/api/v1/devices/{id}", { params: { path: { id } } });
   if (!response.ok) throw failure(response, error);
+}
+
+/** O convite que veio no QR Code: "#convite=<id>.<segredo>" no endereço de /aparelho. */
+export function inviteFromHash(hash: string): { id: string; secret: string } | null {
+  const match = /^#convite=([0-9a-f-]{36})\.([\w-]+)$/i.exec(hash);
+  return match ? { id: match[1], secret: match[2] } : null;
 }
 
 // Aparelho vinculado (cookie device_token): a tela do PIN.

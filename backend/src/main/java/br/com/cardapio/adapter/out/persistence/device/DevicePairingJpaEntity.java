@@ -34,11 +34,14 @@ class DevicePairingJpaEntity {
     @Column(name = "claimed_at")
     private Instant claimedAt;
 
+    @Column(nullable = false)
+    private boolean invite;
+
     protected DevicePairingJpaEntity() {
     }
 
     DevicePairingJpaEntity(UUID id, String code, String secretHash, Instant createdAt, Instant expiresAt,
-                           UUID deviceId, Instant claimedAt) {
+                           UUID deviceId, Instant claimedAt, boolean invite) {
         this.id = id;
         this.code = code;
         this.secretHash = secretHash;
@@ -46,6 +49,7 @@ class DevicePairingJpaEntity {
         this.expiresAt = expiresAt;
         this.deviceId = deviceId;
         this.claimedAt = claimedAt;
+        this.invite = invite;
     }
 
     UUID getId() { return id; }
@@ -55,4 +59,5 @@ class DevicePairingJpaEntity {
     Instant getExpiresAt() { return expiresAt; }
     UUID getDeviceId() { return deviceId; }
     Instant getClaimedAt() { return claimedAt; }
+    boolean isInvite() { return invite; }
 }

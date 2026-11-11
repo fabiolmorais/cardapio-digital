@@ -35,4 +35,19 @@ class DevicePairingTest {
     void theDatabaseKeepsOnlyTheHashOfTheSecret() {
         assertThat(pairing.secretHash().value()).hasSize(64).doesNotContain("segredo");
     }
+
+    @Test
+    void aLinkedCodeStillGetsItsTokenAfterTheTtlButAnInviteDoesNot() {
+        Instant late = NOW.plus(TTL);
+        DevicePairing linkedByCode = new DevicePairing(pairing.id(), pairing.code(), pairing.secretHash(),
+                pairing.createdAt(), pairing.expiresAt(), DeviceId.newId(), null);
+        DevicePairing invite = DevicePairing.invite(new PairingCode("130557"), DeviceSecretHash.of("do-qr"),
+                DeviceId.newId(), NOW, TTL);
+
+        assertThat(pairing.expiredForClaim(late)).isTrue();
+        assertThat(linkedByCode.expiredForClaim(late)).isFalse();
+        assertThat(invite.isLinked()).isTrue();
+        assertThat(invite.expiredForClaim(late.minusSeconds(1))).isFalse();
+        assertThat(invite.expiredForClaim(late)).isTrue();
+    }
 }

@@ -2,7 +2,9 @@ package br.com.cardapio.adapter.in.web.device;
 
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
+import br.com.cardapio.application.port.in.device.DeviceInvite;
 import br.com.cardapio.application.port.in.device.DeviceSummary;
+import br.com.cardapio.application.port.in.device.InviteDeviceUseCase;
 import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
 import br.com.cardapio.application.port.in.device.ListDevicesUseCase;
 import br.com.cardapio.application.port.in.device.UnlinkDeviceUseCase;
@@ -41,11 +43,14 @@ class DeviceController {
     private final LinkDeviceUseCase linkDevice;
     private final ListDevicesUseCase listDevices;
     private final UnlinkDeviceUseCase unlinkDevice;
+    private final InviteDeviceUseCase inviteDevice;
 
-    DeviceController(LinkDeviceUseCase linkDevice, ListDevicesUseCase listDevices, UnlinkDeviceUseCase unlinkDevice) {
+    DeviceController(LinkDeviceUseCase linkDevice, ListDevicesUseCase listDevices, UnlinkDeviceUseCase unlinkDevice,
+                     InviteDeviceUseCase inviteDevice) {
         this.linkDevice = linkDevice;
         this.listDevices = listDevices;
         this.unlinkDevice = unlinkDevice;
+        this.inviteDevice = inviteDevice;
     }
 
     @GetMapping
@@ -73,6 +78,19 @@ class DeviceController {
         DeviceSummary device = linkDevice.link(request.toCommand(AuthenticatedUser.from(jwt)));
         URI location = URI.create("/api/v1/devices/" + device.id().value());
         return ResponseEntity.created(location).body(DeviceResponse.from(device));
+    }
+
+    @PostMapping("/invites")
+    @Operation(operationId = "inviteDevice",
+            summary = "Cria o aparelho e o QR Code que o vincula: o aparelho novo só precisa escanear")
+    @ApiResponse(responseCode = "201", description = "Convite criado; o QR vale por poucos minutos e uma vez só")
+    @ApiResponse(responseCode = "400", description = "Nome vazio ou tipo faltando",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    ResponseEntity<DeviceInviteResponse> invite(@AuthenticationPrincipal Jwt jwt,
+                                                @Valid @RequestBody InviteDeviceRequest request) {
+        DeviceInvite invite = inviteDevice.invite(request.toCommand(AuthenticatedUser.from(jwt)));
+        URI location = URI.create("/api/v1/devices/" + invite.device().id().value());
+        return ResponseEntity.created(location).body(DeviceInviteResponse.from(invite));
     }
 
     @DeleteMapping("/{id}")
