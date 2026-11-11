@@ -890,6 +890,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/blocked-phones/{id}/unblock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Desbloqueia o celular: ele volta a poder chamar e pedir */
+        post: operations["unblockPhone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -1450,6 +1467,23 @@ export interface paths {
         };
         /** Chamados abertos, do mais antigo para o mais novo */
         get: operations["listCallQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/blocked-phones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Celulares bloqueados com a sessão ainda aberta, do bloqueio mais recente */
+        get: operations["listBlockedPhones"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3314,6 +3348,38 @@ export interface components {
         };
         PageResponseStaffCall: {
             content: components["schemas"]["StaffCall"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Celular bloqueado pela equipe, com a sessão ainda aberta */
+        BlockedPhone: {
+            /**
+             * Format: uuid
+             * @description A sessão do celular (o cliente é anônimo)
+             */
+            id: string;
+            /** Format: uuid */
+            tableId: string;
+            /** @example 04 */
+            tableLabel: string;
+            /** @example Salão principal */
+            sectorName: string;
+            /** Format: date-time */
+            blockedAt: string;
+            /**
+             * @description Quem bloqueou
+             * @example Carlos Souza
+             */
+            blockedByName?: string;
+        };
+        PageResponseBlockedPhone: {
+            content: components["schemas"]["BlockedPhone"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -5988,6 +6054,35 @@ export interface operations {
             };
         };
     };
+    unblockPhone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desbloqueado (ou já não estava bloqueado) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um celular deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     refreshSession: {
         parameters: {
             query?: never;
@@ -7195,6 +7290,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseStaffCall"];
+                };
+            };
+        };
+    };
+    listBlockedPhones: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de celulares bloqueados */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseBlockedPhone"];
                 };
             };
         };

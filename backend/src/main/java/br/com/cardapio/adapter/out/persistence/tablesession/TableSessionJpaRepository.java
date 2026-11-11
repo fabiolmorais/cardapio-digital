@@ -1,5 +1,7 @@
 package br.com.cardapio.adapter.out.persistence.tablesession;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +28,37 @@ interface TableSessionJpaRepository extends JpaRepository<TableSessionJpaEntity,
             """)
     int unlockSession(@Param("establishmentId") UUID establishmentId, @Param("id") UUID id,
                       @Param("by") UUID by, @Param("now") Instant now);
+
+    /** "Desbloquear este celular": 1 se desbloqueou, 0 se não é do restaurante ou não estava bloqueada. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE TableSessionJpaEntity s SET s.blockedAt = NULL, s.blockedBy = NULL
+             WHERE s.id = :id AND s.establishmentId = :establishmentId AND s.blockedAt IS NOT NULL
+            """)
+    int unblock(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
+
+    @Query("SELECT s.tableId FROM TableSessionJpaEntity s WHERE s.id = :id AND s.establishmentId = :establishmentId")
+    Optional<UUID> findTableId(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
+
+    /** Os bloqueados com a sessão aberta, com a mesa, o setor e quem bloqueou (LEFT: a pessoa pode ter saído). */
+    @Query(value = """
+            SELECT s.id AS id, s.tableId AS tableId, t.label AS tableLabel, sc.name AS sectorName,
+                   s.blockedAt AS blockedAt, u.name AS blockedByName
+              FROM TableSessionJpaEntity s
+              JOIN DiningTableJpaEntity t ON t.id = s.tableId
+              JOIN SectorJpaEntity sc ON sc.id = t.sectorId
+              LEFT JOIN UserJpaEntity u ON u.id = s.blockedBy
+             WHERE s.establishmentId = :establishmentId AND s.blockedAt IS NOT NULL
+               AND s.endedAt IS NULL AND s.expiresAt > :now
+             ORDER BY s.blockedAt DESC, s.id
+            """,
+            countQuery = """
+            SELECT count(s) FROM TableSessionJpaEntity s
+             WHERE s.establishmentId = :establishmentId AND s.blockedAt IS NOT NULL
+               AND s.endedAt IS NULL AND s.expiresAt > :now
+            """)
+    Page<BlockedPhoneRow> findBlocked(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now,
+                                      Pageable pageable);
 
     /** "Bloquear este celular": 1 se bloqueou, 0 se não é do restaurante ou já estava bloqueada. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)

@@ -1,6 +1,9 @@
 package br.com.cardapio.support;
 
+import br.com.cardapio.application.port.out.tablesession.BlockedPhoneView;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
@@ -10,7 +13,9 @@ import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -71,6 +76,34 @@ public final class InMemoryTableSessions implements TableSessionPort {
             }
         }
         return false;
+    }
+
+    private Optional<TableSession> find(EstablishmentId establishmentId, TableSessionId sessionId) {
+        return saved.values().stream()
+                .filter(s -> s.id().equals(sessionId) && s.establishmentId().equals(establishmentId)).findFirst();
+    }
+
+    @Override
+    public Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId) {
+        return find(establishmentId, sessionId).map(TableSession::tableId);
+    }
+
+    @Override
+    public boolean unblock(EstablishmentId establishmentId, TableSessionId sessionId) {
+        Optional<TableSession> blocked = find(establishmentId, sessionId).filter(TableSession::isBlocked);
+        blocked.ifPresent(s -> save(s.unblock()));
+        return blocked.isPresent();
+    }
+
+    /** A mesa e o setor não estão aqui: a lista leva só a sessão, a mesa e quando foi bloqueada. */
+    @Override
+    public ResultPage<BlockedPhoneView> findBlocked(EstablishmentId establishmentId, Instant now, PageQuery page) {
+        List<BlockedPhoneView> blocked = saved.values().stream()
+                .filter(s -> s.establishmentId().equals(establishmentId) && s.isBlocked() && s.isActive(now))
+                .sorted(Comparator.comparing(TableSession::blockedAt).reversed())
+                .map(s -> new BlockedPhoneView(s.id(), s.tableId(), null, null, s.blockedAt(), null))
+                .toList();
+        return new ResultPage<>(blocked, page.page(), page.size(), blocked.size());
     }
 
     @Override

@@ -96,4 +96,17 @@ class TableSessionTest {
         assertThat(blocked.unlock(carlos, NOW).isPresent()).isFalse();
         assertThat(blocked.block(UserId.newId(), NOW.plusSeconds(5)).blockedAt()).isEqualTo(NOW);
     }
+
+    @Test
+    void unblockingKeepsThePresenceItHadBefore() {
+        UserId carlos = UserId.newId();
+        TableSession present = session.confirmPresence(PresenceMethod.GPS, NOW);
+
+        TableSession unblocked = present.block(carlos, NOW).unblock();
+
+        assertThat(unblocked.isBlocked()).isFalse();
+        assertThat(unblocked.blockedBy()).isNull();
+        assertThat(unblocked.presenceMethod()).isEqualTo(PresenceMethod.GPS);
+        assertThat(session.unblock()).isSameAs(session); // sem bloqueio, nada muda
+    }
 }

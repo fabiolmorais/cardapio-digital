@@ -10,7 +10,7 @@ const FALLBACK_REFRESH_MS = 15_000;
 const REOPEN_MS = 3000;
 
 /** Todos os avisos que alguma tela da mesa ouve: o canal assina todos, e cada hook filtra os seus. */
-const ALL_EVENTS = ["ready", "call", "order", "rodizio", "tab"];
+const ALL_EVENTS = ["ready", "call", "order", "rodizio", "tab", "presence"];
 
 type Subscriber = { names: Set<string>; onEvent: (event: string) => void };
 type Channel = { subscribers: Set<Subscriber>; live: boolean; stop: () => void };

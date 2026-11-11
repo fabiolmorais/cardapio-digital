@@ -502,6 +502,17 @@ export const messages = {
       blockText:
         "Ele não poderá mais chamar nem pedir nesta visita, e os chamados abertos dele serão cancelados. Os outros celulares da mesa continuam normais.",
       blockConfirm: "Bloquear",
+      blocked: {
+        title: "Celulares bloqueados",
+        hint: "Bloqueados até a comanda fechar ou o celular ficar sem uso. Desbloqueie se foi engano.",
+        item: (table: string, sector: string) => `Mesa ${table} · ${sector}`,
+        by: (name: string | null | undefined, ago: string) =>
+          name ? `Bloqueado por ${name} · ${ago}` : `Bloqueado ${ago}`,
+        unblock: "Desbloquear",
+        unblockLabel: (table: string) => `Desbloquear o celular da mesa ${table}`,
+        unblocking: "Desbloqueando…",
+        now: "agora",
+      },
       presence: { WIFI: "Wi-Fi", GPS: "GPS", STAFF: "Liberada pelo garçom" },
       live: "Ao vivo",
       reconnecting: "Reconectando…",

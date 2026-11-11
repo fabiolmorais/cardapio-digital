@@ -162,6 +162,47 @@ class SessionLimitsTest {
     }
 
     @Test
+    void theTeamSeesWhoIsBlockedAndUnblocksThePhone() throws Exception {
+        Cookie prankster = phone(sakura);
+        String id = json(call(sakura, prankster), "$.id");
+        send("POST", sakura.owner(), "/api/v1/calls/" + id + "/block-caller", null);
+
+        MvcTestResult list = send("GET", sakura.owner(), "/api/v1/blocked-phones", null);
+        assertThat(list).hasStatusOk();
+        assertThat(json(list, "$.totalElements")).isEqualTo("1");
+        assertThat(json(list, "$.content[0].tableLabel")).isEqualTo("04");
+        assertThat(json(list, "$.content[0].blockedByName")).isNotEqualTo("null");
+        String phoneId = json(list, "$.content[0].id");
+
+        assertThat(send("POST", sakura.owner(), "/api/v1/blocked-phones/" + phoneId + "/unblock", null))
+                .hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(send("POST", sakura.owner(), "/api/v1/blocked-phones/" + phoneId + "/unblock", null))
+                .hasStatus(HttpStatus.NO_CONTENT); // de novo: tudo bem
+
+        // A lista esvazia, e o celular volta a chamar.
+        assertThat(json(send("GET", sakura.owner(), "/api/v1/blocked-phones", null), "$.totalElements"))
+                .isEqualTo("0");
+        MvcTestResult presence = mvc.post().uri(sakura.table("/presence")).cookie(prankster).exchange();
+        assertThat(json(presence, "$.blocked")).isEqualTo("false");
+        assertThat(call(sakura, prankster)).hasStatus(HttpStatus.CREATED);
+    }
+
+    /** Separação entre restaurantes: a equipe de outro restaurante não vê nem desbloqueia ninguém daqui. */
+    @Test
+    void anotherRestaurantNeitherSeesNorUnblocks() throws Exception {
+        Restaurant other = newRestaurant("Outro Bar");
+        Cookie prankster = phone(sakura);
+        send("POST", sakura.owner(), "/api/v1/calls/" + json(call(sakura, prankster), "$.id") + "/block-caller", null);
+        String phoneId = json(send("GET", sakura.owner(), "/api/v1/blocked-phones", null), "$.content[0].id");
+
+        assertThat(json(send("GET", other.owner(), "/api/v1/blocked-phones", null), "$.totalElements"))
+                .isEqualTo("0");
+        assertThat(send("POST", other.owner(), "/api/v1/blocked-phones/" + phoneId + "/unblock", null))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(call(sakura, prankster)).hasStatus(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void expiredSessionsAreEndedWhenTheyExpired() {
         phone(sakura);
         UUID session = jdbc.queryForObject("""

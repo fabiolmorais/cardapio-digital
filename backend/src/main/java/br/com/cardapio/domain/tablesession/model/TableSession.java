@@ -134,4 +134,13 @@ public record TableSession(
         return new TableSession(id, establishmentId, tableId, tokenHash, createdAt, lastSeenAt, expiresAt, endedAt,
                 presenceMethod, presenceConfirmedAt, unlockedBy, idleLimit, now, Objects.requireNonNull(by));
     }
+
+    /** "Desbloquear": a equipe devolve os botões ao celular. Volta como estava antes do bloqueio. */
+    public TableSession unblock() {
+        if (!isBlocked()) {
+            return this;
+        }
+        return new TableSession(id, establishmentId, tableId, tokenHash, createdAt, lastSeenAt, expiresAt, endedAt,
+                presenceMethod, presenceConfirmedAt, unlockedBy, idleLimit, null, null);
+    }
 }
