@@ -766,6 +766,13 @@ export const messages = {
     },
     form: {
       title: "Vincular novo aparelho",
+      method: "Como vincular",
+      methods: {
+        qr: { name: "QR Code", hint: "O aparelho novo só escaneia" },
+        code: { name: "Código", hint: "Digite o código da tela dele" },
+      },
+      showQr: "Mostrar QR Code",
+      generatingQr: "Gerando o QR Code…",
       code: "Código do aparelho",
       codePlaceholder: "6 números",
       codeHint: "O código aparece no aparelho novo, na tela “Vincular este aparelho”.",
@@ -775,6 +782,19 @@ export const messages = {
       submit: "Vincular",
       submitting: "Vinculando…",
       success: (name: string) => `${name} vinculado. Ele já deve mostrar que está pronto.`,
+    },
+    qr: {
+      title: (name: string) => `Vincular ${name}`,
+      description:
+        "No aparelho novo, abra a câmera e aponte para o QR Code. O link abre a tela do aparelho já vinculada.",
+      alt: "QR Code que vincula o aparelho novo",
+      validFor: (time: string) => `Vale por ${time}, uma vez só`,
+      waiting: "Aguardando o aparelho escanear…",
+      linked: (name: string) => `${name} vinculado. Ele já deve mostrar que está pronto.`,
+      expired: "O QR Code venceu.",
+      newQr: "Gerar outro QR Code",
+      close: "Cancelar",
+      done: "Concluir",
     },
     errors: {
       generic: "Não foi possível vincular agora. Tente de novo em instantes.",
@@ -789,7 +809,7 @@ export const messages = {
     validFor: (time: string) => `Vale por ${time}`,
     steps: [
       "O gerente abre Equipe e aparelhos no painel.",
-      "Em Vincular novo aparelho, digita o código acima.",
+      "Em Vincular novo aparelho, digita o código acima (ou mostra um QR Code para você escanear).",
       "Pronto: a equipe entra só com o PIN.",
     ],
     waiting: "Aguardando o gerente…",
@@ -798,6 +818,8 @@ export const messages = {
     error: "Não foi possível gerar o código agora.",
     newCode: "Gerar outro código",
     passwordLogin: "Entrar com e-mail e senha",
+    claiming: "Vinculando este aparelho…",
+    inviteFailed: "Este QR Code venceu ou já foi usado. Peça outro ao gerente, ou use o código abaixo.",
   },
   pin: {
     linkedAs: (device: string) => `Aparelho vinculado · ${device}`,

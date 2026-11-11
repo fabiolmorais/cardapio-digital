@@ -4,6 +4,7 @@ import { Clock, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Notice } from "@/components/notice";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { messages } from "@/messages/pt-BR";
 import { claimPairing, PairingGoneError, startPairing, type PairingStarted } from "./device-api";
@@ -39,7 +40,7 @@ function formatRemaining(ms: number): string {
  * ao back até ser vinculado. O token do aparelho chega num cookie HttpOnly, que esta tela
  * nunca vê; quando chega, avisa quem a usa (onLinked) para trocar pela tela do PIN.
  */
-export function PairingScreen({ onLinked }: { onLinked: () => void }) {
+export function PairingScreen({ onLinked, inviteFailed = false }: { onLinked: () => void; inviteFailed?: boolean }) {
   const [outcome, setOutcome] = useState<Outcome>(null);
   // Começa vazio: Date.now() na renderização daria um valor diferente no servidor e no navegador.
   const [now, setNow] = useState<number | null>(null);
@@ -125,12 +126,19 @@ export function PairingScreen({ onLinked }: { onLinked: () => void }) {
             <p className="text-muted-foreground">{t.subtitle}</p>
           </div>
 
+          {inviteFailed && (
+            <Notice tone="warning" role="alert">
+              {t.inviteFailed}
+            </Notice>
+          )}
+
           <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-4 py-6">
             <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t.codeLabel}</span>
             {waiting ? (
               <>
+                {/* Os 6 dígitos dividem a largura do card: num celular de 375 px (iPhone 7/SE), não vazam. */}
                 <div
-                  className="flex gap-2"
+                  className="flex w-full max-w-[328px] gap-1.5 min-[400px]:gap-2"
                   role="img"
                   aria-label={t.codeAria(waiting.pairing.code)}
                   data-testid="pairing-code"
@@ -140,7 +148,7 @@ export function PairingScreen({ onLinked }: { onLinked: () => void }) {
                     <span
                       key={index}
                       aria-hidden
-                      className="flex h-15 w-12 items-center justify-center rounded-[14px] border border-input bg-muted font-mono text-[28px] font-bold"
+                      className="flex h-13 min-w-0 flex-1 items-center justify-center rounded-xl border border-input bg-muted font-mono text-2xl font-bold min-[400px]:h-15 min-[400px]:rounded-[14px] min-[400px]:text-[28px]"
                     >
                       {digit}
                     </span>

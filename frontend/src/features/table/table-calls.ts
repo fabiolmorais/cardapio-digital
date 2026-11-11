@@ -50,15 +50,38 @@ const visits = new Map<string, Promise<Presence | null>>();
 export function startVisit(token: string, fresh = false): Promise<Presence | null> {
   let visit = visits.get(token);
   if (!visit || fresh) {
-    visit = fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
+    const current = fetch(`${baseUrl}/api/v1/public/tables/${encodeURIComponent(token)}/session`, {
       method: "POST",
       credentials: "include",
     })
       .then(() => checkPresence(token))
       .catch(() => null);
-    visits.set(token, visit);
+    // Não deu (sem rede, ou o servidor acordando): a próxima chamada tenta de novo, em vez de
+    // reaproveitar a falha.
+    void current.then((presence) => {
+      if (!presence && visits.get(token) === current) visits.delete(token);
+    });
+    visits.set(token, current);
+    visit = current;
   }
   return visit;
+}
+
+/**
+ * Esperas entre as tentativas de abrir a visita (ms). Somam uns 30 s: cobre o servidor acordando
+ * (no staging, ele dorme sem uso e leva uns 25 s para voltar). Depois disso, a tela oferece
+ * "Tentar de novo" em vez de ficar conferindo para sempre.
+ */
+const VISIT_RETRIES = [2_000, 4_000, 8_000, 15_000];
+
+/** O cliente já deixou o navegador usar a localização nesta página (não pergunta de novo)? */
+async function locationGranted(): Promise<boolean> {
+  try {
+    const status = await navigator.permissions?.query({ name: "geolocation" });
+    return status?.state === "granted";
+  } catch {
+    return false; // navegador antigo, sem a API de permissões: o cliente toca no botão
+  }
 }
 
 /**
@@ -86,7 +109,8 @@ function currentPosition(): Promise<Position> {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude, accuracyMeters: coords.accuracy }),
+      ({ coords }) =>
+        resolve({ latitude: coords.latitude, longitude: coords.longitude, accuracyMeters: coords.accuracy }),
       reject,
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
     );
@@ -127,10 +151,19 @@ export async function cancelCall(token: string, id: string): Promise<void> {
  */
 export function useTableCalls(token: string) {
   const [calls, setCalls] = useState<TableCall[] | null>(null);
-  const [presence, setPresence] = useState<Presence | null>(null);
+  const [presence, setPresenceState] = useState<Presence | null>(null);
+  /**
+   * Uma conferência que saiu antes da localização pode chegar depois dela, com o "não" de antes.
+   * Confirmada a presença, só o bloqueio pela equipe a tira; resposta atrasada não.
+   */
+  const setPresence = useCallback((next: Presence) => {
+    setPresenceState((current) => (current?.present && !next.present && !next.blocked ? current : next));
+  }, []);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [closed, setClosed] = useState(false);
+  const [unreachable, setUnreachable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const present = presence?.present === true;
 
   /**
@@ -140,7 +173,7 @@ export function useTableCalls(token: string) {
   const refreshPresence = useCallback(async () => {
     const next = await checkPresence(token);
     if (next) setPresence(next);
-  }, [token]);
+  }, [token, setPresence]);
 
   const refresh = useCallback(async () => {
     try {
@@ -150,15 +183,52 @@ export function useTableCalls(token: string) {
     }
   }, [token]);
 
+  /**
+   * Abre a visita ao chegar. Se falhar, tenta de novo algumas vezes; se nada der, mostra que não
+   * conseguiu falar com o restaurante. Com a presença ainda não confirmada e a localização já
+   * permitida antes, confere por ela na hora, sem o cliente tocar no botão.
+   */
   useEffect(() => {
     let cancelled = false;
-    void startVisit(token).then((first) => {
-      if (first && !cancelled) setPresence(first);
-    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
+
+    async function open() {
+      const first = await startVisit(token);
+      if (cancelled) return;
+      if (!first) {
+        if (failures >= VISIT_RETRIES.length) {
+          setUnreachable(true);
+          return;
+        }
+        timer = setTimeout(open, VISIT_RETRIES[failures++]);
+        return;
+      }
+      setPresence(first);
+      if (first.present || first.blocked || !first.locationEnabled || !(await locationGranted())) return;
+      if (cancelled) return;
+      setBusy("locate");
+      try {
+        const next = await checkPresence(token, await currentPosition());
+        if (next && !cancelled) setPresence(next);
+      } catch {
+        // Sem posição agora: o cliente ainda tem o botão "Usar minha localização".
+      }
+      if (!cancelled) setBusy(null);
+    }
+
+    void open();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, [token]);
+  }, [token, attempt, setPresence]);
+
+  /** "Tentar de novo", depois de não conseguir falar com o restaurante. */
+  function retry() {
+    setUnreachable(false);
+    setAttempt((n) => n + 1);
+  }
 
   // Cada aviso do canal busca os chamados e a presença; a rede de segurança, só os chamados.
   const onUpdate = useCallback(
@@ -217,6 +287,8 @@ export function useTableCalls(token: string) {
     closed,
     presence,
     present,
+    unreachable,
+    retry,
     unlock: calls?.find((c) => c.type === "UNLOCK") ?? null,
     locate,
     recheck,

@@ -28,12 +28,12 @@ final class DevicePersistenceMapper {
 
     static DevicePairingJpaEntity toEntity(DevicePairing p) {
         return new DevicePairingJpaEntity(p.id().value(), p.code().value(), p.secretHash().value(), p.createdAt(),
-                p.expiresAt(), p.deviceId() == null ? null : p.deviceId().value(), p.claimedAt());
+                p.expiresAt(), p.deviceId() == null ? null : p.deviceId().value(), p.claimedAt(), p.invite());
     }
 
     static DevicePairing toDomain(DevicePairingJpaEntity e) {
         return new DevicePairing(new PairingId(e.getId()), new PairingCode(e.getCode()),
                 new DeviceSecretHash(e.getSecretHash()), e.getCreatedAt(), e.getExpiresAt(),
-                e.getDeviceId() == null ? null : new DeviceId(e.getDeviceId()), e.getClaimedAt());
+                e.getDeviceId() == null ? null : new DeviceId(e.getDeviceId()), e.getClaimedAt(), e.isInvite());
     }
 }

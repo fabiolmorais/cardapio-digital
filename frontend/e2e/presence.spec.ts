@@ -101,9 +101,9 @@ test("fora do Wi-Fi, a localização dentro do raio libera os botões", async ({
     wifiName: "Sakura Clientes",
     location: { ...SAKURA, radiusMeters: 100 },
   });
+  // Sem a permissão ainda: o navegador pergunta quando o cliente toca no botão.
   const context = await browser.newContext({
     locale: "pt-BR",
-    permissions: ["geolocation"],
     geolocation: { latitude: -23.5556, longitude: -46.6355, accuracy: 20 },
   });
   const phone = await context.newPage();
@@ -111,12 +111,63 @@ test("fora do Wi-Fi, a localização dentro do raio libera os botões", async ({
     await phone.goto(`/m/${qr}`);
     await expect(phone.getByRole("button", { name: /Conectar ao Wi-Fi “Sakura Clientes”/ })).toBeVisible();
 
+    await context.grantPermissions(["geolocation"]); // o cliente aceita o pedido do navegador
     await phone.getByRole("button", { name: /Usar minha localização/ }).click();
 
     await expect(phone.getByRole("button", { name: /Chamar garçom/ })).toBeVisible();
   } finally {
     await context.close();
   }
+});
+
+test("com a localização já permitida, a mesa confirma sozinha, sem tocar em nada", async ({ request, browser }) => {
+  const { qr } = await restaurant(request, { networks: [], location: { ...SAKURA, radiusMeters: 25 } });
+  const context = await browser.newContext({
+    locale: "pt-BR",
+    permissions: ["geolocation"],
+    geolocation: { latitude: -23.5556, longitude: -46.6355, accuracy: 20 }, // ~11 m
+  });
+  const phone = await context.newPage();
+  try {
+    await phone.goto(`/m/${qr}`);
+
+    await expect(phone.getByRole("button", { name: /Chamar garçom/ })).toBeVisible();
+    await expect(phone.getByRole("dialog")).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test("se o servidor não responde ao abrir, a mesa tenta de novo sozinha", async ({ page, request }) => {
+  const { qr } = await restaurant(request, null);
+  // As duas primeiras conferências falham (o servidor acordando, por exemplo); a terceira passa.
+  let failures = 0;
+  await page.route("**/api/v1/public/tables/*/presence", (route) =>
+    failures++ < 2 ? route.fulfill({ status: 502, body: "" }) : route.fallback(),
+  );
+  await page.goto(`/m/${qr}`);
+
+  await expect(page.getByRole("dialog", { name: "Não conseguimos confirmar que você está no salão" })).toBeVisible({
+    timeout: 15_000,
+  });
+  expect(failures).toBeGreaterThanOrEqual(3);
+});
+
+test("sem falar com o restaurante, a chegada oferece tentar de novo e ver só o cardápio", async ({ page, request }) => {
+  test.setTimeout(90_000); // as tentativas somam uns 30 s antes de desistir
+  const { qr } = await restaurant(request, null);
+  let down = true;
+  await page.route("**/api/v1/public/tables/*/session", (route) =>
+    down ? route.fulfill({ status: 503, body: "" }) : route.fallback(),
+  );
+  await page.goto(`/m/${qr}`);
+
+  const unreachable = page.getByRole("dialog", { name: "Não conseguimos falar com o restaurante" });
+  await expect(unreachable).toBeVisible({ timeout: 45_000 });
+
+  down = false;
+  await unreachable.getByRole("button", { name: "Tentar de novo" }).click();
+  await expect(page.getByRole("dialog", { name: "Não conseguimos confirmar que você está no salão" })).toBeVisible();
 });
 
 test("longe do restaurante, a localização não basta", async ({ request, browser }) => {

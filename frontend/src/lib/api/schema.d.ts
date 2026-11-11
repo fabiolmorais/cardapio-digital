@@ -754,6 +754,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/devices/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria o aparelho e o QR Code que o vincula: o aparelho novo só precisa escanear */
+        post: operations["inviteDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/device-pairings": {
         parameters: {
             query?: never;
@@ -2595,6 +2612,23 @@ export interface components {
              * @description Vazio: o aparelho ainda não buscou o token
              */
             lastSeenAt?: string;
+        };
+        /** @description O aparelho que o gerente vai vincular por QR Code */
+        InviteDeviceRequest: {
+            /** @example Celular do salão */
+            name: string;
+            /** @enum {string} */
+            type: "WAITER" | "KITCHEN" | "TV";
+        };
+        /** @description O QR Code que vincula o aparelho novo, para mostrar no painel */
+        DeviceInvite: {
+            device: components["schemas"]["Device"];
+            /** @description O endereço do QR; leva o segredo do convite, nunca registrar */
+            url: string;
+            /** @description O QR Code do endereço, em SVG */
+            qrSvg: string;
+            /** Format: date-time */
+            expiresAt: string;
         };
         /** @description Pedido de vínculo aberto pelo aparelho novo */
         PairingStarted: {
@@ -5619,6 +5653,39 @@ export interface operations {
             };
             /** @description Código não encontrado ou vencido */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    inviteDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Convite criado; o QR vale por poucos minutos e uma vez só */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceInvite"];
+                };
+            };
+            /** @description Nome vazio ou tipo faltando */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

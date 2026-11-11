@@ -69,7 +69,8 @@ final class DeviceFakes implements DevicePairingPort, DevicePort, DeviceSessionP
         if (p == null || !p.isOpen(at)) {
             return false;
         }
-        pairings.put(id, new DevicePairing(p.id(), p.code(), p.secretHash(), p.createdAt(), p.expiresAt(), deviceId, null));
+        pairings.put(id, new DevicePairing(p.id(), p.code(), p.secretHash(), p.createdAt(), p.expiresAt(), deviceId, null,
+                p.invite()));
         return true;
     }
 
@@ -79,7 +80,8 @@ final class DeviceFakes implements DevicePairingPort, DevicePort, DeviceSessionP
         if (p == null || !p.isLinked() || p.isClaimed()) {
             return false;
         }
-        pairings.put(id, new DevicePairing(p.id(), p.code(), p.secretHash(), p.createdAt(), p.expiresAt(), p.deviceId(), at));
+        pairings.put(id, new DevicePairing(p.id(), p.code(), p.secretHash(), p.createdAt(), p.expiresAt(), p.deviceId(), at,
+                p.invite()));
         return true;
     }
 

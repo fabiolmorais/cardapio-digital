@@ -17,9 +17,6 @@ import java.util.Objects;
 
 public class StartPairingService implements StartPairingUseCase {
 
-    /** Com 1 milhão de códigos possíveis, repetir um aberto é raro; 5 tentativas sobram. */
-    private static final int MAX_ATTEMPTS = 5;
-
     private final DevicePairingPort pairings;
     private final RandomCodeGenerator codes;
     private final RandomTokenGenerator secrets;
@@ -39,22 +36,11 @@ public class StartPairingService implements StartPairingUseCase {
     @Transactional
     public PairingStarted start() {
         Instant now = clock.instant();
-        PairingCode code = freeCode(now);
+        PairingCode code = PairingCodes.free(pairings, codes, now);
         String secret = secrets.generate();
 
         DevicePairing pairing = DevicePairing.start(code, DeviceSecretHash.of(secret), now, ttl);
         pairings.save(pairing);
         return new PairingStarted(pairing.id(), code, secret, pairing.expiresAt());
-    }
-
-    /** Um código que nenhum outro pedido aberto esteja usando agora. */
-    private PairingCode freeCode(Instant now) {
-        for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-            PairingCode candidate = new PairingCode(codes.digits(PairingCode.LENGTH));
-            if (pairings.findOpenByCode(candidate, now).isEmpty()) {
-                return candidate;
-            }
-        }
-        throw new IllegalStateException("Não foi possível gerar um código livre");
     }
 }

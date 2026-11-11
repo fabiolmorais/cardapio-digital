@@ -95,6 +95,8 @@ app:
   devices:
     # Quanto tempo o código mostrado no aparelho novo vale para o gerente digitar.
     pairing-ttl: 10m
+    # Quanto tempo o QR Code do convite (mostrado no painel) vale para o aparelho novo escanear.
+    invite-ttl: 5m
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   # Fotos dos produtos: um bucket do Cloudflare R2 (ver README). Nos testes, o S3Mock.

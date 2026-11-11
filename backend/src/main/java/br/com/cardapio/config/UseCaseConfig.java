@@ -19,6 +19,7 @@ import br.com.cardapio.application.port.in.call.ListTvCallQueueUseCase;
 import br.com.cardapio.application.port.in.call.RequestCallUseCase;
 import br.com.cardapio.application.port.in.device.ClaimPairingUseCase;
 import br.com.cardapio.application.port.in.device.CurrentDeviceUseCase;
+import br.com.cardapio.application.port.in.device.InviteDeviceUseCase;
 import br.com.cardapio.application.port.in.device.LinkDeviceUseCase;
 import br.com.cardapio.application.port.in.device.ListDevicesUseCase;
 import br.com.cardapio.application.port.in.device.StartPairingUseCase;
@@ -145,6 +146,7 @@ import br.com.cardapio.application.service.call.RequestCallService;
 import br.com.cardapio.application.service.device.ClaimPairingService;
 import br.com.cardapio.application.service.device.CurrentDeviceService;
 import br.com.cardapio.application.service.device.DeviceAuthenticator;
+import br.com.cardapio.application.service.device.InviteDeviceService;
 import br.com.cardapio.application.service.device.LinkDeviceService;
 import br.com.cardapio.application.service.device.ListDevicesService;
 import br.com.cardapio.application.service.device.StartPairingService;
@@ -301,6 +303,17 @@ class UseCaseConfig {
                                             RandomTokenGenerator randomTokenGenerator, Clock clock,
                                             @Value("${app.devices.pairing-ttl}") Duration pairingTtl) {
         return new StartPairingService(devicePairingPort, randomCodeGenerator, randomTokenGenerator, clock, pairingTtl);
+    }
+
+    @Bean
+    InviteDeviceUseCase inviteDeviceUseCase(DevicePairingPort devicePairingPort, DevicePort devicePort,
+                                            RandomCodeGenerator randomCodeGenerator,
+                                            RandomTokenGenerator randomTokenGenerator,
+                                            TableDisplayRenderer tableDisplayRenderer, Clock clock,
+                                            @Value("${app.devices.invite-ttl}") Duration inviteTtl,
+                                            @Value("${app.public-url}") String publicUrl) {
+        return new InviteDeviceService(devicePairingPort, devicePort, randomCodeGenerator, randomTokenGenerator,
+                tableDisplayRenderer, clock, inviteTtl, publicUrl);
     }
 
     @Bean

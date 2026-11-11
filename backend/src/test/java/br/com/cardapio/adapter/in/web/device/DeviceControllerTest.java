@@ -148,6 +148,81 @@ class DeviceControllerTest {
         assertThat(list).bodyJson().extractingPath("$.content[0].lastSeenAt").isNotNull();
     }
 
+    private MvcTestResult invite(String token) {
+        return post(token, DEVICES + "/invites", """
+                {"name":"Tablet da cozinha","type":"KITCHEN"}""");
+    }
+
+    /** O id e o segredo que o QR leva, depois de "#convite=". */
+    private static Pairing fromQr(String url) {
+        String[] parts = url.substring(url.indexOf("#convite=") + "#convite=".length()).split("\\.");
+        return new Pairing(parts[0], null, parts[1]);
+    }
+
+    @Test
+    void managerShowsAQrCodeAndTheNewDeviceIsLinkedJustByScanningIt() throws Exception {
+        MvcTestResult invited = invite(sakura.token());
+        assertThat(invited).hasStatus(HttpStatus.CREATED);
+        String deviceId = json(invited, "$.device.id");
+        assertThat(invited).bodyJson().extractingPath("$.device.lastSeenAt").isNull();
+        String url = json(invited, "$.url");
+        assertThat(url).startsWith("http://localhost:3000/aparelho#convite=");
+        assertThat(json(invited, "$.qrSvg")).startsWith("<svg").contains("<path d=\"M");
+
+        // O aparelho aparece na lista esperando, e o QR vincula na primeira leitura.
+        assertThat(get(sakura.token(), DEVICES)).bodyJson().extractingPath("$.content[0].lastSeenAt").isNull();
+        MvcTestResult delivered = claim(fromQr(url));
+        assertThat(delivered).hasStatusOk();
+        assertThat(delivered).bodyJson().extractingPath("$.status").isEqualTo("LINKED");
+        assertThat(delivered).bodyJson().extractingPath("$.device.id").isEqualTo(deviceId);
+        assertThat(delivered).bodyJson().extractingPath("$.device.type").isEqualTo("KITCHEN");
+        assertThat(delivered.getResponse().getCookie(DeviceTokenCookie.NAME)).isNotNull();
+
+        assertThat(claim(fromQr(url))).hasStatus(HttpStatus.NOT_FOUND); // uma vez só
+        assertThat(get(sakura.token(), DEVICES)).bodyJson().extractingPath("$.content[0].lastSeenAt").isNotNull();
+    }
+
+    @Test
+    void expiredOrCanceledQrCodeDoesNotLinkTheDevice() throws Exception {
+        String expiredUrl = json(invite(sakura.token()), "$.url");
+        jdbc.update("""
+                UPDATE device_pairing SET created_at = now() - interval '20 minutes',
+                                          expires_at = now() - interval '10 minutes' WHERE id = ?""",
+                UUID.fromString(fromQr(expiredUrl).id()));
+        assertThat(claim(fromQr(expiredUrl))).hasStatus(HttpStatus.NOT_FOUND);
+
+        // O gerente fechou o QR sem ninguém escanear: o painel desvincula, e o QR deixa de valer.
+        MvcTestResult canceled = invite(sakura.token());
+        assertThat(delete(sakura.token(), json(canceled, "$.device.id"))).hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(claim(fromQr(json(canceled, "$.url")))).hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    /** Acesso entre restaurantes: o convite vale só para o restaurante de quem o criou. */
+    @Test
+    void invitedDeviceBelongsOnlyToTheRestaurantOfWhoInvited() throws Exception {
+        Owner other = newRestaurant();
+        MvcTestResult invited = invite(sakura.token());
+        String deviceId = json(invited, "$.device.id");
+
+        assertThat(get(other.token(), DEVICES)).bodyJson().extractingPath("$.totalElements").isEqualTo(0);
+        assertThat(delete(other.token(), deviceId)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(claim(fromQr(json(invited, "$.url")))).bodyJson().extractingPath("$.establishmentName")
+                .isEqualTo(jdbc.queryForObject("SELECT name FROM establishment WHERE id = ?", String.class,
+                        sakura.establishmentId()));
+    }
+
+    @Test
+    void inviteNeedsANameAndOnlyOwnerOrManagerCanInvite() {
+        MvcTestResult invalid = post(sakura.token(), DEVICES + "/invites", "{\"name\":\" \"}");
+        assertThat(invalid).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(invalid).bodyJson().extractingPath("$.fields").asArray().containsExactlyInAnyOrder("name", "type");
+
+        String waiter = tokenIssuer.issue(new TokenSubject(new UserId(sakura.userId()),
+                new EstablishmentId(sakura.establishmentId()), Role.STAFF)).value();
+        assertThat(invite(waiter)).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(invite(null)).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
     @Test
     void wrongSecretOrUnknownPairingGets404() throws Exception {
         Pairing pairing = startPairing();
