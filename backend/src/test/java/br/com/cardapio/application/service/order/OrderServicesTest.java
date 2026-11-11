@@ -104,6 +104,27 @@ class OrderServicesTest {
         assertThat(published).hasSize(3).allMatch(e -> e instanceof OrderChanged);
     }
 
+    /**
+     * Ninguém fechou a conta ontem e a comanda continuou aberta: quem senta hoje não vê os pedidos
+     * (nem o total) da visita de ontem. A comanda inteira segue no painel da equipe.
+     */
+    @Test
+    void theTableShowsOnlyTheCurrentVisitEvenIfYesterdaysTabWasLeftOpen() {
+        Instant yesterday = NOW.minus(java.time.Duration.ofDays(1));
+        sessions.givenPresent(sakura, mesa04.id(), "ontem", yesterday);
+        clock = Clock.fixed(yesterday, ZoneOffset.UTC);
+        place("ontem", line(sunomono, 3));
+        clock = Clock.fixed(NOW, ZoneOffset.UTC);
+
+        place("ana", line(guioza, 1));
+        TableOrders today = list("bia");
+
+        assertThat(fakes.tabs).hasSize(1); // a mesma comanda, que ninguém fechou
+        assertThat(today.orders()).singleElement().satisfies(o -> assertThat(o.items()).singleElement()
+                .satisfies(i -> assertThat(i.productName()).isEqualTo("Guioza")));
+        assertThat(today.total()).isEqualTo(Money.ofCents(29_90));
+    }
+
     @Test
     void thePriceIsCopiedAtTheMomentOfTheOrder() {
         TableOrder order = place("ana", line(guioza, 2));

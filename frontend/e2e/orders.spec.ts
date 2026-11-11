@@ -62,34 +62,43 @@ test("o celular monta o carrinho, envia, acompanha e cancela um item na fila", a
   const sent = page.getByRole("status");
   await expect(sent).toContainText("Pedido enviado!");
   await expect(sent).toContainText("Pedido nº 1");
+  // Desenho 4.2: cada item com a tag do passo.
+  await expect(page.getByRole("listitem").filter({ hasText: "2× Guioza" })).toContainText("Na fila");
   // O carrinho esvaziou: a barra some do cardápio.
   await page.getByRole("link", { name: "Acompanhar pedido" }).click();
 
+  // Desenho 4.3: um card por item a caminho, com os minutos, a observação e a tag.
   await expect(page).toHaveURL(new RegExp(`/m/${qr}/pedidos$`));
-  const order = page.getByRole("region", { name: /Pedido nº 1/ });
-  await expect(order).toContainText("Este celular");
-  await expect(order).toContainText("2× Guioza");
-  await expect(order).toContainText("sem cebolinha");
-  await expect(order).toContainText("Na fila");
-  await expect(page.getByText("R$ 91,60")).toBeVisible();
+  await expect(page.getByRole("button", { name: "A caminho (2)" })).toHaveAttribute("aria-pressed", "true");
+  const guioza = page.getByRole("article", { name: "2× Guioza" });
+  await expect(guioza).toContainText("sem cebolinha");
+  await expect(guioza).toContainText("Na fila");
+  await expect(guioza).toContainText("agora");
+  await expect(page.getByText("R$ 91,60").first()).toBeVisible();
 
-  // Outro celular da mesa vê o pedido, mas não cancela o que não pediu; e vê o novo pedido na hora.
+  // Outro celular da mesa vê os itens, mas não cancela o que não pediu; e vê o cancelamento na hora.
   const other = await browser.newContext();
   const phone = await other.newPage();
   try {
     await phone.goto(`/m/${qr}/pedidos`);
-    const seen = phone.getByRole("region", { name: /Pedido nº 1/ });
-    await expect(seen).toContainText("Outro celular");
-    await expect(seen.getByRole("button", { name: /Cancelar/ })).toHaveCount(0);
+    await expect(phone.getByRole("article", { name: "2× Sunomono" })).toBeVisible();
+    await expect(phone.getByRole("button", { name: /Cancelar/ })).toHaveCount(0);
 
     await page.getByRole("button", { name: "Cancelar Sunomono" }).click();
-    await expect(order).toContainText("Cancelado");
-    await expect(page.getByText("R$ 59,80")).toBeVisible();
+    await expect(page.getByRole("article", { name: "2× Sunomono" })).toHaveCount(0);
+    await expect(page.getByText("R$ 59,80").first()).toBeVisible();
     // O cancelamento chega ao outro celular pelo tempo real, sem recarregar.
-    await expect(phone.getByText("R$ 59,80")).toBeVisible({ timeout: 3000 });
+    await expect(phone.getByText("R$ 59,80").first()).toBeVisible({ timeout: 3000 });
   } finally {
     await other.close();
   }
+
+  // Desenho 4.4: o histórico agrupa por pedido, com todos os itens, inclusive o cancelado.
+  await page.getByRole("button", { name: "Histórico" }).click();
+  const order = page.getByRole("region", { name: /Pedido nº 1/ });
+  await expect(order).toContainText("Este celular");
+  await expect(order.getByRole("listitem").filter({ hasText: "2× Sunomono" })).toContainText("Cancelado");
+  await expect(order.getByRole("listitem").filter({ hasText: "2× Guioza" })).toContainText("Na fila");
 
   await page.getByRole("link", { name: "Cardápio", exact: true }).click();
   await expect(page.getByRole("link", { name: /Ver pedido/ })).toHaveCount(0);
@@ -105,7 +114,31 @@ test("o pedido acima do limite fica esperando o garçom", async ({ page, request
 
   await expect(page.getByRole("status")).toContainText("Pedido aguardando o garçom");
   await page.getByRole("link", { name: "Acompanhar pedido" }).click();
-  await expect(page.getByRole("region", { name: /Pedido nº 1/ })).toContainText("Aguardando o garçom");
+  await expect(page.getByRole("article", { name: "3× Chá verde gelado" })).toContainText("Aguardando o garçom");
+});
+
+test("depois de enviar, \"Pedir mais alguma coisa\" leva ao cardápio e o carrinho mostra o pedido novo", async ({
+  page,
+  request,
+}) => {
+  const { qr } = await restaurant(request);
+  await page.goto(`/m/${qr}/cardapio`);
+  await add(page, "Guioza");
+  await page.getByRole("link", { name: /Ver pedido/ }).click();
+  await page.getByRole("button", { name: "Enviar pedido para a cozinha" }).click();
+  await expect(page.getByRole("status")).toContainText("Pedido nº 1");
+
+  await page.getByRole("link", { name: "Pedir mais alguma coisa" }).click();
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
+  await add(page, "Sunomono");
+  await page.getByRole("link", { name: /Ver pedido/ }).click();
+
+  // O resumo do pedido novo, e não o "Pedido enviado!" do anterior.
+  await expect(page.getByRole("heading", { name: "Seu pedido" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sunomono" })).toBeVisible();
+  await expect(page.getByText("Pedido enviado!")).toHaveCount(0);
+  await page.getByRole("button", { name: "Enviar pedido para a cozinha" }).click();
+  await expect(page.getByRole("status")).toContainText("Pedido nº 2");
 });
 
 test("com o pedido desligado, o cardápio não tem o botão de adicionar", async ({ page, request }) => {

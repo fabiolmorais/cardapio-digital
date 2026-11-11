@@ -85,7 +85,7 @@ test("a mesa pede o rodízio, o garçom ativa, a mesa pede rodadas e a conta som
   await expect(page.getByRole("heading", { name: "Meus pedidos" })).toBeVisible();
   const visible = page.locator("main").filter({ visible: true });
   await expect(visible.getByText("Rodízio Japonês · 4 pessoas")).toBeVisible();
-  await expect(visible.getByRole("region", { name: /Pedido nº 1/ })).toContainText("Rodízio");
+  await expect(visible.getByRole("article", { name: "2× Guioza" })).toContainText("Rodízio");
   await expect(visible.getByText("R$ 454,60").first()).toBeVisible();
 
   // A comanda no painel: o rodízio, o item a zero e o ajuste das pessoas.

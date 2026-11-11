@@ -66,6 +66,12 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
     }
 
     @Override
+    public Optional<Instant> findVisitStart(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
+        establishmentFilter.enable(establishmentId);
+        return sessions.findVisitStart(establishmentId.value(), tableId.value(), now);
+    }
+
+    @Override
     public Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId) {
         establishmentFilter.enable(establishmentId);
         return sessions.findTableId(sessionId.value(), establishmentId.value()).map(DiningTableId::new);

@@ -46,8 +46,8 @@ async function ownerPanel(browser: Browser, email: string) {
 test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada passo", async ({ page, request, browser }) => {
   const { qr, email } = await restaurant(request);
   await order(page, qr, ["Guioza", "Sunomono"]);
-  const mine = page.getByRole("region", { name: /Pedido nº 1/ });
-  await expect(mine).toContainText("Na fila");
+  const mine = page.getByRole("article");
+  await expect(page.getByRole("article", { name: "1× Guioza" })).toContainText("Na fila");
 
   const panel = await ownerPanel(browser, email);
   try {
@@ -70,7 +70,7 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
     await expect(kitchen.getByRole("region", { name: /Pronto/ }).getByRole("article")).toContainText("Guioza");
     await kitchen.getByRole("button", { name: "Tudo pronto" }).click();
     await expect(kitchen.getByRole("region", { name: "Em preparo" }).getByRole("article")).toHaveCount(0);
-    await expect(mine.getByText("Pronto")).toHaveCount(2, { timeout: 3000 });
+    await expect(mine.getByText("Pronto · saindo")).toHaveCount(2, { timeout: 3000 });
 
     // O garçom (aqui, o dono) leva os pratos: "Entregas" no painel.
     // (O botão do Next em desenvolvimento cobre o "Voltar ao painel" no canto: o teste vai direto.)
@@ -79,10 +79,12 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
     await deliveries.getByRole("listitem", { name: "Mesa 04 · 1× Guioza" }).getByRole("button", { name: "Entregue" }).click();
     await expect(deliveries.getByRole("listitem")).toHaveCount(1);
     // O entregue sai de "A caminho" (o Sunomono continua, pronto) e fica no histórico.
-    await expect(mine).not.toContainText("Guioza", { timeout: 3000 });
-    await expect(mine).toContainText("Sunomono");
+    await expect(page.getByRole("article", { name: "1× Guioza" })).toHaveCount(0, { timeout: 3000 });
+    await expect(page.getByRole("article", { name: "1× Sunomono" })).toContainText("Pronto · saindo");
     await page.getByRole("button", { name: "Histórico" }).click();
-    await expect(mine.getByText("Entregue")).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: /Pedido nº 1/ }).getByRole("listitem").filter({ hasText: "Guioza" }),
+    ).toContainText("Entregue");
   } finally {
     await panel.close();
   }
@@ -106,9 +108,13 @@ test("a cozinha cancela um item com motivo, e o cliente vê o motivo", async ({ 
     await expect(dialog).toBeHidden();
     await expect(ticket).not.toContainText("Sunomono");
 
-    const mine = page.getByRole("region", { name: /Pedido nº 1/ });
-    await expect(mine).toContainText("Acabou o pepino japonês", { timeout: 3000 });
-    await expect(mine).toContainText("Cancelado");
+    // "A caminho" avisa, com o motivo; o histórico mostra o item cancelado.
+    await expect(page.getByText("Sunomono cancelado pela equipe:")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/Acabou o pepino japonês\. O valor não entra na conta\./)).toBeVisible();
+    await page.getByRole("button", { name: "Histórico" }).click();
+    await expect(
+      page.getByRole("region", { name: /Pedido nº 1/ }).getByRole("listitem").filter({ hasText: "Sunomono" }),
+    ).toContainText("Cancelado");
   } finally {
     await panel.close();
   }
@@ -128,10 +134,11 @@ test("o garçom confirma um pedido e recusa outro", async ({ page, request, brow
     await panel.page.getByRole("alertdialog").getByRole("button", { name: "Recusar pedido" }).click();
     await expect(approvals).toBeHidden();
 
-    await expect(page.getByRole("region", { name: /Pedido nº 2/ })).toContainText("Recusado pelo garçom", {
-      timeout: 3000,
-    });
-    await expect(page.getByRole("region", { name: /Pedido nº 1/ })).toContainText("Na fila");
+    await expect(page.getByText("Pedido nº 2 recusado pelo garçom.")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("article", { name: "1× Guioza" })).toContainText("Na fila");
+    await expect(page.getByRole("article", { name: "1× Sunomono" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Histórico" }).click();
+    await expect(page.getByRole("region", { name: /Pedido nº 2/ })).toContainText("Recusado pelo garçom");
     await panel.page.goto("/painel/cozinha");
     await expect(panel.page.getByRole("article", { name: "Mesa 04 · Pedido nº 1" })).toBeVisible();
     await expect(panel.page.getByRole("article", { name: "Mesa 04 · Pedido nº 2" })).toHaveCount(0);

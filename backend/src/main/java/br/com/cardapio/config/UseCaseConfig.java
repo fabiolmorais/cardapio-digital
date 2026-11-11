@@ -711,9 +711,10 @@ class UseCaseConfig {
     ListTableOrdersUseCase listTableOrdersUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                                   OrderSettingsPort orderSettingsPort, TabPort tabPort,
                                                   OrderPort orderPort, TabRodizioPort tabRodizioPort,
-                                                  RodizioPort rodizioPort, Clock clock) {
+                                                  RodizioPort rodizioPort, ProductMediaPort productMediaPort,
+                                                  MediaStoragePort mediaStoragePort, Clock clock) {
         return new ListTableOrdersService(diningTablePort, tableSessionPort, orderSettingsPort, tabPort, orderPort,
-                tabRodizioPort, rodizioPort, clock);
+                tabRodizioPort, rodizioPort, productMediaPort, mediaStoragePort, clock);
     }
 
     @Bean

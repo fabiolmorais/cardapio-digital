@@ -34,6 +34,13 @@ public interface TableSessionPort {
      */
     boolean block(EstablishmentId establishmentId, TableSessionId sessionId, UserId by, Instant now);
 
+    /**
+     * Quando começou a visita atual da mesa: a sessão ativa (nem encerrada nem vencida) mais antiga
+     * dela. Vazio se não há nenhuma. A comanda pode ter ficado aberta de outro dia; o celular só vê
+     * o que foi pedido desde então.
+     */
+    Optional<Instant> findVisitStart(EstablishmentId establishmentId, DiningTableId tableId, Instant now);
+
     /** A mesa da sessão, se ela for deste restaurante. */
     Optional<DiningTableId> findTable(EstablishmentId establishmentId, TableSessionId sessionId);
 
