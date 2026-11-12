@@ -52,7 +52,10 @@ export function useLiveCalls(onNewCall?: (call: StaffCall) => void, source: Live
     () =>
       source.connect((event) => {
         if (event.name === "ready" || event.name === "call") {
+          // O prefixo pega também o quadro do Modo TV ([chave, "board"]).
           void queryClient.invalidateQueries({ queryKey: [source.queryKey] });
+        } else if (event.name === "order") {
+          void queryClient.invalidateQueries({ queryKey: [source.queryKey, "board"] });
         }
       }, setConnected),
     [queryClient, source],

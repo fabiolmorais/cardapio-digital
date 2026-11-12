@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -72,4 +73,56 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
             """, nativeQuery = true)
     List<TableActivityRow> findActivity(@Param("establishmentId") UUID establishmentId,
                                                   @Param("tableIds") Collection<UUID> tableIds);
+
+    /**
+     * O mapa do salão ao vivo: cada mesa ativa (de setor ativo) com os celulares, a comanda aberta,
+     * o total, os itens a caminho e as pessoas do rodízio. Uma consulta, com subconsultas por mesa
+     * (índices em table_id, tab_id e order_id). Nativa: o restaurante vai no WHERE.
+     */
+    @Query(value = """
+            SELECT d.id AS tableId, d.label AS label, s.id AS sectorId, s.name AS sectorName,
+                   (SELECT count(*) FROM table_session ts
+                     WHERE ts.table_id = d.id AND ts.ended_at IS NULL AND ts.expires_at > :now
+                       AND ts.blocked_at IS NULL) AS phones,
+                   t.id AS tabId, t.opened_at AS tabOpenedAt,
+                   COALESCE((SELECT sum(i.unit_price_cents * i.quantity) FROM customer_order o
+                              JOIN order_item i ON i.order_id = o.id
+                             WHERE o.tab_id = t.id AND i.status <> 'CANCELED'), 0)
+                   + COALESCE((SELECT sum(g.quantity * g.unit_price_cents) FROM tab_rodizio r
+                                JOIN tab_rodizio_guest g ON g.tab_rodizio_id = r.id
+                               WHERE r.tab_id = t.id), 0) AS tabTotalCents,
+                   (SELECT count(*) FROM customer_order o JOIN order_item i ON i.order_id = o.id
+                     WHERE o.tab_id = t.id AND i.status IN ('PENDING', 'PREPARING', 'READY')) AS itemsOnTheWay,
+                   COALESCE((SELECT sum(g.quantity) FROM tab_rodizio r
+                              JOIN tab_rodizio_guest g ON g.tab_rodizio_id = r.id
+                             WHERE r.tab_id = t.id), 0) AS rodizioPeople
+              FROM dining_table d
+              JOIN sector s ON s.id = d.sector_id
+              LEFT JOIN tab t ON t.table_id = d.id AND t.status IN ('OPEN', 'CLOSING')
+             WHERE d.establishment_id = :establishmentId AND d.active AND s.active
+             ORDER BY s.position, s.name, length(d.label), d.label
+            """, nativeQuery = true)
+    List<LiveTableRow> findLive(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now);
+
+    /** O que as comandas fechadas no dia de hoje do restaurante (no fuso dele) somaram. */
+    @Query(value = """
+            SELECT COALESCE(sum(t.total_cents), 0)
+              FROM tab t
+              JOIN establishment e ON e.id = t.establishment_id
+             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+               AND t.closed_at >= CAST(:now AS TIMESTAMPTZ) - INTERVAL '2 day'
+               AND (t.closed_at AT TIME ZONE e.time_zone)::date = (CAST(:now AS TIMESTAMPTZ) AT TIME ZONE e.time_zone)::date
+            """, nativeQuery = true)
+    long revenueOn(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now);
+
+    /** A espera média (do chamado ao aceite), em segundos, dos chamados aceitos hoje no dia do restaurante. */
+    @Query(value = """
+            SELECT CAST(avg(EXTRACT(EPOCH FROM (c.accepted_at - c.created_at))) AS BIGINT)
+              FROM call c
+              JOIN establishment e ON e.id = c.establishment_id
+             WHERE c.establishment_id = :establishmentId AND c.accepted_at IS NOT NULL
+               AND c.created_at >= CAST(:now AS TIMESTAMPTZ) - INTERVAL '2 day'
+               AND (c.created_at AT TIME ZONE e.time_zone)::date = (CAST(:now AS TIMESTAMPTZ) AT TIME ZONE e.time_zone)::date
+            """, nativeQuery = true)
+    Long averageWaitSeconds(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now);
 }

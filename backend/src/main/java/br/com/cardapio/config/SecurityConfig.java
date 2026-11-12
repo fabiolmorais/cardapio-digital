@@ -110,7 +110,8 @@ class SecurityConfig {
                         // Tela e login por PIN: quem identifica o aparelho é o cookie device_token.
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/device", "/api/v1/auth/device/team-members").permitAll()
                         // Modo TV na TV vinculada (Guia 15): só leitura, e quem identifica a TV é o mesmo cookie.
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/device/tv/calls", "/api/v1/auth/device/tv/events")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/device/tv/calls", "/api/v1/auth/device/tv/events",
+                                "/api/v1/auth/device/tv/board")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/pin").permitAll()
                         .requestMatchers("/error").permitAll()

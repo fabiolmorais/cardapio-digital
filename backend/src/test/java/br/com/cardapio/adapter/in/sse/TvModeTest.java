@@ -33,6 +33,7 @@ class TvModeTest {
     private static final String PASSWORD = "sushi2026bom";
     private static final String QUEUE = "/api/v1/auth/device/tv/calls";
     private static final String EVENTS = "/api/v1/auth/device/tv/events";
+    private static final String BOARD = "/api/v1/auth/device/tv/board";
 
     @Autowired
     MockMvc mvc;
@@ -151,6 +152,45 @@ class TvModeTest {
         send(delete("/api/v1/devices/" + tvId), sakura.owner(), null);
 
         assertThat(status(get(QUEUE).cookie(tv))).isEqualTo(401);
+    }
+
+    /** Um pedido de 2 guiozas na mesa 04, pelo celular. */
+    private void order(Restaurant restaurant) throws Exception {
+        String category = JsonPath.read(send(post("/api/v1/menu-categories"), restaurant.owner(),
+                "{\"name\":\"Entradas\"}"), "$.id");
+        String product = JsonPath.read(send(post("/api/v1/products"), restaurant.owner(), """
+                {"categoryId":"%s","name":"Guioza","priceCents":2990,"featured":false,"available":true}
+                """.formatted(category)), "$.id");
+        Cookie phone = mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/session")).andReturn()
+                .getResponse().getCookie("table_session");
+        mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/presence").cookie(phone));
+        mvc.perform(post("/api/v1/public/tables/" + restaurant.qr() + "/orders").cookie(phone)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"items\":[{\"productId\":\"%s\",\"quantity\":2}]}".formatted(product)));
+    }
+
+    @Test
+    void theTvSeesTheKitchenAndTheSectorsWithoutLogin() throws Exception {
+        order(sakura);
+
+        String board = mvc.perform(get(BOARD).cookie(tv)).andReturn().getResponse().getContentAsString();
+
+        assertThat((String) JsonPath.read(board, "$.kitchen[0].productName")).isEqualTo("Guioza");
+        assertThat((String) JsonPath.read(board, "$.kitchen[0].tableLabel")).isEqualTo("04");
+        assertThat((String) JsonPath.read(board, "$.kitchen[0].sectorName")).isEqualTo("Salão");
+        assertThat(board).contains("\"sectors\":[\"Salão\"]");
+        assertThat(status(get(BOARD))).isEqualTo(401);
+        assertThat(status(get(BOARD).cookie(link(sakura, "WAITER")))).isEqualTo(403);
+    }
+
+    @Test
+    void theTvOfAnotherRestaurantDoesNotSeeTheKitchen() throws Exception {
+        order(sakura);
+        Cookie theirTv = link(newRestaurant("Outro Bar"), "TV");
+
+        String theirs = mvc.perform(get(BOARD).cookie(theirTv)).andReturn().getResponse().getContentAsString();
+
+        assertThat((java.util.List<?>) JsonPath.read(theirs, "$.kitchen")).isEmpty();
     }
 
     /** Separação entre restaurantes: a TV de um não vê a fila nem ouve os avisos do outro. */

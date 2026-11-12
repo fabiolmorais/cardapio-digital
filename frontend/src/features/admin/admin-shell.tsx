@@ -6,6 +6,7 @@ import {
   ChefHat,
   CreditCard,
   Flame,
+  LayoutGrid,
   LogOut,
   Menu,
   Palette,
@@ -24,6 +25,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useLiveCount } from "@/features/live/use-live-count";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { canManageTeam, type Role } from "@/features/team/team-rules";
 import { useLogout } from "@/lib/auth/use-logout";
@@ -38,8 +40,13 @@ const t = messages.admin;
 type Item = { href: string; label: string; icon: LucideIcon; roles?: readonly Role[] };
 
 const MANAGERS = ["OWNER", "MANAGER"] as const;
+const MANAGERS_AND_STAFF = ["OWNER", "MANAGER", "STAFF"] as const;
 
-const LIVE: Item[] = [{ href: "/painel", label: t.nav.panel, icon: BellRing }];
+const LIVE: Item[] = [
+  { href: "/painel", label: t.nav.panel, icon: BellRing },
+  { href: "/painel/mesas", label: t.nav.floorLive, icon: LayoutGrid, roles: [...MANAGERS_AND_STAFF] },
+  { href: "/painel/comandas", label: t.nav.openTabs, icon: Receipt, roles: [...MANAGERS_AND_STAFF] },
+];
 
 /**
  * As telas de tela cheia, cada uma para quem a usa: o Modo TV o dono ou o gerente liga na TV; a
@@ -157,10 +164,10 @@ function ActiveShellNav({ role, onNavigate }: { role: Role | undefined; onNaviga
   return <ShellNav pathname={usePathname()} role={role} onNavigate={onNavigate} />;
 }
 
-/** "/painel" acende só nele mesmo e na comanda (as telas de /painel/… têm item próprio). */
+/** "/painel" acende só nele mesmo (as telas de /painel/… têm item próprio). */
 function isActive(pathname: string | null, href: string) {
   if (pathname === null) return false;
-  if (href === "/painel") return pathname === "/painel" || pathname.startsWith("/painel/comandas/");
+  if (href === "/painel") return pathname === "/painel";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -174,8 +181,9 @@ function ShellNav({
   onNavigate: () => void;
 }) {
   const allowed = (item: Item) => !item.roles || (role !== undefined && item.roles.includes(role));
+  const live = useLiveCount(role);
   const groups: { label: string | null; items: Item[] }[] = [
-    { label: null, items: LIVE },
+    { label: null, items: LIVE.filter(allowed) },
     { label: t.screens, items: SCREENS.filter(allowed) },
     ...(role && canManageTeam(role) ? [{ label: t.management, items: MANAGEMENT }] : []),
   ];
@@ -203,6 +211,14 @@ function ShellNav({
               >
                 <Icon aria-hidden className="size-4" />
                 {text}
+                {href === "/painel" && live > 0 && (
+                  <span
+                    aria-label={t.nav.liveCount(live)}
+                    className="ml-auto flex h-5.5 min-w-5.5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground"
+                  >
+                    {live}
+                  </span>
+                )}
               </Link>
             );
           })}

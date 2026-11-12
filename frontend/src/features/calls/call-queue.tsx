@@ -1,11 +1,10 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Tv } from "lucide-react";
-import Link from "next/link";
+import { Ban } from "lucide-react";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -18,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
-import { canManageTeam } from "@/features/team/team-rules";
+import { Badge, ColumnHead, TableBox, Timer, elapsed, waitLevel } from "@/features/live/live-ui";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { playChime } from "./alert-sound";
@@ -34,15 +33,10 @@ import {
   type StaffCall,
 } from "./calls-api";
 import { PaymentDialog } from "./payment-dialog";
-import { SoundToggle } from "./sound-toggle";
-import { useLiveCalls, useSoundOn } from "./use-live-calls";
+import { useLiveCalls } from "./use-live-calls";
 
 const t = messages.panel.calls;
 type Role = "OWNER" | "MANAGER" | "STAFF" | "KITCHEN";
-
-/** Até 2 min, normal; até 4 min, atenção; depois, atrasado (desenho 7.1). */
-const WARN_AFTER_S = 120;
-const LATE_AFTER_S = 240;
 
 /** O relógio da tela, de segundo em segundo, para os cronômetros andarem sozinhos. */
 export function useNow() {
@@ -54,21 +48,29 @@ export function useNow() {
   return now;
 }
 
-/** 252 s → "4:12". */
-export function elapsed(seconds: number) {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+export { elapsed };
+
+/** Mesa e setor juntos, como o desenho pede ("Salão principal" logo abaixo do tipo do chamado). */
+export function callDetail(call: StaffCall) {
+  const unlock = call.type === "UNLOCK";
+  return [
+    call.sectorName,
+    unlock ? t.notPresent : call.paymentMethod && t.payment[call.paymentMethod],
+    call.presenceMethod && t.presence[call.presenceMethod],
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /**
- * A fila de chamados do painel (desenho 7.1, coluna Chamados): a mesa, o tipo, há quanto tempo
- * espera, e os botões Aceitar e Concluir. A cozinha só acompanha. Atualiza na hora, pelo tempo
- * real, e toca o alerta a cada chamado novo, se o som estiver ligado.
+ * A coluna "Chamados" do Ao vivo (desenho 7.1): um cartão por chamado, do que espera há mais
+ * tempo ao mais novo, com a mesa, o tipo, o setor, o cronômetro na cor do tempo e os botões
+ * (Aceitar, Liberar, Concluir, Receber pagamento). A cozinha só acompanha. Com `sector`, só os
+ * chamados daquele setor. Atualiza na hora, pelo tempo real, e toca o alerta a cada chamado novo.
  */
-export function CallQueue({ role }: { role: Role }) {
+export function CallQueue({ role, sector = null }: { role: Role; sector?: string | null }) {
   const queryClient = useQueryClient();
-  const { queue, connected } = useLiveCalls(useCallback(() => playChime(), []));
-  const soundOn = useSoundOn();
+  const { queue } = useLiveCalls(useCallback(() => playChime(), []));
   const now = useNow();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,181 +93,150 @@ export function CallQueue({ role }: { role: Role }) {
     setBusy(null);
   }
 
-  const calls = queue.data ?? [];
+  const calls = (queue.data ?? []).filter((call) => sector === null || call.sectorName === sector);
 
   return (
-    <section aria-labelledby="chamados" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id="chamados" className="text-xl font-semibold">
-          {t.title}
-        </h2>
-        {queue.data && <span className="text-sm font-semibold text-brand-text">{t.open(calls.length)}</span>}
-        <span className="text-sm text-muted-foreground">{t.order}</span>
-        <span
-          role="status"
-          className={cn(
-            "ml-auto flex items-center gap-1.5 text-sm",
-            connected ? "text-success" : "text-muted-foreground",
-          )}
-        >
-          <span aria-hidden className={cn("size-2 rounded-full", connected ? "bg-success" : "bg-muted-foreground")} />
-          {connected ? t.live : t.reconnecting}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <SoundToggle />
-        {canManageTeam(role) && (
-          <Link href="/painel/tv" className={buttonVariants({ variant: "outline" })}>
-            <Tv aria-hidden />
-            {t.openTv}
-          </Link>
+    <section aria-labelledby="chamados" className="flex min-w-0 flex-col rounded-[20px] border border-border bg-card">
+      <ColumnHead id="chamados" title={t.title} count={calls.length} hint={t.order} tone="accent" />
+      <span className="sr-only">{t.open(calls.length)}</span>
+      <div className="flex flex-col gap-2.5 px-3 pb-3">
+        {!canAct && <p className="px-1 text-sm text-muted-foreground">{t.kitchenOnly}</p>}
+        {error && (
+          <p role="alert" className="px-1 text-sm text-destructive">
+            {error}
+          </p>
         )}
-      </div>
-      {!soundOn && <p className="text-sm text-muted-foreground">{t.soundHint}</p>}
 
-      {!canAct && <p className="text-sm text-muted-foreground">{t.kitchenOnly}</p>}
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-
-      {queue.isPending ? (
-        <p className="text-sm text-muted-foreground">{t.loading}</p>
-      ) : queue.isError && !queue.data ? (
-        <p role="alert" className="text-sm text-destructive">
-          {t.loadError}
-        </p>
-      ) : calls.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t.empty}</p>
-      ) : (
-        <ul className="flex flex-col gap-2.5">
-          {calls.map((call) => {
-            const waited = (now - Date.parse(call.createdAt)) / 1000;
-            const level = waited >= LATE_AFTER_S ? "late" : waited >= WARN_AFTER_S ? "warn" : "ok";
-            const title = `${t.types[call.type]} · ${t.table} ${call.tableLabel}`;
-            const unlock = call.type === "UNLOCK";
-            // "Quero o rodízio" se resolve ativando: o chamado termina sozinho na ativação.
-            const rodizio = call.type === "RODIZIO";
-            const activate = rodizio && canAct && (
-              <Button
-                className="h-11"
-                disabled={busy !== null}
-                onClick={() => setActivating({ tableId: call.tableId, tableLabel: call.tableLabel })}
-              >
-                {t.activateRodizio}
-              </Button>
-            );
-            // O pedido de liberação é justamente de quem não provou a presença; os outros dizem como provaram.
-            const detail = [
-              unlock ? t.notPresent : call.paymentMethod && t.payment[call.paymentMethod],
-              call.sectorName,
-              call.presenceMethod && t.presence[call.presenceMethod],
-            ]
-              .filter(Boolean)
-              .join(" · ");
-            return (
-              <li
-                key={call.id}
-                aria-label={title}
-                className={cn(
-                  "flex flex-col gap-3 rounded-xl border border-border bg-background p-3.5",
-                  level === "late" && call.status === "PENDING" && "border-destructive",
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-muted leading-none">
-                    <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                      {t.table}
+        {queue.isPending ? (
+          <p className="px-1 text-sm text-muted-foreground">{t.loading}</p>
+        ) : queue.isError && !queue.data ? (
+          <p role="alert" className="px-1 text-sm text-destructive">
+            {t.loadError}
+          </p>
+        ) : calls.length === 0 ? (
+          <p className="px-1 pb-2 text-sm text-muted-foreground">{t.empty}</p>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {calls.map((call) => {
+              const waited = (now - Date.parse(call.createdAt)) / 1000;
+              const pending = call.status === "PENDING";
+              const level = waitLevel(waited, !pending);
+              const title = `${t.types[call.type]} · ${t.table} ${call.tableLabel}`;
+              const unlock = call.type === "UNLOCK";
+              // "Quero o rodízio" se resolve ativando: o chamado termina sozinho na ativação.
+              const rodizio = call.type === "RODIZIO";
+              const activate = rodizio && canAct && (
+                <Button
+                  size="sm"
+                  className="h-9 flex-1"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    setActivating({ tableId: call.tableId, tableLabel: call.tableLabel, requestedAt: call.createdAt })
+                  }
+                >
+                  {t.activateRodizio}
+                </Button>
+              );
+              return (
+                <li
+                  key={call.id}
+                  aria-label={title}
+                  className={cn(
+                    "flex flex-col gap-3 rounded-2xl border border-border bg-muted p-3.5",
+                    pending &&
+                      level === "late" &&
+                      "border-destructive/45 bg-[linear-gradient(180deg,rgb(248_113_113/10%),transparent_60%)]",
+                    pending && unlock && "border-brand-text/50 ring-3 ring-primary/15",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <TableBox label={call.tableLabel} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="font-semibold">{t.types[call.type]}</span>
+                      <span className="truncate text-[13px] text-muted-foreground">{callDetail(call)}</span>
                     </span>
-                    <span className="text-lg font-bold">{call.tableLabel}</span>
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="font-semibold">{t.types[call.type]}</span>
-                    <span className="truncate text-sm text-muted-foreground">{detail}</span>
-                  </span>
-                  <span
-                    className={cn(
-                      "font-mono text-sm font-semibold tabular-nums",
-                      level === "ok" && "text-success",
-                      level === "warn" && "text-warning",
-                      level === "late" && "text-destructive",
-                    )}
-                  >
-                    <span className="sr-only">{t.waitingFor(elapsed(waited))}</span>
-                    <span aria-hidden>{elapsed(waited)}</span>
-                  </span>
-                </div>
-                {call.status === "PENDING" && canAct && !unlock && (
-                  <div className="flex gap-2 *:flex-1">
-                    {activate}
-                    <Button
-                      variant={rodizio ? "outline" : "default"}
-                      className="h-11"
-                      disabled={busy !== null}
-                      onClick={() => act(call.id, acceptCall)}
-                    >
-                      {busy === call.id ? t.accepting : t.accept}
-                    </Button>
+                    <Timer level={level}>
+                      <span className="sr-only">{t.waitingFor(elapsed(waited))}</span>
+                      <span aria-hidden>{elapsed(waited)}</span>
+                    </Timer>
                   </div>
-                )}
-                {call.status === "PENDING" && canAct && unlock && (
-                  <div className="flex gap-2">
-                    <Button className="h-11 flex-1" disabled={busy !== null} onClick={() => setReleasing(call)}>
-                      {t.release}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-11"
-                      disabled={busy !== null}
-                      onClick={() => act(call.id, declineCall)}
-                    >
-                      {t.decline}
-                    </Button>
-                  </div>
-                )}
-                {call.status === "IN_PROGRESS" && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="mr-auto rounded-full bg-muted px-3 py-1 text-sm font-medium">
-                      {t.inProgress(call.acceptedByName)}
-                    </span>
-                    {activate}
-                    {canAct && call.type === "BILL" && (
-                      <Button className="h-11" disabled={busy !== null} onClick={() => setPaying(call)}>
-                        {t.receive}
-                      </Button>
-                    )}
-                    {canAct && call.type !== "BILL" && (
+                  {pending && canAct && !unlock && (
+                    <div className="flex gap-2">
+                      {activate}
                       <Button
-                        variant="outline"
-                        className="h-11"
+                        size="sm"
+                        variant={rodizio ? "outline" : "default"}
+                        className="h-9 flex-1"
                         disabled={busy !== null}
-                        onClick={() => act(call.id, finishCall)}
+                        onClick={() => act(call.id, acceptCall)}
                       >
-                        {busy === call.id ? t.finishing : t.finish}
+                        {busy === call.id ? t.accepting : t.accept}
                       </Button>
-                    )}
-                  </div>
-                )}
-                {canAct && (
-                  <button
-                    type="button"
-                    disabled={busy !== null}
-                    onClick={() => setBlocking(call)}
-                    className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-destructive hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
-                  >
-                    <Ban aria-hidden className="size-4" />
-                    {t.block}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    </div>
+                  )}
+                  {pending && canAct && unlock && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="h-9 flex-1"
+                        disabled={busy !== null}
+                        onClick={() => setReleasing(call)}
+                      >
+                        {t.release}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 border-destructive/35 bg-transparent text-destructive"
+                        disabled={busy !== null}
+                        onClick={() => act(call.id, declineCall)}
+                      >
+                        {t.decline}
+                      </Button>
+                    </div>
+                  )}
+                  {!pending && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone="warn" className="mr-auto">
+                        {t.inProgress(call.acceptedByName)}
+                      </Badge>
+                      {activate}
+                      {canAct && call.type === "BILL" && (
+                        <Button size="sm" className={GREEN} disabled={busy !== null} onClick={() => setPaying(call)}>
+                          {t.receive}
+                        </Button>
+                      )}
+                      {canAct && call.type !== "BILL" && (
+                        <Button
+                          size="sm"
+                          className={GREEN}
+                          disabled={busy !== null}
+                          onClick={() => act(call.id, finishCall)}
+                        >
+                          {busy === call.id ? t.finishing : t.finish}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {canAct && (
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={() => setBlocking(call)}
+                      className="flex w-fit items-center gap-1.5 text-[13px] text-muted-foreground underline-offset-4 hover:text-destructive hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
+                    >
+                      <Ban aria-hidden className="size-3.5" />
+                      {t.block}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      {canAct && <BlockedPhones now={now} />}
+        {canAct && <BlockedPhones now={now} />}
+      </div>
 
       <RodizioDialog target={activating} onClose={() => setActivating(null)} />
       <PaymentDialog
@@ -294,6 +265,9 @@ export function CallQueue({ role }: { role: Role }) {
     </section>
   );
 }
+
+/** O verde do "Concluir" e do "Entregue" (o botão de terminar, no desenho). */
+export const GREEN = "h-9 bg-[#15803d] text-white hover:bg-[#166534]";
 
 /**
  * "Liberar mesa": o garçom digita o código que aparece no celular de quem pediu. É a prova de que

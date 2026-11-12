@@ -69,6 +69,7 @@ test("a mesa vê o total, pede a conta, e o garçom fecha a comanda", async ({ p
 
   const panel = await ownerPanel(browser, email);
   try {
+    await panel.page.goto("/painel/comandas");
     const tabs = panel.page.getByRole("region", { name: /Mesas com comanda aberta/ });
     await expect(tabs).toContainText("R$ 49,80");
     await expect(tabs).toContainText("Tudo entregue");
@@ -83,8 +84,9 @@ test("a mesa vê o total, pede a conta, e o garçom fecha a comanda", async ({ p
     // O celular da mesa vê na hora, pelo tempo real.
     await expect(page.getByRole("status")).toContainText("Conta fechada", { timeout: 3000 });
 
-    await panel.page.goto("/painel");
+    await panel.page.goto("/painel/comandas");
     await expect(panel.page.getByText("Nenhuma comanda aberta.")).toBeVisible();
+    await panel.page.goto("/painel");
     // O chamado da conta terminou junto.
     await expect(panel.page.getByText(/Nenhum chamado aberto/)).toBeVisible();
   } finally {
@@ -98,6 +100,7 @@ test("com item a caminho, o garçom vê o que falta e não fecha", async ({ page
 
   const panel = await ownerPanel(browser, email);
   try {
+    await panel.page.goto("/painel/comandas");
     const tabs = panel.page.getByRole("region", { name: /Mesas com comanda aberta/ });
     await expect(tabs).toContainText("1 item a caminho");
     await tabs.getByRole("link", { name: "Comanda da mesa 04" }).click();
@@ -143,6 +146,7 @@ test("a mesa paga com item a caminho, e o garçom fecha depois sem cobrar de nov
     await expect(page.getByText("Já pago R$ 49,80")).toBeVisible();
 
     await deliverAll(request, headers);
+    await panel.page.goto("/painel/comandas");
     const tabs = panel.page.getByRole("region", { name: /Mesas com comanda aberta/ });
     await tabs.getByRole("link", { name: "Comanda da mesa 04" }).click();
     await expect(panel.page.getByText(/Pago · Pix · \d{2}:\d{2}/)).toBeVisible();
@@ -152,6 +156,34 @@ test("a mesa paga com item a caminho, e o garçom fecha depois sem cobrar de nov
     await panel.page.getByRole("button", { name: "Fechar comanda", exact: true }).click();
     await expect(panel.page.getByRole("status")).toContainText("R$ 49,80 no Pix");
     await expect(page.getByRole("status")).toContainText("Conta fechada", { timeout: 3000 });
+  } finally {
+    await panel.close();
+  }
+});
+
+test("o mapa do salão mostra cada mesa e abre a comanda ao lado", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  await order(page, qr, ["Guioza"]);
+  await page.goto(`/m/${qr}/conta`);
+  await page.getByRole("radio", { name: /Cartão/ }).check();
+  await page.getByRole("button", { name: "Pedir a conta" }).click();
+
+  const panel = await ownerPanel(browser, email);
+  try {
+    // Desenho 7.2: o salão por setor; a mesa 04 pediu a conta.
+    await panel.page.goto("/painel/mesas");
+    await expect(panel.page.getByText("1 de 1 ocupadas · 1 pedindo a conta")).toBeVisible();
+    const salon = panel.page.getByRole("region", { name: "Salão principal" });
+    await salon.getByRole("button", { name: /Mesa 04: abrir a comanda · Conta · Cartão/ }).click();
+
+    const drawer = panel.page.getByRole("complementary", { name: "Mesa 04" });
+    await expect(drawer).toContainText("Comanda aberta");
+    await expect(drawer).toContainText("Conta pedida · Cartão");
+    await expect(drawer).toContainText("1× Guioza");
+    await expect(drawer).toContainText("Na fila");
+    await expect(drawer).toContainText("R$ 29,90");
+    await drawer.getByRole("link", { name: "Ver comanda e fechar" }).click();
+    await expect(panel.page.getByText("Conta pedida · Cartão")).toBeVisible();
   } finally {
     await panel.close();
   }

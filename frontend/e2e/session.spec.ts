@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createAccount, loginThroughForm, panelGreeting, openMenu } from "./support/account";
+import { createAccount, dismissSoundGate, loginThroughForm, panelGreeting, openMenu } from "./support/account";
 
 const isRefresh = (url: string) => url.endsWith("/api/v1/auth/refresh");
 
@@ -51,6 +51,8 @@ test("duas abas recarregando ao mesmo tempo continuam logadas", async ({ page, c
 
   await Promise.all([page.reload(), other.goto("/painel")]);
   await expect(panelGreeting(page)).toBeVisible();
+  // A aba nova pergunta do som (desenho 7.4); a que recarregou já respondeu "Agora não".
+  await dismissSoundGate(other);
   await expect(panelGreeting(other)).toBeVisible();
 
   await Promise.all([page.reload(), other.reload()]);
@@ -65,6 +67,7 @@ test("sair numa aba tira a outra do painel", async ({ page, context, request }) 
   await loginThroughForm(page, email);
   const other = await context.newPage();
   await other.goto("/painel");
+  await dismissSoundGate(other);
   await expect(panelGreeting(other)).toBeVisible();
 
   await openMenu(page);

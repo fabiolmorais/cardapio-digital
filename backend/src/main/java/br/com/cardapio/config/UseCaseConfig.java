@@ -50,6 +50,11 @@ import br.com.cardapio.application.port.in.order.CancelOrderItemUseCase;
 import br.com.cardapio.application.port.in.order.CloseTabUseCase;
 import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.order.GetTabUseCase;
+import br.com.cardapio.application.port.in.live.GetLiveFloorUseCase;
+import br.com.cardapio.application.port.in.live.GetTvBoardUseCase;
+import br.com.cardapio.application.port.out.live.LiveFloorPort;
+import br.com.cardapio.application.service.live.GetLiveFloorService;
+import br.com.cardapio.application.service.live.GetTvBoardService;
 import br.com.cardapio.application.port.in.order.ListClosedTabsUseCase;
 import br.com.cardapio.application.port.in.order.ReceiveBillPaymentUseCase;
 import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
@@ -806,6 +811,20 @@ class UseCaseConfig {
                                                         EventPublisherPort eventPublisherPort, Clock clock) {
         return new ReceiveBillPaymentService(callPort, tabPort, orderPort, tabRodizioPort, tabPaymentPort,
                 eventPublisherPort, clock);
+    }
+
+    // O salão ao vivo e o quadro do Modo TV (desenhos 7.1, 7.2 e 8.1)
+
+    @Bean
+    GetLiveFloorUseCase getLiveFloorUseCase(LiveFloorPort liveFloorPort, CallPort callPort, OrderPort orderPort,
+                                            Clock clock) {
+        return new GetLiveFloorService(liveFloorPort, callPort, orderPort, clock);
+    }
+
+    @Bean
+    GetTvBoardUseCase getTvBoardUseCase(DeviceAuthenticator deviceAuthenticator, OrderPort orderPort,
+                                        SectorPort sectorPort, LiveFloorPort liveFloorPort, Clock clock) {
+        return new GetTvBoardService(deviceAuthenticator, orderPort, sectorPort, liveFloorPort, clock);
     }
 
     // O histórico de comandas (Guia 21)
