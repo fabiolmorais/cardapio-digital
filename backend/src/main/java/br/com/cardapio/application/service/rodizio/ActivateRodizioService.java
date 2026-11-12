@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioPhonePort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.service.order.Tabs;
 import br.com.cardapio.domain.call.event.CallChanged;
@@ -36,12 +37,14 @@ public class ActivateRodizioService implements ActivateRodizioUseCase {
     private final TabPort tabs;
     private final TabRodizioPort tabRodizios;
     private final CallPort calls;
+    private final RodizioPhonePort phones;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public ActivateRodizioService(DiningTablePort tables, RodizioPort rodizios, EstablishmentTimeZonePort timeZones,
-                                  TabPort tabs, TabRodizioPort tabRodizios, CallPort calls, EventPublisherPort events,
-                                  Clock clock) {
+                                  TabPort tabs, TabRodizioPort tabRodizios, CallPort calls, RodizioPhonePort phones,
+                                  EventPublisherPort events, Clock clock) {
+        this.phones = phones;
         this.tables = tables;
         this.rodizios = rodizios;
         this.timeZones = timeZones;
@@ -54,7 +57,8 @@ public class ActivateRodizioService implements ActivateRodizioUseCase {
 
     /**
      * Tudo numa transação: a comanda abre (se a mesa ainda não pediu nada), o rodízio entra com o
-     * preço de agora no relógio do restaurante, e o "Quero o rodízio" da mesa termina atendido.
+     * preço de agora no relógio do restaurante, os celulares da mesa entram nele, e o "Quero o
+     * rodízio" da mesa termina atendido.
      */
     @Override
     @Transactional
@@ -76,6 +80,8 @@ public class ActivateRodizioService implements ActivateRodizioUseCase {
         if (!tabRodizios.insertIfNone(activated)) {
             throw new RodizioAlreadyActiveException(rodizio.name());
         }
+        // Os celulares que estão na mesa agora entram; quem chegar depois pergunta se participa.
+        phones.joinAllAtTable(establishmentId, activated.id(), table.id(), now);
 
         calls.findOpen(establishmentId, table.id(), CallType.RODIZIO).ifPresent(open -> {
             Call done = open.resolveWithRodizio(command.by(), now);

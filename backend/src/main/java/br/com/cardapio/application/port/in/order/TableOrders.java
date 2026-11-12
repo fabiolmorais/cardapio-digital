@@ -2,6 +2,7 @@ package br.com.cardapio.application.port.in.order;
 
 import br.com.cardapio.application.port.in.rodizio.TableRodizio;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import br.com.cardapio.domain.shared.model.Money;
 
@@ -18,9 +19,11 @@ import java.util.Set;
  * @param rodizio         o rodízio da mesa; null se ela não está no rodízio
  * @param rodizioProducts os produtos incluídos (a aba Rodízio); vazio fora do rodízio
  * @param rodizioLimits   as regras ligadas, em números para a tela; null fora do rodízio
+ * @param participation   se este celular está no rodízio da mesa; null fora do rodízio
  */
 public record TableOrders(boolean orderingEnabled, Money total, Money paid, Money due, TableRodizio rodizio, Set<ProductId> rodizioProducts,
-                          RoundPolicy.Limits rodizioLimits, List<TableOrder> orders) {
+                          RoundPolicy.Limits rodizioLimits, List<TableOrder> orders,
+                          RodizioParticipation participation) {
 
     public TableOrders {
         rodizioProducts = Set.copyOf(rodizioProducts);

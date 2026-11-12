@@ -115,12 +115,12 @@ class RodizioRulesFlowTest {
                  "tiers":[{"name":"Adulto","defaultPriceCents":12990,"prices":[]}],
                  "productIds":["%s","%s"]}
                 """.formatted(guioza, sashimi)), "$.id");
+        Cookie phone = phone(); // na mesa antes da ativação: entra no rodízio junto
         MvcTestResult activated = send("POST", owner, "/api/v1/tables/" + tableId + "/rodizio",
                 "{\"rodizioId\":\"%s\",\"guests\":[{\"tierName\":\"Adulto\",\"quantity\":1}]}".formatted(rodizio));
         assertThat(activated).hasStatus(HttpStatus.CREATED);
         Instant startedAt = Instant.parse(json(activated, "$.startedAt"));
         assertThat(Instant.parse(json(activated, "$.endsAt"))).isEqualTo(startedAt.plus(Duration.ofMinutes(60)));
-        Cookie phone = phone();
 
         MvcTestResult twoSashimis = fromPhone(phone, "/rounds", sashimi, 2);
         assertThat(twoSashimis).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);

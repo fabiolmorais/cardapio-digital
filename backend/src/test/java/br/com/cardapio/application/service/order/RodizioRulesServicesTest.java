@@ -76,7 +76,7 @@ class RodizioRulesServicesTest {
                 List.of(new PriceTier("Adulto", Money.ofCents(129_90), List.of())), Set.of(guioza.id(), sashimi.id()),
                 NOW);
         rodizios.save(japones);
-        new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("America/Sao_Paulo"), fakes, rodizios, calls,
+        new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("America/Sao_Paulo"), fakes, rodizios, calls, rodizios,
                 published::add, clock(NOW)).activate(new ActivateRodizioCommand(sakura, mesa04.id(), japones.id(),
                 Map.of("Adulto", 2), UserId.newId()));
     }
@@ -86,13 +86,13 @@ class RodizioRulesServicesTest {
     }
 
     private TableOrder send(boolean round, Instant at, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock(at)).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(product.id(), quantity, null)), round));
     }
 
     private TableOrders tableOrders(Instant at) {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock(at))
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, rodizios, clock(at))
                 .list(QR_04, "ana");
     }
 

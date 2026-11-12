@@ -75,7 +75,7 @@ class KitchenServicesTest {
     /** Um pedido da Ana, um minuto depois do anterior (a fila é por ordem de chegada). */
     private TableOrder place(OrderLine... lines) {
         clock = Clock.offset(clock, Duration.ofMinutes(1));
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, "ana", List.of(lines)));
     }
@@ -216,7 +216,7 @@ class KitchenServicesTest {
             assertThat(i.status()).isEqualTo(OrderItemStatus.CANCELED);
             assertThat(i.cancelReason()).isEqualTo(OrderItem.REJECTED_BY_STAFF);
         });
-        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock).list(QR_04, "ana")
+        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, rodizios, clock).list(QR_04, "ana")
                 .total()).isEqualTo(Money.ZERO);
         assertThatThrownBy(() -> review().reject(EstablishmentId.newId(), order.id(), carlos))
                 .isInstanceOf(OrderNotFoundException.class);

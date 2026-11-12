@@ -79,7 +79,7 @@ class TabServicesTest {
     }
 
     private TableOrder place(String phone, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, phone, List.of(new OrderLine(product.id(), quantity, null))));
     }
@@ -193,7 +193,7 @@ class TabServicesTest {
         assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.DONE);
         assertThat(fakes.tabs.get(theTab()).status()).isEqualTo(TabStatus.OPEN);
         TableOrders atTheTable = new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios,
-                fakes, clock).list(QR_04, "ana");
+                fakes, rodizios, clock).list(QR_04, "ana");
         assertThat(atTheTable.paid()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(atTheTable.due()).isEqualTo(Money.ZERO);
         StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab());

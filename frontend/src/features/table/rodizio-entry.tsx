@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
+import { RodizioInvite } from "./rodizio-invite";
 import { useTableCalls } from "./table-calls";
 import { listRodizios, useTableOrders, type RodizioQuote } from "./table-orders";
 
@@ -17,7 +18,7 @@ const card =
  * rodadas; sem ele, o "Quero o rodízio" (só se o restaurante tem algum à la minute).
  */
 export function RodizioEntry({ token, photo }: { token: string; photo?: string }) {
-  const { data } = useTableOrders(token);
+  const { data, refresh } = useTableOrders(token);
   const { rodizio: request } = useTableCalls(token);
   const [offered, setOffered] = useState<RodizioQuote[]>([]);
 
@@ -32,6 +33,17 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
   }, [token]);
 
   const active = data?.rodizio;
+  // A mesa está no rodízio, mas este celular chegou depois: pergunta se ele participa.
+  if (active && data.rodizioParticipation !== "JOINED") {
+    return (
+      <RodizioInvite
+        token={token}
+        rodizio={active}
+        participation={data.rodizioParticipation}
+        onChange={() => void refresh()}
+      />
+    );
+  }
   if (active) {
     const rounds = data.orders.filter((o) => o.items.some((i) => i.rodizio)).length;
     return (

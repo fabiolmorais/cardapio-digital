@@ -2,6 +2,7 @@ package br.com.cardapio.adapter.in.web.order;
 
 import br.com.cardapio.adapter.in.web.rodizio.TableRodizioResponse;
 import br.com.cardapio.application.port.in.order.TableOrders;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -27,7 +28,10 @@ record TableOrdersResponse(
         @Schema(description = "As regras do rodízio ligadas, em números para a tela; ausente fora do rodízio")
         RodizioLimits rodizioLimits,
         @Schema(requiredMode = REQUIRED, description = "Os pedidos da comanda aberta, do mais antigo ao mais novo")
-        List<TableOrderResponse> orders
+        List<TableOrderResponse> orders,
+        @Schema(description = "Se este celular está no rodízio da mesa (NONE: chegou depois e não disse; "
+                + "REQUESTED: chamou o garçom; JOINED: está dentro); ausente fora do rodízio")
+        RodizioParticipation rodizioParticipation
 ) {
 
     @Schema(name = "RodizioLimits", description = "Cada campo ausente: a regra está desligada")
@@ -49,6 +53,6 @@ record TableOrdersResponse(
                 t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.rodizioProducts().stream().map(p -> p.value()).sorted().toList(),
                 RodizioLimits.from(t.rodizioLimits()),
-                t.orders().stream().map(TableOrderResponse::from).toList());
+                t.orders().stream().map(TableOrderResponse::from).toList(), t.participation());
     }
 }

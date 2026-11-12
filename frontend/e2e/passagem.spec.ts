@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
@@ -81,7 +81,8 @@ test("a mesa entra no passagem, vira o cartão, e os passadores veem a cor na ho
 });
 
 /** A mesma churrascaria com a Picanha (só do rodízio) e o rodízio já ativado na mesa 04, para 2 pessoas. */
-async function churrascariaServing(request: APIRequestContext) {
+/** Com `seated`, o celular já está na mesa (presença confirmada) quando o garçom ativa: entra no rodízio junto. */
+async function churrascariaServing(request: APIRequestContext, seated?: Page) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
@@ -104,6 +105,10 @@ async function churrascariaServing(request: APIRequestContext) {
     tiers: [{ name: "Adulto", defaultPriceCents: 15990, prices: [] }],
     productIds: [picanha.id],
   });
+  if (seated) {
+    await seated.goto(`/m/${table.publicToken}`);
+    await expect(seated.getByText("No salão")).toBeVisible();
+  }
   const activated = await request.post(`${API_URL}/api/v1/tables/${table.id}/rodizio`, {
     headers,
     data: { rodizioId: churrasco.id, guests: [{ tierName: "Adulto", quantity: 2 }] },
@@ -113,7 +118,7 @@ async function churrascariaServing(request: APIRequestContext) {
 }
 
 test("a mesa pede uma picanha mal passada, e o passador entrega", async ({ page, request, browser }) => {
-  const { qr, email } = await churrascariaServing(request);
+  const { qr, email } = await churrascariaServing(request, page);
 
   await page.goto(`/m/${qr}/cardapio`);
   const picanha = page.getByRole("group", { name: "Picanha", exact: true });

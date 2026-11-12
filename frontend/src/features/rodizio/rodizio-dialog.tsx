@@ -102,7 +102,9 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
           </DialogTitle>
           <DialogDescription>
             {adjusting
-              ? t.adjustText
+              ? target.requestedAt
+                ? t.joinRequested(asked === 0 ? t.now : t.minutesAgo(asked as number))
+                : t.adjustText
               : target.requestedAt
                 ? t.requested(asked === 0 ? t.now : t.minutesAgo(asked as number))
                 : t.activateText}

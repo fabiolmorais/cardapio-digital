@@ -2,7 +2,9 @@ package br.com.cardapio.adapter.in.web.rodizio;
 
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.adapter.in.web.tablesession.TableSessionCookie;
+import br.com.cardapio.application.port.in.rodizio.JoinRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.QuoteRodiziosUseCase;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import br.com.cardapio.application.port.in.rodizio.TurnRodizioCardUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,8 +29,10 @@ class PublicRodizioController {
 
     private final QuoteRodiziosUseCase quotes;
     private final TurnRodizioCardUseCase turnCard;
+    private final JoinRodizioUseCase join;
 
-    PublicRodizioController(QuoteRodiziosUseCase quotes, TurnRodizioCardUseCase turnCard) {
+    PublicRodizioController(QuoteRodiziosUseCase quotes, TurnRodizioCardUseCase turnCard, JoinRodizioUseCase join) {
+        this.join = join;
         this.quotes = quotes;
         this.turnCard = turnCard;
     }
@@ -45,6 +49,29 @@ class PublicRodizioController {
                                   @CookieValue(name = TableSessionCookie.NAME, required = false) String session,
                                   @Valid @RequestBody CardRequest request) {
         return TableRodizioResponse.from(turnCard.turn(token, session, request.status()));
+    }
+
+    @Schema(name = "RodizioJoin")
+    record JoinResponse(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+                    description = "REQUESTED: esperando o garçom incluir; JOINED: já estava no rodízio")
+            RodizioParticipation participation
+    ) {
+    }
+
+    @PostMapping("/rodizio/join")
+    @Operation(operationId = "joinTableRodizio",
+            summary = "\"Vou participar\": este celular pede para entrar no rodízio da mesa e chama o garçom")
+    @ApiResponse(responseCode = "200", description = "Pedido feito (ou o celular já estava no rodízio)")
+    @ApiResponse(responseCode = "401", description = "Sem sessão válida nesta mesa",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "Sem presença confirmada, ou celular bloqueado",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "A mesa não está no rodízio",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    JoinResponse join(@PathVariable String token,
+                      @CookieValue(name = TableSessionCookie.NAME, required = false) String session) {
+        return new JoinResponse(join.join(token, session));
     }
 
     @GetMapping("/rodizios")

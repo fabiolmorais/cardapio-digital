@@ -72,7 +72,7 @@ class PassagemServicesTest {
         Rodizio rodizio = Rodizio.create(sakura, "Churrasco", type, "", RodizioRules.NONE,
                 List.of(new PriceTier("Adulto", Money.ofCents(159_90), List.of())), Set.of(picanha.id()), NOW);
         rodizios.save(rodizio);
-        new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("America/Sao_Paulo"), fakes, rodizios, calls,
+        new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("America/Sao_Paulo"), fakes, rodizios, calls, rodizios,
                 published::add, clock).activate(new ActivateRodizioCommand(sakura, mesa04.id(), rodizio.id(),
                 Map.of("Adulto", 2), UserId.newId()));
         published.clear();
@@ -103,7 +103,7 @@ class PassagemServicesTest {
     void theCutRequestIsARoundAtZeroWithThePoint() {
         rodizio(RodizioType.PASSAGEM);
 
-        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(picanha.id(), 1, "Mal passada")), true));
 

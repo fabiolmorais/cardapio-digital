@@ -243,6 +243,17 @@ export const tablePage = {
     nothingOnTheWay: "Nada a caminho: tudo o que foi pedido já chegou à mesa.",
   },
   rodizio: {
+    invite: {
+      label: "Rodízio da mesa",
+      title: (name: string, people: number) =>
+        `Esta mesa está no ${name} · ${people} ${people === 1 ? "pessoa" : "pessoas"}`,
+      question: "Você vai participar? O rodízio é cobrado por pessoa: o garçom inclui você na conta.",
+      yes: "Sim, vou participar",
+      no: "Não, vou pedir à parte",
+      joining: "Chamando o garçom…",
+      requested: "Garçom chamado: assim que ele incluir você, as rodadas liberam neste celular.",
+      changeMind: (name: string) => `Esta mesa está no ${name}. Quero participar`,
+    },
     want: "Quero o rodízio",
     wantNamed: (name: string) => `Quero o rodízio · ${name}`,
     options: (n: number) => `${n} rodízios`,
