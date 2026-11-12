@@ -61,7 +61,7 @@ class RodizioPersistenceAdapter implements RodizioPort {
         RodizioRules rules = r.rules();
         rodizios.save(new RodizioJpaEntity(id, establishment, r.name(), r.type().name(), r.description(),
                 rules.maxPerItemPerRound(), rules.maxPendingPerGuest(), rules.minRoundIntervalMinutes(),
-                rules.timeLimitMinutes(), rules.wasteNotice(), r.active(), r.createdAt()));
+                rules.timeLimitMinutes(), rules.wasteNotice(), r.active(), r.createdAt(), r.banner()));
         prices.deleteByRodizio(id);
         tiers.deleteByRodizio(id);
         products.deleteByRodizio(id);
@@ -145,7 +145,8 @@ class RodizioPersistenceAdapter implements RodizioPort {
                                                 p.getEndsAt(), Money.ofCents(p.getPriceCents())))
                                         .toList()))
                         .toList(),
-                productsByRodizio.getOrDefault(e.getId(), Set.of()), e.isActive(), e.getCreatedAt())).toList();
+                productsByRodizio.getOrDefault(e.getId(), Set.of()), e.isActive(), e.getCreatedAt(),
+                e.getBannerPath())).toList();
     }
 
     /** Segunda = bit 0 (1), terça = bit 1 (2) … domingo = bit 6 (64). */

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, X } from "lucide-react";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type ChangeEvent, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ToggleRow } from "@/components/toggle-row";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,10 @@ import {
   updateRodizio,
   type MenuProduct,
   type Rodizio,
+  BANNER_MAX_BYTES,
+  BANNER_TYPES,
+  removeRodizioBanner,
+  uploadRodizioBanner,
 } from "./rodizio-api";
 import {
   DAYS,
@@ -298,6 +302,7 @@ function RodizioEditor({
             </div>
           </fieldset>
         </Panel>
+        <BannerPanel rodizio={rodizio} />
 
         <Panel>
           <PanelTitle title={t.prices.title} text={t.prices.text} />
@@ -798,6 +803,125 @@ function ProductPicker({
             })}
           </div>
         ))}
+    </Panel>
+  );
+}
+
+/**
+ * O banner do rodízio (tela "Escolha o rodízio" da mesa): a prévia no formato 2:1, o tamanho ideal,
+ * e o envio direto ao armazenamento. Sem banner, a mesa usa a foto de um prato (automática).
+ */
+function BannerPanel({ rodizio }: { rodizio?: Rodizio }) {
+  const inputId = useId();
+  // O banner fica aqui, e não na lista: recarregar a lista recria o formulário e perderia o que
+  // ainda não foi salvo nele.
+  const [url, setUrl] = useState(rodizio?.bannerUrl ?? null);
+  const [percent, setPercent] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const b = messages.rodizio.banner;
+
+  const send = useMutation({
+    mutationFn: async (file: File) => {
+      if (!BANNER_TYPES.includes(file.type)) throw new Error(b.wrongType);
+      if (file.size > BANNER_MAX_BYTES) throw new Error(b.tooBig);
+      setPercent(0);
+      return uploadRodizioBanner(rodizio!.id, file, (fraction) =>
+        setPercent(fraction < 1 ? Math.round(fraction * 100) : null),
+      );
+    },
+    onSuccess: (saved) => {
+      setUrl(saved.bannerUrl ?? null);
+      setNotice(b.sent);
+    },
+    onSettled: () => setPercent(null),
+  });
+  const remove = useMutation({
+    mutationFn: () => removeRodizioBanner(rodizio!.id),
+    onSuccess: (saved) => {
+      setUrl(saved.bannerUrl ?? null);
+      setNotice(b.removed);
+    },
+  });
+
+  function onPick(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // a mesma imagem pode ser escolhida de novo
+    if (!file) return;
+    setNotice(null);
+    remove.reset();
+    send.mutate(file);
+  }
+
+  const busy = send.isPending || remove.isPending;
+  const error = send.error ?? remove.error;
+
+  return (
+    <Panel>
+      <PanelTitle title={b.title} text={b.text} />
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="relative aspect-[2/1] w-full max-w-[360px] overflow-hidden rounded-2xl border border-border bg-muted">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- banner já no tamanho certo, vindo do R2
+            <img src={url} alt={b.preview(rodizio!.name)} className="size-full object-cover" />
+          ) : (
+            <span className="flex size-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+              {b.automatic}
+            </span>
+          )}
+        </div>
+        <div className="flex min-w-60 flex-1 flex-col gap-2">
+          <p className="text-sm text-muted-foreground">{b.ideal}</p>
+          {rodizio ? (
+            <div className="flex flex-wrap gap-2">
+              <input
+                id={inputId}
+                type="file"
+                accept={BANNER_TYPES.join(",")}
+                disabled={busy}
+                onChange={onPick}
+                className="peer sr-only"
+              />
+              <label
+                htmlFor={inputId}
+                className={cn(
+                  "inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50 dark:bg-input/30",
+                  busy && "pointer-events-none opacity-60",
+                )}
+              >
+                {url ? b.replace : b.send}
+              </label>
+              {url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-10 px-3"
+                  disabled={busy}
+                  onClick={() => remove.mutate()}
+                >
+                  {b.remove}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm font-medium">{b.saveFirst}</p>
+          )}
+          {send.isPending && (
+            <p role="status" className="text-sm text-muted-foreground">
+              {percent === null ? b.processing : b.sending(percent)}
+            </p>
+          )}
+          {notice && !busy && (
+            <p role="status" className="text-sm text-success">
+              {notice}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error.message}
+            </p>
+          )}
+        </div>
+      </div>
     </Panel>
   );
 }

@@ -144,6 +144,11 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public byte[] processBanner(byte[] original) {
+        throw new UnsupportedOperationException();
+    }
+
     // VideoHostingPort
     @Override
     public String createVideo(String title) {

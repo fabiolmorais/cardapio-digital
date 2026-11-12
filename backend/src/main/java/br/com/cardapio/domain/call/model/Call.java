@@ -133,9 +133,17 @@ public record Call(
                 createdAt, now, Objects.requireNonNull(by), now, canceledAt, releaseCode);
     }
 
-    /** "Recusar": o garçom não libera (o celular não está no salão). O chamado é cancelado. */
+    /**
+     * "Recusar": na liberação, o garçom não libera (o celular não está no salão); no "Quero o
+     * rodízio", a mesa não vai entrar no rodízio (ou quem pediu não vai participar). O chamado é
+     * cancelado. A liberação só se recusa antes de alguém responder; o rodízio, enquanto estiver aberto.
+     */
     public Call decline(Instant now) {
-        requirePendingUnlock();
+        if (type == CallType.RODIZIO) {
+            requireOpen();
+        } else {
+            requirePendingUnlock();
+        }
         return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.CANCELED,
                 createdAt, acceptedAt, acceptedBy, doneAt, now, releaseCode);
     }

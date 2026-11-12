@@ -20,5 +20,8 @@ public interface RodizioPhonePort {
     /** O garçom ajustou as pessoas: quem tinha pedido para entrar entra. Devolve quantos entraram. */
     int admitRequested(EstablishmentId establishmentId, TabRodizioId rodizio, Instant now);
 
+    /** O garçom recusou o "Quero o rodízio": quem pediu para entrar volta a não estar (pode pedir de novo). */
+    int cancelRequests(EstablishmentId establishmentId, TabRodizioId rodizio);
+
     RodizioParticipation find(EstablishmentId establishmentId, TabRodizioId rodizio, TableSessionId session);
 }

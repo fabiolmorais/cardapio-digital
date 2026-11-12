@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.rodizio.QuoteRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.RodizioQuote;
 import br.com.cardapio.application.port.out.account.EstablishmentTimeZonePort;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -21,10 +22,12 @@ public class QuoteRodiziosService implements QuoteRodiziosUseCase {
     private final EstablishmentTimeZonePort timeZones;
     private final DiningTablePort tables;
     private final TableSessionPort sessions;
+    private final MediaStoragePort storage;
     private final Clock clock;
 
     public QuoteRodiziosService(RodizioPort rodizios, EstablishmentTimeZonePort timeZones, DiningTablePort tables,
-                                TableSessionPort sessions, Clock clock) {
+                                TableSessionPort sessions, MediaStoragePort storage, Clock clock) {
+        this.storage = storage;
         this.rodizios = rodizios;
         this.timeZones = timeZones;
         this.tables = tables;
@@ -48,6 +51,7 @@ public class QuoteRodiziosService implements QuoteRodiziosUseCase {
 
     private ResultPage<RodizioQuote> quote(EstablishmentId establishmentId, PageQuery page) {
         LocalDateTime localTime = LocalDateTime.ofInstant(clock.instant(), timeZones.timeZoneOf(establishmentId));
-        return rodizios.findActive(establishmentId, page).map(r -> RodizioQuote.of(r, localTime));
+        return rodizios.findActive(establishmentId, page).map(r -> RodizioQuote.of(r, localTime,
+                r.banner() == null ? null : storage.publicUrl(r.banner())));
     }
 }

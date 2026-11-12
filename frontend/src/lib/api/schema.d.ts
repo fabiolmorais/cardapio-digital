@@ -406,6 +406,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rodizios/{id}/banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 2: o arquivo já foi enviado; confere e troca o banner */
+        post: operations["setRodizioBanner"];
+        /** Tira o banner: a mesa volta para a imagem automática */
+        delete: operations["removeRodizioBanner"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rodizios/{id}/banner/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 1: pede a URL assinada para enviar o banner */
+        post: operations["startRodizioBannerUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/push/subscriptions": {
         parameters: {
             query?: never;
@@ -1977,6 +2012,8 @@ export interface components {
             productIds: string[];
             /** @description false: pausado (as mesas não podem pedir) */
             active: boolean;
+            /** @description O banner enviado (2:1, 1200 × 600); ausente: a mesa mostra a imagem automática */
+            bannerUrl?: string;
         };
         RodizioRulesView: {
             /** Format: int32 */
@@ -2461,6 +2498,32 @@ export interface components {
             activeTables: number;
             /** @description false: desativado (só vem com includeInactive) */
             active: boolean;
+        };
+        SetRodizioBannerRequest: {
+            /** Format: uuid */
+            uploadId: string;
+        };
+        RodizioBannerUploadRequest: {
+            /** @example image/jpeg */
+            contentType: string;
+            /**
+             * Format: int64
+             * @description Tamanho em bytes (até 5 MB)
+             */
+            sizeBytes: number;
+        };
+        /** @description Envie o banner com um PUT na url, com estes cabeçalhos; depois avise com o uploadId */
+        RodizioBannerUpload: {
+            /** Format: uuid */
+            uploadId: string;
+            url: string;
+            /** @example PUT */
+            method: string;
+            headers: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
         };
         PushSubscriptionKeys: {
             /** @description A chave pública do navegador, em base64url */
@@ -3121,6 +3184,8 @@ export interface components {
             type: "A_LA_MINUTE" | "PASSAGEM";
             description: string;
             tiers: components["schemas"]["RodizioQuoteTier"][];
+            /** @description O banner enviado pelo restaurante (2:1); ausente: a mesa mostra a imagem automática */
+            bannerUrl?: string;
         };
         RodizioQuoteTier: {
             name: string;
@@ -4958,6 +5023,125 @@ export interface operations {
             };
             /** @description Já existe um rodízio ativo com este nome, ou o limite de ativos */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    setRodizioBanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRodizioBannerRequest"];
+            };
+        };
+        responses: {
+            /** @description Banner trocado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Não é JPG nem PNG, ou é pequeno demais */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um rodízio deste restaurante, ou o envio não chegou */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    removeRodizioBanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Banner removido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rodizio"];
+                };
+            };
+            /** @description Não é um rodízio deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startRodizioBannerUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RodizioBannerUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Como enviar o arquivo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RodizioBannerUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um rodízio deste restaurante */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

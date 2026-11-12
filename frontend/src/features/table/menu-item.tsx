@@ -21,6 +21,7 @@ export function MenuItemCard({
   reelsHref,
   onOpen,
   price,
+  selected = false,
 }: {
   item: MenuItem;
   action?: ReactNode;
@@ -29,6 +30,8 @@ export function MenuItemCard({
   onOpen?: () => void;
   /** No lugar do preço (a aba Rodízio não mostra preço). */
   price?: ReactNode;
+  /** Escolhido na rodada do rodízio: o cartão fica na cor da marca (desenho 6.2). */
+  selected?: boolean;
 }) {
   const hasVideo = item.media.some((m) => m.type === "VIDEO");
   const off = discountPercent(item);
@@ -36,7 +39,10 @@ export function MenuItemCard({
     <article
       id={`produto-${item.id}`}
       aria-disabled={!item.available || undefined}
-      className="flex scroll-mt-24 gap-3.5 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-2.5"
+      className={cn(
+        "flex scroll-mt-24 gap-3.5 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-2.5 transition-colors",
+        selected && "border-(--brand-text)/60 bg-(--brand)/15",
+      )}
     >
       {reelsHref ? (
         <Link

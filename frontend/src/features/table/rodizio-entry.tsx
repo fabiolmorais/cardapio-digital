@@ -36,12 +36,7 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
   // A mesa está no rodízio, mas este celular chegou depois: pergunta se ele participa.
   if (active && data.rodizioParticipation !== "JOINED") {
     return (
-      <RodizioInvite
-        token={token}
-        rodizio={active}
-        participation={data.rodizioParticipation}
-        onChange={() => void refresh()}
-      />
+      <RodizioInvite token={token} rodizio={active} participation={data.rodizioParticipation} onChange={refresh} />
     );
   }
   if (active) {

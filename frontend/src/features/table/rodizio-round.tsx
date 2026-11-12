@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Flame, Minus, Plus } from "lucide-react";
+import { CircleAlert, Clock, Flame, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
@@ -8,7 +8,6 @@ import { useCart } from "./cart";
 import { MenuItemCard } from "./menu-item";
 import type { MenuItem } from "./table-data";
 import { placeOrder, timeOf, type TableOrders } from "./table-orders";
-import { MesaNotice } from "./mesa-notice";
 
 const t = tablePage.rodizio;
 const focus = "focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none";
@@ -125,7 +124,14 @@ export function RodizioRound({
           </p>
         )
       )}
-      {limits?.wasteNotice && <MesaNotice tone="warning">{limits.wasteNotice}</MesaNotice>}
+      {limits?.wasteNotice && (
+        <p className="flex items-start gap-2.5 rounded-[14px] bg-(--mesa-warn-soft) px-3.5 py-3 text-[13px] leading-[18px]">
+          <CircleAlert aria-hidden className="mt-px size-4.5 shrink-0 text-(--mesa-warn)" />
+          <span>
+            {t.wastePrefix} {limits.wasteNotice.charAt(0).toLowerCase() + limits.wasteNotice.slice(1)}
+          </span>
+        </p>
+      )}
       {limits?.maxPerItem != null && <p className="text-sm text-(--mesa-muted)">{t.maxPerItem(limits.maxPerItem)}</p>}
 
       {items.length === 0 && <p className="text-(--mesa-muted)">{t.empty}</p>}
@@ -135,6 +141,7 @@ export function RodizioRound({
           <MenuItemCard
             key={item.id}
             item={item}
+            selected={n > 0}
             price={
               <span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">{t.included}</span>
             }

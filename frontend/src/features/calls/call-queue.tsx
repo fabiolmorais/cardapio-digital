@@ -174,17 +174,36 @@ export function CallQueue({ role, sector = null }: { role: Role; sector?: string
                       <span aria-hidden>{elapsed(waited)}</span>
                     </Timer>
                   </div>
-                  {pending && canAct && !unlock && (
+                  {pending && canAct && !unlock && !rodizio && (
                     <div className="flex gap-2">
-                      {activate}
                       <Button
                         size="sm"
-                        variant={rodizio ? "outline" : "default"}
                         className="h-9 flex-1"
                         disabled={busy !== null}
                         onClick={() => act(call.id, acceptCall)}
                       >
                         {busy === call.id ? t.accepting : t.accept}
+                      </Button>
+                    </div>
+                  )}
+                  {/* "Quero o rodízio" se resolve ativando (ou ajustando as pessoas) ou recusando: "Aceitar"
+                    e "Concluir" terminariam o chamado sem ninguém entrar no rodízio. */}
+                  {canAct && rodizio && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {!pending && (
+                        <Badge tone="warn" className="mr-auto">
+                          {t.inProgress(call.acceptedByName)}
+                        </Badge>
+                      )}
+                      {activate}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 border-destructive/35 bg-transparent text-destructive"
+                        disabled={busy !== null}
+                        onClick={() => act(call.id, declineCall)}
+                      >
+                        {busy === call.id ? t.declining : t.decline}
                       </Button>
                     </div>
                   )}
@@ -209,12 +228,11 @@ export function CallQueue({ role, sector = null }: { role: Role; sector?: string
                       </Button>
                     </div>
                   )}
-                  {!pending && (
+                  {!pending && !rodizio && (
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone="warn" className="mr-auto">
                         {t.inProgress(call.acceptedByName)}
                       </Badge>
-                      {activate}
                       {canAct && call.type === "BILL" && (
                         <Button size="sm" className={GREEN} disabled={busy !== null} onClick={() => setPaying(call)}>
                           {t.receive}

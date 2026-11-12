@@ -6,6 +6,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.Role;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.support.IntegrationTest;
+import br.com.cardapio.support.TestImages;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
+import java.awt.image.BufferedImage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -270,6 +276,57 @@ class RodizioControllerTest {
         assertThat(json(refused, "$.detail")).contains("não está no cardápio");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM rodizio WHERE establishment_id = ?", Integer.class,
                 sakura.establishmentId())).isZero();
+    }
+
+    /** Faz o papel do navegador: PUT direto no armazenamento, com a URL assinada. */
+    private int browserPut(MvcTestResult upload, byte[] content) throws Exception {
+        HttpRequest put = HttpRequest.newBuilder(URI.create(json(upload, "$.url")))
+                .header("Content-Type", json(upload, "$.headers['Content-Type']"))
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(content))
+                .build();
+        return HttpClient.newHttpClient().send(put, HttpResponse.BodyHandlers.discarding()).statusCode();
+    }
+
+    @Test
+    void theOwnerSendsTheBannerAndTheTableSeesIt() throws Exception {
+        String id = create(sakura.token(), japones("Japonês"));
+        byte[] image = TestImages.encode("jpeg", 2400, 1200);
+
+        MvcTestResult upload = send("POST", sakura.token(), RODIZIOS + "/" + id + "/banner/uploads",
+                "{\"contentType\":\"image/jpeg\",\"sizeBytes\":%d}".formatted(image.length));
+        assertThat(upload).hasStatusOk();
+        assertThat(browserPut(upload, image)).isEqualTo(200);
+        MvcTestResult set = send("POST", sakura.token(), RODIZIOS + "/" + id + "/banner",
+                "{\"uploadId\":\"%s\"}".formatted(json(upload, "$.uploadId")));
+        assertThat(set).hasStatusOk();
+        String url = json(set, "$.bannerUrl");
+        assertThat(url).contains("/rodizios/").endsWith(".jpg");
+        HttpResponse<byte[]> stored = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create(url)).build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+        BufferedImage banner = TestImages.read(stored.body());
+        assertThat(banner.getWidth()).isEqualTo(1200);
+        assertThat(banner.getHeight()).isEqualTo(600);
+        assertThat(send("GET", sakura.token(), "/api/v1/rodizio-quotes", null)).bodyJson()
+                .extractingPath("$.content[0].bannerUrl").isEqualTo(url);
+
+        MvcTestResult removed = send("DELETE", sakura.token(), RODIZIOS + "/" + id + "/banner", null);
+        assertThat(removed).hasStatusOk();
+        assertThat(removed).bodyJson().extractingPath("$.bannerUrl").isNull();
+    }
+
+    @Test
+    void anotherRestaurantDoesNotTouchTheBanner() throws Exception {
+        String id = create(sakura.token(), japones("Japonês"));
+        Owner other = newRestaurant();
+
+        assertThat(send("POST", other.token(), RODIZIOS + "/" + id + "/banner/uploads",
+                "{\"contentType\":\"image/jpeg\",\"sizeBytes\":1000}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.token(), RODIZIOS + "/" + id + "/banner",
+                "{\"uploadId\":\"%s\"}".formatted(UUID.randomUUID()))).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("DELETE", other.token(), RODIZIOS + "/" + id + "/banner", null))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", sakura.token(), RODIZIOS + "/" + id + "/banner/uploads",
+                "{\"contentType\":\"image/gif\",\"sizeBytes\":1000}")).hasStatus(HttpStatus.BAD_REQUEST);
     }
 
     @Test

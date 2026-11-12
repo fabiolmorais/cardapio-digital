@@ -34,7 +34,8 @@ export function RodizioInvite({
   token: string;
   rodizio: NonNullable<TableOrders["rodizio"]>;
   participation: RodizioParticipation | undefined;
-  onChange: () => void;
+  /** Busca de novo os pedidos da mesa (a participação vem do servidor). */
+  onChange: () => Promise<unknown> | void;
 }) {
   // No servidor não há sessionStorage: lá conta como "não respondeu", e o navegador acerta.
   const stored = useSyncExternalStore(
@@ -43,10 +44,10 @@ export function RodizioInvite({
     () => false,
   );
   const [declined, setDeclined] = useState(false);
-  const [asked, setAsked] = useState<RodizioParticipation | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const state = asked ?? participation ?? "NONE";
+  // Vem sempre do servidor: se o garçom recusar o pedido, a pergunta volta sozinha (pelo tempo real).
+  const state = participation ?? "NONE";
 
   if (state === "JOINED") return null;
 
@@ -54,8 +55,8 @@ export function RodizioInvite({
     setBusy(true);
     setError(null);
     try {
-      setAsked(await joinRodizio(token));
-      onChange();
+      await joinRodizio(token);
+      await onChange();
     } catch (e) {
       setError((e as Error).message);
     } finally {

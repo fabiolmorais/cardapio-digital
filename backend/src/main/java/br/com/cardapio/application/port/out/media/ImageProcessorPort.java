@@ -14,4 +14,11 @@ public interface ImageProcessorPort {
      * InvalidImageException nas mesmas situações da foto.
      */
     ProcessedLogo processLogo(byte[] original);
+
+    /**
+     * O banner do rodízio, em JPG no formato largo (2:1), cortado pelo centro e reduzido até
+     * BannerFile.WIDTH × BannerFile.HEIGHT. InvalidImageException se não for JPG ou PNG, ou se for
+     * menor que BannerFile.MIN_WIDTH × BannerFile.MIN_HEIGHT.
+     */
+    byte[] processBanner(byte[] original);
 }

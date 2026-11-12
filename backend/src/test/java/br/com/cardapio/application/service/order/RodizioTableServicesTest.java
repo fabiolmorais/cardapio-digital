@@ -38,12 +38,15 @@ import br.com.cardapio.domain.rodizio.model.TimedPrice;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemoryStorage;
 import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
 import br.com.cardapio.application.service.rodizio.JoinRodizioService;
 import br.com.cardapio.domain.rodizio.exception.RodizioNotJoinedException;
 import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
+import br.com.cardapio.application.service.call.DeclineCallService;
+import br.com.cardapio.application.service.call.AcceptCallService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -162,6 +165,27 @@ class RodizioTableServicesTest {
         assertThat(join.join(QR_04, "ana")).isEqualTo(RodizioParticipation.JOINED);
     }
 
+    /** O garçom recusa o "Quero o rodízio" de quem chegou depois: o celular volta a não estar, e pode pedir de novo. */
+    @Test
+    void theWaiterDeclinesSomeoneWhoArrivedLater() {
+        activate(japones, Map.of("Adulto", 2));
+        rodizios.openToAll.clear();
+        sessions.givenPresent(sakura, mesa04.id(), "bia", NOW);
+        JoinRodizioService join = new JoinRodizioService(tables, sessions, fakes, rodizios, rodizios, calls,
+                published::add, clock);
+        join.join(QR_04, "bia");
+        Call request = calls.findOpen(sakura, mesa04.id(), CallType.RODIZIO).orElseThrow();
+        // Aceitar e depois recusar também vale: o rodízio se recusa enquanto o chamado está aberto.
+        new AcceptCallService(calls, published::add, clock).accept(sakura, request.id(), carlos);
+
+        new DeclineCallService(calls, fakes, rodizios, rodizios, published::add, clock).decline(sakura, request.id());
+
+        assertThat(calls.saved.get(request.id()).status()).isEqualTo(CallStatus.CANCELED);
+        assertThat(tableOrders("bia").participation()).isEqualTo(RodizioParticipation.NONE);
+        assertThat(published).last().isInstanceOf(br.com.cardapio.domain.rodizio.event.RodizioChanged.class);
+        assertThat(join.join(QR_04, "bia")).isEqualTo(RodizioParticipation.REQUESTED);
+    }
+
     @Test
     void outsideTheRodizioThePhoneHasNoParticipation() {
         send(false, sunomono, 1);
@@ -269,8 +293,9 @@ class RodizioTableServicesTest {
     @Test
     void theTableSeesThePricesOfNowInTheRestaurantClock() {
         var quotes = new QuoteRodiziosService(rodizios, id -> ZoneId.of("America/Sao_Paulo"), tables, sessions,
-                clock).forTable(QR_04, "ana", new PageQuery(0, 20));
-        var inUtc = new QuoteRodiziosService(rodizios, id -> ZoneId.of("UTC"), tables, sessions, clock)
+                new InMemoryStorage(), clock).forTable(QR_04, "ana", new PageQuery(0, 20));
+        var inUtc = new QuoteRodiziosService(rodizios, id -> ZoneId.of("UTC"), tables, sessions, new InMemoryStorage(),
+                clock)
                 .forStaff(sakura, new PageQuery(0, 20));
 
         assertThat(quotes.content()).singleElement().satisfies(q -> assertThat(q.tiers())
