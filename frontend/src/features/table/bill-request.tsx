@@ -143,9 +143,13 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       <>
         {header}
         <section role="status" className="flex flex-col items-center gap-5 pt-4 text-center">
-          <span className="flex size-28 items-center justify-center rounded-full bg-(--mesa-glass)">
-            <span className="flex size-18 items-center justify-center rounded-full bg-(--brand) text-white">
-              <Receipt aria-hidden className="size-8" />
+          <span className="relative flex size-32 items-center justify-center rounded-full bg-(--brand)/15">
+            <span
+              aria-hidden
+              className="absolute inset-0 animate-ping rounded-full bg-(--brand) opacity-30 motion-reduce:hidden"
+            />
+            <span className="relative flex size-20 items-center justify-center rounded-full bg-(--brand) text-white shadow-[0_16px_36px_rgba(204,63,28,.45)]">
+              <Receipt aria-hidden className="size-9" />
             </span>
           </span>
           <div className="flex flex-col gap-2">
@@ -208,9 +212,13 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       <>
         {header}
         <section role="status" className="flex flex-col items-center gap-5 pt-4 text-center">
-          <span className="flex size-28 items-center justify-center rounded-full bg-(--mesa-ok-soft)">
-            <span className="flex size-18 items-center justify-center rounded-full bg-(--mesa-ok) text-white">
-              <Check aria-hidden className="size-8" />
+          <span className="relative flex size-32 items-center justify-center rounded-full bg-(--mesa-ok-soft)">
+            <span
+              aria-hidden
+              className="absolute inset-0 animate-ping rounded-full bg-(--mesa-ok) opacity-30 motion-reduce:hidden"
+            />
+            <span className="relative flex size-20 items-center justify-center rounded-full bg-(--mesa-ok) text-[#0F0D0C] shadow-[0_16px_36px_rgba(74,222,128,.30)]">
+              <Check aria-hidden className="size-10" strokeWidth={2.6} />
             </span>
           </span>
           <div className="flex flex-col gap-2">

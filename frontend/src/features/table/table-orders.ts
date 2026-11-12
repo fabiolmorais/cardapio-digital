@@ -17,7 +17,8 @@ const t = tablePage.orders;
  * O canal de tempo real avisa quando um pedido da mesa muda, quando o garçom ativa o rodízio (ou
  * ajusta as pessoas) e quando fecha a conta.
  */
-const ORDER_EVENTS = ["order", "rodizio", "tab"] as const;
+// "call": o garçom recebeu um pagamento ao atender o pedido de conta (o que falta pagar muda).
+const ORDER_EVENTS = ["order", "rodizio", "tab", "call"] as const;
 
 /** A hora do pedido, no relógio do celular (que está no restaurante). */
 export function timeOf(iso: string) {
