@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
 
 test.describe.configure({ timeout: 90_000 });
@@ -8,7 +8,8 @@ test.describe.configure({ timeout: 90_000 });
  * ligadas: 1 de cada item por pessoa, até 2 itens a caminho por pessoa, 15 minutos de rodízio
  * (assim o aviso do fim já aparece) e o aviso de desperdício. O rodízio já está ativo, para 1 pessoa.
  */
-async function restaurant(request: APIRequestContext) {
+/** Com `seated`, o celular já está na mesa (presença confirmada) quando o garçom ativa: entra no rodízio junto. */
+async function restaurant(request: APIRequestContext, seated?: Page) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const post = async (path: string, data: object) => (await request.post(`${API_URL}${path}`, { headers, data })).json();
@@ -28,6 +29,10 @@ async function restaurant(request: APIRequestContext) {
     tiers: [{ name: "Adulto", defaultPriceCents: 12990, prices: [] }],
     productIds: [guioza.id, sashimi.id],
   });
+  if (seated) {
+    await seated.goto(`/m/${table.publicToken}`);
+    await expect(seated.getByText("No salão")).toBeVisible();
+  }
   const activated = await request.post(`${API_URL}/api/v1/tables/${table.id}/rodizio`, {
     headers,
     data: { rodizioId: rodizio.id, guests: [{ tierName: "Adulto", quantity: 1 }] },
@@ -37,7 +42,7 @@ async function restaurant(request: APIRequestContext) {
 }
 
 test("a aba Rodízio mostra as regras, e o + e o envio param nelas", async ({ page, request }) => {
-  const { qr } = await restaurant(request);
+  const { qr } = await restaurant(request, page);
   await page.goto(`/m/${qr}/cardapio`);
 
   const round = page.getByRole("region", { name: "Rodízio Japonês · 1 pessoa" });

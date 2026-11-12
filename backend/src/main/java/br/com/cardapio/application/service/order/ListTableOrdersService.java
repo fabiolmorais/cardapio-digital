@@ -13,6 +13,7 @@ import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioPhonePort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.tablesession.TableVisits;
@@ -27,6 +28,7 @@ import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabPayment;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import br.com.cardapio.domain.rodizio.model.RodizioRules;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 import br.com.cardapio.domain.rodizio.service.RoundPolicy;
@@ -52,6 +54,7 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
     private final TabRodizioPort tabRodizios;
     private final RodizioPort rodizios;
     private final TabPaymentPort payments;
+    private final RodizioPhonePort phones;
     private final ProductMediaPort media;
     private final MediaStoragePort storage;
     private final Clock clock;
@@ -59,15 +62,16 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
     /** Sem as fotos dos produtos (os itens vêm sem miniatura): para os testes que não são sobre elas. */
     public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                                   TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
-                                  TabPaymentPort payments, Clock clock) {
-        this(tables, sessions, settings, tabs, orders, tabRodizios, rodizios, payments, null, null, clock);
+                                  TabPaymentPort payments, RodizioPhonePort phones, Clock clock) {
+        this(tables, sessions, settings, tabs, orders, tabRodizios, rodizios, payments, phones, null, null, clock);
     }
 
     public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                                   TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
-                                  TabPaymentPort payments, ProductMediaPort media, MediaStoragePort storage,
-                                  Clock clock) {
+                                  TabPaymentPort payments, RodizioPhonePort phones, ProductMediaPort media,
+                                  MediaStoragePort storage, Clock clock) {
         this.payments = payments;
+        this.phones = phones;
         this.media = media;
         this.storage = storage;
         this.tables = tables;
@@ -119,10 +123,14 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .filter(p -> !p.receivedAt().isBefore(visitStart))
                 .map(TabPayment::amount)
                 .reduce(Money.ZERO, Money::plus);
-        var phones = TableOrder.phones(found, visit.session().id());
-        return new TableOrders(enabled, total, paid, total.minusOrZero(paid), rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
+        var phoneNumbers = TableOrder.phones(found, visit.session().id());
+        // Este celular está no rodízio da mesa? Quem chegou depois da ativação pergunta antes.
+        RodizioParticipation participation = rodizio == null ? null
+                : phones.find(establishmentId, rodizio.id(), visit.session().id());
+        return new TableOrders(enabled, total, paid, total.minusOrZero(paid),
+                rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
                 found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId),
-                        phones::get)).toList());
+                        phoneNumbers::get)).toList(), participation);
     }
 
     /** A miniatura da primeira foto de cada produto (a capa, como no cardápio). */

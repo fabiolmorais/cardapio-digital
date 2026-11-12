@@ -73,7 +73,7 @@ class OrderServicesTest {
     }
 
     private TableOrder place(String qr, String phone, OrderLine... lines) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(qr, phone, List.of(lines)));
     }
@@ -83,7 +83,7 @@ class OrderServicesTest {
     }
 
     private TableOrders list(String phone) {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock).list(QR_04, phone);
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, rodizios, clock).list(QR_04, phone);
     }
 
     private OrderLine line(Product product, int quantity) {

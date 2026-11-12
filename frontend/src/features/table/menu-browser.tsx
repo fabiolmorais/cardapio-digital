@@ -12,6 +12,7 @@ import { PassagemCuts } from "./passagem-cuts";
 import { ProductSheet } from "./product-sheet";
 import { RodizioRound } from "./rodizio-round";
 import type { MenuItem, PublicMenu } from "./table-data";
+import { RodizioInvite } from "./rodizio-invite";
 import { useTableOrders } from "./table-orders";
 
 const t = tablePage.menu;
@@ -44,9 +45,12 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   const [current, setCurrent] = useState<string | null>(null);
   const chips = useRef<HTMLElement>(null);
   // Sem resposta, os botões ficam: o envio do pedido confere de novo.
-  const { data: orders } = useTableOrders(token);
+  const { data: orders, refresh } = useTableOrders(token);
   const ordering = orders?.orderingEnabled ?? true;
-  const rodizio = ordering ? orders?.rodizio : undefined;
+  // A aba Rodízio é de quem está nele: o celular que chegou depois da ativação pergunta antes.
+  const joined = orders?.rodizioParticipation === "JOINED";
+  const rodizio = ordering && joined ? orders?.rodizio : undefined;
+  const invite = ordering && orders?.rodizio && !joined ? orders.rodizio : undefined;
   const included = new Set(orders?.rodizioProductIds ?? []);
   const rodizioItems = menu.categories.flatMap((c) => c.products).filter((p) => included.has(p.id));
   const rounds = orders?.orders.filter((o) => o.items.some((i) => i.rodizio)).length ?? 0;
@@ -159,6 +163,14 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
 
   return (
     <div className="flex flex-col gap-5">
+      {invite && (
+        <RodizioInvite
+          token={token}
+          rodizio={invite}
+          participation={orders?.rodizioParticipation}
+          onChange={() => void refresh()}
+        />
+      )}
       <div className="relative">
         <Search
           aria-hidden

@@ -94,7 +94,8 @@ class TableRodizioController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     TableRodizioResponse changeGuests(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID tableId,
                                       @Valid @RequestBody GuestsRequest request) {
-        return TableRodizioResponse.from(changeGuests.change(AuthenticatedUser.from(jwt).establishmentId(),
-                new DiningTableId(tableId), request.toMap()));
+        var user = AuthenticatedUser.from(jwt);
+        return TableRodizioResponse.from(changeGuests.change(user.establishmentId(), new DiningTableId(tableId),
+                request.toMap(), user.userId()));
     }
 }

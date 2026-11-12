@@ -358,6 +358,8 @@ export const messages = {
     },
     rodizio: {
       requested: (when: string) => `A mesa pediu pelo celular ${when}. Confirme quantas pessoas vão participar.`,
+      joinRequested: (when: string) =>
+        `Chegou alguém que quer participar (pediu pelo celular ${when}). Conte a pessoa: o celular dela passa a pedir rodadas.`,
       now: "agora",
       minutesAgo: (minutes: number) => `há ${minutes} min`,
       activateTitle: "Ativar rodízio",

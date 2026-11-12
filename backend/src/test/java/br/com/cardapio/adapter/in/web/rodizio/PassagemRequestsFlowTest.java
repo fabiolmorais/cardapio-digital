@@ -51,6 +51,8 @@ class PassagemRequestsFlowTest {
                 {"name":"Churrasco","type":"PASSAGEM","rules":{},
                  "tiers":[{"name":"Adulto","defaultPriceCents":15990,"prices":[]}],"productIds":["%s"]}
                 """.formatted(picanha)), "$.id");
+        // O celular já está na mesa quando o garçom ativa: entra no rodízio junto.
+        seated = phone();
         assertThat(send("POST", owner, "/api/v1/tables/" + json(table, "$.id") + "/rodizio",
                 "{\"rodizioId\":\"%s\",\"guests\":[{\"tierName\":\"Adulto\",\"quantity\":2}]}".formatted(churrasco)))
                 .hasStatus(HttpStatus.CREATED);
@@ -85,6 +87,9 @@ class PassagemRequestsFlowTest {
         return String.valueOf((Object) JsonPath.read(result.getResponse().getContentAsString(), path));
     }
 
+    /** O celular que estava na mesa na ativação do rodízio. */
+    private Cookie seated;
+
     /** Um celular na mesa, com a presença confirmada pela rede do salão. */
     private Cookie phone() {
         Cookie cookie = mvc.post().uri("/api/v1/public/tables/" + qr04 + "/session").exchange().getResponse()
@@ -105,7 +110,7 @@ class PassagemRequestsFlowTest {
 
     @Test
     void theCutGoesToThePassersAndNotToTheKitchen() throws Exception {
-        Cookie phone = phone();
+        Cookie phone = seated;
         MvcTestResult cut = fromPhone(phone, "/rounds", picanha, "Mal passada");
         assertThat(cut).hasStatus(HttpStatus.CREATED);
         assertThat(cut).bodyJson().extractingPath("$.items[0].unitPriceCents").isEqualTo(0);
@@ -130,7 +135,7 @@ class PassagemRequestsFlowTest {
 
     @Test
     void anotherRestaurantSeesNoneOfTheCuts() throws Exception {
-        assertThat(fromPhone(phone(), "/rounds", picanha, "Ao ponto")).hasStatus(HttpStatus.CREATED);
+        assertThat(fromPhone(seated, "/rounds", picanha, "Ao ponto")).hasStatus(HttpStatus.CREATED);
         String other = newOwner();
 
         assertThat(send("GET", other, "/api/v1/passagem-requests", null)).bodyJson()

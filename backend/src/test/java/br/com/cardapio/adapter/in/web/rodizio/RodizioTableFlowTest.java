@@ -226,6 +226,55 @@ class RodizioTableFlowTest {
     }
 
     @Test
+    void aPhoneThatArrivesAfterTheActivationAsksBeforeOrderingRounds() throws Exception {
+        Cookie ana = phone(sakura);
+        assertThat(activate(sakura.waiter(), sakura, sakura.rodizio(), 2, 0)).hasStatus(HttpStatus.CREATED);
+        Cookie bia = phone(sakura); // chegou depois da ativação
+
+        assertThat(fromPhone(sakura, ana, "GET", "/orders", null)).bodyJson()
+                .extractingPath("$.rodizioParticipation").isEqualTo("JOINED");
+        assertThat(fromPhone(sakura, bia, "GET", "/orders", null)).bodyJson()
+                .extractingPath("$.rodizioParticipation").isEqualTo("NONE");
+        assertThat(fromPhone(sakura, bia, "POST", "/rounds", items(sakura.guioza(), 1)))
+                .hasStatus(HttpStatus.CONFLICT);
+        // O cardápio de sempre continua valendo para ela.
+        assertThat(fromPhone(sakura, bia, "POST", "/orders", items(sakura.sunomono(), 1)))
+                .hasStatus(HttpStatus.CREATED);
+
+        // "Vou participar": chama o garçom com o "Quero o rodízio".
+        MvcTestResult joined = fromPhone(sakura, bia, "POST", "/rodizio/join", null);
+        assertThat(joined).hasStatusOk();
+        assertThat(joined).bodyJson().extractingPath("$.participation").isEqualTo("REQUESTED");
+        assertThat(send("GET", sakura.waiter(), "/api/v1/calls", null)).bodyJson()
+                .extractingPath("$.content[0].type").isEqualTo("RODIZIO");
+
+        // O garçom conta a bia: ela entra no rodízio e pede rodadas.
+        assertThat(send("PUT", sakura.waiter(), "/api/v1/tables/" + sakura.tableId() + "/rodizio/guests",
+                "{\"guests\":[{\"tierName\":\"Adulto\",\"quantity\":3}]}")).hasStatusOk();
+        assertThat(fromPhone(sakura, bia, "GET", "/orders", null)).bodyJson()
+                .extractingPath("$.rodizioParticipation").isEqualTo("JOINED");
+        assertThat(fromPhone(sakura, bia, "POST", "/rounds", items(sakura.guioza(), 1)))
+                .hasStatus(HttpStatus.CREATED);
+        assertThat(list(send("GET", sakura.waiter(), "/api/v1/calls", null), "$.content")).isEmpty();
+    }
+
+    @Test
+    void aPhoneOfAnotherRestaurantDoesNotJoinThisRodizio() throws Exception {
+        assertThat(activate(sakura.waiter(), sakura, sakura.rodizio(), 2, 0)).hasStatus(HttpStatus.CREATED);
+        Restaurant other = newRestaurant("Outro Sushi");
+        Cookie theirs = phone(other);
+
+        // A sessão do outro restaurante não vale nesta mesa.
+        assertThat(fromPhone(sakura, theirs, "POST", "/rodizio/join", null)).hasStatus(HttpStatus.UNAUTHORIZED);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM rodizio_phone WHERE session_id IN "
+                + "(SELECT id FROM table_session WHERE table_id = (SELECT table_id FROM table_session s "
+                + "JOIN dining_table d ON d.id = s.table_id WHERE d.public_token = ? LIMIT 1))", Integer.class,
+                other.qr04())).isZero();
+        // Na mesa dele, sem rodízio, não há o que entrar.
+        assertThat(fromPhone(other, theirs, "POST", "/rodizio/join", null)).hasStatus(HttpStatus.CONFLICT);
+    }
+
+    @Test
     void anotherRestaurantGets404AndSeesNothing() throws Exception {
         Restaurant other = newRestaurant("Outro Sushi");
 

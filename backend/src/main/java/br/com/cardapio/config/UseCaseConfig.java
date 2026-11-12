@@ -81,6 +81,7 @@ import br.com.cardapio.application.port.in.realtime.WatchTableEventsUseCase;
 import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.ChangeRodizioGuestsUseCase;
+import br.com.cardapio.application.port.in.rodizio.JoinRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListPassagemRequestsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListPassagemTablesUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
@@ -127,6 +128,7 @@ import br.com.cardapio.application.port.out.push.PushSubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.realtime.EventStreamPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioPhonePort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.security.AccessTokenIssuer;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
@@ -212,6 +214,7 @@ import br.com.cardapio.application.service.realtime.WatchTableEventsService;
 import br.com.cardapio.application.service.realtime.WatchTvEventsService;
 import br.com.cardapio.application.service.rodizio.ActivateRodizioService;
 import br.com.cardapio.application.service.rodizio.ChangeRodizioGuestsService;
+import br.com.cardapio.application.service.rodizio.JoinRodizioService;
 import br.com.cardapio.application.service.rodizio.ListPassagemRequestsService;
 import br.com.cardapio.application.service.rodizio.ListPassagemTablesService;
 import br.com.cardapio.application.service.rodizio.ListRodiziosService;
@@ -709,10 +712,10 @@ class UseCaseConfig {
     PlaceOrderUseCase placeOrderUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                         OrderSettingsPort orderSettingsPort, ProductPort productPort, TabPort tabPort,
                                         OrderPort orderPort, TabRodizioPort tabRodizioPort, RodizioPort rodizioPort,
-                                        SubscriptionPort subscriptionPort, EventPublisherPort eventPublisherPort,
-                                        Clock clock) {
+                                        RodizioPhonePort rodizioPhonePort, SubscriptionPort subscriptionPort,
+                                        EventPublisherPort eventPublisherPort, Clock clock) {
         return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort, tabPort,
-                orderPort, tabRodizioPort, rodizioPort, subscriptionPort, eventPublisherPort, clock);
+                orderPort, tabRodizioPort, rodizioPort, rodizioPhonePort, subscriptionPort, eventPublisherPort, clock);
     }
 
     @Bean
@@ -720,10 +723,11 @@ class UseCaseConfig {
                                                   OrderSettingsPort orderSettingsPort, TabPort tabPort,
                                                   OrderPort orderPort, TabRodizioPort tabRodizioPort,
                                                   RodizioPort rodizioPort, TabPaymentPort tabPaymentPort,
-                                                  ProductMediaPort productMediaPort,
+                                                  RodizioPhonePort rodizioPhonePort, ProductMediaPort productMediaPort,
                                                   MediaStoragePort mediaStoragePort, Clock clock) {
         return new ListTableOrdersService(diningTablePort, tableSessionPort, orderSettingsPort, tabPort, orderPort,
-                tabRodizioPort, rodizioPort, tabPaymentPort, productMediaPort, mediaStoragePort, clock);
+                tabRodizioPort, rodizioPort, tabPaymentPort, rodizioPhonePort, productMediaPort, mediaStoragePort,
+                clock);
     }
 
     @Bean
@@ -873,16 +877,28 @@ class UseCaseConfig {
     ActivateRodizioUseCase activateRodizioUseCase(DiningTablePort diningTablePort, RodizioPort rodizioPort,
                                                   EstablishmentTimeZonePort timeZonePort, TabPort tabPort,
                                                   TabRodizioPort tabRodizioPort, CallPort callPort,
+                                                  RodizioPhonePort rodizioPhonePort,
                                                   EventPublisherPort eventPublisherPort, Clock clock) {
         return new ActivateRodizioService(diningTablePort, rodizioPort, timeZonePort, tabPort, tabRodizioPort,
-                callPort, eventPublisherPort, clock);
+                callPort, rodizioPhonePort, eventPublisherPort, clock);
     }
 
     @Bean
     ChangeRodizioGuestsUseCase changeRodizioGuestsUseCase(DiningTablePort diningTablePort, TabPort tabPort,
                                                           TabRodizioPort tabRodizioPort,
+                                                          RodizioPhonePort rodizioPhonePort, CallPort callPort,
                                                           EventPublisherPort eventPublisherPort, Clock clock) {
-        return new ChangeRodizioGuestsService(diningTablePort, tabPort, tabRodizioPort, eventPublisherPort, clock);
+        return new ChangeRodizioGuestsService(diningTablePort, tabPort, tabRodizioPort, rodizioPhonePort, callPort,
+                eventPublisherPort, clock);
+    }
+
+    @Bean
+    JoinRodizioUseCase joinRodizioUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                          TabPort tabPort, TabRodizioPort tabRodizioPort,
+                                          RodizioPhonePort rodizioPhonePort, CallPort callPort,
+                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new JoinRodizioService(diningTablePort, tableSessionPort, tabPort, tabRodizioPort, rodizioPhonePort,
+                callPort, eventPublisherPort, clock);
     }
 
     // O rodízio de passagem: o cartão e os passadores (Guia 27)

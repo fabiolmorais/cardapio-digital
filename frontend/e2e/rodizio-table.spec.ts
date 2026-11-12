@@ -18,7 +18,7 @@ async function restaurant(request: APIRequestContext) {
   const guioza = await product("Guioza", 2990);
   await product("Coca-Cola", 790);
   // Só o preço padrão: o teste não depende do dia e da hora em que roda.
-  await post("/api/v1/rodizios", {
+  const japones = await post("/api/v1/rodizios", {
     name: "Rodízio Japonês",
     type: "A_LA_MINUTE",
     description: "Peças à vontade",
@@ -29,7 +29,7 @@ async function restaurant(request: APIRequestContext) {
     ],
     productIds: [guioza.id],
   });
-  return { qr: table.publicToken as string, email, post, guioza };
+  return { qr: table.publicToken as string, email, post, guioza, tableId: table.id as string, japonesId: japones.id };
 }
 
 async function ownerPanel(browser: Browser, email: string) {
@@ -120,4 +120,53 @@ test("com mais de um rodízio, a tela inicial mostra um banner para cada um", as
   await expect(banners.getByRole("article", { name: "Rodízio de Petiscos" })).toContainText("R$ 89,90");
   await banners.getByRole("link", { name: "Quero o rodízio · Rodízio de Petiscos" }).click();
   await expect(page).toHaveURL(new RegExp(`/m/${qr}/rodizio$`));
+});
+
+test("quem chega depois da ativação pergunta se participa, e entra quando o garçom conta", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email, post, tableId, japonesId } = await restaurant(request);
+  // A Ana já está na mesa quando o garçom ativa o rodízio para 2 pessoas.
+  await page.goto(`/m/${qr}`);
+  await expect(page.getByText("No salão")).toBeVisible(); // a sessão da Ana já existe, com a presença
+  await post(`/api/v1/tables/${tableId}/rodizio`, {
+    rodizioId: japonesId,
+    guests: [{ tierName: "Adulto", quantity: 2 }],
+  });
+  await page.reload();
+  await expect(page.getByRole("link", { name: /Rodízio Japonês · 2 pessoas/ })).toBeVisible();
+
+  // A Bia chega depois: o celular dela pergunta, em vez de já entrar no rodízio.
+  const later = await browser.newContext();
+  const bia = await later.newPage();
+  const owner = await ownerPanel(browser, email);
+  try {
+    await bia.goto(`/m/${qr}`);
+    const invite = bia.getByRole("region", { name: "Rodízio da mesa" });
+    await expect(invite).toContainText("Esta mesa está no Rodízio Japonês · 2 pessoas");
+    await bia.getByRole("link", { name: "Cardápio" }).click();
+    await expect(bia.getByRole("link", { name: "Rodízio", exact: true })).toHaveCount(0);
+    await bia.getByRole("region", { name: "Rodízio da mesa" }).getByRole("button", { name: "Sim, vou participar" }).click();
+    await expect(bia.getByRole("status").filter({ hasText: "Garçom chamado" })).toBeVisible();
+
+    // O garçom conta a Bia: o diálogo abre no "Ajustar pessoas", com o rodízio da comanda.
+    const call = owner.page.getByRole("listitem", { name: "Quero o rodízio · Mesa 04" });
+    await call.getByRole("button", { name: "Ativar rodízio" }).click();
+    const dialog = owner.page.getByRole("dialog");
+    await expect(dialog).toContainText("Ajustar pessoas");
+    await expect(dialog).toContainText("Chegou alguém que quer participar");
+    await dialog.getByRole("button", { name: "Mais Adulto" }).click();
+    await dialog.getByRole("button", { name: "Salvar" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(call).toHaveCount(0);
+
+    // O celular da Bia entra no rodízio na hora, pelo tempo real.
+    await expect(bia.getByRole("link", { name: "Rodízio", exact: true })).toBeVisible({ timeout: 5000 });
+    await expect(bia.getByRole("region", { name: "Rodízio da mesa" })).toHaveCount(0);
+  } finally {
+    await later.close();
+    await owner.close();
+  }
 });

@@ -41,6 +41,9 @@ import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
+import br.com.cardapio.application.service.rodizio.JoinRodizioService;
+import br.com.cardapio.domain.rodizio.exception.RodizioNotJoinedException;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -98,19 +101,74 @@ class RodizioTableServicesTest {
 
     private TableRodizio activate(Rodizio rodizio, Map<String, Integer> guests) {
         return new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("America/Sao_Paulo"), fakes, rodizios,
-                calls, published::add, clock)
+                calls, rodizios, published::add, clock)
                 .activate(new ActivateRodizioCommand(sakura, mesa04.id(), rodizio.id(), guests, carlos));
     }
 
     private TableOrder send(boolean round, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, subscriptions,
-                published::add, clock).place(new PlaceOrderCommand(QR_04, "ana", List.of(new OrderLine(product.id(), quantity, null)),
-                round));
+        return send("ana", round, product, quantity);
+    }
+
+    private TableOrder send(String phone, boolean round, Product product, int quantity) {
+        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios,
+                subscriptions, published::add, clock).place(new PlaceOrderCommand(QR_04, phone,
+                List.of(new OrderLine(product.id(), quantity, null)), round));
     }
 
     private TableOrders tableOrders() {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock)
-                .list(QR_04, "ana");
+        return tableOrders("ana");
+    }
+
+    private TableOrders tableOrders(String phone) {
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, rodizios,
+                clock).list(QR_04, phone);
+    }
+
+    /**
+     * Quem chega depois da ativação não entra sozinho no rodízio (ele é cobrado por pessoa): o
+     * celular pergunta, "Vou participar" chama o garçom, e só depois que ele ajusta as pessoas o
+     * celular pede rodadas.
+     */
+    @Test
+    void aPhoneThatArrivesLaterAsksAndJoinsWhenTheWaiterCountsIt() {
+        activate(japones, Map.of("Adulto", 2));
+        // A ana estava na mesa na ativação; a bia chega depois.
+        rodizios.openToAll.clear();
+        var tabRodizio = rodizios.byTab.values().iterator().next().id();
+        rodizios.phones.put(tabRodizio, new java.util.HashMap<>(Map.of(sessions.byToken("ana").id(),
+                RodizioParticipation.JOINED)));
+        sessions.givenPresent(sakura, mesa04.id(), "bia", NOW);
+
+        assertThat(tableOrders("ana").participation()).isEqualTo(RodizioParticipation.JOINED);
+        assertThat(tableOrders("bia").participation()).isEqualTo(RodizioParticipation.NONE);
+        assertThatThrownBy(() -> send("bia", true, guioza, 1)).isInstanceOf(RodizioNotJoinedException.class);
+
+        JoinRodizioService join = new JoinRodizioService(tables, sessions, fakes, rodizios, rodizios, calls,
+                published::add, clock);
+        assertThat(join.join(QR_04, "bia")).isEqualTo(RodizioParticipation.REQUESTED);
+        Call request = calls.findOpen(sakura, mesa04.id(), CallType.RODIZIO).orElseThrow();
+        assertThat(tableOrders("bia").participation()).isEqualTo(RodizioParticipation.REQUESTED);
+        assertThatThrownBy(() -> send("bia", true, guioza, 1)).isInstanceOf(RodizioNotJoinedException.class);
+
+        // O garçom conta a bia: ela entra, e o "Quero o rodízio" termina atendido.
+        new ChangeRodizioGuestsService(tables, fakes, rodizios, rodizios, calls, published::add, clock)
+                .change(sakura, mesa04.id(), Map.of("Adulto", 3), carlos);
+
+        assertThat(tableOrders("bia").participation()).isEqualTo(RodizioParticipation.JOINED);
+        assertThat(calls.saved.get(request.id()).status()).isEqualTo(CallStatus.DONE);
+        assertThat(send("bia", true, guioza, 1).items()).singleElement()
+                .satisfies(i -> assertThat(i.rodizio()).isTrue());
+        // Quem já estava dentro não pede de novo.
+        assertThat(join.join(QR_04, "ana")).isEqualTo(RodizioParticipation.JOINED);
+    }
+
+    @Test
+    void outsideTheRodizioThePhoneHasNoParticipation() {
+        send(false, sunomono, 1);
+
+        assertThat(tableOrders().participation()).isNull();
+        assertThatThrownBy(() -> new JoinRodizioService(tables, sessions, fakes, rodizios, rodizios, calls,
+                published::add, clock).join(QR_04, "ana")).isInstanceOf(NoRodizioOnTableException.class);
     }
 
     private Tab theTab() {
@@ -148,7 +206,7 @@ class RodizioTableServicesTest {
                 .isInstanceOf(RodizioNotFoundException.class);
         DiningTable theirs = tables.given(EstablishmentId.newId(), "04", "qr-de-outra-casa-00000000");
         assertThatThrownBy(() -> new ActivateRodizioService(tables, rodizios, id -> ZoneId.of("UTC"), fakes,
-                rodizios, calls, published::add, clock)
+                rodizios, calls, rodizios, published::add, clock)
                 .activate(new ActivateRodizioCommand(sakura, theirs.id(), japones.id(), Map.of("Adulto", 2), carlos)))
                 .isInstanceOf(TableNotFoundException.class);
     }
@@ -191,8 +249,8 @@ class RodizioTableServicesTest {
         send(false, sunomono, 1);
         fakes.items.replaceAll((id, item) -> item.deliver(carlos, NOW));
 
-        TableRodizio changed = new ChangeRodizioGuestsService(tables, fakes, rodizios, published::add, clock)
-                .change(sakura, mesa04.id(), Map.of("Adulto", 2, "Criança", 1));
+        TableRodizio changed = new ChangeRodizioGuestsService(tables, fakes, rodizios, rodizios, calls, published::add, clock)
+                .change(sakura, mesa04.id(), Map.of("Adulto", 2, "Criança", 1), carlos);
         StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab().id());
         StaffTab closed = new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, clock)
                 .close(sakura, theTab().id(), carlos, PaymentMethod.PIX);
@@ -203,8 +261,8 @@ class RodizioTableServicesTest {
         assertThat(open.total()).isEqualTo(Money.ofCents(expected));
         assertThat(closed.total()).isEqualTo(Money.ofCents(expected));
         assertThat(fakes.tabs.get(theTab().id()).total()).isEqualTo(Money.ofCents(expected));
-        assertThatThrownBy(() -> new ChangeRodizioGuestsService(tables, fakes, rodizios, published::add, clock)
-                .change(sakura, mesa04.id(), Map.of("Adulto", 1)))
+        assertThatThrownBy(() -> new ChangeRodizioGuestsService(tables, fakes, rodizios, rodizios, calls, published::add, clock)
+                .change(sakura, mesa04.id(), Map.of("Adulto", 1), carlos))
                 .isInstanceOf(NoRodizioOnTableException.class);
     }
 

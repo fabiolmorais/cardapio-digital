@@ -458,6 +458,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/rodizio/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Vou participar": este celular pede para entrar no rodízio da mesa e chama o garçom */
+        post: operations["joinTableRodizio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/presence": {
         parameters: {
             query?: never;
@@ -2501,6 +2518,13 @@ export interface components {
             phone: number;
             items: components["schemas"]["TableOrderItem"][];
         };
+        RodizioJoin: {
+            /**
+             * @description REQUESTED: esperando o garçom incluir; JOINED: já estava no rodízio
+             * @enum {string}
+             */
+            participation: "NONE" | "REQUESTED" | "JOINED";
+        };
         PresenceCheckRequest: {
             /**
              * Format: double
@@ -3199,6 +3223,11 @@ export interface components {
             rodizioLimits?: components["schemas"]["RodizioLimits"];
             /** @description Os pedidos da comanda aberta, do mais antigo ao mais novo */
             orders: components["schemas"]["TableOrder"][];
+            /**
+             * @description Se este celular está no rodízio da mesa (NONE: chegou depois e não disse; REQUESTED: chamou o garçom; JOINED: está dentro); ausente fora do rodízio
+             * @enum {string}
+             */
+            rodizioParticipation?: "NONE" | "REQUESTED" | "JOINED";
         };
         PublicMenu: {
             categories: components["schemas"]["PublicMenuCategory"][];
@@ -5087,6 +5116,57 @@ export interface operations {
             };
             /** @description Pedidos demais deste celular em pouco tempo */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    joinTableRodizio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido feito (ou o celular já estava no rodízio) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RodizioJoin"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Sem presença confirmada, ou celular bloqueado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa não está no rodízio */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -61,6 +61,16 @@ export async function listRodizios(token: string): Promise<RodizioQuote[]> {
   return page.content;
 }
 
+export type RodizioParticipation = NonNullable<TableOrders["rodizioParticipation"]>;
+
+/** "Vou participar": este celular pede para entrar no rodízio da mesa, e o garçom é chamado. */
+export async function joinRodizio(token: string): Promise<RodizioParticipation> {
+  const response = await send(token, "/rodizio/join", { method: "POST" });
+  if (!response.ok) throw await failure(response, t.failed);
+  const body: { participation: RodizioParticipation } = await response.json();
+  return body.participation;
+}
+
 export type CardStatus = NonNullable<TableOrders["rodizio"]>["status"];
 
 /** O cartão do rodízio de passagem: verde (SERVING, pode servir) ou vermelho (PAUSED). */
@@ -122,5 +132,5 @@ export function useTableOrders(token: string) {
     setBusy(null);
   }
 
-  return { data, busy, error, closed, cancel };
+  return { data, busy, error, closed, cancel, refresh };
 }

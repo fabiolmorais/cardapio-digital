@@ -32,6 +32,7 @@ import {
   unblockPhone,
   type StaffCall,
 } from "./calls-api";
+import { fetchOpenTabs, fetchTab } from "@/features/tabs/tabs-api";
 import { PaymentDialog } from "./payment-dialog";
 import { useLiveCalls } from "./use-live-calls";
 
@@ -93,6 +94,21 @@ export function CallQueue({ role, sector = null }: { role: Role; sector?: string
     setBusy(null);
   }
 
+  /**
+   * "Quero o rodízio": se a mesa ainda não está no rodízio, o diálogo ativa; se já está (alguém
+   * chegou depois e quer participar), ele abre no "Ajustar pessoas" com o rodízio da comanda.
+   */
+  async function openRodizio(call: StaffCall) {
+    let current: RodizioTarget["current"] = null;
+    try {
+      const open = (await fetchOpenTabs()).find((tab) => tab.tableId === call.tableId);
+      if (open) current = (await fetchTab(open.id)).rodizio ?? null;
+    } catch {
+      // Sem resposta: abre na ativação, e o back avisa se a mesa já está no rodízio.
+    }
+    setActivating({ tableId: call.tableId, tableLabel: call.tableLabel, requestedAt: call.createdAt, current });
+  }
+
   const calls = (queue.data ?? []).filter((call) => sector === null || call.sectorName === sector);
 
   return (
@@ -130,9 +146,7 @@ export function CallQueue({ role, sector = null }: { role: Role; sector?: string
                   size="sm"
                   className="h-9 flex-1"
                   disabled={busy !== null}
-                  onClick={() =>
-                    setActivating({ tableId: call.tableId, tableLabel: call.tableLabel, requestedAt: call.createdAt })
-                  }
+                  onClick={() => void openRodizio(call)}
                 >
                   {t.activateRodizio}
                 </Button>

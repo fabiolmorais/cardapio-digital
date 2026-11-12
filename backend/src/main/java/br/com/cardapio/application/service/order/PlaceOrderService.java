@@ -12,6 +12,7 @@ import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioPhonePort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.service.plan.PlanAllowances;
@@ -33,13 +34,16 @@ import br.com.cardapio.domain.presence.exception.PresenceRequiredException;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
 import br.com.cardapio.domain.rodizio.exception.ProductNotInRodizioException;
 import br.com.cardapio.domain.rodizio.exception.ProductOnlyInRodizioException;
+import br.com.cardapio.domain.rodizio.exception.RodizioNotJoinedException;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
+import br.com.cardapio.domain.rodizio.model.RodizioParticipation;
 import br.com.cardapio.domain.rodizio.model.RodizioRules;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 import br.com.cardapio.domain.rodizio.service.RoundPolicy;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
+import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -66,14 +70,16 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private final OrderPort orders;
     private final TabRodizioPort tabRodizios;
     private final RodizioPort rodizios;
+    private final RodizioPhonePort phones;
     private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
     private final Clock clock;
 
     public PlaceOrderService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                              ProductPort products, TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios,
-                             RodizioPort rodizios, SubscriptionPort subscriptions, EventPublisherPort events,
-                             Clock clock) {
+                             RodizioPort rodizios, RodizioPhonePort phones, SubscriptionPort subscriptions,
+                             EventPublisherPort events, Clock clock) {
+        this.phones = phones;
         this.tables = tables;
         this.sessions = sessions;
         this.settings = settings;
@@ -133,7 +139,8 @@ public class PlaceOrderService implements PlaceOrderUseCase {
 
         // A rodada só vale com o rodízio ativo na comanda, só com os produtos incluídos nele e dentro
         // das regras que o restaurante ligou. O carrinho não leva o que é só do rodízio.
-        TabRodizio rodizio = command.round() ? requireRodizio(establishmentId, tableId, menu, command.lines(), now)
+        TabRodizio rodizio = command.round()
+                ? requireRodizio(establishmentId, tableId, visit.session().id(), menu, command.lines(), now)
                 : null;
         if (rodizio == null) {
             menu.values().stream().filter(p -> !p.details().aLaCarte()).findFirst().ifPresent(p -> {
@@ -164,11 +171,16 @@ public class PlaceOrderService implements PlaceOrderUseCase {
      * rodada respeita as regras. Os produtos e as regras vêm do cadastro de agora: se o restaurante
      * tirou um produto do rodízio, ele sai da rodada também.
      */
-    private TabRodizio requireRodizio(EstablishmentId establishmentId, DiningTableId tableId,
+    private TabRodizio requireRodizio(EstablishmentId establishmentId, DiningTableId tableId, TableSessionId session,
                                       Map<ProductId, Product> menu, List<OrderLine> lines, Instant now) {
         Tab tab = tabs.findOpen(establishmentId, tableId).orElseThrow(NoRodizioOnTableException::new);
         TabRodizio rodizio = tabRodizios.findByTab(establishmentId, tab.id())
                 .orElseThrow(NoRodizioOnTableException::new);
+        // O rodízio é cobrado por pessoa: o celular que chegou depois da ativação só pede rodada
+        // depois que o garçom o inclui.
+        if (phones.find(establishmentId, rodizio.id(), session) != RodizioParticipation.JOINED) {
+            throw new RodizioNotJoinedException();
+        }
         Rodizio registered = rodizios.find(establishmentId, rodizio.rodizioId()).orElse(null);
         Set<ProductId> included = registered == null ? Set.of() : registered.productIds();
         menu.values().stream().filter(p -> !included.contains(p.id())).findFirst().ifPresent(p -> {
