@@ -130,4 +130,17 @@ class JavaImageProcessorTest {
                 .hasMessageContaining("128 × 128");
         assertThat(processor.processLogo(TestImages.encode("jpeg", 150, 150)).variants()).hasSize(2);
     }
+
+    @Test
+    void theBannerIsCutInTwoToOneAndShrunkToTheStoredSize() {
+        BufferedImage big = TestImages.read(processor.processBanner(TestImages.encode("png", 3000, 2000)));
+        BufferedImage wide = TestImages.read(processor.processBanner(TestImages.encode("jpeg", 1600, 400)));
+
+        assertThat(big).extracting(BufferedImage::getWidth, BufferedImage::getHeight).containsExactly(1200, 600);
+        // Mais largo que 2:1: corta as laterais, sem ampliar.
+        assertThat(wide).extracting(BufferedImage::getWidth, BufferedImage::getHeight).containsExactly(800, 400);
+        assertThat(processor.processBanner(TestImages.encode("png", 1200, 600))).startsWith(0xFF, 0xD8);
+        assertThatThrownBy(() -> processor.processBanner(TestImages.encode("jpeg", 500, 300)))
+                .isInstanceOf(InvalidImageException.class).hasMessageContaining("1200 × 600");
+    }
 }

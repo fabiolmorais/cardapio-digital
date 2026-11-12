@@ -43,6 +43,11 @@ class RodizioPhonePersistenceAdapter implements RodizioPhonePort {
     }
 
     @Override
+    public int cancelRequests(EstablishmentId establishmentId, TabRodizioId rodizio) {
+        return phones.cancelRequests(establishmentId.value(), rodizio.value());
+    }
+
+    @Override
     public RodizioParticipation find(EstablishmentId establishmentId, TabRodizioId rodizio, TableSessionId session) {
         establishmentFilter.enable(establishmentId);
         return phones.findByEstablishmentIdAndTabRodizioIdAndSessionId(establishmentId.value(), rodizio.value(),

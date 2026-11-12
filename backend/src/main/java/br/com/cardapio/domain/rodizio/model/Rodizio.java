@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Um rodízio do restaurante (Japonês, Pizza…): cobrado por pessoa, conforme a faixa, com os
  * produtos incluídos e as regras opcionais. É um cadastro: desativa, e não apaga.
  *
  * @param productIds os produtos incluídos (a aba Rodízio da mesa)
+ * @param banner     o caminho do banner enviado pelo restaurante; null: a mesa mostra a imagem automática
  */
 public record Rodizio(
         RodizioId id,
@@ -27,7 +29,8 @@ public record Rodizio(
         List<PriceTier> tiers,
         Set<ProductId> productIds,
         boolean active,
-        Instant createdAt
+        Instant createdAt,
+        String banner
 ) {
 
     /** Rodízios ativos por restaurante: Japonês, Pizza, almoço executivo… dez cobrem qualquer casa. */
@@ -64,19 +67,20 @@ public record Rodizio(
     public static Rodizio create(EstablishmentId establishmentId, String name, RodizioType type, String description,
                                  RodizioRules rules, List<PriceTier> tiers, Set<ProductId> productIds, Instant now) {
         return new Rodizio(RodizioId.newId(), establishmentId, name, type, description, rules, tiers, productIds, true,
-                now);
+                now, null);
     }
 
     /** Muda tudo de uma vez (o formulário do admin manda o rodízio inteiro). */
     public Rodizio edit(String newName, RodizioType newType, String newDescription, RodizioRules newRules,
                         List<PriceTier> newTiers, Set<ProductId> newProductIds) {
         return new Rodizio(id, establishmentId, newName, newType, newDescription, newRules, newTiers, newProductIds,
-                active, createdAt);
+                active, createdAt, banner);
     }
 
     /** Pausa: sai das mesas (não pode ser pedido), mas continua no cadastro para voltar depois. */
     public Rodizio deactivate() {
-        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, false, createdAt);
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, false, createdAt,
+                banner);
     }
 
     /** O mesmo rodízio, com o produto incluído (ou tirado): a chave na tela do produto. */
@@ -87,11 +91,26 @@ public record Rodizio(
         } else {
             next.remove(productId);
         }
-        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, next, active, createdAt);
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, next, active, createdAt, banner);
     }
 
     /** Volta a valer para as mesas. */
     public Rodizio reactivate() {
-        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, true, createdAt);
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, true, createdAt,
+                banner);
+    }
+
+    /**
+     * O banner novo (ou nenhum, com null). Cada envio ganha um nome novo: a imagem velha não fica
+     * presa no cache do celular.
+     */
+    public Rodizio withBanner(String path) {
+        return new Rodizio(id, establishmentId, name, type, description, rules, tiers, productIds, active, createdAt,
+                path);
+    }
+
+    /** O caminho de um banner novo deste rodízio. */
+    public String newBannerPath() {
+        return "rodizios/" + establishmentId.value() + "/" + id.value() + "/banner-" + UUID.randomUUID() + ".jpg";
     }
 }

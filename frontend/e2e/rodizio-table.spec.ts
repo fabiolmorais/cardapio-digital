@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
 
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
@@ -50,7 +50,7 @@ test("a mesa pede o rodízio, o garçom ativa, a mesa pede rodadas e a conta som
   await page.goto(`/m/${qr}`);
   await page.getByRole("link", { name: /Quero o rodízio/ }).click();
   await expect(page.getByRole("heading", { name: "Escolha o rodízio" })).toBeVisible();
-  await expect(page.getByText("R$ 129,90 · Adulto")).toBeVisible();
+  await expect(page.getByText("R$ 129,90 adulto")).toBeVisible();
   await page.getByRole("button", { name: "Chamar garçom para ativar" }).click();
   await expect(page.getByText("Pedido enviado ao garçom")).toBeVisible();
 
@@ -169,4 +169,85 @@ test("quem chega depois da ativação pergunta se participa, e entra quando o ga
     await later.close();
     await owner.close();
   }
+});
+
+test("o garçom recusa o pedido de quem chegou depois, e o celular pode pedir de novo", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email, post, tableId, japonesId } = await restaurant(request);
+  await page.goto(`/m/${qr}`);
+  await expect(page.getByText("No salão")).toBeVisible();
+  await post(`/api/v1/tables/${tableId}/rodizio`, {
+    rodizioId: japonesId,
+    guests: [{ tierName: "Adulto", quantity: 2 }],
+  });
+
+  const later = await browser.newContext();
+  const bia = await later.newPage();
+  const owner = await ownerPanel(browser, email);
+  try {
+    await bia.goto(`/m/${qr}`);
+    const invite = bia.getByRole("region", { name: "Rodízio da mesa" });
+    await invite.getByRole("button", { name: "Não, vou pedir à parte" }).click();
+    await bia.getByRole("button", { name: /Quero participar/ }).click();
+    await expect(bia.getByRole("status").filter({ hasText: "Garçom chamado" })).toBeVisible();
+
+    // No painel, o "Quero o rodízio" se resolve ativando ou recusando: não há "Aceitar" nem "Concluir".
+    const call = owner.page.getByRole("listitem", { name: "Quero o rodízio · Mesa 04" });
+    await expect(call.getByRole("button", { name: "Ativar rodízio" })).toBeVisible();
+    await expect(call.getByRole("button", { name: "Aceitar" })).toHaveCount(0);
+    await call.getByRole("button", { name: "Recusar" }).click();
+    await expect(call).toHaveCount(0);
+
+    // O celular volta a mostrar o atalho para pedir de novo, na hora.
+    await expect(bia.getByRole("button", { name: /Quero participar/ })).toBeVisible({ timeout: 5000 });
+  } finally {
+    await later.close();
+    await owner.close();
+  }
+});
+
+/** Um banner 1200 × 600 gerado no próprio navegador (canvas), sem arquivo no repositório. */
+async function bannerImage(page: Page) {
+  const base64 = await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 600;
+    const context = canvas.getContext("2d")!;
+    context.fillStyle = "#7c2d12";
+    context.fillRect(0, 0, 1200, 600);
+    const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let text = "";
+    for (const byte of bytes) text += String.fromCharCode(byte);
+    return btoa(text);
+  });
+  return { name: "banner.jpg", mimeType: "image/jpeg", buffer: Buffer.from(base64, "base64") };
+}
+
+test("o dono envia o banner do rodízio, e a mesa vê o banner em \u201cEscolha o rodízio\u201d", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email } = await restaurant(request);
+  const owner = await ownerPanel(browser, email);
+  try {
+    await owner.page.goto("/admin/rodizios");
+    const editor = owner.page.getByRole("region", { name: "Rodízio Japonês" });
+    await expect(editor).toContainText("Tamanho ideal: 1200 × 600 pixels");
+    await expect(editor).toContainText("Sem banner: a mesa mostra automaticamente a foto de um prato");
+    await editor.getByLabel("Enviar banner").setInputFiles(await bannerImage(owner.page));
+    await expect(editor.getByRole("status").filter({ hasText: "Banner atualizado." })).toBeVisible({ timeout: 15_000 });
+    await expect(editor.getByRole("img", { name: "Banner do Rodízio Japonês" })).toBeVisible();
+  } finally {
+    await owner.close();
+  }
+
+  await page.goto(`/m/${qr}/rodizio`);
+  const card = page.getByRole("listitem").filter({ hasText: "Rodízio Japonês" });
+  await expect(card).toContainText("R$ 129,90 adulto");
+  await expect(card.locator("img")).toHaveAttribute("src", /\/rodizios\/.+\/banner-.+\.jpg$/);
 });

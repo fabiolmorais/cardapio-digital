@@ -164,12 +164,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   return (
     <div className="flex flex-col gap-5">
       {invite && (
-        <RodizioInvite
-          token={token}
-          rodizio={invite}
-          participation={orders?.rodizioParticipation}
-          onChange={() => void refresh()}
-        />
+        <RodizioInvite token={token} rodizio={invite} participation={orders?.rodizioParticipation} onChange={refresh} />
       )}
       <div className="relative">
         <Search
@@ -202,7 +197,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
           <nav
             ref={chips}
             aria-label={tablePage.categories}
-            className="sticky top-0 z-10 -mx-5 flex gap-2 overflow-x-auto bg-(--mesa-bg)/95 px-5 py-2 backdrop-blur [scrollbar-width:none]"
+            className="sticky top-0 z-20 -mx-5 flex gap-2 overflow-x-auto bg-(--mesa-bg)/95 px-5 py-2 backdrop-blur [scrollbar-width:none]"
           >
             {rodizio && (
               <a href="#rodizio" className={cn(chip, chipOff)}>

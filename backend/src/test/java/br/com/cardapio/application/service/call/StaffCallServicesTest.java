@@ -18,6 +18,7 @@ import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
 import br.com.cardapio.domain.tablesession.model.PresenceMethod;
 import br.com.cardapio.domain.tablesession.model.TableSession;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
+import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemoryTableSessions;
 import org.junit.jupiter.api.Test;
 
@@ -181,11 +182,17 @@ class StaffCallServicesTest {
                 .isInstanceOf(CallNotFoundException.class);
     }
 
+    /** Fora do rodízio, recusar não mexe em comanda nem rodízio: a comanda fica de fora (null). */
+    private DeclineCallService decline() {
+        InMemoryRodizios rodizios = new InMemoryRodizios();
+        return new DeclineCallService(calls, null, rodizios, rodizios, published::add, clock);
+    }
+
     @Test
     void decliningKeepsTheTableLocked() {
         Call call = unlockRequest(DiningTableId.newId());
 
-        StaffCall declined = new DeclineCallService(calls, published::add, clock).decline(sakura, call.id());
+        StaffCall declined = decline().decline(sakura, call.id());
 
         assertThat(declined.status()).isEqualTo(CallStatus.CANCELED);
         assertThat(sessions.byToken("celular-de-fora").isPresent()).isFalse();
@@ -193,10 +200,10 @@ class StaffCallServicesTest {
     }
 
     @Test
-    void onlyAnUnlockRequestCanBeDeclined() {
+    void onlyAnUnlockOrRodizioRequestCanBeDeclined() {
         Call waiter = given(NOW);
 
-        assertThatThrownBy(() -> new DeclineCallService(calls, published::add, clock).decline(sakura, waiter.id()))
+        assertThatThrownBy(() -> decline().decline(sakura, waiter.id()))
                 .isInstanceOf(CallStateException.class);
     }
 

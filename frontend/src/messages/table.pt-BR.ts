@@ -243,6 +243,8 @@ export const tablePage = {
     nothingOnTheWay: "Nada a caminho: tudo o que foi pedido já chegou à mesa.",
   },
   rodizio: {
+    tierLine: (price: string, tier: string) => `${price} ${tier.toLowerCase()}`,
+    wastePrefix: "Evite desperdício:",
     invite: {
       label: "Rodízio da mesa",
       title: (name: string, people: number) =>

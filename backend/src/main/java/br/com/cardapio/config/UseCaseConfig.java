@@ -82,6 +82,7 @@ import br.com.cardapio.application.port.in.realtime.WatchTvEventsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioUseCase;
 import br.com.cardapio.application.port.in.rodizio.ChangeRodizioGuestsUseCase;
 import br.com.cardapio.application.port.in.rodizio.JoinRodizioUseCase;
+import br.com.cardapio.application.port.in.rodizio.RodizioBannerUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListPassagemRequestsUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListPassagemTablesUseCase;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
@@ -215,6 +216,7 @@ import br.com.cardapio.application.service.realtime.WatchTvEventsService;
 import br.com.cardapio.application.service.rodizio.ActivateRodizioService;
 import br.com.cardapio.application.service.rodizio.ChangeRodizioGuestsService;
 import br.com.cardapio.application.service.rodizio.JoinRodizioService;
+import br.com.cardapio.application.service.rodizio.RodizioBannerService;
 import br.com.cardapio.application.service.rodizio.ListPassagemRequestsService;
 import br.com.cardapio.application.service.rodizio.ListPassagemTablesService;
 import br.com.cardapio.application.service.rodizio.ListRodiziosService;
@@ -689,8 +691,10 @@ class UseCaseConfig {
     }
 
     @Bean
-    DeclineCallUseCase declineCallUseCase(CallPort callPort, EventPublisherPort eventPublisherPort, Clock clock) {
-        return new DeclineCallService(callPort, eventPublisherPort, clock);
+    DeclineCallUseCase declineCallUseCase(CallPort callPort, TabPort tabPort, TabRodizioPort tabRodizioPort,
+                                          RodizioPhonePort rodizioPhonePort, EventPublisherPort eventPublisherPort,
+                                          Clock clock) {
+        return new DeclineCallService(callPort, tabPort, tabRodizioPort, rodizioPhonePort, eventPublisherPort, clock);
     }
 
     // Fim da trava de presença (Guia 17)
@@ -869,8 +873,9 @@ class UseCaseConfig {
     @Bean
     QuoteRodiziosUseCase quoteRodiziosUseCase(RodizioPort rodizioPort, EstablishmentTimeZonePort timeZonePort,
                                               DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
-                                              Clock clock) {
-        return new QuoteRodiziosService(rodizioPort, timeZonePort, diningTablePort, tableSessionPort, clock);
+                                              MediaStoragePort mediaStoragePort, Clock clock) {
+        return new QuoteRodiziosService(rodizioPort, timeZonePort, diningTablePort, tableSessionPort,
+                mediaStoragePort, clock);
     }
 
     @Bean
@@ -890,6 +895,12 @@ class UseCaseConfig {
                                                           EventPublisherPort eventPublisherPort, Clock clock) {
         return new ChangeRodizioGuestsService(diningTablePort, tabPort, tabRodizioPort, rodizioPhonePort, callPort,
                 eventPublisherPort, clock);
+    }
+
+    @Bean
+    RodizioBannerUseCase rodizioBannerUseCase(RodizioPort rodizioPort, MediaStoragePort mediaStoragePort,
+                                              ImageProcessorPort imageProcessorPort) {
+        return new RodizioBannerService(rodizioPort, mediaStoragePort, imageProcessorPort);
     }
 
     @Bean

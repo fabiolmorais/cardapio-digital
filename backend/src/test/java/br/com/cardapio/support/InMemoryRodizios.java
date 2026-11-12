@@ -64,6 +64,14 @@ public final class InMemoryRodizios implements RodizioPort, TabRodizioPort, Rodi
     }
 
     @Override
+    public int cancelRequests(EstablishmentId establishmentId, TabRodizioId rodizio) {
+        Map<TableSessionId, RodizioParticipation> those = phones.getOrDefault(rodizio, Map.of());
+        int before = those.size();
+        those.values().removeIf(p -> p == RodizioParticipation.REQUESTED);
+        return before - those.size();
+    }
+
+    @Override
     public RodizioParticipation find(EstablishmentId establishmentId, TabRodizioId rodizio, TableSessionId session) {
         RodizioParticipation explicit = phones.getOrDefault(rodizio, Map.of()).get(session);
         if (explicit != null) {

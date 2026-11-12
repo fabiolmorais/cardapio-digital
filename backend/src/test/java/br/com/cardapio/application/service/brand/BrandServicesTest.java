@@ -56,6 +56,11 @@ class BrandServicesTest {
             }
             return new ProcessedLogo(Map.of(LogoVariant.SMALL, "128".getBytes(), LogoVariant.LARGE, "512".getBytes()));
         }
+
+        @Override
+        public byte[] processBanner(byte[] original) {
+            throw new UnsupportedOperationException();
+        }
     };
     private final InMemoryStorage storage = new InMemoryStorage();
     private final GetBrandService get = new GetBrandService(brandPort, storage);

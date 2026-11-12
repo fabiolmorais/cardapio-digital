@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, Flame, UserCheck } from "lucide-react";
+import { Check, ChevronLeft, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatCents } from "@/lib/format";
@@ -19,7 +19,7 @@ const focus = "focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:o
  * garçom para ativar" (um chamado RODIZIO). Quem escolhe e confirma as pessoas é o garçom, ao
  * ativar; quando ele ativa, a tela mostra "Rodízio ativado!" e leva ao cardápio.
  */
-export function RodizioChooser({ token, tableLabel }: { token: string; tableLabel: string }) {
+export function RodizioChooser({ token, tableLabel, photo }: { token: string; tableLabel: string; photo?: string }) {
   const calls = useTableCalls(token);
   const orders = useTableOrders(token);
   const [options, setOptions] = useState<RodizioQuote[] | null>(null);
@@ -104,30 +104,40 @@ export function RodizioChooser({ token, tableLabel }: { token: string; tableLabe
       ) : (
         <>
           <ul className="flex flex-col gap-3">
-            {options.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-col gap-2 rounded-[26px] border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5"
-              >
-                <span className="flex items-center gap-2.5">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-(--brand) text-white">
-                    <Flame aria-hidden className="size-5" />
+            {options.map((r) => {
+              const image = r.bannerUrl ?? photo;
+              return (
+                <li
+                  key={r.id}
+                  className="relative flex h-[180px] overflow-hidden rounded-[26px] border-[1.5px] border-(--mesa-stroke) bg-black text-white"
+                >
+                  {image ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- banner já no tamanho certo, vindo do R2
+                    <img src={image} alt="" decoding="async" className="absolute inset-0 size-full object-cover" />
+                  ) : (
+                    <span aria-hidden className="absolute inset-0 bg-(--brand)" />
+                  )}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 bg-[linear-gradient(90deg,rgb(0_0_0/82%)_0%,rgb(0_0_0/35%)_70%,rgb(0_0_0/10%)_100%)]"
+                  />
+                  <span className="relative flex w-[220px] flex-col gap-1.5 px-4.5 py-4">
+                    <h2 className="text-xl leading-6 font-bold tracking-tight">{r.name}</h2>
+                    {r.type === "PASSAGEM" && <span className="text-[13px] text-white/80">{t.passagemHint}</span>}
+                    {r.description && (
+                      <p className="line-clamp-2 text-[13px] leading-[18px] text-white/82">{r.description}</p>
+                    )}
+                    <span className="mt-auto flex flex-col gap-0.5">
+                      {r.tiers.map((tier, i) => (
+                        <span key={tier.name} className={i === 0 ? "text-xl font-bold" : "text-[13px] text-white/75"}>
+                          {t.tierLine(formatCents(tier.priceCents), tier.name)}
+                        </span>
+                      ))}
+                    </span>
                   </span>
-                  <span className="flex flex-col">
-                    <h2 className="text-xl font-bold tracking-tight">{r.name}</h2>
-                    {r.type === "PASSAGEM" && <span className="text-sm text-(--mesa-muted)">{t.passagemHint}</span>}
-                  </span>
-                </span>
-                {r.description && <p className="text-sm text-(--mesa-muted)">{r.description}</p>}
-                <ul className="flex flex-col gap-0.5">
-                  {r.tiers.map((tier, i) => (
-                    <li key={tier.name} className={cn(i === 0 ? "text-lg font-bold" : "text-sm text-(--mesa-muted)")}>
-                      {t.tierPrice(tier.name, formatCents(tier.priceCents))}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
           <section className="flex flex-col gap-3 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-4">

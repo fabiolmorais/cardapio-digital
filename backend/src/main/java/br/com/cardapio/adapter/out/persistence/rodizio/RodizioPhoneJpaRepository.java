@@ -47,4 +47,11 @@ interface RodizioPhoneJpaRepository extends JpaRepository<RodizioPhoneJpaEntity,
             """, nativeQuery = true)
     int admitRequested(@Param("establishmentId") UUID establishmentId, @Param("rodizio") UUID rodizio,
                        @Param("now") Instant now);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+            DELETE FROM rodizio_phone
+             WHERE establishment_id = :establishmentId AND tab_rodizio_id = :rodizio AND joined_at IS NULL
+            """, nativeQuery = true)
+    int cancelRequests(@Param("establishmentId") UUID establishmentId, @Param("rodizio") UUID rodizio);
 }

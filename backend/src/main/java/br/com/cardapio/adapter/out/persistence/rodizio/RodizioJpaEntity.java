@@ -46,12 +46,17 @@ class RodizioJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "banner_path")
+    private String bannerPath;
+
     protected RodizioJpaEntity() {
     }
 
     RodizioJpaEntity(UUID id, UUID establishmentId, String name, String type, String description,
                      Integer maxPerItemPerRound, Integer maxPendingPerGuest, Integer minRoundIntervalMinutes,
-                     Integer timeLimitMinutes, String wasteNotice, boolean active, Instant createdAt) {
+                     Integer timeLimitMinutes, String wasteNotice, boolean active, Instant createdAt,
+                     String bannerPath) {
+        this.bannerPath = bannerPath;
         super(establishmentId);
         this.id = id;
         this.name = name;
@@ -77,4 +82,5 @@ class RodizioJpaEntity extends EstablishmentScopedEntity {
     String getWasteNotice() { return wasteNotice; }
     boolean isActive() { return active; }
     Instant getCreatedAt() { return createdAt; }
+    String getBannerPath() { return bannerPath; }
 }

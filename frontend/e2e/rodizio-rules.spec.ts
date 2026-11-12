@@ -46,7 +46,7 @@ test("a aba Rodízio mostra as regras, e o + e o envio param nelas", async ({ pa
   await page.goto(`/m/${qr}/cardapio`);
 
   const round = page.getByRole("region", { name: "Rodízio Japonês · 1 pessoa" });
-  await expect(round).toContainText("Sobras são cobradas à parte.");
+  await expect(round).toContainText("Evite desperdício: sobras são cobradas à parte.");
   await expect(round).toContainText("Até 1 de cada item por rodada");
   await expect(round.getByRole("status").first()).toContainText(/Faltam 1[45] minutos para o fim do rodízio/);
   // O Sashimi é só do rodízio: está na aba Rodízio, mas não no cardápio de sempre.

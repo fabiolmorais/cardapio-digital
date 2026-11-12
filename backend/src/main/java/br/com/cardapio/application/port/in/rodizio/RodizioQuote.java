@@ -11,8 +11,11 @@ import java.util.List;
 /**
  * Um rodízio com o preço de cada faixa AGORA, no relógio do restaurante: é o que a mesa vê em
  * "Escolha o rodízio" e o que o garçom vê ao ativar.
+ *
+ * @param bannerUrl o banner enviado pelo restaurante; null: a mesa mostra a imagem automática
  */
-public record RodizioQuote(RodizioId id, String name, RodizioType type, String description, List<Tier> tiers) {
+public record RodizioQuote(RodizioId id, String name, RodizioType type, String description, List<Tier> tiers,
+                           String bannerUrl) {
 
     public RodizioQuote {
         tiers = List.copyOf(tiers);
@@ -21,10 +24,10 @@ public record RodizioQuote(RodizioId id, String name, RodizioType type, String d
     public record Tier(String name, Money price) {
     }
 
-    public static RodizioQuote of(Rodizio rodizio, LocalDateTime localTime) {
+    public static RodizioQuote of(Rodizio rodizio, LocalDateTime localTime, String bannerUrl) {
         return new RodizioQuote(rodizio.id(), rodizio.name(), rodizio.type(), rodizio.description(),
                 rodizio.tiers().stream()
                         .map(t -> new Tier(t.name(), t.priceAt(localTime.getDayOfWeek(), localTime.toLocalTime())))
-                        .toList());
+                        .toList(), bannerUrl);
     }
 }

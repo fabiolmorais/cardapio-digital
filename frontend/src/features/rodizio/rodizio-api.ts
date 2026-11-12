@@ -1,4 +1,5 @@
 import { api, type Schemas } from "@/lib/api/client";
+import { sendToStorage } from "@/lib/api/direct-upload";
 import { messages } from "@/messages/pt-BR";
 
 export type Rodizio = Schemas["Rodizio"];
@@ -122,4 +123,35 @@ export async function fetchAllProducts(): Promise<MenuProduct[]> {
     all.push(...data.content.map((p) => ({ id: p.id, name: p.name, categoryId: p.categoryId })));
     if (all.length >= data.totalElements || data.content.length === 0) return all;
   }
+}
+
+/** O banner que o restaurante pode enviar: JPG ou PNG de até 5 MB (o ideal é 1200 × 600, 2:1). */
+export const BANNER_TYPES = ["image/jpeg", "image/png"];
+export const BANNER_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Os três passos do banner, como a logo: URL assinada, envio direto ao R2 e confirmação. */
+export async function uploadRodizioBanner(
+  id: string,
+  file: File,
+  onProgress: (fraction: number) => void,
+): Promise<Rodizio> {
+  const started = await api.POST("/api/v1/rodizios/{id}/banner/uploads", {
+    params: { path: { id } },
+    body: { contentType: file.type, sizeBytes: file.size },
+  });
+  if (!started.data) throw failure(started.response, started.error);
+  await sendToStorage(started.data, file, onProgress);
+  const { data, error, response } = await api.POST("/api/v1/rodizios/{id}/banner", {
+    params: { path: { id } },
+    body: { uploadId: started.data.uploadId },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/** Tira o banner: a mesa volta para a imagem automática. */
+export async function removeRodizioBanner(id: string): Promise<Rodizio> {
+  const { data, error, response } = await api.DELETE("/api/v1/rodizios/{id}/banner", { params: { path: { id } } });
+  if (data) return data;
+  throw failure(response, error);
 }

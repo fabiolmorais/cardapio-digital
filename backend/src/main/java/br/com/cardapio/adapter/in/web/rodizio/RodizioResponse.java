@@ -22,7 +22,9 @@ record RodizioResponse(
         @Schema(requiredMode = REQUIRED) Rules rules,
         @Schema(requiredMode = REQUIRED) List<Tier> tiers,
         @Schema(requiredMode = REQUIRED) List<UUID> productIds,
-        @Schema(requiredMode = REQUIRED, description = "false: pausado (as mesas não podem pedir)") boolean active
+        @Schema(requiredMode = REQUIRED, description = "false: pausado (as mesas não podem pedir)") boolean active,
+        @Schema(description = "O banner enviado (2:1, 1200 × 600); ausente: a mesa mostra a imagem automática")
+        String bannerUrl
 ) {
 
     @Schema(name = "RodizioRulesView")
@@ -47,7 +49,7 @@ record RodizioResponse(
     ) {
     }
 
-    static RodizioResponse from(Rodizio r) {
+    static RodizioResponse from(Rodizio r, String bannerUrl) {
         RodizioRules rules = r.rules();
         return new RodizioResponse(r.id().value(), r.name(), r.type(), r.description(),
                 new Rules(rules.maxPerItemPerRound(), rules.maxPendingPerGuest(), rules.minRoundIntervalMinutes(),
@@ -55,6 +57,6 @@ record RodizioResponse(
                 r.tiers().stream().map(t -> new Tier(t.name(), t.defaultPrice().cents(),
                         t.exceptions().stream().map(e -> new Special(e.days(), e.startsAt(), e.endsAt(),
                                 e.price().cents())).toList())).toList(),
-                r.productIds().stream().map(p -> p.value()).sorted().toList(), r.active());
+                r.productIds().stream().map(p -> p.value()).sorted().toList(), r.active(), bannerUrl);
     }
 }

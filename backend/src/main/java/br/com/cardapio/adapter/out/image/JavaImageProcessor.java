@@ -6,6 +6,7 @@ import br.com.cardapio.application.port.out.media.ProcessedLogo;
 import br.com.cardapio.domain.brand.model.LogoVariant;
 import br.com.cardapio.domain.shared.exception.InvalidImageException;
 import br.com.cardapio.domain.menu.model.ImageVariant;
+import br.com.cardapio.domain.rodizio.model.BannerFile;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.IIOImage;
@@ -76,6 +77,37 @@ class JavaImageProcessor implements ImageProcessorPort {
             variants.put(variant, png(fitInSquare(image, variant.side())));
         }
         return new ProcessedLogo(variants);
+    }
+
+    /** Corta pelo centro na proporção do banner (2:1) e reduz até o tamanho gravado (nunca amplia). */
+    @Override
+    public byte[] processBanner(byte[] original) {
+        BufferedImage image = orient(read(original, MIN_SIDE), ExifOrientation.of(original));
+        if (image.getWidth() < BannerFile.MIN_WIDTH || image.getHeight() < BannerFile.MIN_HEIGHT) {
+            throw new InvalidImageException("O banner é pequeno demais. Use uma imagem de pelo menos "
+                    + BannerFile.MIN_WIDTH + " × " + BannerFile.MIN_HEIGHT + " pixels (o ideal é "
+                    + BannerFile.WIDTH + " × " + BannerFile.HEIGHT + ").");
+        }
+        double ratio = (double) BannerFile.WIDTH / BannerFile.HEIGHT;
+        int sw = image.getWidth();
+        int sh = image.getHeight();
+        if ((double) sw / sh > ratio) {
+            sw = (int) Math.round(sh * ratio);
+        } else {
+            sh = (int) Math.round(sw / ratio);
+        }
+        int sx = (image.getWidth() - sw) / 2;
+        int sy = (image.getHeight() - sh) / 2;
+        double scale = Math.min(1.0, (double) BannerFile.WIDTH / sw);
+        int tw = Math.max(1, (int) Math.round(sw * scale));
+        int th = Math.max(1, (int) Math.round(sh * scale));
+        BufferedImage out = new BufferedImage(tw, th, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = out.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.drawImage(image, 0, 0, tw, th, sx, sy, sx + sw, sy + sh, null);
+        g.dispose();
+        return jpeg(out);
     }
 
     private static BufferedImage fitInSquare(BufferedImage image, int side) {

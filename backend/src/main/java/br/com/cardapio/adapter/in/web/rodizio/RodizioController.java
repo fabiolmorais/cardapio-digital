@@ -2,6 +2,11 @@ package br.com.cardapio.adapter.in.web.rodizio;
 
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
+import br.com.cardapio.application.port.in.rodizio.RodizioBannerUseCase;
+import br.com.cardapio.domain.rodizio.model.BannerFile;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import br.com.cardapio.application.port.in.rodizio.ListRodiziosUseCase;
 import br.com.cardapio.application.port.in.rodizio.ManageRodiziosUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -26,6 +31,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -41,8 +48,11 @@ class RodizioController {
 
     private final ListRodiziosUseCase listRodizios;
     private final ManageRodiziosUseCase manageRodizios;
+    private final RodizioBannerUseCase banners;
 
-    RodizioController(ListRodiziosUseCase listRodizios, ManageRodiziosUseCase manageRodizios) {
+    RodizioController(ListRodiziosUseCase listRodizios, ManageRodiziosUseCase manageRodizios,
+                      RodizioBannerUseCase banners) {
+        this.banners = banners;
         this.listRodizios = listRodizios;
         this.manageRodizios = manageRodizios;
     }
@@ -58,7 +68,7 @@ class RodizioController {
             @Parameter(description = "Rodízios por página (1 a 100)")
             @RequestParam(defaultValue = "20") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
         return PageResponse.from(listRodizios.list(AuthenticatedUser.from(jwt).establishmentId(),
-                new PageQuery(page, size)), RodizioResponse::from);
+                new PageQuery(page, size)), this::response);
     }
 
     @GetMapping("/{id}")
@@ -68,7 +78,7 @@ class RodizioController {
     @ApiResponse(responseCode = "404", description = "Não é um rodízio ativo deste restaurante",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     RodizioResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
-        return RodizioResponse.from(listRodizios.get(AuthenticatedUser.from(jwt).establishmentId(),
+        return response(listRodizios.get(AuthenticatedUser.from(jwt).establishmentId(),
                 new RodizioId(id)));
     }
 
@@ -87,7 +97,7 @@ class RodizioController {
                                            @Valid @RequestBody RodizioRequest request) {
         Rodizio created = manageRodizios.create(AuthenticatedUser.from(jwt).establishmentId(), request.toForm());
         return ResponseEntity.created(URI.create("/api/v1/rodizios/" + created.id().value()))
-                .body(RodizioResponse.from(created));
+                .body(response(created));
     }
 
     @PutMapping("/{id}")
@@ -102,7 +112,7 @@ class RodizioController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     RodizioResponse update(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                            @Valid @RequestBody RodizioRequest request) {
-        return RodizioResponse.from(manageRodizios.update(AuthenticatedUser.from(jwt).establishmentId(),
+        return response(manageRodizios.update(AuthenticatedUser.from(jwt).establishmentId(),
                 new RodizioId(id), request.toForm()));
     }
 
@@ -126,7 +136,73 @@ class RodizioController {
     @ApiResponse(responseCode = "409", description = "Já existe um rodízio ativo com este nome, ou o limite de ativos",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     RodizioResponse reactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
-        return RodizioResponse.from(manageRodizios.reactivate(AuthenticatedUser.from(jwt).establishmentId(),
+        return response(manageRodizios.reactivate(AuthenticatedUser.from(jwt).establishmentId(),
                 new RodizioId(id)));
+    }
+
+    private RodizioResponse response(Rodizio r) {
+        return RodizioResponse.from(r, banners.bannerUrl(r));
+    }
+
+    @Schema(name = "RodizioBannerUploadRequest")
+    record BannerUploadRequest(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, example = "image/jpeg") @NotBlank String contentType,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Tamanho em bytes (até 5 MB)")
+            @NotNull @Positive Long sizeBytes
+    ) {
+    }
+
+    @Schema(name = "RodizioBannerUpload",
+            description = "Envie o banner com um PUT na url, com estes cabeçalhos; depois avise com o uploadId")
+    record BannerUploadResponse(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID uploadId,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String url,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, example = "PUT") String method,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Map<String, String> headers,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant expiresAt
+    ) {
+    }
+
+    @Schema(name = "SetRodizioBannerRequest")
+    record SetBannerRequest(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID uploadId) {
+    }
+
+    @PostMapping("/{id}/banner/uploads")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(operationId = "startRodizioBannerUpload", summary = "Passo 1: pede a URL assinada para enviar o banner")
+    @ApiResponse(responseCode = "200", description = "Como enviar o arquivo")
+    @ApiResponse(responseCode = "400", description = "Tipo ou tamanho não aceito",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Não é um rodízio deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    BannerUploadResponse startBannerUpload(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                           @Valid @RequestBody BannerUploadRequest request) {
+        var upload = banners.start(AuthenticatedUser.from(jwt).establishmentId(), new RodizioId(id),
+                new BannerFile(request.contentType(), request.sizeBytes()));
+        return new BannerUploadResponse(upload.uploadId(), upload.url(), "PUT", upload.headers(), upload.expiresAt());
+    }
+
+    @PostMapping("/{id}/banner")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(operationId = "setRodizioBanner", summary = "Passo 2: o arquivo já foi enviado; confere e troca o banner")
+    @ApiResponse(responseCode = "200", description = "Banner trocado")
+    @ApiResponse(responseCode = "400", description = "Não é JPG nem PNG, ou é pequeno demais",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Não é um rodízio deste restaurante, ou o envio não chegou",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    RodizioResponse setBanner(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                              @Valid @RequestBody SetBannerRequest request) {
+        return response(banners.set(AuthenticatedUser.from(jwt).establishmentId(), new RodizioId(id),
+                request.uploadId()));
+    }
+
+    @DeleteMapping("/{id}/banner")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(operationId = "removeRodizioBanner", summary = "Tira o banner: a mesa volta para a imagem automática")
+    @ApiResponse(responseCode = "200", description = "Banner removido")
+    @ApiResponse(responseCode = "404", description = "Não é um rodízio deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    RodizioResponse removeBanner(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return response(banners.remove(AuthenticatedUser.from(jwt).establishmentId(), new RodizioId(id)));
     }
 }

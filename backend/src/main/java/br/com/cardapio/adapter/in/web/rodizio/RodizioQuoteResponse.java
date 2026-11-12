@@ -15,7 +15,9 @@ record RodizioQuoteResponse(
         @Schema(requiredMode = REQUIRED) String name,
         @Schema(requiredMode = REQUIRED) RodizioType type,
         @Schema(requiredMode = REQUIRED) String description,
-        @Schema(requiredMode = REQUIRED) List<Tier> tiers
+        @Schema(requiredMode = REQUIRED) List<Tier> tiers,
+        @Schema(description = "O banner enviado pelo restaurante (2:1); ausente: a mesa mostra a imagem automática")
+        String bannerUrl
 ) {
 
     @Schema(name = "RodizioQuoteTier")
@@ -24,6 +26,6 @@ record RodizioQuoteResponse(
 
     static RodizioQuoteResponse from(RodizioQuote q) {
         return new RodizioQuoteResponse(q.id().value(), q.name(), q.type(), q.description(),
-                q.tiers().stream().map(t -> new Tier(t.name(), t.price().cents())).toList());
+                q.tiers().stream().map(t -> new Tier(t.name(), t.price().cents())).toList(), q.bannerUrl());
     }
 }

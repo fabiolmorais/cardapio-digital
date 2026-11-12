@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { RodizioChooser } from "@/features/table/rodizio-chooser";
-import { getTable } from "@/features/table/table-data";
+import { aLaCarte, showcase } from "@/features/table/carte";
+import { getMenu, getTable } from "@/features/table/table-data";
 import { TableShell } from "@/features/table/table-shell";
 import { messages } from "@/messages/pt-BR";
 
@@ -25,7 +26,11 @@ export default function TableRodizioPage({ params }: PageProps<"/m/[token]/rodiz
 async function Rodizio({ params }: Pick<PageProps<"/m/[token]/rodizio">, "params">) {
   await connection();
   const { token } = await params;
-  const table = await getTable(token);
+  const [table, menu] = await Promise.all([getTable(token), getMenu(token)]);
+  // Sem banner enviado pelo restaurante, o rodízio usa a foto de um prato (a mesma da tela da mesa).
+  const products = menu ? aLaCarte(menu).flatMap((c) => c.products) : [];
+  const top = menu ? showcase(menu).items : [];
+  const photo = (top.find((p) => p.photo) ?? products.find((p) => p.photo))?.photo?.medium;
   if (!table) {
     return (
       <p role="alert" className="p-6 text-muted-foreground">
@@ -35,7 +40,7 @@ async function Rodizio({ params }: Pick<PageProps<"/m/[token]/rodizio">, "params
   }
   return (
     <TableShell token={token} table={table} current="home">
-      <RodizioChooser token={token} tableLabel={table.tableLabel} />
+      <RodizioChooser token={token} tableLabel={table.tableLabel} photo={photo} />
     </TableShell>
   );
 }
