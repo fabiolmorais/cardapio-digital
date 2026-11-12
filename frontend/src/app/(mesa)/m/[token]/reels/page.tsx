@@ -47,6 +47,8 @@ async function ReelsPage({ params, searchParams }: Pick<PageProps<"/m/[token]/re
         menu={menu}
         startId={typeof produto === "string" ? produto : null}
         establishmentName={table.establishmentName}
+        logo={brand.logo?.small}
+        brandColor={brand.primary}
         backHref={de === "inicio" ? `/m/${token}` : `/m/${token}/cardapio`}
       />
     </div>

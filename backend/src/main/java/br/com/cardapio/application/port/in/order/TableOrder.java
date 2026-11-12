@@ -13,15 +13,19 @@ import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import br.com.cardapio.domain.menu.model.ProductId;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
  * Um pedido como a MESA vê: todos os celulares da mesa veem todos os pedidos da comanda.
  *
- * @param mine foi este celular que mandou (só ele cancela os itens)
+ * @param mine  foi este celular que mandou (só ele cancela os itens)
+ * @param phone de qual celular da mesa é o pedido, sem dizer quem: 1 é sempre o celular que está
+ *              olhando; os outros, 2, 3… na ordem do primeiro pedido de cada um
  */
-public record TableOrder(OrderId id, int number, OrderStatus status, Instant createdAt, boolean mine,
+public record TableOrder(OrderId id, int number, OrderStatus status, Instant createdAt, boolean mine, int phone,
                          List<Item> items) {
 
     public TableOrder {
@@ -48,14 +52,35 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
         }
     }
 
+    /** O pedido que este celular acabou de mandar: é dele, então o celular 1. */
     public static TableOrder from(OrderWithItems found, TableSessionId viewer) {
-        return from(found, viewer, product -> null);
+        return from(found, viewer, product -> null, session -> 1);
     }
 
-    /** @param thumbs a miniatura de cada produto (null se não tem foto) */
-    public static TableOrder from(OrderWithItems found, TableSessionId viewer, Function<ProductId, String> thumbs) {
+    /**
+     * @param thumbs a miniatura de cada produto (null se não tem foto)
+     * @param phones o número de cada celular da mesa (ver {@link #phones})
+     */
+    public static TableOrder from(OrderWithItems found, TableSessionId viewer, Function<ProductId, String> thumbs,
+                                  Function<TableSessionId, Integer> phones) {
         var order = found.order();
         return new TableOrder(order.id(), order.number(), order.status(), order.createdAt(),
-                order.sessionId().equals(viewer), found.items().stream().map(i -> Item.from(i, thumbs)).toList());
+                order.sessionId().equals(viewer), phones.apply(order.sessionId()),
+                found.items().stream().map(i -> Item.from(i, thumbs)).toList());
+    }
+
+    /**
+     * Numera os celulares que pediram: quem está olhando é o 1; os outros, 2, 3… na ordem do
+     * primeiro pedido. É o "Celular 2" da tela: a mesa vê quanto cada um pediu sem saber quem é.
+     *
+     * @param orders os pedidos, do mais antigo ao mais novo
+     */
+    public static Map<TableSessionId, Integer> phones(List<OrderWithItems> orders, TableSessionId viewer) {
+        Map<TableSessionId, Integer> numbers = new LinkedHashMap<>();
+        numbers.put(viewer, 1);
+        for (OrderWithItems o : orders) {
+            numbers.putIfAbsent(o.order().sessionId(), numbers.size() + 1);
+        }
+        return numbers;
     }
 }

@@ -119,8 +119,10 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .filter(p -> !p.receivedAt().isBefore(visitStart))
                 .map(TabPayment::amount)
                 .reduce(Money.ZERO, Money::plus);
+        var phones = TableOrder.phones(found, visit.session().id());
         return new TableOrders(enabled, total, paid, total.minusOrZero(paid), rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
-                found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId))).toList());
+                found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId),
+                        phones::get)).toList());
     }
 
     /** A miniatura da primeira foto de cada produto (a capa, como no cardápio). */

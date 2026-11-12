@@ -183,7 +183,9 @@ test("o mapa do salão mostra cada mesa e abre a comanda ao lado", async ({ page
     await expect(drawer).toContainText("Na fila");
     await expect(drawer).toContainText("R$ 29,90");
     await drawer.getByRole("link", { name: "Ver comanda e fechar" }).click();
-    await expect(panel.page.getByText("Conta pedida · Cartão")).toBeVisible();
+    await expect(panel.page).toHaveURL(/\/painel\/comandas\/[0-9a-f-]+$/);
+    await expect(panel.page.getByRole("heading", { name: "Comanda aberta" })).toBeVisible();
+    await expect(panel.page.getByRole("main").getByText("Conta pedida · Cartão")).toBeVisible();
   } finally {
     await panel.close();
   }

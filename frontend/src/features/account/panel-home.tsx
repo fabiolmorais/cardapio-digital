@@ -16,7 +16,7 @@ import { KITCHEN_KEY, KitchenLink, OrdersColumn, ReadyColumn } from "@/features/
 import { fetchKitchenQueue } from "@/features/orders/orders-api";
 import { useLiveOrders } from "@/features/orders/use-live-orders";
 import { PrintingLink } from "@/features/printing/printing-link";
-import { PushCard } from "@/features/pwa/push-card";
+import { PushTag } from "@/features/pwa/push-tag";
 import { canManageTeam } from "@/features/team/team-rules";
 import { api } from "@/lib/api/client";
 import { formatCents } from "@/lib/format";
@@ -146,6 +146,7 @@ function Live({ role }: { role: Role }) {
           </div>
         )}
         <SoundTag />
+        <PushTag />
         {canManageTeam(role) && (
           <Link href="/painel/tv" className={cn(buttonVariants({ variant: "outline" }), "h-11 gap-2")}>
             <Tv aria-hidden />
@@ -191,8 +192,6 @@ function Live({ role }: { role: Role }) {
           <OrdersColumn sector={current} canReview={!kitchenRole} />
           <ReadyColumn sector={current} canDeliver={!kitchenRole} />
         </div>
-
-        <PushCard />
       </div>
       <SoundGate />
     </>

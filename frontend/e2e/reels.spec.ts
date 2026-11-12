@@ -95,6 +95,8 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   const guioza = page.getByRole("region", { name: "Guioza" });
   await expect(guioza.getByRole("heading", { name: "Guioza" })).toBeVisible();
   await expect(guioza).toContainText("Destaque");
+  // No topo, ao lado do nome, a logo do restaurante; sem logo, as iniciais na cor da marca.
+  await expect(page.getByText("RL", { exact: true })).toBeVisible();
   await expect.poll(() => playing(page, "Guioza")).toBe(true);
   // E continua tocando (a barra de progresso atualizando a tela não pode pausar o vídeo).
   await page.waitForTimeout(1500);

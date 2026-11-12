@@ -51,6 +51,17 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
   // pedido recusado pelo garçom têm o aviso do pedido.
   const canceled = entries.filter(({ item, order }) => item.status === "CANCELED" && order.status !== "REJECTED");
   const rejected = orders.filter((order) => order.status === "REJECTED");
+  // Quanto cada celular pediu (os itens que entram na conta), do 1 (este) em diante.
+  const byPhone = new Map<number, number>();
+  for (const order of data?.orders ?? []) {
+    if (order.status === "REJECTED") continue;
+    const sum = order.items
+      .filter((i) => i.status !== "CANCELED")
+      .reduce((acc, i) => acc + i.unitPriceCents * i.quantity, 0);
+    byPhone.set(order.phone, (byPhone.get(order.phone) ?? 0) + sum);
+  }
+  const phones = [...byPhone.entries()].sort(([a], [b]) => a - b);
+  const mineCents = byPhone.get(1) ?? 0;
 
   if (closed) return <TabClosed />;
 
@@ -70,6 +81,11 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
             <span className="text-lg font-bold text-(--mesa-fg)">
               {formatCents(data.paidCents > 0 ? data.dueCents : data.totalCents)}
             </span>
+            {phones.length > 1 && (
+              <span className="text-xs">
+                {t.thisPhone} · {formatCents(mineCents)}
+              </span>
+            )}
           </span>
         )}
       </header>
@@ -162,10 +178,30 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
               <div className="flex items-center justify-between gap-3">
                 <span className="flex flex-col">
                   <span className="font-semibold">{t.partial}</span>
-                  <span className="text-sm text-(--mesa-muted)">{t.historyTotalHint}</span>
+                  <span className="text-sm text-(--mesa-muted)">
+                    {phones.length > 1 ? t.phones(phones.length) : t.historyTotalHint}
+                  </span>
                 </span>
                 <span className="text-2xl font-bold">{formatCents(data.totalCents)}</span>
               </div>
+              {(phones.length > 1 || data.rodizio) && (
+                <ul aria-label={t.byPhone} className="flex flex-col gap-1 border-t border-(--mesa-stroke) pt-2 text-sm">
+                  {phones.map(([phone, cents]) => (
+                    <li key={phone} className="flex items-center justify-between gap-3">
+                      <span className={phone === 1 ? "font-semibold" : "text-(--mesa-muted)"}>
+                        {phone === 1 ? t.thisPhone : t.phone(phone)}
+                      </span>
+                      <span className={phone === 1 ? "font-semibold" : undefined}>{formatCents(cents)}</span>
+                    </li>
+                  ))}
+                  {data.rodizio && (
+                    <li className="flex items-center justify-between gap-3">
+                      <span className="text-(--mesa-muted)">{t.rodizioShare(data.rodizio.people)}</span>
+                      <span>{formatCents(data.rodizio.totalCents)}</span>
+                    </li>
+                  )}
+                </ul>
+              )}
               {data.paidCents > 0 && (
                 <>
                   <div className="flex items-center justify-between gap-3 border-t border-(--mesa-stroke) pt-2 text-sm">
@@ -282,7 +318,7 @@ function HistoryOrder({ order }: { order: TableOrder }) {
     >
       <div className="flex justify-between gap-2 text-sm text-(--mesa-muted)">
         <h2>{title}</h2>
-        <span>{order.mine ? t.mine : t.other}</span>
+        <span>{order.mine ? t.mine : t.phone(order.phone)}</span>
       </div>
       <ul className="flex flex-col">
         {order.items.map((item) => {

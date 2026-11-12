@@ -2,6 +2,7 @@
 
 import { Pause, Plus, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
@@ -34,12 +35,17 @@ export function Reels({
   menu,
   startId,
   establishmentName,
+  logo,
+  brandColor,
   backHref,
 }: {
   token: string;
   menu: PublicMenu;
   startId: string | null;
   establishmentName: string;
+  /** A logo pequena do restaurante; sem ela, as iniciais na cor da marca. */
+  logo?: string;
+  brandColor: string;
   /** Para onde o "Fechar" volta: o cardápio ou, vindo de um destaque, o início da mesa. */
   backHref: string;
 }) {
@@ -124,7 +130,10 @@ export function Reels({
 
       {/* Por cima de tudo: a marca, o fechar, o som e o pedido. */}
       <div className="pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between gap-3 px-4 pt-9">
-        <span className="truncate text-sm font-semibold drop-shadow">{establishmentName}</span>
+        <span className="flex min-w-0 items-center gap-2.5">
+          <BrandLogo logo={logo} name={establishmentName} color={brandColor} alt="" className="size-8 text-xs" />
+          <span className="truncate text-sm font-semibold drop-shadow">{establishmentName}</span>
+        </span>
         <Link href={back} aria-label={t.close} className={cn(round, "pointer-events-auto")}>
           <X aria-hidden className="size-5" />
         </Link>

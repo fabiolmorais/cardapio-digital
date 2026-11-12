@@ -2494,6 +2494,11 @@ export interface components {
             createdAt: string;
             /** @description Foi este celular que mandou (só ele cancela os itens) */
             mine: boolean;
+            /**
+             * Format: int32
+             * @description De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido
+             */
+            phone: number;
             items: components["schemas"]["TableOrderItem"][];
         };
         PresenceCheckRequest: {

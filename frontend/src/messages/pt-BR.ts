@@ -1529,6 +1529,13 @@ export const messages = {
       needsInstall: "No iPhone, os avisos só chegam com o app instalado na tela de início.",
       unsupported: "Este navegador não recebe avisos. No Android, use o Chrome; no iPhone, instale o app.",
       error: "Não foi possível ativar os avisos. Tente de novo.",
+      tagOn: "Avisos ligados",
+      tagOff: "Avisos desligados",
+      tagOnLabel: "Avisos no celular ligados. Toque para desligar",
+      tagOffLabel: "Avisos no celular desligados. Toque para ligar",
+      tagDenied: "Avisos bloqueados",
+      tagInstall: "Instale para receber avisos",
+      tagFailed: "Avisos: tente de novo",
     },
     install: {
       title: "Instalar o app da equipe",

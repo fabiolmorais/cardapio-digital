@@ -29,7 +29,7 @@ async function restaurant(request: APIRequestContext) {
     ],
     productIds: [guioza.id],
   });
-  return { qr: table.publicToken as string, email };
+  return { qr: table.publicToken as string, email, post, guioza };
 }
 
 async function ownerPanel(browser: Browser, email: string) {
@@ -100,4 +100,24 @@ test("a mesa pede o rodízio, o garçom ativa, a mesa pede rodadas e a conta som
   await expect(owner.page.getByRole("region", { name: "Rodízio Japonês · 3 pessoas" })).toBeVisible();
   await expect(owner.page.getByText("R$ 324,70").first()).toBeVisible();
   await owner.close();
+});
+
+test("com mais de um rodízio, a tela inicial mostra um banner para cada um", async ({ page, request }) => {
+  const { qr, post, guioza } = await restaurant(request);
+  await post("/api/v1/rodizios", {
+    name: "Rodízio de Petiscos",
+    type: "A_LA_MINUTE",
+    description: "Petiscos à vontade",
+    rules: {},
+    tiers: [{ name: "Adulto", defaultPriceCents: 8990, prices: [] }],
+    productIds: [guioza.id],
+  });
+
+  await page.goto(`/m/${qr}`);
+  const banners = page.getByRole("list", { name: "2 rodízios" });
+  await expect(banners.getByRole("article")).toHaveCount(2);
+  await expect(banners.getByRole("article", { name: "Rodízio Japonês" })).toContainText("R$ 129,90");
+  await expect(banners.getByRole("article", { name: "Rodízio de Petiscos" })).toContainText("R$ 89,90");
+  await banners.getByRole("link", { name: "Quero o rodízio · Rodízio de Petiscos" }).click();
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}/rodizio$`));
 });
