@@ -85,18 +85,22 @@ test("o garçom ativa as notificações no painel, e desativa", async ({ page, r
   await fakePushService(page);
   await loginThroughForm(page, email);
 
-  const card = page.getByRole("region", { name: "Avisos no celular" });
+  // A tag fica no topo do Ao vivo, ao lado do "Som ligado".
   const subscribed = page.waitForResponse(
     (r) => r.url().endsWith("/api/v1/push/subscriptions") && r.request().method() === "POST",
   );
-  await card.getByRole("button", { name: "Ativar notificações" }).click();
+  await page.getByRole("button", { name: "Avisos no celular desligados. Toque para ligar" }).click();
   expect((await subscribed).status()).toBe(201);
-  await expect(card.getByRole("status")).toHaveText("Os avisos estão ligados neste aparelho.");
+  const on = page.getByRole("button", { name: "Avisos no celular ligados. Toque para desligar" });
+  await expect(on).toHaveAttribute("aria-pressed", "true");
+  await expect(on).toHaveText("Avisos ligados");
 
   const removed = page.waitForResponse(
     (r) => r.url().includes("/api/v1/push/subscriptions?endpoint=") && r.request().method() === "DELETE",
   );
-  await card.getByRole("button", { name: "Desativar" }).click();
+  await on.click();
   expect((await removed).status()).toBe(204);
-  await expect(card.getByRole("button", { name: "Ativar notificações" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Avisos no celular desligados. Toque para ligar" })).toHaveText(
+    "Avisos desligados",
+  );
 });

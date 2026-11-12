@@ -19,6 +19,9 @@ record TableOrderResponse(
         @Schema(requiredMode = REQUIRED) Instant createdAt,
         @Schema(requiredMode = REQUIRED, description = "Foi este celular que mandou (só ele cancela os itens)")
         boolean mine,
+        @Schema(requiredMode = REQUIRED,
+                description = "De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido")
+        int phone,
         @Schema(requiredMode = REQUIRED) List<Item> items
 ) {
 
@@ -43,7 +46,7 @@ record TableOrderResponse(
     }
 
     static TableOrderResponse from(TableOrder o) {
-        return new TableOrderResponse(o.id().value(), o.number(), o.status(), o.createdAt(), o.mine(),
+        return new TableOrderResponse(o.id().value(), o.number(), o.status(), o.createdAt(), o.mine(), o.phone(),
                 o.items().stream().map(Item::from).toList());
     }
 }

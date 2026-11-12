@@ -50,14 +50,51 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
     );
   }
   if (offered.length === 0) return null;
-  // O banner (desenho 2.1): o nome (um rodízio só) e o menor preço por pessoa, o da faixa mais cara
-  // de cada rodízio (a de adulto), sobre a foto de um prato.
-  const name = offered.length === 1 ? offered[0].name : t.eyebrow;
-  const prices = offered.map((r) => Math.max(...r.tiers.map((tier) => tier.priceCents))).filter(Number.isFinite);
-  const price = prices.length ? Math.min(...prices) : null;
+  // O banner (desenho 2.1): um por rodízio, com o nome e o preço por pessoa (o da faixa mais cara,
+  // a de adulto), sobre a foto de um prato. Com mais de um, ficam lado a lado e a mesa desliza
+  // entre eles. Com o rodízio já pedido ao garçom, um banner só, dizendo que ele está vindo.
+  if (request || offered.length === 1) {
+    return <Banner token={token} photo={photo} rodizio={request ? null : offered[0]} requested={Boolean(request)} />;
+  }
   return (
-    <section
-      aria-label={t.eyebrow}
+    <section aria-label={t.eyebrow} className="-mx-5 flex flex-col gap-2">
+      <ul
+        aria-label={t.options(offered.length)}
+        className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 [scrollbar-width:none]"
+      >
+        {offered.map((rodizio) => (
+          <li key={rodizio.id} className="w-[86%] max-w-[340px] shrink-0 snap-start">
+            <Banner token={token} photo={photo} rodizio={rodizio} requested={false} />
+          </li>
+        ))}
+      </ul>
+      <span className="px-5 text-xs text-(--mesa-muted)">{t.swipe(offered.length)}</span>
+    </section>
+  );
+}
+
+/** O preço por pessoa do rodízio: o da faixa mais cara (a de adulto). */
+function adultPrice(rodizio: RodizioQuote): number | null {
+  const prices = rodizio.tiers.map((tier) => tier.priceCents);
+  return prices.length ? Math.max(...prices) : null;
+}
+
+/** Um banner de rodízio; sem `rodizio`, o banner do pedido já feito ao garçom. */
+function Banner({
+  token,
+  photo,
+  rodizio,
+  requested,
+}: {
+  token: string;
+  photo?: string;
+  rodizio: RodizioQuote | null;
+  requested: boolean;
+}) {
+  const price = rodizio ? adultPrice(rodizio) : null;
+  return (
+    <article
+      aria-label={rodizio?.name ?? t.eyebrow}
       className="relative flex h-[156px] overflow-hidden rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass)"
     >
       {photo && (
@@ -72,10 +109,10 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
       <div className="relative flex w-[210px] flex-col justify-between p-4">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[.3px] text-(--brand-text) uppercase">
           <Flame aria-hidden className="size-3.5" />
-          {name}
+          {rodizio?.name ?? t.eyebrow}
         </span>
         <span className="text-xl leading-[26px] font-semibold tracking-[-0.3px]">
-          {request ? (
+          {requested ? (
             <span className="text-base">{t.requestedSub}</span>
           ) : (
             <>
@@ -91,11 +128,12 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
         </span>
         <Link
           href={`/m/${token}/rodizio`}
+          aria-label={rodizio ? t.wantNamed(rodizio.name) : undefined}
           className="flex h-10 items-center self-start rounded-xl bg-(--brand) px-3.5 text-sm font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:outline-none"
         >
           {t.want}
         </Link>
       </div>
-    </section>
+    </article>
   );
 }

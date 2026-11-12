@@ -95,6 +95,8 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   const guioza = page.getByRole("region", { name: "Guioza" });
   await expect(guioza.getByRole("heading", { name: "Guioza" })).toBeVisible();
   await expect(guioza).toContainText("Destaque");
+  // No topo, ao lado do nome, a logo do restaurante; sem logo, as iniciais na cor da marca.
+  await expect(page.getByText("RL", { exact: true })).toBeVisible();
   await expect.poll(() => playing(page, "Guioza")).toBe(true);
   // E continua tocando (a barra de progresso atualizando a tela não pode pausar o vídeo).
   await page.waitForTimeout(1500);
@@ -110,6 +112,16 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await page.getByRole("region", { name: "Sunomono" }).scrollIntoViewIfNeeded();
   await expect.poll(() => playing(page, "Sunomono")).toBe(true);
   await expect.poll(() => playing(page, "Guioza")).toBe(false);
+
+  // O Sunomono é o último: deslizar mais uma vez volta ao primeiro, como se não tivesse fim.
+  await page
+    .getByRole("region", { name: "Sunomono" })
+    .evaluate((el) => el.parentElement!.scrollBy({ top: el.clientHeight, behavior: "instant" }));
+  await expect(page.getByRole("region", { name: "Guioza" })).toBeInViewport();
+  await expect.poll(() => playing(page, "Guioza")).toBe(true);
+  await expect.poll(() => playing(page, "Sunomono")).toBe(false);
+  await page.getByRole("region", { name: "Sunomono" }).scrollIntoViewIfNeeded();
+  await expect.poll(() => playing(page, "Sunomono")).toBe(true);
 
   await page.getByRole("button", { name: "Adicionar Sunomono" }).click();
   await page.getByRole("dialog", { name: "Sunomono" }).getByRole("button", { name: /^Adicionar/ }).click();

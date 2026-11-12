@@ -104,6 +104,19 @@ class OrderServicesTest {
         assertThat(published).hasSize(3).allMatch(e -> e instanceof OrderChanged);
     }
 
+    /** Cada celular vê a si mesmo como o 1 e os outros como 2, 3… na ordem do primeiro pedido. */
+    @Test
+    void eachPhoneSeesItselfAsPhoneOneAndTheOthersNumberedInOrder() {
+        place("ana", line(guioza, 1));
+        place("bia", line(sunomono, 2));
+        place("ana", line(sunomono, 1));
+        place("caio", line(guioza, 1));
+
+        assertThat(list("ana").orders()).extracting(TableOrder::phone).containsExactly(1, 2, 1, 3);
+        assertThat(list("bia").orders()).extracting(TableOrder::phone).containsExactly(2, 1, 2, 3);
+        assertThat(list("caio").orders()).extracting(TableOrder::phone).containsExactly(2, 3, 2, 1);
+    }
+
     /**
      * Ninguém fechou a conta ontem e a comanda continuou aberta: quem senta hoje não vê os pedidos
      * (nem o total) da visita de ontem. A comanda inteira segue no painel da equipe.

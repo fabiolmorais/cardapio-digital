@@ -2,6 +2,7 @@
 
 import { Pause, Plus, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
@@ -34,12 +35,17 @@ export function Reels({
   menu,
   startId,
   establishmentName,
+  logo,
+  brandColor,
   backHref,
 }: {
   token: string;
   menu: PublicMenu;
   startId: string | null;
   establishmentName: string;
+  /** A logo pequena do restaurante; sem ela, as iniciais na cor da marca. */
+  logo?: string;
+  brandColor: string;
   /** Para onde o "Fechar" volta: o cardápio ou, vindo de um destaque, o início da mesa. */
   backHref: string;
 }) {
@@ -57,6 +63,10 @@ export function Reels({
   const [adding, setAdding] = useState<MenuItem | null>(null);
   const { count, totalCents } = useCart(token);
   const sections = useRef<(HTMLElement | null)[]>([]);
+  const scroller = useRef<HTMLDivElement>(null);
+  // Rolagem infinita: depois do último prato vem uma cópia do primeiro. Ao chegar nela, a tela
+  // salta (sem animação) para o primeiro de verdade, e a rolagem parece não ter fim.
+  const loops = items.length > 1;
 
   // Abre no prato que o cliente tocou no cardápio.
   useEffect(() => {
@@ -68,7 +78,15 @@ export function Reels({
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) setActive(Number((entry.target as HTMLElement).dataset.index));
+          if (!entry.isIntersecting) continue;
+          const index = Number((entry.target as HTMLElement).dataset.index);
+          if (index === items.length) {
+            // A cópia do primeiro: volta ao começo de verdade, no mesmo quadro.
+            scroller.current?.scrollTo({ top: 0, behavior: "instant" });
+            setActive(0);
+          } else {
+            setActive(index);
+          }
         }
       },
       { threshold: 0.6 },
@@ -96,7 +114,10 @@ export function Reels({
 
   return (
     <div className="fixed inset-0 bg-black text-white">
-      <div className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-none [scrollbar-width:none]">
+      <div
+        ref={scroller}
+        className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-none [scrollbar-width:none]"
+      >
         {items.length === 0 && <p className="p-6 text-white/80">{t.empty}</p>}
         {items.map((item, index) => (
           <section
@@ -111,20 +132,51 @@ export function Reels({
             <ProductReel
               item={item}
               active={index === active}
-              mounted={index >= active - WINDOW_BEFORE && index <= active + WINDOW_AFTER}
+              mounted={
+                (index >= active - WINDOW_BEFORE && index <= active + WINDOW_AFTER) ||
+                // No último, o primeiro já fica pronto: é para ele que a rolagem volta.
+                (loops && index === 0 && active >= items.length - 1 - WINDOW_AFTER)
+              }
               preloadFirst={index === active + 1}
               muted={muted}
               canAdd={ordering && item.available}
               onAdd={() => setAdding(item)}
-              isLast={index === items.length - 1}
+              isLast={!loops && index === items.length - 1}
             />
           </section>
         ))}
+        {loops && (
+          // A cópia do primeiro prato, só para a passagem do último para ele parecer contínua: o
+          // leitor de tela não a vê, e nada nela é clicável (a tela salta para o original).
+          <section
+            ref={(el) => {
+              sections.current[items.length] = el;
+            }}
+            data-index={items.length}
+            aria-hidden
+            inert
+            className="relative h-dvh snap-start snap-always overflow-hidden"
+          >
+            <ProductReel
+              item={items[0]}
+              active={false}
+              mounted={active >= items.length - 1 - WINDOW_AFTER}
+              preloadFirst={active === items.length - 1}
+              muted={muted}
+              canAdd={ordering && items[0].available}
+              onAdd={() => {}}
+              isLast={false}
+            />
+          </section>
+        )}
       </div>
 
       {/* Por cima de tudo: a marca, o fechar, o som e o pedido. */}
       <div className="pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between gap-3 px-4 pt-9">
-        <span className="truncate text-sm font-semibold drop-shadow">{establishmentName}</span>
+        <span className="flex min-w-0 items-center gap-2.5">
+          <BrandLogo logo={logo} name={establishmentName} color={brandColor} alt="" className="size-8 text-xs" />
+          <span className="truncate text-sm font-semibold drop-shadow">{establishmentName}</span>
+        </span>
         <Link href={back} aria-label={t.close} className={cn(round, "pointer-events-auto")}>
           <X aria-hidden className="size-5" />
         </Link>

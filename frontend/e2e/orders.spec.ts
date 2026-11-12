@@ -173,3 +173,42 @@ test("o dono liga a confirmação do garçom e muda os limites", async ({ page, 
   expect(saved.maxAmountCents).toBe(15000);
   expect(saved.maxItems ?? null).toBeNull();
 });
+
+test("a mesa vê o total e quanto cada celular pediu", async ({ page, request, browser }) => {
+  const { qr } = await restaurant(request);
+  const other = await browser.newContext();
+  const phone = await other.newPage();
+  try {
+    for (const [p, name] of [
+      [page, "Guioza"],
+      [phone, "Chá verde gelado"],
+    ] as const) {
+      await p.goto(`/m/${qr}/cardapio`);
+      await add(p, name);
+      await p.getByRole("link", { name: /Ver pedido/ }).click();
+      await p.getByRole("button", { name: "Enviar pedido para a cozinha" }).click();
+      await p.getByRole("link", { name: "Acompanhar pedido" }).click();
+    }
+
+    // "A caminho": o total da mesa e, embaixo, o que este celular pediu.
+    await page.reload();
+    await expect(page.getByText("Total da mesa")).toBeVisible();
+    await expect(page.getByText("R$ 41,90").first()).toBeVisible();
+    await expect(page.getByText("Este celular · R$ 29,90")).toBeVisible();
+
+    // "Histórico": o total e quanto cada celular pediu, sem dizer quem é.
+    await page.getByRole("button", { name: "Histórico" }).click();
+    const byPhone = page.getByRole("list", { name: "Por celular" });
+    await expect(byPhone.getByRole("listitem").filter({ hasText: "Este celular" })).toContainText("R$ 29,90");
+    await expect(byPhone.getByRole("listitem").filter({ hasText: "Celular 2" })).toContainText("R$ 12,00");
+    await expect(page.getByRole("region", { name: /Pedido nº 2/ })).toContainText("Celular 2");
+
+    // O outro celular se vê como "Este celular", e o primeiro vira o "Celular 2".
+    await phone.getByRole("button", { name: "Histórico" }).click();
+    const theirs = phone.getByRole("list", { name: "Por celular" });
+    await expect(theirs.getByRole("listitem").filter({ hasText: "Este celular" })).toContainText("R$ 12,00");
+    await expect(theirs.getByRole("listitem").filter({ hasText: "Celular 2" })).toContainText("R$ 29,90");
+  } finally {
+    await other.close();
+  }
+});
