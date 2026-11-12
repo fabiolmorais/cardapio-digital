@@ -107,3 +107,52 @@ test("com item a caminho, o garçom vê o que falta e não fecha", async ({ page
     await panel.close();
   }
 });
+
+test("a mesa paga com item a caminho, e o garçom fecha depois sem cobrar de novo", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email, headers } = await restaurant(request);
+  await order(page, qr, ["Guioza", "Sunomono"]);
+  // Só o guioza chega; o sunomono continua na cozinha.
+  const queue = await (await request.get(`${API_URL}/api/v1/order-items`, { headers })).json();
+  const guioza = queue.content.find((i: { productName: string }) => i.productName === "Guioza");
+  expect((await request.post(`${API_URL}/api/v1/order-items/${guioza.id}/deliver`, { headers })).status()).toBe(204);
+
+  await page.goto(`/m/${qr}/conta`);
+  await page.getByRole("radio", { name: /Pix/ }).check();
+  await page.getByRole("button", { name: "Pedir a conta" }).click();
+  await expect(page.getByRole("status")).toContainText("Conta solicitada");
+
+  const panel = await ownerPanel(browser, email);
+  try {
+    const call = panel.page.getByRole("listitem", { name: "Pedir a conta · Mesa 04" });
+    await call.getByRole("button", { name: "Aceitar" }).click();
+    await call.getByRole("button", { name: "Receber pagamento" }).click();
+    const dialog = panel.page.getByRole("dialog", { name: "Conta da mesa 04" });
+    await expect(dialog).toContainText("Falta receber");
+    await expect(dialog).toContainText("1 item ainda está a caminho");
+    await expect(dialog.getByRole("radio", { name: "Pix" })).toBeChecked();
+    await dialog.getByRole("button", { name: "Recebi R$ 49,80 no Pix" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(panel.page.getByText(/Nenhum chamado aberto/)).toBeVisible();
+
+    // A mesa vê que a conta está paga, mas a comanda continua aberta (o sunomono ainda vem).
+    await expect(page.getByRole("status")).toContainText("Conta paga", { timeout: 3000 });
+    await expect(page.getByText("Já pago R$ 49,80")).toBeVisible();
+
+    await deliverAll(request, headers);
+    const tabs = panel.page.getByRole("region", { name: /Mesas com comanda aberta/ });
+    await tabs.getByRole("link", { name: "Comanda da mesa 04" }).click();
+    await expect(panel.page.getByText(/Pago · Pix · \d{2}:\d{2}/)).toBeVisible();
+    await expect(panel.page.getByText("Tudo pago")).toBeVisible();
+    // Sem nada a receber, não pergunta a forma de pagamento: o botão só fecha.
+    await expect(panel.page.getByRole("radio", { name: "Cartão" })).toHaveCount(0);
+    await panel.page.getByRole("button", { name: "Fechar comanda", exact: true }).click();
+    await expect(panel.page.getByRole("status")).toContainText("R$ 49,80 no Pix");
+    await expect(page.getByRole("status")).toContainText("Conta fechada", { timeout: 3000 });
+  } finally {
+    await panel.close();
+  }
+});

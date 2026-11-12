@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.out.order.OpenTabView;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
+import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.application.port.out.order.WaitingOrderView;
@@ -28,6 +29,7 @@ import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.order.model.TabPayment;
 import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
@@ -48,13 +50,14 @@ import java.util.Set;
  * O cardápio, as configurações, as comandas e os pedidos na memória, para os testes dos serviços
  * do pedido. Do cardápio, só o que o pedido usa; o resto lança UnsupportedOperationException.
  */
-final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, OrderPort {
+final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, OrderPort, TabPaymentPort {
 
     final Map<ProductId, Product> products = new LinkedHashMap<>();
     final Map<EstablishmentId, OrderSettings> settings = new HashMap<>();
     final Map<TabId, Tab> tabs = new LinkedHashMap<>();
     final Map<OrderId, Order> orders = new LinkedHashMap<>();
     final Map<OrderItemId, OrderItem> items = new LinkedHashMap<>();
+    final List<TabPayment> payments = new ArrayList<>();
     private final Map<EstablishmentId, Integer> counters = new HashMap<>();
 
     Product product(EstablishmentId establishmentId, String name, long priceCents, boolean available) {
@@ -180,6 +183,31 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
         }
         items.put(changed.id(), changed);
         return true;
+    }
+
+    @Override
+    public boolean splitItem(OrderItem kept, OrderItem canceled, OrderItemStatus expectedStatus) {
+        OrderItem current = items.get(kept.id());
+        if (current == null || current.status() != expectedStatus
+                || current.quantity() != kept.quantity() + canceled.quantity()) {
+            return false;
+        }
+        items.put(kept.id(), kept);
+        items.put(canceled.id(), canceled);
+        return true;
+    }
+
+    // --- TabPaymentPort
+    @Override
+    public void add(TabPayment payment) {
+        payments.add(payment);
+    }
+
+    @Override
+    public List<TabPayment> findPayments(EstablishmentId establishmentId, TabId tabId) {
+        return payments.stream()
+                .filter(p -> p.establishmentId().equals(establishmentId) && p.tabId().equals(tabId))
+                .toList();
     }
 
     @Override

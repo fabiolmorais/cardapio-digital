@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, ChevronLeft, CreditCard, QrCode, Receipt, Star } from "lucide-react";
+import { Banknote, Check, ChevronLeft, CreditCard, QrCode, Receipt, Star } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { formatCents } from "@/lib/format";
@@ -21,7 +21,8 @@ const METHODS: { id: PaymentMethod; icon: ReactNode }[] = [
 /**
  * "Pedir a conta" (desenhos Conta e Conta solicitada): o total da comanda, a forma de pagamento e
  * o pedido. Com a conta já pedida, mostra quem está vindo e deixa trocar a forma de pagamento ou
- * cancelar. Quando o garçom fecha a comanda, agradece.
+ * cancelar. Se a mesa já pagou (com itens ainda a caminho), o que foi pago sai do total e, sem
+ * nada a pagar, a tela diz que a conta está paga. Quando o garçom fecha a comanda, agradece.
  */
 export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: string | null }) {
   const state = useTableCalls(token);
@@ -78,10 +79,25 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       .flatMap((o) => o.items)
       .filter((i) => ["PENDING", "PREPARING", "READY"].includes(i.status))
       .reduce((sum, i) => sum + i.quantity, 0) ?? 0;
+  const paid = (orders?.paidCents ?? 0) > 0;
   const total = orders && (
     <section className="flex flex-col gap-2 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
-      <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">{t.total}</span>
-      <span className="text-4xl font-bold tracking-tight">{formatCents(orders.totalCents)}</span>
+      <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">
+        {paid ? t.due : t.total}
+      </span>
+      <span className="text-4xl font-bold tracking-tight">
+        {formatCents(paid ? orders.dueCents : orders.totalCents)}
+      </span>
+      {paid && (
+        <span className="flex flex-wrap gap-2 text-sm">
+          <span className="rounded-full border border-(--mesa-stroke) px-2.5 py-0.5 text-(--mesa-muted)">
+            {t.consumed(formatCents(orders.totalCents))}
+          </span>
+          <span className="rounded-full bg-(--mesa-ok-soft) px-2.5 py-0.5 font-semibold text-(--mesa-ok)">
+            {t.alreadyPaid(formatCents(orders.paidCents))}
+          </span>
+        </span>
+      )}
       {orders.rodizio && (
         <span className="text-sm text-(--mesa-muted)">
           {tablePage.rodizio.billLine(orders.rodizio.name, orders.rodizio.people)} ·{" "}
@@ -182,6 +198,27 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
             </a>
           )}
         </div>
+      </>
+    );
+  }
+
+  // Tudo pago (a mesa pagou com itens a caminho): não há conta a pedir até pedirem mais.
+  if (orders && paid && orders.dueCents === 0 && !changing) {
+    return (
+      <>
+        {header}
+        <section role="status" className="flex flex-col items-center gap-5 pt-4 text-center">
+          <span className="flex size-28 items-center justify-center rounded-full bg-(--mesa-ok-soft)">
+            <span className="flex size-18 items-center justify-center rounded-full bg-(--mesa-ok) text-white">
+              <Check aria-hidden className="size-8" />
+            </span>
+          </span>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-3xl font-bold tracking-tight">{t.paidTitle}</h2>
+            <p className="text-(--mesa-muted)">{t.paidText}</p>
+          </div>
+        </section>
+        {total}
       </>
     );
   }

@@ -13,11 +13,13 @@ import java.util.Set;
  *
  * @param orderingEnabled o restaurante aceita pedido pelo celular (a tela esconde o carrinho se não)
  * @param total           o total parcial da especificação: os itens não cancelados mais o rodízio
+ * @param paid            o que a mesa já pagou adiantado (a comanda continua aberta)
+ * @param due             o que falta pagar: o total menos o que já foi pago
  * @param rodizio         o rodízio da mesa; null se ela não está no rodízio
  * @param rodizioProducts os produtos incluídos (a aba Rodízio); vazio fora do rodízio
  * @param rodizioLimits   as regras ligadas, em números para a tela; null fora do rodízio
  */
-public record TableOrders(boolean orderingEnabled, Money total, TableRodizio rodizio, Set<ProductId> rodizioProducts,
+public record TableOrders(boolean orderingEnabled, Money total, Money paid, Money due, TableRodizio rodizio, Set<ProductId> rodizioProducts,
                           RoundPolicy.Limits rodizioLimits, List<TableOrder> orders) {
 
     public TableOrders {

@@ -1,16 +1,19 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.application.port.in.order.BillSummary;
 import br.com.cardapio.application.port.in.order.ClosedTab;
 import br.com.cardapio.application.port.in.order.OpenTab;
 import br.com.cardapio.application.port.in.order.OrderItemStep;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.StaffTab;
 import br.com.cardapio.application.port.in.order.TableOrder;
+import br.com.cardapio.application.port.in.order.TableOrders;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.service.call.InMemoryCalls;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.event.CallChanged;
+import br.com.cardapio.domain.call.exception.CallNotFoundException;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
@@ -26,6 +29,7 @@ import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.order.model.TabPeriod;
 import br.com.cardapio.domain.order.model.TabStatus;
 import br.com.cardapio.domain.shared.event.DomainEvent;
+import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
 import br.com.cardapio.support.InMemorySubscriptions;
@@ -90,7 +94,7 @@ class TabServicesTest {
     }
 
     private StaffTab close(PaymentMethod method) {
-        return new CloseTabService(fakes, fakes, calls, sessions, rodizios, published::add, clock)
+        return new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, clock)
                 .close(sakura, theTab(), carlos, method);
     }
 
@@ -116,13 +120,13 @@ class TabServicesTest {
         calls.insertIfNoneOpen(Call.open(sakura, mesa04.id(), sessions.byToken("ana").id(), CallType.BILL,
                 PaymentMethod.CARD, NOW));
 
-        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios).get(sakura, theTab());
+        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab());
 
         assertThat(tab.orders()).hasSize(2);
         assertThat(tab.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(tab.billRequestedWith()).isEqualTo(PaymentMethod.CARD);
         assertThat(tab.status()).isEqualTo(TabStatus.OPEN);
-        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios).get(EstablishmentId.newId(), theTab()))
+        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios, fakes).get(EstablishmentId.newId(), theTab()))
                 .isInstanceOf(TabNotFoundException.class);
     }
 
@@ -159,6 +163,84 @@ class TabServicesTest {
                 .isInstanceOf(TabStateException.class).hasMessageContaining("1× Guioza");
         assertThat(fakes.tabs.get(theTab()).status()).isEqualTo(TabStatus.OPEN);
         assertThat(sessions.byToken("ana").endedAt()).isNull();
+    }
+
+    private ReceiveBillPaymentService billPayment() {
+        return new ReceiveBillPaymentService(calls, fakes, fakes, rodizios, fakes, published::add, clock);
+    }
+
+    private Call billAcceptedBy(String phone, PaymentMethod method) {
+        Call bill = Call.open(sakura, mesa04.id(), sessions.byToken(phone).id(), CallType.BILL, method, NOW)
+                .accept(carlos, NOW);
+        calls.insertIfNoneOpen(bill);
+        return bill;
+    }
+
+    @Test
+    void theTablePaysWithItemsOnTheWayAndTheTabStaysOpenUntilTheyArrive() {
+        deliverAll(place("ana", guioza, 2));
+        TableOrder later = place("bia", sunomono, 1); // ainda na cozinha
+        Call bill = billAcceptedBy("ana", PaymentMethod.PIX);
+
+        BillSummary summary = billPayment().bill(sakura, bill.id());
+        assertThat(summary.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
+        assertThat(summary.due()).isEqualTo(summary.total());
+        assertThat(summary.itemsOnTheWay()).isEqualTo(1);
+        assertThat(summary.requestedWith()).isEqualTo(PaymentMethod.PIX);
+
+        billPayment().receive(sakura, bill.id(), carlos, summary.due(), PaymentMethod.PIX);
+
+        assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.DONE);
+        assertThat(fakes.tabs.get(theTab()).status()).isEqualTo(TabStatus.OPEN);
+        TableOrders atTheTable = new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios,
+                fakes, clock).list(QR_04, "ana");
+        assertThat(atTheTable.paid()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
+        assertThat(atTheTable.due()).isEqualTo(Money.ZERO);
+        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab());
+        assertThat(open.paid()).isEqualTo(open.total());
+        assertThat(open.due()).isEqualTo(Money.ZERO);
+        assertThat(open.payments()).singleElement().satisfies(p -> {
+            assertThat(p.method()).isEqualTo(PaymentMethod.PIX);
+            assertThat(p.amount()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
+        });
+
+        // O sunomono chega; o garçom fecha sem cobrar nada e sem dizer a forma (já foi informada).
+        deliverAll(later);
+        StaffTab closed = close(null);
+
+        assertThat(closed.status()).isEqualTo(TabStatus.CLOSED);
+        assertThat(closed.paymentMethod()).isEqualTo(PaymentMethod.PIX);
+        assertThat(closed.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
+        assertThat(fakes.payments).hasSize(1);
+    }
+
+    @Test
+    void aPartialPaymentLeavesTheRestForTheClosing() {
+        deliverAll(place("ana", guioza, 2));
+        Call bill = billAcceptedBy("ana", PaymentMethod.CARD);
+
+        billPayment().receive(sakura, bill.id(), carlos, Money.ofCents(20_00), PaymentMethod.CARD);
+        StaffTab closed = close(PaymentMethod.CASH);
+
+        assertThat(closed.total()).isEqualTo(Money.ofCents(2 * 29_90));
+        assertThat(closed.paid()).isEqualTo(Money.ofCents(2 * 29_90));
+        assertThat(fakes.payments).extracting(p -> p.amount().cents()).containsExactly(20_00L, 2 * 29_90L - 20_00);
+        assertThat(closed.paymentMethod()).isEqualTo(PaymentMethod.CASH);
+    }
+
+    @Test
+    void theWaiterCannotReceiveMoreThanIsDueNorFromAnotherRestaurant() {
+        deliverAll(place("ana", guioza, 1));
+        Call bill = billAcceptedBy("ana", PaymentMethod.PIX);
+
+        assertThatThrownBy(() -> billPayment().receive(sakura, bill.id(), carlos, Money.ofCents(29_91),
+                PaymentMethod.PIX)).isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> billPayment().receive(EstablishmentId.newId(), bill.id(), carlos,
+                Money.ofCents(29_90), PaymentMethod.PIX)).isInstanceOf(CallNotFoundException.class);
+        assertThatThrownBy(() -> billPayment().bill(EstablishmentId.newId(), bill.id()))
+                .isInstanceOf(CallNotFoundException.class);
+        assertThat(fakes.payments).isEmpty();
+        assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.IN_PROGRESS);
     }
 
     @Test

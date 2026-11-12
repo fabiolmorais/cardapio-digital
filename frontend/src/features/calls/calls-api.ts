@@ -3,6 +3,8 @@ import { api, type Schemas } from "@/lib/api/client";
 
 export type StaffCall = Schemas["StaffCall"];
 export type BlockedPhone = Schemas["BlockedPhone"];
+export type Bill = Schemas["Bill"];
+export type PaymentMethod = Schemas["ReceivePaymentRequest"]["paymentMethod"];
 
 /** A mensagem do back (Problem Details) ou o código HTTP. */
 function problem(error: unknown, status: number): Error {
@@ -64,6 +66,27 @@ export async function blockCaller(id: string): Promise<void> {
 
 export async function finishCall(id: string): Promise<StaffCall> {
   const { data, error, response } = await api.POST("/api/v1/calls/{id}/finish", { params: { path: { id } } });
+  if (!data) throw problem(error, response.status);
+  return data;
+}
+
+/** A conta que a mesa pediu: o consumo, o que já pagou e o que falta. */
+export async function fetchBill(id: string): Promise<Bill> {
+  const { data, error, response } = await api.GET("/api/v1/calls/{id}/bill", { params: { path: { id } } });
+  if (!data) throw problem(error, response.status);
+  return data;
+}
+
+/** Atende o pedido de conta recebendo o pagamento: a comanda continua aberta, com o valor abatido. */
+export async function receivePayment(
+  id: string,
+  amountCents: number,
+  paymentMethod: PaymentMethod,
+): Promise<StaffCall> {
+  const { data, error, response } = await api.POST("/api/v1/calls/{id}/payment", {
+    params: { path: { id } },
+    body: { amountCents, paymentMethod },
+  });
   if (!data) throw problem(error, response.status);
   return data;
 }

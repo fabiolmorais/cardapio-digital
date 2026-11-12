@@ -102,6 +102,11 @@ export const tablePage = {
     cancel: "Cancelar pedido da conta",
     loading: "Carregando…",
     total: "Total da comanda",
+    due: "Falta pagar",
+    consumed: (total: string) => `Consumo ${total}`,
+    alreadyPaid: (paid: string) => `Já pago ${paid}`,
+    paidTitle: "Conta paga",
+    paidText: "Obrigado! Se pedirem mais alguma coisa, é só pedir a conta de novo.",
     onTheWay: (count: number) =>
       count === 1
         ? "1 item ainda está a caminho e já está incluído no total."
@@ -202,7 +207,11 @@ export const tablePage = {
     allPhones: "Aparecem aqui os itens de todos os celulares da mesa.",
     minutes: (minutes: number) => (minutes < 1 ? "agora" : `${minutes} min`),
     canceledByTeam: (name: string) => `${name} cancelado pela equipe:`,
+    canceledByYou: (name: string) => `${name} cancelado por você.`,
+    canceledByOwner: (name: string) => `${name} cancelado por quem fez o pedido.`,
     canceledNoCharge: "O valor não entra na conta.",
+    paid: "Já pago",
+    due: "Falta pagar",
     rejectedNotice: (number: number) => `Pedido nº ${number} recusado pelo garçom.`,
     rejectedNoCharge: "Os itens não entram na conta. Fale com o garçom se precisar.",
     historyTotalHint: "Os itens cancelados não entram na conta.",

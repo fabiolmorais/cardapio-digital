@@ -118,4 +118,45 @@ class OrderItemTest {
         assertThatThrownBy(() -> item(1, null).deliver(kenji, NOW).cancelByStaff(kenji, "tarde", NOW))
                 .isInstanceOf(OrderItemStateException.class).hasMessage("Este item já foi entregue");
     }
+
+    @Test
+    void theKitchenCancelsOnlyPartOfTheItem() {
+        UserId kenji = UserId.newId();
+        OrderItem ten = item(10, "sem gergelim").start(NOW);
+
+        OrderItem.StaffCancel result = ten.cancelByStaff(kenji, "Só tem pepino para 5", 5, NOW.plusSeconds(60));
+
+        assertThat(result.kept().id()).isEqualTo(ten.id());
+        assertThat(result.kept().quantity()).isEqualTo(5);
+        assertThat(result.kept().status()).isEqualTo(OrderItemStatus.PREPARING);
+        assertThat(result.canceled().id()).isNotEqualTo(ten.id());
+        assertThat(result.canceled().quantity()).isEqualTo(5);
+        assertThat(result.canceled().status()).isEqualTo(OrderItemStatus.CANCELED);
+        assertThat(result.canceled().cancelReason()).isEqualTo("Só tem pepino para 5");
+        assertThat(result.canceled().canceledBy()).isEqualTo(kenji);
+        assertThat(result.canceled().note()).isEqualTo("sem gergelim");
+        assertThat(result.canceled().canceledByCustomer()).isFalse();
+    }
+
+    @Test
+    void cancelingTheWholeQuantityIsTheUsualCancel() {
+        OrderItem two = item(2, null);
+
+        OrderItem.StaffCancel result = two.cancelByStaff(UserId.newId(), "Acabou", 2, NOW);
+
+        assertThat(result.kept()).isNull();
+        assertThat(result.canceled().id()).isEqualTo(two.id());
+        assertThat(result.canceled().quantity()).isEqualTo(2);
+        assertThatThrownBy(() -> two.cancelByStaff(UserId.newId(), "Acabou", 3, NOW))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> two.cancelByStaff(UserId.newId(), "Acabou", 0, NOW))
+                .isInstanceOf(InvalidValueException.class);
+    }
+
+    @Test
+    void itKnowsWhenTheCustomerCanceled() {
+        assertThat(item(1, null).cancelByCustomer(NOW).canceledByCustomer()).isTrue();
+        assertThat(item(1, null).cancelByStaff(UserId.newId(), "Acabou", NOW).canceledByCustomer()).isFalse();
+        assertThat(item(1, null).canceledByCustomer()).isFalse();
+    }
 }

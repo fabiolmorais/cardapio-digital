@@ -120,6 +120,44 @@ test("a cozinha cancela um item com motivo, e o cliente vê o motivo", async ({ 
   }
 });
 
+test("a cozinha cancela só parte da quantidade, e o resto continua", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  await page.goto(`/m/${qr}/cardapio`);
+  await page.getByRole("button", { name: "Adicionar Guioza" }).click();
+  await page.getByRole("dialog", { name: "Guioza" }).getByRole("button", { name: /^Adicionar/ }).click();
+  await page.getByRole("link", { name: /Ver pedido/ }).click();
+  await page.getByRole("button", { name: "Aumentar Guioza" }).click();
+  await page.getByRole("button", { name: "Aumentar Guioza" }).click();
+  await page.getByRole("button", { name: "Enviar pedido para a cozinha" }).click();
+  await page.getByRole("link", { name: "Acompanhar pedido" }).click();
+  await expect(page.getByRole("article", { name: "3× Guioza" })).toBeVisible();
+
+  const panel = await ownerPanel(browser, email);
+  try {
+    await panel.page.goto("/painel/cozinha");
+    const ticket = panel.page.getByRole("article", { name: "Mesa 04 · Pedido nº 1" });
+    await ticket.getByRole("button", { name: "Cancelar um item" }).click();
+    const dialog = panel.page.getByRole("dialog", { name: "Cancelar item" });
+    // Começa em todos; a cozinha só tem para 1, então cancela 2.
+    await expect(dialog).toContainText("Todos os 3");
+    await dialog.getByRole("button", { name: "Cancelar um a menos" }).click();
+    await expect(dialog).toContainText("1 continua no pedido");
+    await dialog.getByRole("button", { name: "Acabou um ingrediente" }).click();
+    await expect(dialog).toContainText("2× Guioza: Acabou um ingrediente");
+    await dialog.getByRole("button", { name: "Cancelar item" }).click();
+    await expect(dialog).toBeHidden();
+    // A ficha continua com o guioza, agora com quantidade 1 (o número fica num quadrado ao lado do nome).
+    await expect(ticket.getByRole("listitem").filter({ hasText: "Guioza" })).toContainText(/^1\s*Guioza/);
+
+    // A mesa vê 1 a caminho, o aviso dos 2 cancelados e o total de 1.
+    await expect(page.getByRole("article", { name: "1× Guioza" })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText("2× Guioza cancelado pela equipe:")).toBeVisible();
+    await expect(page.getByText("R$ 29,90").first()).toBeVisible();
+  } finally {
+    await panel.close();
+  }
+});
+
 test("o garçom confirma um pedido e recusa outro", async ({ page, request, browser }) => {
   const { qr, email } = await restaurant(request, { orderingEnabled: true, approvalRequired: true });
   await order(page, qr, ["Guioza"]);

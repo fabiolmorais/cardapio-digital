@@ -92,7 +92,7 @@ class RodizioRulesServicesTest {
     }
 
     private TableOrders tableOrders(Instant at) {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock(at))
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock(at))
                 .list(QR_04, "ana");
     }
 

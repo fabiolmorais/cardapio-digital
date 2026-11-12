@@ -17,6 +17,10 @@ record TableOrdersResponse(
         boolean orderingEnabled,
         @Schema(requiredMode = REQUIRED, description = "Os itens não cancelados mais o rodízio (pessoas × preço)")
         long totalCents,
+        @Schema(requiredMode = REQUIRED, description = "O que a mesa já pagou adiantado (a comanda continua aberta)")
+        long paidCents,
+        @Schema(requiredMode = REQUIRED, description = "O que falta pagar: o total menos o que já foi pago")
+        long dueCents,
         @Schema(description = "O rodízio da mesa; ausente se ela não está no rodízio") TableRodizioResponse rodizio,
         @Schema(requiredMode = REQUIRED, description = "Os produtos incluídos no rodízio (a aba Rodízio)")
         List<UUID> rodizioProductIds,
@@ -41,7 +45,7 @@ record TableOrdersResponse(
     }
 
     static TableOrdersResponse from(TableOrders t) {
-        return new TableOrdersResponse(t.orderingEnabled(), t.total().cents(),
+        return new TableOrdersResponse(t.orderingEnabled(), t.total().cents(), t.paid().cents(), t.due().cents(),
                 t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.rodizioProducts().stream().map(p -> p.value()).sorted().toList(),
                 RodizioLimits.from(t.rodizioLimits()),

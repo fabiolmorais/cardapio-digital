@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { Minus, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,8 +25,9 @@ const t = messages.panel.cancelItem;
 const OTHER = -1;
 
 /**
- * "Cancelar item" (desenho 9.2): qual item da ficha, o motivo (os comuns num toque, ou escrito) e
- * a prévia do que o cliente vê. O motivo é obrigatório: o back recusa sem ele.
+ * "Cancelar item" (desenho 9.2): qual item da ficha, quantos (pediram 10, mas só dá para fazer 5),
+ * o motivo (os comuns num toque, ou escrito) e a prévia do que o cliente vê. O motivo é
+ * obrigatório: o back recusa sem ele.
  */
 export function CancelItemDialog({
   items,
@@ -51,8 +53,14 @@ function Body({ items, onDone }: { items: CancelableItem[]; onDone: () => void }
   const [choice, setChoice] = useState(0);
   const [other, setOther] = useState("");
   const item = items.find((i) => i.id === itemId) ?? items[0];
+  // Quantos cancelar: começa em todos; volta a todos ao trocar de item.
+  const [amount, setAmount] = useState(item.quantity);
+  const count = Math.min(amount, item.quantity);
   const reason = choice === OTHER ? other.trim() : t.reasons[choice];
-  const cancel = useMutation({ mutationFn: () => cancelItem(item.id, reason), onSuccess: onDone });
+  const cancel = useMutation({
+    mutationFn: () => cancelItem(item.id, reason, count < item.quantity ? count : undefined),
+    onSuccess: onDone,
+  });
 
   const option = (on: boolean) =>
     cn(
@@ -80,13 +88,52 @@ function Body({ items, onDone }: { items: CancelableItem[]; onDone: () => void }
               type="radio"
               name={`${id}item`}
               checked={i.id === itemId}
-              onChange={() => setItemId(i.id)}
+              onChange={() => {
+                setItemId(i.id);
+                setAmount(i.quantity);
+              }}
               className="size-5 accent-destructive"
             />
             {i.quantity}× {i.productName}
           </label>
         ))}
       </fieldset>
+
+      {item.quantity > 1 && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="pb-2 text-sm font-semibold text-muted-foreground">{t.howMany}</legend>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1 rounded-xl border border-border p-1">
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                className="size-11"
+                aria-label={t.less}
+                disabled={count <= 1}
+                onClick={() => setAmount(count - 1)}
+              >
+                <Minus aria-hidden />
+              </Button>
+              <output aria-live="polite" className="w-10 text-center text-lg font-bold tabular-nums">
+                {count}
+              </output>
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                className="size-11"
+                aria-label={t.more}
+                disabled={count >= item.quantity}
+                onClick={() => setAmount(count + 1)}
+              >
+                <Plus aria-hidden />
+              </Button>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {count < item.quantity ? t.keeps(item.quantity - count) : t.all(item.quantity)}
+            </span>
+          </div>
+        </fieldset>
+      )}
 
       <fieldset className="flex flex-col gap-2">
         <legend className="pb-2 text-sm font-semibold text-muted-foreground">{t.reason}</legend>
@@ -127,7 +174,7 @@ function Body({ items, onDone }: { items: CancelableItem[]; onDone: () => void }
       <div className="flex flex-col gap-1 rounded-xl bg-muted p-4">
         <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t.preview}</span>
         <span>
-          {item.productName}: {reason || "…"}
+          {count}× {item.productName}: {reason || "…"}
         </span>
       </div>
 

@@ -45,6 +45,13 @@ public interface OrderPort {
     /** Grava a mudança do pedido SÓ SE ele ainda estiver no status esperado (dois garçons respondendo juntos). */
     boolean updateOrder(Order changed, OrderStatus expectedStatus);
 
+    /**
+     * O cancelamento de parte do item: grava a quantidade que sobrou no item SÓ SE ele ainda estiver
+     * no status e na quantidade de antes, e cria o item da parte cancelada (no mesmo lugar do pedido,
+     * e já impresso se o original já tinha saído na impressora, para sair a via "CANCELADO").
+     */
+    boolean splitItem(OrderItem kept, OrderItem canceled, OrderItemStatus expectedStatus);
+
     /** Cancela, de uma vez, os itens ainda a caminho de um pedido (o pedido recusado), com o motivo. */
     void cancelItemsOnTheWay(EstablishmentId establishmentId, OrderId orderId, UserId by, String reason,
                              Instant now);

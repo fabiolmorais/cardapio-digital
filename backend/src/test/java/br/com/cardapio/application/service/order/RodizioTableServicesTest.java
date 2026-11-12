@@ -109,7 +109,7 @@ class RodizioTableServicesTest {
     }
 
     private TableOrders tableOrders() {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock)
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock)
                 .list(QR_04, "ana");
     }
 
@@ -193,8 +193,8 @@ class RodizioTableServicesTest {
 
         TableRodizio changed = new ChangeRodizioGuestsService(tables, fakes, rodizios, published::add, clock)
                 .change(sakura, mesa04.id(), Map.of("Adulto", 2, "Criança", 1));
-        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios).get(sakura, theTab().id());
-        StaffTab closed = new CloseTabService(fakes, fakes, calls, sessions, rodizios, published::add, clock)
+        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab().id());
+        StaffTab closed = new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, clock)
                 .close(sakura, theTab().id(), carlos, PaymentMethod.PIX);
 
         long expected = 2 * 149_90 + 64_90 + 19_90;

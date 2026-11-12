@@ -10,6 +10,7 @@ import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
+import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
@@ -24,6 +25,7 @@ import br.com.cardapio.domain.order.model.OrderItemStatus;
 import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
+import br.com.cardapio.domain.order.model.TabPayment;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
 import br.com.cardapio.domain.rodizio.model.RodizioRules;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
@@ -49,6 +51,7 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
     private final OrderPort orders;
     private final TabRodizioPort tabRodizios;
     private final RodizioPort rodizios;
+    private final TabPaymentPort payments;
     private final ProductMediaPort media;
     private final MediaStoragePort storage;
     private final Clock clock;
@@ -56,13 +59,15 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
     /** Sem as fotos dos produtos (os itens vêm sem miniatura): para os testes que não são sobre elas. */
     public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                                   TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
-                                  Clock clock) {
-        this(tables, sessions, settings, tabs, orders, tabRodizios, rodizios, null, null, clock);
+                                  TabPaymentPort payments, Clock clock) {
+        this(tables, sessions, settings, tabs, orders, tabRodizios, rodizios, payments, null, null, clock);
     }
 
     public ListTableOrdersService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
                                   TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios, RodizioPort rodizios,
-                                  ProductMediaPort media, MediaStoragePort storage, Clock clock) {
+                                  TabPaymentPort payments, ProductMediaPort media, MediaStoragePort storage,
+                                  Clock clock) {
+        this.payments = payments;
         this.media = media;
         this.storage = storage;
         this.tables = tables;
@@ -109,7 +114,12 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .map(OrderItem::subtotal)
                 .reduce(Money.ZERO, Money::plus)
                 .plus(rodizio == null ? Money.ZERO : rodizio.total());
-        return new TableOrders(enabled, total, rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
+        // O que a mesa pagou adiantado nesta visita sai do que falta pagar.
+        Money paid = open.map(tab -> payments.findPayments(establishmentId, tab.id())).orElse(List.of()).stream()
+                .filter(p -> !p.receivedAt().isBefore(visitStart))
+                .map(TabPayment::amount)
+                .reduce(Money.ZERO, Money::plus);
+        return new TableOrders(enabled, total, paid, total.minusOrZero(paid), rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
                 found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId))).toList());
     }
 

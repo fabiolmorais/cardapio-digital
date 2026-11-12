@@ -89,6 +89,9 @@ test("o celular monta o carrinho, envia, acompanha e cancela um item na fila", a
     await expect(page.getByText("R$ 59,80").first()).toBeVisible();
     // O cancelamento chega ao outro celular pelo tempo real, sem recarregar.
     await expect(phone.getByText("R$ 59,80").first()).toBeVisible({ timeout: 3000 });
+    // O aviso diz, em destaque, quem cancelou: o próprio dono do pedido.
+    await expect(page.getByText("2× Sunomono cancelado por você.")).toBeVisible();
+    await expect(phone.getByText("2× Sunomono cancelado por quem fez o pedido.")).toBeVisible();
   } finally {
     await other.close();
   }

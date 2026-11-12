@@ -21,6 +21,15 @@ public record Money(long cents) implements Comparable<Money> {
         return new Money(Math.addExact(cents, other.cents));
     }
 
+    /** Este valor menos o outro, sem ficar negativo (o que falta pagar, por exemplo). */
+    public Money minusOrZero(Money other) {
+        return new Money(Math.max(0, cents - other.cents));
+    }
+
+    public boolean isZero() {
+        return cents == 0;
+    }
+
     public Money times(int quantity) {
         if (quantity < 0) {
             throw new IllegalArgumentException("Quantidade não pode ser negativa");

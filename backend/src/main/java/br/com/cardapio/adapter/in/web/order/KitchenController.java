@@ -123,7 +123,8 @@ class KitchenController {
     ResponseEntity<Void> cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                 @Valid @RequestBody CancelItemRequest request) {
         var user = AuthenticatedUser.from(jwt);
-        cancel.cancel(user.establishmentId(), new OrderItemId(id), user.userId(), request.reason());
+        cancel.cancel(user.establishmentId(), new OrderItemId(id), user.userId(), request.reason(),
+                request.quantity());
         return ResponseEntity.noContent().build();
     }
 

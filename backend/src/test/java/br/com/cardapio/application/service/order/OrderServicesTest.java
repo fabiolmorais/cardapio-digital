@@ -83,7 +83,7 @@ class OrderServicesTest {
     }
 
     private TableOrders list(String phone) {
-        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock).list(QR_04, phone);
+        return new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock).list(QR_04, phone);
     }
 
     private OrderLine line(Product product, int quantity) {

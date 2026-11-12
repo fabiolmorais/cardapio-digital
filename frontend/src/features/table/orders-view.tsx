@@ -47,9 +47,9 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
   const orders = data ? [...data.orders].reverse() : [];
   const entries: Entry[] = orders.flatMap((order) => order.items.map((item) => ({ item, order })));
   const onTheWay = entries.filter(({ item, order }) => order.status !== "REJECTED" && ON_THE_WAY.includes(item.status));
-  // O aviso de prato cancelado pela equipe (com o motivo). O que o próprio cliente cancelou fica
-  // só no histórico.
-  const canceledByTeam = entries.filter(({ item }) => item.status === "CANCELED" && item.cancelReason);
+  // O aviso de cada prato cancelado: pela equipe (com o motivo) ou por quem fez o pedido. Os do
+  // pedido recusado pelo garçom têm o aviso do pedido.
+  const canceled = entries.filter(({ item, order }) => item.status === "CANCELED" && order.status !== "REJECTED");
   const rejected = orders.filter((order) => order.status === "REJECTED");
 
   if (closed) return <TabClosed />;
@@ -66,8 +66,10 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
         </div>
         {data && orders.length > 0 && (
           <span className="flex flex-col text-right text-sm text-(--mesa-muted)">
-            {t.partial}
-            <span className="text-lg font-bold text-(--mesa-fg)">{formatCents(data.totalCents)}</span>
+            {data.paidCents > 0 ? t.due : t.partial}
+            <span className="text-lg font-bold text-(--mesa-fg)">
+              {formatCents(data.paidCents > 0 ? data.dueCents : data.totalCents)}
+            </span>
           </span>
         )}
       </header>
@@ -133,11 +135,21 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
               <strong>{t.rejectedNotice(order.number)}</strong> {t.rejectedNoCharge}
             </Alert>
           ))}
-          {canceledByTeam.map(({ item }) => (
-            <Alert key={item.id}>
-              <strong>{t.canceledByTeam(item.productName)}</strong> {item.cancelReason}. {t.canceledNoCharge}
-            </Alert>
-          ))}
+          {canceled.map(({ item, order }) => {
+            const name = item.quantity > 1 ? `${item.quantity}× ${item.productName}` : item.productName;
+            return (
+              <Alert key={item.id}>
+                {item.canceledByCustomer ? (
+                  <strong>{order.mine ? t.canceledByYou(name) : t.canceledByOwner(name)}</strong>
+                ) : (
+                  <>
+                    <strong>{t.canceledByTeam(name)}</strong> {item.cancelReason}.
+                  </>
+                )}{" "}
+                {t.canceledNoCharge}
+              </Alert>
+            );
+          })}
           <p className="pt-1 text-center text-sm text-(--mesa-muted)">{t.allPhones}</p>
         </section>
       ) : (
@@ -146,12 +158,26 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
             <HistoryOrder key={order.id} order={order} />
           ))}
           {data && (
-            <div className="flex items-center justify-between gap-3 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-3.5">
-              <span className="flex flex-col">
-                <span className="font-semibold">{t.partial}</span>
-                <span className="text-sm text-(--mesa-muted)">{t.historyTotalHint}</span>
-              </span>
-              <span className="text-2xl font-bold">{formatCents(data.totalCents)}</span>
+            <div className="flex flex-col gap-2 rounded-[22px] border border-(--mesa-stroke) bg-(--mesa-glass) p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex flex-col">
+                  <span className="font-semibold">{t.partial}</span>
+                  <span className="text-sm text-(--mesa-muted)">{t.historyTotalHint}</span>
+                </span>
+                <span className="text-2xl font-bold">{formatCents(data.totalCents)}</span>
+              </div>
+              {data.paidCents > 0 && (
+                <>
+                  <div className="flex items-center justify-between gap-3 border-t border-(--mesa-stroke) pt-2 text-sm">
+                    <span className="text-(--mesa-muted)">{t.paid}</span>
+                    <span className="font-semibold text-(--mesa-ok)">− {formatCents(data.paidCents)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-semibold">{t.due}</span>
+                    <span className="font-bold">{formatCents(data.dueCents)}</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </section>
@@ -234,7 +260,7 @@ function OnTheWayItem({
   );
 }
 
-/** O aviso vermelho de "A caminho" (desenho 4.3): prato cancelado pela equipe, pedido recusado. */
+/** O aviso vermelho de "A caminho" (desenho 4.3): prato cancelado, pedido recusado. */
 function Alert({ children }: { children: ReactNode }) {
   return (
     <p className="flex items-start gap-2.5 rounded-[14px] bg-(--mesa-danger-soft) px-3.5 py-3 text-[13px] leading-[18px]">

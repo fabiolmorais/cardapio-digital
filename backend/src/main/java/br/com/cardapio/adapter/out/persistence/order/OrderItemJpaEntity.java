@@ -94,6 +94,23 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
         this.tabRodizioId = tabRodizioId;
     }
 
+    /**
+     * A parte cancelada de um item (a cozinha só tinha para parte): uma cópia dele, com outro id, a
+     * quantidade cancelada e o cancelamento. Fica no mesmo lugar do pedido e herda a hora da
+     * impressão: se o original já saiu na impressora, a parte cancelada sai na via "CANCELADO".
+     */
+    OrderItemJpaEntity canceledPart(UUID partId, int partQuantity, Instant at, UUID by, String reason) {
+        OrderItemJpaEntity part = new OrderItemJpaEntity(partId, getEstablishmentId(), orderId, position, productId,
+                productName, unitPriceCents, partQuantity, note, "CANCELED", createdAt, tabRodizioId);
+        part.preparingAt = preparingAt;
+        part.readyAt = readyAt;
+        part.canceledAt = at;
+        part.canceledBy = by;
+        part.cancelReason = reason;
+        part.printedAt = printedAt;
+        return part;
+    }
+
     UUID getId() { return id; }
     UUID getOrderId() { return orderId; }
     UUID getProductId() { return productId; }

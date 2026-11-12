@@ -33,6 +33,7 @@ import {
   unblockPhone,
   type StaffCall,
 } from "./calls-api";
+import { PaymentDialog } from "./payment-dialog";
 import { SoundToggle } from "./sound-toggle";
 import { useLiveCalls, useSoundOn } from "./use-live-calls";
 
@@ -73,6 +74,7 @@ export function CallQueue({ role }: { role: Role }) {
   const [error, setError] = useState<string | null>(null);
   const [blocking, setBlocking] = useState<StaffCall | null>(null);
   const [releasing, setReleasing] = useState<StaffCall | null>(null);
+  const [paying, setPaying] = useState<StaffCall | null>(null);
   const [activating, setActivating] = useState<RodizioTarget | null>(null);
   const canAct = role !== "KITCHEN";
 
@@ -229,7 +231,12 @@ export function CallQueue({ role }: { role: Role }) {
                       {t.inProgress(call.acceptedByName)}
                     </span>
                     {activate}
-                    {canAct && (
+                    {canAct && call.type === "BILL" && (
+                      <Button className="h-11" disabled={busy !== null} onClick={() => setPaying(call)}>
+                        {t.receive}
+                      </Button>
+                    )}
+                    {canAct && call.type !== "BILL" && (
                       <Button
                         variant="outline"
                         className="h-11"
@@ -261,6 +268,11 @@ export function CallQueue({ role }: { role: Role }) {
       {canAct && <BlockedPhones now={now} />}
 
       <RodizioDialog target={activating} onClose={() => setActivating(null)} />
+      <PaymentDialog
+        call={paying}
+        onClose={() => setPaying(null)}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ["call-queue"] })}
+      />
       <ReleaseDialog
         call={releasing}
         onClose={() => setReleasing(null)}
