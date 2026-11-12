@@ -72,10 +72,10 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
     await expect(kitchen.getByRole("region", { name: "Em preparo" }).getByRole("article")).toHaveCount(0);
     await expect(mine.getByText("Pronto · saindo")).toHaveCount(2, { timeout: 3000 });
 
-    // O garçom (aqui, o dono) leva os pratos: "Entregas" no painel.
+    // O garçom (aqui, o dono) leva os pratos: "Prontos para entregar" no painel.
     // (O botão do Next em desenvolvimento cobre o "Voltar ao painel" no canto: o teste vai direto.)
     await kitchen.goto("/painel");
-    const deliveries = kitchen.getByRole("region", { name: /Entregas/ });
+    const deliveries = kitchen.getByRole("region", { name: /Prontos para entregar/ });
     await deliveries.getByRole("listitem", { name: "Mesa 04 · 1× Guioza" }).getByRole("button", { name: "Entregue" }).click();
     await expect(deliveries.getByRole("listitem")).toHaveCount(1);
     // O entregue sai de "A caminho" (o Sunomono continua, pronto) e fica no histórico.
@@ -165,7 +165,7 @@ test("o garçom confirma um pedido e recusa outro", async ({ page, request, brow
 
   const panel = await ownerPanel(browser, email);
   try {
-    const approvals = panel.page.getByRole("region", { name: /Pedidos para confirmar/ });
+    const approvals = panel.page.getByRole("list", { name: "Pedidos para confirmar" });
     await expect(approvals.getByRole("listitem", { name: "Mesa 04 · Pedido nº 1" })).toContainText("R$ 29,90");
     await approvals.getByRole("listitem", { name: "Mesa 04 · Pedido nº 1" }).getByRole("button", { name: "Confirmar" }).click();
     await approvals.getByRole("listitem", { name: "Mesa 04 · Pedido nº 2" }).getByRole("button", { name: "Recusar" }).click();

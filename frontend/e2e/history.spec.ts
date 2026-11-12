@@ -50,10 +50,10 @@ async function restaurantWithClosedTabs(request: APIRequestContext, browser: Bro
 test("o dono vê as comandas fechadas de hoje, filtra por mesa e abre uma", async ({ page, request, browser }) => {
   const { email } = await restaurantWithClosedTabs(request, browser);
   await loginThroughForm(page, email);
-  // As seções do painel carregam aos poucos e empurram o resto para baixo: espera elas assentarem.
-  await expect(page.getByText("Nenhuma comanda aberta.")).toBeVisible();
+  // As colunas do painel carregam aos poucos e empurram o resto para baixo: espera elas assentarem.
+  await expect(page.getByText("Nada pronto para levar.")).toBeVisible();
   await openMenu(page);
-  await page.getByRole("link", { name: /Comandas/ }).click();
+  await page.getByRole("link", { name: "Comandas", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/comandas$/);
 
   await expect(page.getByText("2 comandas fechadas")).toBeVisible();

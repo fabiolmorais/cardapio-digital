@@ -1475,6 +1475,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/floor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As mesas agora (livre, ocupada, chamando, conta pedida) e o resumo do dia */
+        get: operations["getLiveFloor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -1586,6 +1603,23 @@ export interface paths {
         };
         /** A fila de chamados na TV vinculada (sem login, pelo cookie) */
         get: operations["listTvCallQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device/tv/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A cozinha, os prontos e a espera média na TV vinculada (sem login) */
+        get: operations["getTvBoard"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3450,6 +3484,84 @@ export interface components {
             email?: string;
             establishment: components["schemas"]["EstablishmentAccess"];
         };
+        /** @description O salão agora: cada mesa ativa e o resumo do dia */
+        LiveFloor: {
+            /** @description As mesas ativas, por setor e número */
+            tables: components["schemas"]["LiveTable"][];
+            /**
+             * Format: int32
+             * @description Mesas com gente, comanda ou chamado
+             */
+            occupied: number;
+            /**
+             * Format: int64
+             * @description O faturado de hoje (comandas fechadas); ausente para quem não é dono ou gerente
+             */
+            revenueTodayCents?: number;
+            /**
+             * Format: int64
+             * @description A espera média dos chamados de hoje, em segundos; ausente se ninguém chamou
+             */
+            averageWaitSeconds?: number;
+        };
+        LiveTable: {
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** Format: uuid */
+            sectorId: string;
+            sectorName: string;
+            /**
+             * @description O que pinta a mesa no mapa
+             * @enum {string}
+             */
+            state: "FREE" | "OCCUPIED" | "CALLING" | "BILL";
+            /**
+             * Format: int32
+             * @description Celulares com a sessão ativa
+             */
+            phones: number;
+            /**
+             * Format: uuid
+             * @description A comanda aberta; ausente se a mesa não tem
+             */
+            tabId?: string;
+            /**
+             * Format: date-time
+             * @description Desde quando a comanda está aberta
+             */
+            tabOpenedAt?: string;
+            /**
+             * Format: int64
+             * @description Itens não cancelados mais o rodízio
+             */
+            tabTotalCents: number;
+            /** Format: int32 */
+            itemsOnTheWay: number;
+            /**
+             * Format: int32
+             * @description Pessoas no rodízio; zero fora do rodízio
+             */
+            rodizioPeople: number;
+            /** @description O chamado aberto que mais importa; ausente se nenhum */
+            call?: components["schemas"]["LiveTableCall"];
+            /**
+             * Format: int32
+             * @description Pedidos esperando a confirmação do garçom
+             */
+            waitingOrders: number;
+        };
+        LiveTableCall: {
+            /** @enum {string} */
+            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
+            /** @enum {string} */
+            status: "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELED";
+            /** @enum {string} */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
+            /** Format: date-time */
+            createdAt: string;
+            acceptedByName?: string;
+        };
         PageResponseDevice: {
             content: components["schemas"]["Device"][];
             /** Format: int32 */
@@ -3542,6 +3654,17 @@ export interface components {
             device: components["schemas"]["Device"];
             /** @example Sakura Sushi */
             establishmentName: string;
+        };
+        TvBoard: {
+            /** @description Na fila, em preparo e prontos, do mais antigo ao mais novo */
+            kitchen: components["schemas"]["KitchenItem"][];
+            /** @description Os setores ativos, na ordem do salão */
+            sectors: string[];
+            /**
+             * Format: int64
+             * @description A espera média dos chamados de hoje, em segundos; ausente se ninguém chamou
+             */
+            averageWaitSeconds?: number;
         };
         PageResponsePinMember: {
             content: components["schemas"]["PinMember"][];
@@ -7492,6 +7615,26 @@ export interface operations {
             };
         };
     };
+    getLiveFloor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O salão; o faturado só para o dono e o gerente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveFloor"];
+                };
+            };
+        };
+    };
     streamStaffEvents: {
         parameters: {
             query?: never;
@@ -7696,6 +7839,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseStaffCall"];
+                };
+            };
+            /** @description Aparelho não vinculado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O aparelho não é uma TV */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getTvBoard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                device_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O quadro da TV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TvBoard"];
                 };
             };
             /** @description Aparelho não vinculado */

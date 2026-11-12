@@ -24,7 +24,7 @@ export function connectTvEvents(
 
   function open() {
     source = new EventSource(`${baseUrl}/api/v1/auth/device/tv/events`, { withCredentials: true });
-    for (const name of ["ready", "call"]) {
+    for (const name of ["ready", "call", "order"]) {
       source.addEventListener(name, (message) => {
         if (name === "ready") onConnectedChange(true);
         try {

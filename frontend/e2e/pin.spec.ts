@@ -1,5 +1,14 @@
 import { devices, expect, test, type Browser, type APIRequestContext, type Page } from "@playwright/test";
-import { addTeamMember, API_URL, apiLogin, createAccount, linkDeviceByCode, openMenu } from "./support/account";
+import {
+  addTeamMember,
+  API_URL,
+  apiLogin,
+  createAccount,
+  dismissSoundGate,
+  linkDeviceByCode,
+  openMenu,
+  panelGreeting,
+} from "./support/account";
 
 const APP_URL = "http://localhost:3000";
 const PIN = "258014";
@@ -35,8 +44,10 @@ test("garçom entra com PIN, cai no painel e, ao sair, volta para o PIN", async 
   await typePin(phone, PIN); // entra sozinho ao digitar o 6º dígito
 
   await expect(phone).toHaveURL(/\/painel$/);
-  await expect(phone.getByRole("heading", { name: "Olá, Carlos Souza" })).toBeVisible();
+  await dismissSoundGate(phone);
+  await expect(panelGreeting(phone)).toBeVisible();
   await openMenu(phone);
+  await expect(phone.getByText("Carlos Souza")).toBeVisible();
   await expect(phone.getByText("Seu papel: Garçom")).toBeVisible();
   await expect(phone.getByRole("link", { name: /Equipe/ })).toHaveCount(0); // garçom não cuida da equipe
   // O menu do garçom: o Ao vivo, os passadores e o app; sem Modo TV, cozinha nem impressão.

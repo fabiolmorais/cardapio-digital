@@ -33,11 +33,23 @@ export async function loginThroughForm(page: Page, email: string) {
   // O servidor de desenvolvimento compila o painel na primeira visita: com a suíte inteira em
   // paralelo, isso passa dos 5 segundos de espera padrão.
   await expect(page).toHaveURL(/\/painel$/, { timeout: 15_000 });
+  await dismissSoundGate(page);
   await expect(panelGreeting(page)).toBeVisible();
 }
 
+/** O título do Ao vivo (desenho 7.1): é ele que diz que o painel abriu. */
 export function panelGreeting(page: Page) {
-  return page.getByRole("heading", { name: `Olá, ${OWNER_NAME}` });
+  return page.getByRole("heading", { name: "Ao vivo", level: 1 });
+}
+
+/**
+ * O aviso "Ativar alertas sonoros" (desenho 7.4) abre ao entrar no painel com o som desligado:
+ * os testes respondem "Agora não", que vale até a aba fechar.
+ */
+export async function dismissSoundGate(page: Page) {
+  const later = page.getByRole("dialog", { name: "Ativar alertas sonoros" }).getByRole("button", { name: "Agora não" });
+  await later.click({ timeout: 10_000 });
+  await expect(later).toBeHidden();
 }
 
 /** Entra pela API e devolve o token de acesso do dono. */

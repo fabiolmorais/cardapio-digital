@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useLiveOrders } from "@/features/orders/use-live-orders";
 import { formatCents } from "@/lib/format";
+import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { fetchOpenTabs } from "./tabs-api";
@@ -22,7 +23,9 @@ export function clock(iso: string) {
  * Cada uma abre a comanda, de onde o garçom fecha a conta. Atualiza a cada pedido e fechamento.
  */
 export function OpenTabs() {
-  const { list } = useLiveOrders(OPEN_TABS_KEY, fetchOpenTabs, undefined, true, TAB_EVENTS);
+  // Depois de um F5, a sessão volta em seguida: a lista espera por ela para buscar.
+  const { status } = useRequiredSession();
+  const { list } = useLiveOrders(OPEN_TABS_KEY, fetchOpenTabs, undefined, status === "authenticated", TAB_EVENTS);
   const tabs = list.data ?? [];
 
   return (

@@ -96,7 +96,7 @@ test("a mesa pede a conta, troca a forma de pagamento e o painel mostra a escolh
   const panel = await ownerPanel(browser, email);
   try {
     const call = panel.page.getByRole("listitem", { name: "Pedir a conta · Mesa 04" });
-    await expect(call).toContainText("Dinheiro · Salão principal");
+    await expect(call).toContainText("Salão principal · Dinheiro");
     // Um pedido de conta só: trocar a forma de pagamento não criou outro.
     await expect(panel.page.getByText("1 aberto")).toBeVisible();
   } finally {
@@ -114,12 +114,17 @@ test("o painel liga e desliga o som e mostra que está ao vivo", async ({ reques
   const { email } = await restaurant(request);
   const panel = await ownerPanel(browser, email);
   try {
-    await expect(panel.page.getByRole("status").filter({ hasText: "Ao vivo" })).toBeVisible();
-    await panel.page.getByRole("button", { name: "Ativar som" }).click();
-    const off = panel.page.getByRole("button", { name: "Desligar som" });
-    await expect(off).toHaveAttribute("aria-pressed", "true");
-    await off.click();
-    await expect(panel.page.getByRole("button", { name: "Ativar som" })).toHaveAttribute("aria-pressed", "false");
+    // Desenho 7.1: a data, a hora e "tempo real" embaixo do título; a tag do som no topo.
+    await expect(panel.page.getByRole("status").filter({ hasText: "tempo real" })).toBeVisible();
+    await panel.page.getByRole("button", { name: "Som desligado. Toque para ligar" }).click();
+    const on = panel.page.getByRole("button", { name: "Som ligado. Toque para desligar" });
+    await expect(on).toHaveAttribute("aria-pressed", "true");
+    await expect(on).toHaveText("Som ligado");
+    await on.click();
+    await expect(panel.page.getByRole("button", { name: "Som desligado. Toque para ligar" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   } finally {
     await panel.close();
   }
@@ -142,7 +147,13 @@ test("o Modo TV mostra o chamado novo em tela cheia, na hora", async ({ page, re
     await expect(alert).toContainText("Chamar garçom");
     await expect(alert).toContainText("04");
     await expect(alert).toBeHidden({ timeout: 12_000 });
+    // Desenho 8.1: três colunas; o chamado com o setor junto da mesa.
     await expect(panel.page.getByRole("heading", { name: "Chamados" })).toBeVisible();
+    await expect(panel.page.getByRole("heading", { name: "Na cozinha" })).toBeVisible();
+    await expect(panel.page.getByRole("heading", { name: "Prontos" })).toBeVisible();
+    await expect(panel.page.getByRole("listitem", { name: "Mesa 04 · Chamar garçom" })).toContainText(
+      "Salão principal",
+    );
   } finally {
     await panel.close();
   }

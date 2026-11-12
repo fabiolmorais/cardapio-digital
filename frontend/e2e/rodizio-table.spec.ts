@@ -89,6 +89,7 @@ test("a mesa pede o rodízio, o garçom ativa, a mesa pede rodadas e a conta som
   await expect(visible.getByText("R$ 454,60").first()).toBeVisible();
 
   // A comanda no painel: o rodízio, o item a zero e o ajuste das pessoas.
+  await owner.page.goto("/painel/comandas");
   await owner.page.getByRole("link", { name: "Comanda da mesa 04" }).click();
   const rodizio = owner.page.getByRole("region", { name: "Rodízio Japonês · 4 pessoas" });
   await expect(rodizio).toContainText("3× Adulto · R$ 129,90");

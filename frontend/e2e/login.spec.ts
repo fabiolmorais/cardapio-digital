@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createAccount, PASSWORD, openMenu } from "./support/account";
+import { createAccount, dismissSoundGate, PASSWORD, openMenu, panelGreeting } from "./support/account";
 
 test("login leva ao painel com os dados de quem entrou", async ({ page, request }) => {
   const { email, establishmentName } = await createAccount(request);
@@ -10,9 +10,11 @@ test("login leva ao painel com os dados de quem entrou", async ({ page, request 
   await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page).toHaveURL(/\/painel$/);
-  await expect(page.getByRole("heading", { name: "Olá, Marina Tanaka" })).toBeVisible();
+  await dismissSoundGate(page);
+  await expect(panelGreeting(page)).toBeVisible();
   await expect(page.getByText(establishmentName)).toBeVisible();
   await openMenu(page);
+  await expect(page.getByText("Marina Tanaka")).toBeVisible();
   await expect(page.getByText("Seu papel: Dono")).toBeVisible();
 
   await page.getByRole("button", { name: "Sair" }).click();

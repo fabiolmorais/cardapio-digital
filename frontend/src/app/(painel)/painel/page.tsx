@@ -10,9 +10,7 @@ export const metadata: Metadata = {
 export default function PanelPage() {
   return (
     <AdminShell>
-      <div className="flex w-full flex-col gap-6 px-4 py-6 sm:px-7">
-        <PanelHome />
-      </div>
+      <PanelHome />
     </AdminShell>
   );
 }

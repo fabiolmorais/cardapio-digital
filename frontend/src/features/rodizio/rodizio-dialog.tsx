@@ -16,12 +16,21 @@ import {
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { TableBox } from "@/features/live/live-ui";
 import { activateRodizio, changeGuests, fetchQuotes, type GuestCount, type TableRodizio } from "./rodizio-api";
 
 const t = messages.panel.rodizio;
 
-/** A mesa do diálogo e, para ajustar as pessoas, o rodízio que ela já tem. */
-export type RodizioTarget = { tableId: string; tableLabel: string; current?: TableRodizio | null };
+/**
+ * A mesa do diálogo e, para ajustar as pessoas, o rodízio que ela já tem. `requestedAt`: quando a
+ * mesa pediu o rodízio pelo celular (o "Quero o rodízio"), para o diálogo dizer há quanto tempo.
+ */
+export type RodizioTarget = {
+  tableId: string;
+  tableLabel: string;
+  current?: TableRodizio | null;
+  requestedAt?: string;
+};
 
 /**
  * "Ativar rodízio" (desenho 7.3): o rodízio, as pessoas por faixa com + e −, e quanto entra na
@@ -75,17 +84,30 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
 
   const option = (on: boolean) =>
     cn(
-      "flex flex-1 flex-col gap-0.5 rounded-xl border border-border px-3.5 py-3 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-      on && "border-primary bg-primary/10",
+      "flex min-w-36 flex-1 flex-col gap-0.5 rounded-[14px] border border-input bg-muted px-3.5 py-3 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+      on && "border-brand-text/70 bg-primary/15",
     );
 
+  // A hora em que o diálogo abriu: o "há 2 min" fica parado enquanto ele está aberto.
+  const [openedAt] = useState(() => Date.now());
+  const asked = target.requestedAt && Math.max(0, Math.round((openedAt - Date.parse(target.requestedAt)) / 60_000));
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>
-          {adjusting ? t.adjustTitle : t.activateTitle} · {t.table(target.tableLabel)}
-        </DialogTitle>
-        <DialogDescription>{adjusting ? t.adjustText : t.activateText}</DialogDescription>
+      <DialogHeader className="flex-row items-start gap-3 text-left">
+        <TableBox label={target.tableLabel} tone="accent" />
+        <span className="flex flex-col gap-0.5">
+          <DialogTitle className="text-xl">
+            {adjusting ? t.adjustTitle : t.activateTitle}
+            <span className="sr-only"> · {t.table(target.tableLabel)}</span>
+          </DialogTitle>
+          <DialogDescription>
+            {adjusting
+              ? t.adjustText
+              : target.requestedAt
+                ? t.requested(asked === 0 ? t.now : t.minutesAgo(asked as number))
+                : t.activateText}
+          </DialogDescription>
+        </span>
       </DialogHeader>
 
       {!adjusting &&
@@ -98,9 +120,9 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
         ) : options.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t.none}</p>
         ) : (
-          options.length > 1 && (
+          options.length > 0 && (
             <fieldset className="flex flex-col gap-2">
-              <legend className="pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <legend className="pb-2 text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">
                 {t.choose}
               </legend>
               <div className="flex flex-wrap gap-2">
@@ -114,8 +136,8 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
                   >
                     <span className="font-semibold">{r.name}</span>
                     {r.tiers[0] && (
-                      <span className="text-sm text-muted-foreground">
-                        {formatCents(r.tiers[0].priceCents)} · {r.tiers[0].name}
+                      <span className="text-[13px] text-muted-foreground">
+                        {formatCents(r.tiers[0].priceCents)} {r.tiers[0].name.toLowerCase()}
                       </span>
                     )}
                   </button>
@@ -127,13 +149,13 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
 
       {tiers.length > 0 && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          <legend className="pb-2 text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">
             {adjusting ? target.current!.name : rodizio?.name} · {t.people}
           </legend>
           {tiers.map((tier) => {
             const n = counts[tier.name] ?? 0;
             return (
-              <div key={tier.name} className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3.5 py-2.5">
+              <div key={tier.name} className="flex items-center gap-3 rounded-[14px] border border-border bg-muted px-3.5 py-3">
                 <span className="flex flex-1 flex-col">
                   <span className="font-semibold">{tier.name}</span>
                   <span className="text-sm text-muted-foreground">{t.each(formatCents(tier.priceCents))}</span>
@@ -162,7 +184,7 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
               </div>
             );
           })}
-          <div className="flex items-baseline justify-between rounded-xl bg-muted px-4 py-3">
+          <div className="mt-2 flex items-baseline justify-between rounded-[14px] bg-secondary px-4 py-3.5">
             <span className="font-semibold">{t.total}</span>
             <span className="font-mono text-2xl font-bold tabular-nums">{formatCents(total)}</span>
           </div>
@@ -174,10 +196,12 @@ function Body({ target, onDone }: { target: RodizioTarget; onDone: () => void })
           {save.error.message}
         </p>
       )}
-      <DialogFooter>
-        <DialogClose render={<Button variant="outline" className="h-11" />}>{t.cancel}</DialogClose>
+      <DialogFooter className="flex-row gap-2.5 sm:justify-stretch">
+        <DialogClose render={<Button variant="ghost" className="h-11 flex-1 text-muted-foreground" />}>
+          {t.cancel}
+        </DialogClose>
         <Button
-          className="h-11"
+          className="h-11 flex-2"
           disabled={save.isPending || people === 0 || (!adjusting && !rodizio)}
           onClick={() => save.mutate()}
         >
