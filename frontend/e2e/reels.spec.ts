@@ -113,6 +113,16 @@ test("o cliente abre o Reels pelo cardápio, assiste, desliza e adiciona ao pedi
   await expect.poll(() => playing(page, "Sunomono")).toBe(true);
   await expect.poll(() => playing(page, "Guioza")).toBe(false);
 
+  // O Sunomono é o último: deslizar mais uma vez volta ao primeiro, como se não tivesse fim.
+  await page
+    .getByRole("region", { name: "Sunomono" })
+    .evaluate((el) => el.parentElement!.scrollBy({ top: el.clientHeight, behavior: "instant" }));
+  await expect(page.getByRole("region", { name: "Guioza" })).toBeInViewport();
+  await expect.poll(() => playing(page, "Guioza")).toBe(true);
+  await expect.poll(() => playing(page, "Sunomono")).toBe(false);
+  await page.getByRole("region", { name: "Sunomono" }).scrollIntoViewIfNeeded();
+  await expect.poll(() => playing(page, "Sunomono")).toBe(true);
+
   await page.getByRole("button", { name: "Adicionar Sunomono" }).click();
   await page.getByRole("dialog", { name: "Sunomono" }).getByRole("button", { name: /^Adicionar/ }).click();
   await expect(page.getByRole("link", { name: /Ver pedido/ })).toContainText("R$ 19,90");
