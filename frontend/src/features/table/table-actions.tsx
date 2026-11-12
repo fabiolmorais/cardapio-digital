@@ -2,10 +2,13 @@
 
 import { Bell, Receipt, UserCheck } from "lucide-react";
 import Link from "next/link";
+import { cn } from "cn";
+import { formatCents } from "@/lib/format";
 import type { ReactNode } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { ArrivalGate, PresencePanel } from "./presence-panel";
 import { requestCall, cancelCall, useTableCalls } from "./table-calls";
+import { useTableOrders } from "./table-orders";
 
 const t = tablePage;
 
@@ -29,6 +32,10 @@ export function TableActions({
 }) {
   const state = useTableCalls(token);
   const { waiter, bill, busy, error, run } = state;
+  // O que a mesa já pagou (o garçom recebe antes de fechar, com itens ainda a caminho).
+  const { data: orders } = useTableOrders(token);
+  const paid = orders?.paidCents ?? 0;
+  const due = orders?.dueCents ?? 0;
   const coming = waiter?.status === "IN_PROGRESS";
 
   // A trava de presença: enquanto o celular não provou que está no salão, os botões dão lugar a ela.
@@ -118,7 +125,15 @@ export function TableActions({
           </span>
           <span className="flex flex-col">
             <span className="font-semibold">{t.askBill}</span>
-            <span className="text-sm text-(--mesa-muted)">{bill ? t.calls.billSent : t.calls.billSub}</span>
+            <span className={cn("text-sm text-(--mesa-muted)", !bill && paid > 0 && "font-semibold text-(--mesa-ok)")}>
+              {bill
+                ? t.calls.billSent
+                : paid > 0
+                  ? due === 0
+                    ? t.calls.billPaid
+                    : t.calls.billPartial(formatCents(paid), formatCents(due))
+                  : t.calls.billSub}
+            </span>
           </span>
         </Link>
       </section>

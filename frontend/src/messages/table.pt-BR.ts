@@ -65,6 +65,8 @@ export const tablePage = {
     waiterSent: "Chamado enviado",
     billSub: "Pix, cartão ou dinheiro",
     billSent: "Conta solicitada",
+    billPaid: "Conta paga ✓",
+    billPartial: (paid: string, due: string) => `Pago ${paid} · falta ${due}`,
     pendingTitle: "Chamado enviado",
     pendingText: "O garçom já foi avisado e vem até a mesa.",
     comingTitle: "Garçom a caminho",

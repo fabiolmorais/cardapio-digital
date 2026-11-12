@@ -144,6 +144,11 @@ test("a mesa paga com item a caminho, e o garçom fecha depois sem cobrar de nov
     // A mesa vê que a conta está paga, mas a comanda continua aberta (o sunomono ainda vem).
     await expect(page.getByRole("status")).toContainText("Conta paga", { timeout: 3000 });
     await expect(page.getByText("Já pago R$ 49,80")).toBeVisible();
+    // A tela da mesa também mostra que a conta foi paga, no cartão "Pedir a conta".
+    await page.getByRole("link", { name: "Voltar para a mesa" }).click();
+    await expect(page.getByRole("link", { name: /Pedir a conta/ })).toContainText("Conta paga ✓");
+    await page.getByRole("link", { name: /Pedir a conta/ }).click();
+    await expect(page.getByRole("status")).toContainText("Conta paga");
 
     await deliverAll(request, headers);
     await panel.page.goto("/painel/comandas");
