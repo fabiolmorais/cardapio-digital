@@ -28,6 +28,12 @@ primary_region = "gru"
   # E-mail pelo Resend, do domínio verificado.
   EMAIL_FROM = "OhChefe <nao-responda@avisos.ohchefe.app.br>"
   VAPID_SUBJECT = "mailto:contato@ohchefe.app.br"
+  # O pool do banco, pensado para a máquina que suspende (ver auto_stop_machines): na volta, as
+  # conexões com o Neon estão mortas. Com 1 conexão parada e a validação curta, a primeira resposta
+  # depois de acordar leva poucos segundos (com o padrão, eram ~70 s testando 10 conexões mortas).
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE = "1"
+  SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT = "60000"
+  SPRING_DATASOURCE_HIKARI_VALIDATION_TIMEOUT = "1000"
   # O staging fica aberto na internet: sem o mapa da API, como na produção.
   OPENAPI_ENABLED = "false"
   # Os erros do back, no projeto ohchefe-api do Sentry (o DSN não é segredo).
@@ -36,8 +42,11 @@ primary_region = "gru"
 [http_service]
   internal_port = 8080
   force_https = true
-  # No staging a máquina dorme sem uso, e acorda no primeiro acesso (alguns segundos).
-  auto_stop_machines = "stop"
+  # No staging a máquina dorme sem uso e acorda no primeiro acesso. "suspend" congela a máquina com
+  # a memória (o Java já pronto) e ela volta em cerca de 1 s. Com "stop", o Java subia do zero a
+  # cada acesso (mais de 5 min nesta máquina), e o Fly a desligava no meio da subida por "falta de
+  # uso": a API ficava em 503 sem nunca terminar de subir (12/11/2026).
+  auto_stop_machines = "suspend"
   auto_start_machines = true
   min_machines_running = 0
 
