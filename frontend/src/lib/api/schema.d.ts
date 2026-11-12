@@ -839,6 +839,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{id}/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atende o pedido de conta recebendo o pagamento: a comanda continua aberta e o valor sai do que falta */
+        post: operations["receiveBillPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{id}/finish": {
         parameters: {
             query?: never;
@@ -1484,6 +1501,23 @@ export interface paths {
         };
         /** Chamados abertos, do mais antigo para o mais novo */
         get: operations["listCallQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{id}/bill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A conta que a mesa pediu: o consumo, o que já pagou e o que falta */
+        get: operations["getCallBill"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2189,10 +2223,10 @@ export interface components {
         };
         CloseTabRequest: {
             /**
-             * @description Como a mesa pagou
+             * @description Como a mesa pagou o que faltava; ausente se ela já pagou tudo adiantado
              * @enum {string}
              */
-            paymentMethod: "PIX" | "CARD" | "CASH";
+            paymentMethod?: "PIX" | "CARD" | "CASH";
         };
         StaffTab: {
             /** Format: uuid */
@@ -2216,7 +2250,24 @@ export interface components {
              */
             totalCents: number;
             /**
-             * @description Fechada: como a mesa pagou
+             * Format: int64
+             * @description O que a mesa já pagou (adiantado, ou tudo, se fechada)
+             */
+            paidCents: number;
+            /**
+             * Format: int64
+             * @description O que falta receber; zero se fechada
+             */
+            dueCents: number;
+            /**
+             * Format: int64
+             * @description O que a mesa pagou além do consumo (devolver ao fechar)
+             */
+            overpaidCents: number;
+            /** @description Os pagamentos recebidos, do mais antigo ao mais novo */
+            payments: components["schemas"]["TabPayment"][];
+            /**
+             * @description Fechada: como a mesa pagou (a forma do último pagamento)
              * @enum {string}
              */
             paymentMethod?: "PIX" | "CARD" | "CASH";
@@ -2240,6 +2291,14 @@ export interface components {
             createdAt: string;
             items: components["schemas"]["TableOrderItem"][];
         };
+        TabPayment: {
+            /** Format: int64 */
+            amountCents: number;
+            /** @enum {string} */
+            paymentMethod: "PIX" | "CARD" | "CASH";
+            /** Format: date-time */
+            receivedAt: string;
+        };
         TableOrderItem: {
             /** Format: uuid */
             id: string;
@@ -2260,6 +2319,8 @@ export interface components {
             rodizio: boolean;
             /** @description Miniatura da foto do produto; vazio se ele não tem foto */
             thumbUrl?: string;
+            /** @description Foi o próprio cliente que cancelou (e não a equipe) */
+            canceledByCustomer: boolean;
         };
         CreateTableRequest: {
             /** @example 04 */
@@ -2620,6 +2681,12 @@ export interface components {
              * @example Acabou o salmão
              */
             reason: string;
+            /**
+             * Format: int32
+             * @description Quantos cancelar (a cozinha só tem para parte); ausente = o item todo
+             * @example 5
+             */
+            quantity?: number;
         };
         MenuCategoryRequest: {
             /** @example Entradas */
@@ -2769,6 +2836,20 @@ export interface components {
              */
             presenceMethod?: "WIFI" | "GPS" | "STAFF";
         };
+        /** @description O que o garçom recebeu da mesa ao atender o pedido de conta */
+        ReceivePaymentRequest: {
+            /**
+             * Format: int64
+             * @description Valor recebido, em centavos (até o que falta pagar)
+             * @example 8790
+             */
+            amountCents: number;
+            /**
+             * @description Como a mesa pagou
+             * @enum {string}
+             */
+            paymentMethod: "PIX" | "CARD" | "CASH";
+        };
         EstablishmentAccess: {
             /** Format: uuid */
             id: string;
@@ -2874,8 +2955,11 @@ export interface components {
              * @description O que foi cobrado
              */
             totalCents: number;
-            /** @enum {string} */
-            paymentMethod: "PIX" | "CARD" | "CASH";
+            /**
+             * @description Como a mesa pagou; ausente se fechou sem nada a cobrar
+             * @enum {string}
+             */
+            paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @description Quem fechou */
             closedByName?: string;
         };
@@ -3058,6 +3142,16 @@ export interface components {
              * @description Os itens não cancelados mais o rodízio (pessoas × preço)
              */
             totalCents: number;
+            /**
+             * Format: int64
+             * @description O que a mesa já pagou adiantado (a comanda continua aberta)
+             */
+            paidCents: number;
+            /**
+             * Format: int64
+             * @description O que falta pagar: o total menos o que já foi pago
+             */
+            dueCents: number;
             /** @description O rodízio da mesa; ausente se ela não está no rodízio */
             rodizio?: components["schemas"]["TableRodizio"];
             /** @description Os produtos incluídos no rodízio (a aba Rodízio) */
@@ -3377,6 +3471,39 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        /** @description A conta que a mesa pediu: o consumo, o que já foi pago e o que falta */
+        Bill: {
+            /**
+             * Format: uuid
+             * @description A comanda aberta da mesa; ausente se ela ainda não pediu nada
+             */
+            tabId?: string;
+            /**
+             * Format: int64
+             * @description O consumo: itens não cancelados mais o rodízio
+             */
+            totalCents: number;
+            /**
+             * Format: int64
+             * @description O que a mesa já pagou adiantado
+             */
+            paidCents: number;
+            /**
+             * Format: int64
+             * @description O que falta receber
+             */
+            dueCents: number;
+            /**
+             * @description A forma que a mesa escolheu ao pedir a conta
+             * @enum {string}
+             */
+            requestedWith: "PIX" | "CARD" | "CASH";
+            /**
+             * Format: int32
+             * @description Quantos itens ainda não chegaram à mesa
+             */
+            itemsOnTheWay: number;
         };
         /** @description Celular bloqueado pela equipe, com a sessão ainda aberta */
         BlockedPhone: {
@@ -5968,6 +6095,59 @@ export interface operations {
             };
         };
     };
+    receiveBillPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceivePaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Recebido; o chamado sai da fila */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffCall"];
+                };
+            };
+            /** @description Valor zerado ou maior do que falta pagar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um pedido de conta, ainda não foi aceito, ou já foi encerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     finishCall: {
         parameters: {
             query?: never;
@@ -7353,6 +7533,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseStaffCall"];
+                };
+            };
+        };
+    };
+    getCallBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A conta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bill"];
+                };
+            };
+            /** @description Não é um chamado deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é um pedido de conta */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

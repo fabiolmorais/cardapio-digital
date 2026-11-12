@@ -194,6 +194,81 @@ class TabFlowTest {
                 .isEqualTo("CLOSED");
     }
 
+    /** O celular pede a conta e o garçom aceita: devolve o id do chamado. */
+    private String billAccepted(Restaurant r, Cookie phone, String method) throws Exception {
+        assertThat(mvc.post().uri("/api/v1/public/tables/" + r.qr04() + "/calls").cookie(phone)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"BILL\",\"paymentMethod\":\"%s\"}".formatted(method))
+                .exchange()).hasStatus(HttpStatus.CREATED);
+        String callId = json(send("GET", r.waiter(), "/api/v1/calls", null), "$.content[0].id");
+        assertThat(send("POST", r.waiter(), "/api/v1/calls/" + callId + "/accept", null)).hasStatusOk();
+        return callId;
+    }
+
+    @Test
+    void theTablePaysAheadAndTheWaiterClosesWithoutChargingAgain() throws Exception {
+        Cookie ana = phone(sakura);
+        MvcTestResult first = order(sakura, ana, sakura.guioza(), 2);
+        MvcTestResult later = order(sakura, ana, sakura.sunomono(), 1);
+        deliver(sakura, first);
+        String callId = billAccepted(sakura, ana, "PIX");
+        long total = 2 * 2990 + 1990;
+
+        MvcTestResult bill = send("GET", sakura.waiter(), "/api/v1/calls/" + callId + "/bill", null);
+        assertThat(bill).hasStatusOk();
+        assertThat(json(bill, "$.dueCents")).isEqualTo(String.valueOf(total));
+        assertThat(json(bill, "$.itemsOnTheWay")).isEqualTo("1");
+        assertThat(json(bill, "$.requestedWith")).isEqualTo("PIX");
+
+        // Mais do que falta: não recebe.
+        assertThat(send("POST", sakura.waiter(), "/api/v1/calls/" + callId + "/payment",
+                "{\"amountCents\":%d,\"paymentMethod\":\"PIX\"}".formatted(total + 1)))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        MvcTestResult received = send("POST", sakura.waiter(), "/api/v1/calls/" + callId + "/payment",
+                "{\"amountCents\":%d,\"paymentMethod\":\"PIX\"}".formatted(total));
+        assertThat(received).hasStatusOk();
+        assertThat(json(received, "$.status")).isEqualTo("DONE");
+
+        // A mesa vê que já pagou; a comanda continua aberta, com o sunomono a caminho.
+        MvcTestResult atTheTable = mvc.get().uri("/api/v1/public/tables/" + sakura.qr04() + "/orders").cookie(ana)
+                .exchange();
+        assertThat(json(atTheTable, "$.paidCents")).isEqualTo(String.valueOf(total));
+        assertThat(json(atTheTable, "$.dueCents")).isEqualTo("0");
+        String tabId = json(send("GET", sakura.waiter(), "/api/v1/tabs/open", null), "$.content[0].id");
+        MvcTestResult detail = send("GET", sakura.waiter(), "/api/v1/tabs/" + tabId, null);
+        assertThat(json(detail, "$.dueCents")).isEqualTo("0");
+        assertThat(json(detail, "$.payments[0].paymentMethod")).isEqualTo("PIX");
+
+        // O sunomono chega; o garçom fecha sem informar a forma de pagamento.
+        deliver(sakura, later);
+        MvcTestResult closed = send("POST", sakura.waiter(), "/api/v1/tabs/" + tabId + "/close", "{}");
+        assertThat(closed).hasStatusOk();
+        assertThat(json(closed, "$.status")).isEqualTo("CLOSED");
+        assertThat(json(closed, "$.paymentMethod")).isEqualTo("PIX");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tab_payment WHERE tab_id = ?::uuid", Integer.class,
+                tabId)).isEqualTo(1);
+    }
+
+    @Test
+    void theKitchenCancelsPartOfAnItem() throws Exception {
+        Cookie ana = phone(sakura);
+        String item = list(order(sakura, ana, sakura.guioza(), 3), "$.items[*].id").getFirst();
+
+        assertThat(send("POST", sakura.kitchen(), "/api/v1/order-items/" + item + "/cancel",
+                "{\"reason\":\"Só tem para 1\",\"quantity\":2}")).hasStatus(HttpStatus.NO_CONTENT);
+
+        MvcTestResult atTheTable = mvc.get().uri("/api/v1/public/tables/" + sakura.qr04() + "/orders").cookie(ana)
+                .exchange();
+        assertThat(json(atTheTable, "$.totalCents")).isEqualTo("2990");
+        assertThat(json(atTheTable, "$.orders[0].items[?(@.status == 'PENDING')].quantity")).isEqualTo("[1]");
+        assertThat(json(atTheTable, "$.orders[0].items[?(@.status == 'CANCELED')].quantity")).isEqualTo("[2]");
+        assertThat(json(atTheTable, "$.orders[0].items[?(@.status == 'CANCELED')].canceledByCustomer"))
+                .isEqualTo("[false]");
+        // Mais do que sobrou: não cancela.
+        assertThat(send("POST", sakura.kitchen(), "/api/v1/order-items/" + item + "/cancel",
+                "{\"reason\":\"Acabou\",\"quantity\":2}")).hasStatus(HttpStatus.BAD_REQUEST);
+    }
+
     @Test
     void theKitchenDoesNotCloseTabs() {
         assertThat(send("GET", sakura.kitchen(), "/api/v1/tabs/open", null)).hasStatus(HttpStatus.FORBIDDEN);
@@ -211,5 +286,22 @@ class TabFlowTest {
                 .hasStatus(HttpStatus.NOT_FOUND);
         assertThat(jdbc.queryForObject("SELECT status FROM tab WHERE id = ?::uuid", String.class, tabId))
                 .isEqualTo("OPEN");
+    }
+
+    @Test
+    void anotherRestaurantDoesNotSeeTheBillNorReceivesIt() throws Exception {
+        Cookie ana = phone(sakura);
+        deliver(sakura, order(sakura, ana, sakura.guioza(), 1));
+        String callId = billAccepted(sakura, ana, "CARD");
+        Restaurant other = newRestaurant("Outro Bar");
+
+        assertThat(send("GET", other.waiter(), "/api/v1/calls/" + callId + "/bill", null))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.waiter(), "/api/v1/calls/" + callId + "/payment",
+                "{\"amountCents\":2990,\"paymentMethod\":\"CARD\"}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tab_payment WHERE call_id = ?::uuid", Integer.class,
+                callId)).isZero();
+        assertThat(send("GET", sakura.kitchen(), "/api/v1/calls/" + callId + "/bill", null))
+                .hasStatus(HttpStatus.FORBIDDEN);
     }
 }

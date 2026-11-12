@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.order.GetTabUseCase;
 import br.com.cardapio.application.port.in.order.StaffTab;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
+import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
@@ -21,8 +22,11 @@ public class GetTabService implements GetTabUseCase {
     private final OrderPort orders;
     private final CallPort calls;
     private final TabRodizioPort tabRodizios;
+    private final TabPaymentPort payments;
 
-    public GetTabService(TabPort tabs, OrderPort orders, CallPort calls, TabRodizioPort tabRodizios) {
+    public GetTabService(TabPort tabs, OrderPort orders, CallPort calls, TabRodizioPort tabRodizios,
+                         TabPaymentPort payments) {
+        this.payments = payments;
         this.tabs = tabs;
         this.orders = orders;
         this.calls = calls;
@@ -39,6 +43,6 @@ public class GetTabService implements GetTabUseCase {
                         .map(Call::paymentMethod).orElse(null)
                 : null;
         return StaffTab.from(view, orders.findByTab(establishmentId, tabId), billRequestedWith,
-                tabRodizios.findByTab(establishmentId, tabId).orElse(null));
+                tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId));
     }
 }

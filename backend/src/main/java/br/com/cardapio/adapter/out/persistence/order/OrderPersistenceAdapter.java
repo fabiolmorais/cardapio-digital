@@ -117,6 +117,24 @@ class OrderPersistenceAdapter implements OrderPort {
     }
 
     @Override
+    public boolean splitItem(OrderItem kept, OrderItem canceled, OrderItemStatus expectedStatus) {
+        establishmentFilter.enable(kept.establishmentId());
+        OrderItemJpaEntity original = items.findByIdAndEstablishmentId(kept.id().value(),
+                kept.establishmentId().value()).orElse(null);
+        if (original == null) {
+            return false;
+        }
+        int before = kept.quantity() + canceled.quantity();
+        if (items.updateQuantityIfUnchanged(kept.id().value(), kept.establishmentId().value(), expectedStatus.name(),
+                before, kept.quantity()) != 1) {
+            return false;
+        }
+        items.save(original.canceledPart(canceled.id().value(), canceled.quantity(), canceled.canceledAt(),
+                canceled.canceledBy() == null ? null : canceled.canceledBy().value(), canceled.cancelReason()));
+        return true;
+    }
+
+    @Override
     public boolean updateOrder(Order o, OrderStatus expectedStatus) {
         establishmentFilter.enable(o.establishmentId());
         return orders.updateIfStatus(o.id().value(), o.establishmentId().value(), expectedStatus.name(),

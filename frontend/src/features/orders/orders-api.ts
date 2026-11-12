@@ -34,11 +34,11 @@ export async function stepItem(id: string, step: ItemStep): Promise<void> {
   if (!response.ok) throw problem(error, response.status);
 }
 
-/** Cancela, com o motivo que o cliente vê. */
-export async function cancelItem(id: string, reason: string): Promise<void> {
+/** Cancela, com o motivo que o cliente vê; `quantity` cancela só parte (a cozinha só tem para alguns). */
+export async function cancelItem(id: string, reason: string, quantity?: number): Promise<void> {
   const { error, response } = await api.POST("/api/v1/order-items/{id}/cancel", {
     params: { path: { id } },
-    body: { reason },
+    body: { reason, quantity },
   });
   if (!response.ok) throw problem(error, response.status);
 }

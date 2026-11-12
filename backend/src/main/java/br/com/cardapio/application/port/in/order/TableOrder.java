@@ -32,9 +32,11 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
      * @param cancelReason o motivo, quando cancelado ("acabou o salmão")
      * @param rodizio      veio numa rodada do rodízio (a tela mostra "Rodízio" em vez de R$ 0,00)
      * @param thumbUrl     a miniatura da foto do produto; null se ele não tem foto
+     * @param canceledByCustomer foi o próprio cliente que cancelou (e não a equipe)
      */
     public record Item(OrderItemId id, String productName, Money unitPrice, int quantity, String note,
-                       OrderItemStatus status, String cancelReason, boolean rodizio, String thumbUrl) {
+                       OrderItemStatus status, String cancelReason, boolean rodizio, String thumbUrl,
+                       boolean canceledByCustomer) {
 
         static Item from(OrderItem i) {
             return from(i, product -> null);
@@ -42,7 +44,7 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
 
         static Item from(OrderItem i, Function<ProductId, String> thumbs) {
             return new Item(i.id(), i.productName(), i.unitPrice(), i.quantity(), i.note(), i.status(),
-                    i.cancelReason(), i.inRodizio(), thumbs.apply(i.productId()));
+                    i.cancelReason(), i.inRodizio(), thumbs.apply(i.productId()), i.canceledByCustomer());
         }
     }
 

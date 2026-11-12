@@ -32,11 +32,13 @@ record TableOrderResponse(
             @Schema(requiredMode = REQUIRED) OrderItemStatus status,
             @Schema(description = "Por que foi cancelado") String cancelReason,
             @Schema(requiredMode = REQUIRED, description = "Veio numa rodada do rodízio (preço zero)") boolean rodizio,
-            @Schema(description = "Miniatura da foto do produto; vazio se ele não tem foto") String thumbUrl
+            @Schema(description = "Miniatura da foto do produto; vazio se ele não tem foto") String thumbUrl,
+            @Schema(requiredMode = REQUIRED, description = "Foi o próprio cliente que cancelou (e não a equipe)")
+            boolean canceledByCustomer
     ) {
         static Item from(TableOrder.Item i) {
             return new Item(i.id().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
-                    i.status(), i.cancelReason(), i.rodizio(), i.thumbUrl());
+                    i.status(), i.cancelReason(), i.rodizio(), i.thumbUrl(), i.canceledByCustomer());
         }
     }
 

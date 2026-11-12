@@ -163,6 +163,45 @@ public record OrderItem(
         return with(OrderItemStatus.CANCELED, preparingAt, readyAt, deliveredAt, deliveredBy, now, by, text);
     }
 
+    /**
+     * O resultado do cancelamento de parte do item: o que continua a caminho e o que foi cancelado.
+     *
+     * @param kept     o que continua (o mesmo item, com a quantidade que sobrou); null se cancelou tudo
+     * @param canceled o que foi cancelado: o próprio item, se cancelou tudo; senão um item novo, com a
+     *                 quantidade cancelada e o motivo
+     */
+    public record StaffCancel(OrderItem kept, OrderItem canceled) {
+    }
+
+    /**
+     * A equipe cancela só parte do item: pediram 10, mas a cozinha só tem ingrediente para 5. O item
+     * fica com o que sobrou, no mesmo passo, e a parte cancelada vira um item à parte, com o motivo
+     * (é o que o cliente vê e o que sai fora da conta). Cancelar a quantidade toda é o cancelamento
+     * de sempre.
+     */
+    public StaffCancel cancelByStaff(UserId by, String reason, int cancelQuantity, Instant now) {
+        if (cancelQuantity < 1 || cancelQuantity > quantity) {
+            throw new InvalidValueException("Escolha quantos cancelar: de 1 a " + quantity + ".");
+        }
+        OrderItem canceled = cancelByStaff(by, reason, now);
+        if (cancelQuantity == quantity) {
+            return new StaffCancel(null, canceled);
+        }
+        OrderItem kept = new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice,
+                quantity - cancelQuantity, note, status, createdAt, preparingAt, readyAt, deliveredAt, deliveredBy,
+                canceledAt, canceledBy, cancelReason, tabRodizioId);
+        OrderItem part = new OrderItem(OrderItemId.newId(), establishmentId, orderId, productId, productName,
+                unitPrice, cancelQuantity, note, OrderItemStatus.CANCELED, createdAt, preparingAt, readyAt,
+                deliveredAt, deliveredBy, canceled.canceledAt(), canceled.canceledBy(), canceled.cancelReason(),
+                tabRodizioId);
+        return new StaffCancel(kept, part);
+    }
+
+    /** O próprio cliente cancelou (e não a equipe, nem o garçom ao recusar o pedido). */
+    public boolean canceledByCustomer() {
+        return status == OrderItemStatus.CANCELED && canceledBy == null;
+    }
+
     private String stateMessage() {
         return switch (status) {
             case DELIVERED -> "Este item já foi entregue";

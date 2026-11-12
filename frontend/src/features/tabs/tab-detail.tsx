@@ -64,8 +64,10 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
   const queryClient = useQueryClient();
   const [method, setMethod] = useState<PaymentMethod>(tab.billRequestedWith ?? "PIX");
   const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
+  // A mesa já pagou tudo adiantado: fecha sem cobrar e sem perguntar a forma (já foi informada).
+  const settled = tab.dueCents === 0;
   const close = useMutation({
-    mutationFn: () => closeTab(tab.id, method),
+    mutationFn: () => closeTab(tab.id, settled ? undefined : method),
     onSuccess: (closed) => {
       onClosed(closed);
       void queryClient.invalidateQueries({ queryKey: ["open-tabs"] });
@@ -106,7 +108,12 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
             </span>
           </span>
           <h2 className="text-2xl font-bold">{t.closedTitle}</h2>
-          <p className="font-semibold">{t.paidWith(tp[tab.paymentMethod ?? "PIX"], formatCents(tab.totalCents))}</p>
+          <p className="font-semibold">
+            {tab.paymentMethod
+              ? t.paidWith(tp[tab.paymentMethod], formatCents(tab.totalCents))
+              : t.closedNoCharge(formatCents(tab.totalCents))}
+          </p>
+          {tab.payments.length > 1 && <Payments payments={tab.payments} />}
           <p className="max-w-sm text-muted-foreground">{t.closedText(tab.tableLabel)}</p>
           <Link href="/painel" className={cn(buttonVariants({ variant: "outline" }), "h-12 w-full max-w-sm")}>
             {t.back}
@@ -202,39 +209,53 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           <span className="font-semibold">{t.total}</span>
           <span className="font-mono text-lg font-bold tabular-nums">{formatCents(tab.totalCents)}</span>
         </div>
+        {tab.payments.length > 0 && (
+          <>
+            <Payments payments={tab.payments} />
+            <div className="flex items-baseline justify-between border-t border-border pt-3">
+              <span className="font-semibold">{t.due}</span>
+              <span className="font-mono text-lg font-bold tabular-nums">{formatCents(tab.dueCents)}</span>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-5 text-center">
-        <span className="text-sm text-muted-foreground">{t.toReceive}</span>
-        <span className="font-mono text-4xl font-bold tabular-nums">{formatCents(tab.totalCents)}</span>
+        <span className="text-sm text-muted-foreground">{settled && tab.paidCents > 0 ? t.settled : t.toReceive}</span>
+        <span className="font-mono text-4xl font-bold tabular-nums">{formatCents(tab.dueCents)}</span>
+        {settled && tab.paidCents > 0 && <span className="text-sm text-muted-foreground">{t.settledHint}</span>}
       </section>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="pb-2 text-sm font-semibold text-muted-foreground">
-          {tab.billRequestedWith ? t.paymentChosen(tp[tab.billRequestedWith]) : t.payment}
-        </legend>
-        <div className="grid grid-cols-3 gap-2">
-          {METHODS.map((m) => (
-            <label
-              key={m}
-              className={cn(
-                "flex h-14 cursor-pointer items-center justify-center rounded-xl border border-border font-semibold has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
-                method === m && "border-emerald-600 bg-emerald-700/15",
-              )}
-            >
-              <input
-                type="radio"
-                name="payment"
-                value={m}
-                checked={method === m}
-                onChange={() => setMethod(m)}
-                className="sr-only"
-              />
-              {tp[m]}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {tab.overpaidCents > 0 && <Notice tone="warning">{t.overpaid(formatCents(tab.overpaidCents))}</Notice>}
+
+      {!settled && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="pb-2 text-sm font-semibold text-muted-foreground">
+            {tab.billRequestedWith ? t.paymentChosen(tp[tab.billRequestedWith]) : t.payment}
+          </legend>
+          <div className="grid grid-cols-3 gap-2">
+            {METHODS.map((m) => (
+              <label
+                key={m}
+                className={cn(
+                  "flex h-14 cursor-pointer items-center justify-center rounded-xl border border-border font-semibold has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
+                  method === m && "border-emerald-600 bg-emerald-700/15",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value={m}
+                  checked={method === m}
+                  onChange={() => setMethod(m)}
+                  className="sr-only"
+                />
+                {tp[m]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       {onTheWay.length > 0 && (
         <Notice tone="warning">
@@ -251,8 +272,27 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
         disabled={close.isPending || onTheWay.length > 0}
         onClick={() => close.mutate()}
       >
-        {close.isPending ? t.closing : t.close(tp[method])}
+        {close.isPending ? t.closing : settled ? t.closeSettled : t.close(tp[method])}
       </Button>
     </>
+  );
+}
+
+/** Os pagamentos já recebidos, como tags na nota da comanda: a forma, a hora e o valor. */
+function Payments({ payments }: { payments: StaffTab["payments"] }) {
+  return (
+    <ul aria-label={t.paidTotal} className="flex flex-col gap-1.5">
+      {payments.map((p) => (
+        <li key={p.receivedAt} className="flex items-center gap-2 text-sm">
+          <span className="flex-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700/15 px-2.5 py-0.5 text-xs font-semibold text-success">
+              <Check aria-hidden className="size-3.5" />
+              {t.paidTag(tp[p.paymentMethod], clock(p.receivedAt))}
+            </span>
+          </span>
+          <span className="w-24 text-right font-mono text-success tabular-nums">− {formatCents(p.amountCents)}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

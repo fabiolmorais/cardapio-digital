@@ -40,6 +40,18 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
                        @Param("canceledAt") Instant canceledAt, @Param("canceledBy") UUID canceledBy,
                        @Param("cancelReason") String cancelReason);
 
+    /** A quantidade que sobrou, só se o item ainda estiver no status e na quantidade de antes: 1 linha ou 0. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE OrderItemJpaEntity i SET i.quantity = :quantity
+             WHERE i.id = :id AND i.establishmentId = :establishmentId AND i.status = :expected
+               AND i.quantity = :expectedQuantity
+            """)
+    int updateQuantityIfUnchanged(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
+                                  @Param("expected") String expected,
+                                  @Param("expectedQuantity") int expectedQuantity,
+                                  @Param("quantity") int quantity);
+
     /** Cancela de uma vez os itens ainda a caminho de um pedido (o pedido recusado pelo garçom). */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

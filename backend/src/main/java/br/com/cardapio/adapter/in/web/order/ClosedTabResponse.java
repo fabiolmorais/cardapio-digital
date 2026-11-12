@@ -17,7 +17,7 @@ record ClosedTabResponse(
         @Schema(requiredMode = REQUIRED) Instant openedAt,
         @Schema(requiredMode = REQUIRED) Instant closedAt,
         @Schema(requiredMode = REQUIRED, description = "O que foi cobrado") long totalCents,
-        @Schema(requiredMode = REQUIRED) PaymentMethod paymentMethod,
+        @Schema(description = "Como a mesa pagou; ausente se fechou sem nada a cobrar") PaymentMethod paymentMethod,
         @Schema(description = "Quem fechou") String closedByName
 ) {
     static ClosedTabResponse from(ClosedTab t) {

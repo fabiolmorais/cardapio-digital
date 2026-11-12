@@ -51,6 +51,7 @@ import br.com.cardapio.application.port.in.order.CloseTabUseCase;
 import br.com.cardapio.application.port.in.order.GetOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.order.GetTabUseCase;
 import br.com.cardapio.application.port.in.order.ListClosedTabsUseCase;
+import br.com.cardapio.application.port.in.order.ReceiveBillPaymentUseCase;
 import br.com.cardapio.application.port.in.order.ListKitchenQueueUseCase;
 import br.com.cardapio.application.port.in.order.ListPrintJobsUseCase;
 import br.com.cardapio.application.port.in.order.ClaimPrintJobUseCase;
@@ -110,6 +111,7 @@ import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
+import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.plan.LoadPlansPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
@@ -181,6 +183,7 @@ import br.com.cardapio.application.service.order.CloseTabService;
 import br.com.cardapio.application.service.order.GetOrderSettingsService;
 import br.com.cardapio.application.service.order.GetTabService;
 import br.com.cardapio.application.service.order.ListClosedTabsService;
+import br.com.cardapio.application.service.order.ReceiveBillPaymentService;
 import br.com.cardapio.application.service.order.ListKitchenQueueService;
 import br.com.cardapio.application.service.order.ListPrintJobsService;
 import br.com.cardapio.application.service.order.ClaimPrintJobService;
@@ -711,10 +714,11 @@ class UseCaseConfig {
     ListTableOrdersUseCase listTableOrdersUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                                   OrderSettingsPort orderSettingsPort, TabPort tabPort,
                                                   OrderPort orderPort, TabRodizioPort tabRodizioPort,
-                                                  RodizioPort rodizioPort, ProductMediaPort productMediaPort,
+                                                  RodizioPort rodizioPort, TabPaymentPort tabPaymentPort,
+                                                  ProductMediaPort productMediaPort,
                                                   MediaStoragePort mediaStoragePort, Clock clock) {
         return new ListTableOrdersService(diningTablePort, tableSessionPort, orderSettingsPort, tabPort, orderPort,
-                tabRodizioPort, rodizioPort, productMediaPort, mediaStoragePort, clock);
+                tabRodizioPort, rodizioPort, tabPaymentPort, productMediaPort, mediaStoragePort, clock);
     }
 
     @Bean
@@ -783,15 +787,24 @@ class UseCaseConfig {
 
     @Bean
     GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
-                                TabRodizioPort tabRodizioPort) {
-        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort);
+                                TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort) {
+        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort, tabPaymentPort);
     }
 
     @Bean
     CloseTabUseCase closeTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
                                     TableSessionPort tableSessionPort, TabRodizioPort tabRodizioPort,
-                                    EventPublisherPort eventPublisherPort, Clock clock) {
-        return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, tabRodizioPort,
+                                    TabPaymentPort tabPaymentPort, EventPublisherPort eventPublisherPort,
+                                    Clock clock) {
+        return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, tabRodizioPort, tabPaymentPort,
+                eventPublisherPort, clock);
+    }
+
+    @Bean
+    ReceiveBillPaymentUseCase receiveBillPaymentUseCase(CallPort callPort, TabPort tabPort, OrderPort orderPort,
+                                                        TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort,
+                                                        EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ReceiveBillPaymentService(callPort, tabPort, orderPort, tabRodizioPort, tabPaymentPort,
                 eventPublisherPort, clock);
     }
 

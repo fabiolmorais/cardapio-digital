@@ -8,8 +8,10 @@ import br.com.cardapio.application.port.in.call.DeclineCallUseCase;
 import br.com.cardapio.application.port.in.call.FinishCallUseCase;
 import br.com.cardapio.application.port.in.call.ListCallQueueUseCase;
 import br.com.cardapio.application.port.in.call.ReleaseCallUseCase;
+import br.com.cardapio.application.port.in.order.ReceiveBillPaymentUseCase;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.call.model.CallId;
+import br.com.cardapio.domain.shared.model.Money;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,10 +46,12 @@ class StaffCallController {
     private final DeclineCallUseCase declineCall;
     private final ReleaseCallUseCase releaseCall;
     private final BlockCallerUseCase blockCaller;
+    private final ReceiveBillPaymentUseCase billPayment;
 
     StaffCallController(ListCallQueueUseCase listQueue, AcceptCallUseCase acceptCall, FinishCallUseCase finishCall,
                         DeclineCallUseCase declineCall, BlockCallerUseCase blockCaller,
-                        ReleaseCallUseCase releaseCall) {
+                        ReleaseCallUseCase releaseCall, ReceiveBillPaymentUseCase billPayment) {
+        this.billPayment = billPayment;
         this.listQueue = listQueue;
         this.acceptCall = acceptCall;
         this.finishCall = finishCall;
@@ -95,6 +99,36 @@ class StaffCallController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     StaffCallResponse finish(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return StaffCallResponse.from(finishCall.finish(AuthenticatedUser.from(jwt).establishmentId(), new CallId(id)));
+    }
+
+    @GetMapping("/{id}/bill")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "getCallBill", summary = "A conta que a mesa pediu: o consumo, o que já pagou e o que falta")
+    @ApiResponse(responseCode = "200", description = "A conta")
+    @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Não é um pedido de conta",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    BillResponse bill(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return BillResponse.from(billPayment.bill(AuthenticatedUser.from(jwt).establishmentId(), new CallId(id)));
+    }
+
+    @PostMapping("/{id}/payment")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "receiveBillPayment",
+            summary = "Atende o pedido de conta recebendo o pagamento: a comanda continua aberta e o valor sai do que falta")
+    @ApiResponse(responseCode = "200", description = "Recebido; o chamado sai da fila")
+    @ApiResponse(responseCode = "400", description = "Valor zerado ou maior do que falta pagar",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Não é um chamado deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Não é um pedido de conta, ainda não foi aceito, ou já foi encerrado",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    StaffCallResponse receivePayment(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                     @Valid @RequestBody ReceivePaymentRequest request) {
+        var user = AuthenticatedUser.from(jwt);
+        return StaffCallResponse.from(billPayment.receive(user.establishmentId(), new CallId(id), user.userId(),
+                Money.ofCents(request.amountCents()), request.paymentMethod()));
     }
 
     @PostMapping("/{id}/release")

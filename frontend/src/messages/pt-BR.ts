@@ -312,7 +312,16 @@ export const messages = {
       paymentChosen: (method: string) => `Forma de pagamento · a mesa escolheu ${method}`,
       onTheWayWarning: (items: string) => `Ainda a caminho: ${items}. Entregue ou cancele antes de fechar.`,
       close: (method: string) => `Recebi no ${method} · fechar comanda`,
+      closeSettled: "Fechar comanda",
       closing: "Fechando…",
+      paidTag: (method: string, time: string) => `Pago · ${method} · ${time}`,
+      paidTotal: "Já pago",
+      due: "Falta receber",
+      settled: "Tudo pago",
+      settledHint: "A mesa já pagou. Feche a comanda sem cobrar de novo.",
+      overpaid: (amount: string) =>
+        `A mesa pagou ${amount} a mais (item cancelado depois do pagamento). Devolva a diferença.`,
+      closedNoCharge: (total: string) => `${total} · nada a cobrar`,
       closedText: (table: string) =>
         `A mesa ${table} está livre. Os celulares da mesa foram desconectados e o QR volta a pedir presença.`,
       paidWith: (method: string, total: string) => `${total} no ${method}`,
@@ -437,6 +446,11 @@ export const messages = {
       subtitle: (table: string, number?: number) =>
         `Mesa ${table}${number === undefined ? "" : ` · Pedido nº ${number}`} · o cliente vê o motivo na hora`,
       which: "Qual item?",
+      howMany: "Quantos cancelar?",
+      less: "Cancelar um a menos",
+      more: "Cancelar um a mais",
+      all: (n: number) => `Todos os ${n}`,
+      keeps: (n: number) => `${n} continua${n === 1 ? "" : "m"} no pedido`,
       reason: "Motivo",
       reasons: ["Acabou um ingrediente", "Pedido em dobro", "A mesa desistiu"],
       other: "Outro motivo",
@@ -485,6 +499,27 @@ export const messages = {
       kitchenOnly: "A cozinha acompanha a fila; quem aceita é o salão.",
       release: "Liberar mesa",
       releasing: "Liberando…",
+      receive: "Receber pagamento",
+      paymentDialog: {
+        title: (table: string) => `Conta da mesa ${table}`,
+        description: "Confira o valor com a mesa e confirme o que recebeu. A comanda continua aberta até você fechar.",
+        loading: "Carregando a conta…",
+        total: "Consumo",
+        paid: "Já pago",
+        due: "Falta receber",
+        onTheWay: (n: number) =>
+          n === 1
+            ? "1 item ainda está a caminho. A comanda continua aberta e você fecha quando ele chegar."
+            : `${n} itens ainda estão a caminho. A comanda continua aberta e você fecha quando eles chegarem.`,
+        nothingDue: "A mesa não deve nada agora. Conclua o chamado.",
+        amount: "Valor recebido",
+        amountHint: "Se a mesa dividiu a conta, digite só a parte que recebeu agora.",
+        method: "Forma de pagamento",
+        invalid: (max: string) => `Digite um valor de até ${max}.`,
+        cancel: "Voltar",
+        receiving: "Registrando…",
+        confirm: (amount: string, method: string) => (amount ? `Recebi ${amount} no ${method}` : `Recebi no ${method}`),
+      },
       releaseDialog: {
         title: (table: string) => `Liberar o celular da mesa ${table}`,
         description:

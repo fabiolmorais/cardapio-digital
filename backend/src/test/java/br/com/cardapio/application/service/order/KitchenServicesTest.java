@@ -143,8 +143,28 @@ class KitchenServicesTest {
         assertThatThrownBy(() -> new AdvanceOrderItemService(fakes, published::add, clock)
                 .advance(other, id, OrderItemStep.START, kenji)).isInstanceOf(OrderItemNotFoundException.class);
         assertThatThrownBy(() -> new CancelOrderItemByStaffService(fakes, published::add, clock)
-                .cancel(other, id, kenji, "Acabou")).isInstanceOf(OrderItemNotFoundException.class);
+                .cancel(other, id, kenji, "Acabou", null)).isInstanceOf(OrderItemNotFoundException.class);
         assertThat(item(id).status()).isEqualTo(OrderItemStatus.PENDING);
+    }
+
+    @Test
+    void theKitchenCancelsPartOfTheQuantity() {
+        OrderItemId id = place(line(sunomono, 10)).items().getFirst().id();
+        advance(id, OrderItemStep.START);
+
+        new CancelOrderItemByStaffService(fakes, published::add, clock).cancel(sakura, id, kenji, "Só tem para 5", 5);
+
+        assertThat(item(id).quantity()).isEqualTo(5);
+        assertThat(item(id).status()).isEqualTo(OrderItemStatus.PREPARING);
+        assertThat(fakes.items.values()).filteredOn(i -> i.status() == OrderItemStatus.CANCELED)
+                .singleElement().satisfies(part -> {
+                    assertThat(part.quantity()).isEqualTo(5);
+                    assertThat(part.cancelReason()).isEqualTo("Só tem para 5");
+                    assertThat(part.orderId()).isEqualTo(item(id).orderId());
+                });
+        assertThat(queue()).singleElement().satisfies(k -> assertThat(k.quantity()).isEqualTo(5));
+        assertThatThrownBy(() -> new CancelOrderItemByStaffService(fakes, published::add, clock)
+                .cancel(sakura, id, kenji, "Acabou", 6)).isInstanceOf(InvalidValueException.class);
     }
 
     @Test
@@ -152,7 +172,7 @@ class KitchenServicesTest {
         OrderItemId id = place(line(sunomono, 1)).items().getFirst().id();
         advance(id, OrderItemStep.START);
 
-        new CancelOrderItemByStaffService(fakes, published::add, clock).cancel(sakura, id, kenji, "Acabou o pepino");
+        new CancelOrderItemByStaffService(fakes, published::add, clock).cancel(sakura, id, kenji, "Acabou o pepino", null);
 
         assertThat(item(id).status()).isEqualTo(OrderItemStatus.CANCELED);
         assertThat(item(id).cancelReason()).isEqualTo("Acabou o pepino");
@@ -196,7 +216,7 @@ class KitchenServicesTest {
             assertThat(i.status()).isEqualTo(OrderItemStatus.CANCELED);
             assertThat(i.cancelReason()).isEqualTo(OrderItem.REJECTED_BY_STAFF);
         });
-        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, clock).list(QR_04, "ana")
+        assertThat(new ListTableOrdersService(tables, sessions, fakes, fakes, fakes, rodizios, rodizios, fakes, clock).list(QR_04, "ana")
                 .total()).isEqualTo(Money.ZERO);
         assertThatThrownBy(() -> review().reject(EstablishmentId.newId(), order.id(), carlos))
                 .isInstanceOf(OrderNotFoundException.class);

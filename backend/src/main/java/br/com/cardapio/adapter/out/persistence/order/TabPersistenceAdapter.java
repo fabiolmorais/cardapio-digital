@@ -56,7 +56,7 @@ class TabPersistenceAdapter implements TabPort {
     public boolean close(Tab t) {
         establishmentFilter.enable(t.establishmentId());
         return tabs.close(t.id().value(), t.establishmentId().value(), t.closedAt(), t.closedBy().value(),
-                t.total().cents(), t.paymentMethod().name()) == 1;
+                t.total().cents(), t.paymentMethod() == null ? null : t.paymentMethod().name()) == 1;
     }
 
     @Override
@@ -75,7 +75,8 @@ class TabPersistenceAdapter implements TabPort {
                 tableId == null ? null : tableId.value(), PageRequest.of(page.page(), page.size()));
         return new ResultPage<>(rows.map(r -> new ClosedTabView(new TabId(r.getId()), r.getTableLabel(),
                 r.getSectorName(), r.getOpenedAt(), r.getClosedAt(), Money.ofCents(r.getTotalCents()),
-                PaymentMethod.valueOf(r.getPaymentMethod()), r.getClosedByName())).getContent(), page.page(),
+                r.getPaymentMethod() == null ? null : PaymentMethod.valueOf(r.getPaymentMethod()),
+                r.getClosedByName())).getContent(), page.page(),
                 page.size(), rows.getTotalElements());
     }
 

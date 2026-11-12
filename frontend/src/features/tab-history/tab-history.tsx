@@ -198,11 +198,11 @@ function History({ timeZone }: { timeZone: string }) {
                     <span className="flex min-w-0 flex-col">
                       <span className="font-semibold">{t.tableLabel(tab.tableLabel, tab.sectorName)}</span>
                       <span className="text-sm text-muted-foreground sm:hidden">
-                        {dateTime(tab.closedAt, timeZone)} · {pay[tab.paymentMethod]}
+                        {dateTime(tab.closedAt, timeZone)} · {tab.paymentMethod ? pay[tab.paymentMethod] : "—"}
                       </span>
                     </span>
                     <span className="hidden text-sm text-muted-foreground sm:block">{dateTime(tab.closedAt, timeZone)}</span>
-                    <span className="hidden text-sm sm:block">{pay[tab.paymentMethod]}</span>
+                    <span className="hidden text-sm sm:block">{tab.paymentMethod ? pay[tab.paymentMethod] : "—"}</span>
                     <span className="font-mono font-semibold tabular-nums">{formatCents(tab.totalCents)}</span>
                     <ChevronRight aria-hidden className="size-5 text-muted-foreground" />
                   </Link>
