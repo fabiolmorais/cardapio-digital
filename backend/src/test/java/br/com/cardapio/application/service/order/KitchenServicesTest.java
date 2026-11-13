@@ -5,11 +5,17 @@ import br.com.cardapio.application.port.in.order.OrderItemStep;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.in.order.WaitingOrder;
+import br.com.cardapio.application.port.out.menu.MediaCount;
+import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTable;
+import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.Product;
+import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.ProductMedia;
+import br.com.cardapio.domain.menu.model.ProductMediaId;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.exception.OrderItemNotFoundException;
 import br.com.cardapio.domain.order.exception.OrderItemStateException;
@@ -25,6 +31,7 @@ import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.support.InMemoryRodizios;
+import br.com.cardapio.support.InMemoryStorage;
 import br.com.cardapio.support.InMemorySubscriptions;
 import br.com.cardapio.support.InMemoryTableSessions;
 import br.com.cardapio.support.TablesByToken;
@@ -36,8 +43,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +64,8 @@ class KitchenServicesTest {
 
     private final OrderFakes fakes = new OrderFakes();
     private final InMemoryRodizios rodizios = new InMemoryRodizios();
+    private final Galleries galleries = new Galleries();
+    private final InMemoryStorage storage = new InMemoryStorage();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final List<DomainEvent> published = new ArrayList<>();
@@ -87,7 +99,7 @@ class KitchenServicesTest {
     private List<KitchenItem> queue(OrderItemStatus... statuses) {
         Set<OrderItemStatus> wanted = statuses.length == 0
                 ? EnumSet.noneOf(OrderItemStatus.class) : EnumSet.of(statuses[0], statuses);
-        return new ListKitchenQueueService(fakes).list(sakura, wanted, PAGE).content();
+        return new ListKitchenQueueService(fakes, galleries, storage).list(sakura, wanted, PAGE).content();
     }
 
     private void advance(OrderItemId id, OrderItemStep step) {
@@ -115,6 +127,19 @@ class KitchenServicesTest {
         assertThat(queue(OrderItemStatus.PENDING)).hasSize(2);
         assertThat(second.items()).hasSize(1);
         assertThatThrownBy(() -> queue(OrderItemStatus.DELIVERED)).isInstanceOf(InvalidValueException.class);
+    }
+
+    @Test
+    void eachItemComesWithTheProductAndItsThumbnail() {
+        ProductMedia photo = ProductMedia.newImage(sakura, guioza.id(), 1200, 900, 0);
+        galleries.ready.add(photo);
+        place(line(guioza, 1), line(sunomono, 1));
+
+        List<KitchenItem> queue = queue();
+
+        assertThat(queue).extracting(KitchenItem::productId).containsExactly(guioza.id(), sunomono.id());
+        assertThat(queue.get(0).photoUrl()).isEqualTo(storage.publicUrl(photo.fileOf(ImageVariant.THUMB)));
+        assertThat(queue.get(1).photoUrl()).isNull(); // sem foto: a tela mostra um ícone
     }
 
     @Test
@@ -220,5 +245,47 @@ class KitchenServicesTest {
                 .total()).isEqualTo(Money.ZERO);
         assertThatThrownBy(() -> review().reject(EstablishmentId.newId(), order.id(), carlos))
                 .isInstanceOf(OrderNotFoundException.class);
+    }
+
+    /** As galerias prontas do cardápio, em memória: a fila só lê as capas. */
+    private static final class Galleries implements ProductMediaPort {
+
+        final List<ProductMedia> ready = new ArrayList<>();
+
+        @Override
+        public List<ProductMedia> findReadyGalleries(EstablishmentId establishmentId) {
+            return ready.stream().filter(m -> m.establishmentId().equals(establishmentId)).toList();
+        }
+
+        @Override
+        public void save(ProductMedia media) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<ProductMedia> find(EstablishmentId establishmentId, ProductMediaId id) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<ProductMedia> findActiveByProduct(EstablishmentId establishmentId, ProductId productId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int nextPosition(EstablishmentId establishmentId, ProductId productId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<ProductMedia> findByVideoId(String videoId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<ProductId, MediaCount> countByProducts(EstablishmentId establishmentId,
+                                                          Collection<ProductId> productIds) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -149,6 +149,8 @@ class KitchenFlowTest {
         assertThat(json(queue, "$.content[0].sectorName")).isEqualTo("Salão");
         assertThat(json(queue, "$.content[0].orderNumber")).isEqualTo("1");
         assertThat(json(queue, "$.content[0].quantity")).isEqualTo("2");
+        assertThat(json(queue, "$.content[0].productId")).isEqualTo(sakura.guioza());
+        assertThat(list(queue, "$.content[*].photoUrl")).containsOnlyNulls(); // sem foto cadastrada
 
         assertThat(step(sakura.kitchen(), guioza, "start")).hasStatus(HttpStatus.NO_CONTENT);
         assertThat(step(sakura.kitchen(), guioza, "ready")).hasStatus(HttpStatus.NO_CONTENT);

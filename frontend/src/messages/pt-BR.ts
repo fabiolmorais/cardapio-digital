@@ -383,7 +383,16 @@ export const messages = {
     },
     kitchen: {
       title: "Cozinha",
-      subtitle: "Toque no item em preparo para marcar pronto",
+      subtitle: (restaurant?: string) =>
+        restaurant ? `${restaurant} · toque no item para avançar` : "Toque no item para avançar",
+      byItemTitle: "Cozinha · por item",
+      byItemSubtitle: "Tudo o que está na fila e em preparo, somado",
+      views: { label: "Visão", order: "Por pedido", item: "Por item" },
+      emptyByItem: "Nada na fila nem em preparo.",
+      itemTotal: (name: string, total: number) => `${name}: ${total} no total`,
+      tableQty: (quantity: number) => `×${quantity}`,
+      tableLate: (quantity: number, minutes: number) => `×${quantity} · ${minutes} min`,
+      noteAt: (note: string, table: string) => `${note} · Mesa ${table}`,
       open: "Abrir a tela da cozinha",
       openHint: "A fila de pedidos em tela cheia, com “Começar” e “Pronto”.",
       back: "Voltar ao painel",
@@ -448,8 +457,8 @@ export const messages = {
     },
     cancelItem: {
       title: "Cancelar item",
-      subtitle: (table: string, number?: number) =>
-        `Mesa ${table}${number === undefined ? "" : ` · Pedido nº ${number}`} · o cliente vê o motivo na hora`,
+      subtitle: (number?: number) =>
+        number === undefined ? "O cliente vê o motivo na hora" : `Pedido nº ${number} · o cliente vê o motivo na hora`,
       which: "Qual item?",
       howMany: "Quantos cancelar?",
       less: "Cancelar um a menos",
@@ -457,10 +466,13 @@ export const messages = {
       all: (n: number) => `Todos os ${n}`,
       keeps: (n: number) => `${n} continua${n === 1 ? "" : "m"} no pedido`,
       reason: "Motivo",
-      reasons: ["Acabou um ingrediente", "Pedido em dobro", "A mesa desistiu"],
+      reasons: ["Acabou o ingrediente", "Pedido em dobro", "Cliente desistiu"],
       other: "Outro motivo",
       otherLabel: "Escreva o motivo",
       preview: "O cliente vai ver",
+      previewText: (name: string, reason: string) =>
+        `“${name} cancelado pela equipe: ${reason}. O valor não entra na conta.”`,
+      close: "Fechar",
       back: "Voltar",
       confirm: "Cancelar item",
       canceling: "Cancelando…",

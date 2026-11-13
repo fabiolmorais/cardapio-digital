@@ -1,16 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Tv, Volume2, VolumeX } from "lucide-react";
+import { Tv } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { disableSound, enableSound } from "@/features/calls/alert-sound";
 import { CallQueue } from "@/features/calls/call-queue";
-import { useLiveCalls, useSoundOn } from "@/features/calls/use-live-calls";
+import { useLiveCalls } from "@/features/calls/use-live-calls";
+import { useMinuteClock } from "@/features/live/clock";
 import { sectorsOf } from "@/features/live/live-api";
-import { TONE } from "@/features/live/live-ui";
 import { SoundGate } from "@/features/live/sound-gate";
+import { SoundTag } from "@/features/live/sound-tag";
 import { useLiveFloor, useStaffConnected } from "@/features/live/use-live-floor";
 import { KITCHEN_KEY, KitchenLink, OrdersColumn, ReadyColumn } from "@/features/orders/staff-orders";
 import { fetchKitchenQueue } from "@/features/orders/orders-api";
@@ -18,7 +17,7 @@ import { useLiveOrders } from "@/features/orders/use-live-orders";
 import { PrintingLink } from "@/features/printing/printing-link";
 import { PushTag } from "@/features/pwa/push-tag";
 import { canManageTeam } from "@/features/team/team-rules";
-import { api } from "@/lib/api/client";
+import { useMe } from "./use-me";
 import { formatCents } from "@/lib/format";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
@@ -31,27 +30,6 @@ const tl = t.live;
 const dateFormat = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 const timeFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-async function fetchMe() {
-  const { data, response } = await api.GET("/api/v1/me");
-  if (!data) throw new Error(String(response.status));
-  return data;
-}
-
-/** O relógio do topo, de minuto em minuto. Começa vazio: a hora do servidor e a do navegador diferem. */
-function useMinuteClock() {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    const tick = () => setNow(new Date());
-    const first = window.setTimeout(tick, 0);
-    const timer = window.setInterval(tick, 15_000);
-    return () => {
-      window.clearTimeout(first);
-      window.clearInterval(timer);
-    };
-  }, []);
-  return now;
-}
-
 /**
  * O "Ao vivo" (desenho 7.1): no topo, a data e a hora, o filtro por setor, o "Som ligado" e o
  * "Abrir Modo TV"; depois os números do dia e as três colunas (Chamados, Pedidos e Prontos para
@@ -61,12 +39,7 @@ function useMinuteClock() {
 export function PanelHome() {
   const { status } = useRequiredSession();
   const { leaving, logout } = useLogout();
-  const me = useQuery({
-    queryKey: ["me"],
-    queryFn: fetchMe,
-    enabled: status === "authenticated",
-    retry: false,
-  });
+  const me = useMe(status === "authenticated");
 
   if (status !== "authenticated" || me.isPending) {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
@@ -220,29 +193,5 @@ function Kpi({
       <span className={cn("text-[28px] leading-[34px] font-bold tracking-tight", className)}>{children}</span>
       {hint && <span className="text-[13px] text-muted-foreground/80">{hint}</span>}
     </div>
-  );
-}
-
-/**
- * "Som ligado" (verde) ou "Som desligado": a tag do topo, que também liga e desliga. Ligar
- * precisa ser num toque: é a regra do navegador para tocar som.
- */
-function SoundTag() {
-  const soundOn = useSoundOn();
-  const Icon = soundOn ? Volume2 : VolumeX;
-  return (
-    <button
-      type="button"
-      aria-pressed={soundOn}
-      aria-label={soundOn ? tl.soundOnLabel : tl.soundOffLabel}
-      onClick={() => void (soundOn ? disableSound() : enableSound())}
-      className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-        soundOn ? TONE.ok : TONE.neutral,
-      )}
-    >
-      <Icon aria-hidden className="size-4" />
-      {soundOn ? tl.soundOn : tl.soundOff}
-    </button>
   );
 }

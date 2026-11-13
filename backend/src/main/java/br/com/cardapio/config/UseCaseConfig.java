@@ -754,8 +754,9 @@ class UseCaseConfig {
     // A cozinha e a confirmação do garçom (Guia 19)
 
     @Bean
-    ListKitchenQueueUseCase listKitchenQueueUseCase(OrderPort orderPort) {
-        return new ListKitchenQueueService(orderPort);
+    ListKitchenQueueUseCase listKitchenQueueUseCase(OrderPort orderPort, ProductMediaPort productMediaPort,
+                                                    MediaStoragePort mediaStoragePort) {
+        return new ListKitchenQueueService(orderPort, productMediaPort, mediaStoragePort);
     }
 
     @Bean
