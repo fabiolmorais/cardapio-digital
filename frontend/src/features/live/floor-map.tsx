@@ -21,6 +21,7 @@ import { useLiveFloor } from "./use-live-floor";
 const t = messages.panel.floorLive;
 const calls = messages.panel.calls;
 const status = messages.tablePage.orders.status;
+const tm = messages.panel.tab;
 
 /** A cor de cada estado no mapa (a legenda do desenho 7.2). */
 const STATE_CLASS: Record<LiveTable["state"], string> = {
@@ -201,9 +202,12 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
             <X aria-hidden />
           </Button>
         </div>
-        {(billWith || data?.rodizio) && (
+        {(billWith || data?.rodizio || (data && data.paidCents > 0)) && (
           <div className="flex flex-wrap gap-2">
             {billWith && <Badge tone="info">{t.billRequested(calls.payment[billWith])}</Badge>}
+            {data && data.paidCents > 0 && (
+              <Badge tone="ok">{data.dueCents === 0 ? tm.settled : t.paidSoFar(formatCents(data.paidCents))}</Badge>
+            )}
             {data?.rodizio && (
               <Badge tone="accent">
                 {t.rodizioBadge(
@@ -276,6 +280,25 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
                   <span className="flex-1 font-semibold">{t.total}</span>
                   <span className="font-mono text-xl font-semibold">{formatCents(data.totalCents)}</span>
                 </div>
+                {data.payments.length > 0 && (
+                  <>
+                    {/* O que a mesa já pagou (adiantado, com itens ainda a caminho), como na comanda. */}
+                    <ul aria-label={tm.paidTotal} className="flex flex-col gap-1.5">
+                      {data.payments.map((p) => (
+                        <li key={p.receivedAt} className="flex items-center gap-2.5 text-[13px]">
+                          <span className="flex-1">
+                            <Badge tone="ok">{tm.paidTag(calls.payment[p.paymentMethod], clock(p.receivedAt))}</Badge>
+                          </span>
+                          <span className="font-mono text-success">− {bare(p.amountCents)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex-1 font-semibold">{tm.due}</span>
+                      <span className="font-mono text-xl font-semibold">{formatCents(data.dueCents)}</span>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </section>

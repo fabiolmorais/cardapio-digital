@@ -148,7 +148,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
               aria-hidden
               className="absolute inset-0 animate-ping rounded-full bg-(--brand) opacity-30 motion-reduce:hidden"
             />
-            <span className="relative flex size-20 items-center justify-center rounded-full bg-(--brand) text-white shadow-[0_16px_36px_rgba(204,63,28,.45)]">
+            <span className="relative flex size-20 items-center justify-center rounded-full bg-(--brand) text-white shadow-[0_16px_36px_color-mix(in_oklab,var(--brand)_45%,transparent)]">
               <Receipt aria-hidden className="size-9" />
             </span>
           </span>
