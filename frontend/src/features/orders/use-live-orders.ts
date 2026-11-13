@@ -2,10 +2,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { liveRefreshMs, useMissedEventWatch } from "@/lib/realtime/missed-events";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
-
-/** Sem o tempo real (rede ruim, servidor reiniciando), a lista volta a perguntar de tempos em tempos. */
-const FALLBACK_REFRESH_MS = 15_000;
 
 /**
  * Uma lista de pedidos da equipe ao vivo (a fila da cozinha, as entregas, os pedidos para
@@ -13,6 +11,7 @@ const FALLBACK_REFRESH_MS = 15_000;
  * `onNew` é chamado quando aparece um id que a tela ainda não tinha visto (o som); os que já
  * estavam ao abrir, não. Com `enabled` falso (a sessão ainda voltando, depois de um F5), espera.
  * `events` diz quais avisos fazem buscar de novo, além do "ready" (as comandas ouvem "tab" também).
+ * Com o tempo real ligado, confere a lista a cada minuto.
  */
 export function useLiveOrders<T extends { id: string }>(
   queryKey: readonly unknown[],
@@ -26,21 +25,29 @@ export function useLiveOrders<T extends { id: string }>(
   const list = useQuery({
     queryKey,
     queryFn: fetch,
-    refetchInterval: connected ? false : FALLBACK_REFRESH_MS,
+    refetchInterval: liveRefreshMs(connected),
     retry: false,
     enabled,
   });
   const key = JSON.stringify(queryKey);
+  const watch = useMissedEventWatch(list.data, String(queryKey[0]));
   const names = events.join(",");
 
   useEffect(() => {
     if (!enabled) return;
-    return subscribeStaffEvents((event) => {
-      if (event.name === "ready" || names.split(",").includes(event.name)) {
-        void queryClient.invalidateQueries({ queryKey: JSON.parse(key) });
-      }
-    }, setConnected);
-  }, [queryClient, key, enabled, names]);
+    return subscribeStaffEvents(
+      (event) => {
+        watch.eventReceived();
+        if (event.name === "ready" || names.split(",").includes(event.name)) {
+          void queryClient.invalidateQueries({ queryKey: JSON.parse(key) });
+        }
+      },
+      (next) => {
+        watch.connectedChanged(next);
+        setConnected(next);
+      },
+    );
+  }, [queryClient, key, enabled, names, watch]);
 
   const seen = useRef<Set<string> | null>(null);
   const notify = useRef(onNew);
