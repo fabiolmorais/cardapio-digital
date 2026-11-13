@@ -31,12 +31,13 @@ function plain(text: string) {
  * página: sem ida à rede a cada letra (ADR 0006). As abas são âncoras para as seções.
  *
  * Cada produto disponível tem o "Adicionar", que abre o prato com a observação e a quantidade.
- * Se o restaurante desligou o pedido pelo celular, o botão some (o cardápio continua).
+ * Se o restaurante desligou o pedido pelo celular, ou a assinatura está suspensa (`serving` falso),
+ * o botão some e o prato abre só para ver: o cardápio continua como vitrine.
  *
  * Com o rodízio ativo na mesa, a aba Rodízio vem antes de tudo, com os produtos incluídos sem
  * preço e as rodadas. O estado vem dos pedidos da mesa, e o tempo real avisa quando o garçom ativa.
  */
-export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }) {
+export function MenuBrowser({ token, menu, serving }: { token: string; menu: PublicMenu; serving: boolean }) {
   const [search, setSearch] = useState("");
   const query = plain(useDeferredValue(search).trim());
   const inputId = useId();
@@ -46,7 +47,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
   const chips = useRef<HTMLElement>(null);
   // Sem resposta, os botões ficam: o envio do pedido confere de novo.
   const { data: orders, refresh } = useTableOrders(token);
-  const ordering = orders?.orderingEnabled ?? true;
+  const ordering = serving && (orders?.orderingEnabled ?? true);
   // A aba Rodízio é de quem está nele: o celular que chegou depois da ativação pergunta antes.
   const joined = orders?.rodizioParticipation === "JOINED";
   const rodizio = ordering && joined ? orders?.rodizio : undefined;
@@ -260,6 +261,7 @@ export function MenuBrowser({ token, menu }: { token: string; menu: PublicMenu }
         token={token}
         item={open}
         onClose={() => setOpen(null)}
+        canAdd={ordering}
         reelsHref={(item) => (item.media.length > 0 ? reels(item) : undefined)}
       />
     </div>

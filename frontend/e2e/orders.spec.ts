@@ -144,12 +144,22 @@ test("depois de enviar, \"Pedir mais alguma coisa\" leva ao cardápio e o carrin
   await expect(page.getByRole("status")).toContainText("Pedido nº 2");
 });
 
-test("com o pedido desligado, o cardápio não tem o botão de adicionar", async ({ page, request }) => {
+test("com o pedido desligado, o cardápio não tem o botão de adicionar, nem no prato aberto", async ({
+  page,
+  request,
+}) => {
   const { qr } = await restaurant(request, { orderingEnabled: false, approvalRequired: false });
   await page.goto(`/m/${qr}/cardapio`);
 
   await expect(page.getByRole("heading", { name: "Guioza" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Adicionar/ })).toHaveCount(0);
+
+  // O prato abre só para ver: sem a observação e sem o "Adicionar" (o mesmo vale com a assinatura suspensa).
+  await page.getByRole("button", { name: "Ver Guioza" }).click();
+  const dish = page.getByRole("dialog", { name: "Guioza" });
+  await expect(dish.getByRole("heading", { name: "Guioza" })).toBeVisible();
+  await expect(dish.getByRole("button", { name: /^Adicionar/ })).toHaveCount(0);
+  await expect(dish.getByLabel(/observação/i)).toHaveCount(0);
 });
 
 test("o dono liga a confirmação do garçom e muda os limites", async ({ page, request }) => {

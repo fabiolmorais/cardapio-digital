@@ -38,6 +38,7 @@ export function Reels({
   logo,
   brandColor,
   backHref,
+  serving,
 }: {
   token: string;
   menu: PublicMenu;
@@ -48,6 +49,8 @@ export function Reels({
   brandColor: string;
   /** Para onde o "Fechar" volta: o cardápio ou, vindo de um destaque, o início da mesa. */
   backHref: string;
+  /** Falso com a assinatura suspensa: o Reels continua, sem o "Adicionar". */
+  serving: boolean;
 }) {
   // O Reels é do cardápio de sempre: o que é só do rodízio não tem preço para mostrar nem para adicionar.
   const items = aLaCarte(menu)
@@ -59,7 +62,7 @@ export function Reels({
   );
   const [active, setActive] = useState(startIndex);
   const [muted, setMuted] = useState(true);
-  const [ordering, setOrdering] = useState(true);
+  const [ordering, setOrdering] = useState(serving);
   const [adding, setAdding] = useState<MenuItem | null>(null);
   const { count, totalCents } = useCart(token);
   const sections = useRef<(HTMLElement | null)[]>([]);
@@ -95,18 +98,19 @@ export function Reels({
     return () => observer.disconnect();
   }, [items.length]);
 
-  // O restaurante desligou o pedido pelo celular? O "Adicionar" some (o Reels continua).
+  // O restaurante desligou o pedido pelo celular (ou a assinatura está suspensa)? O "Adicionar"
+  // some (o Reels continua).
   useEffect(() => {
     let cancelled = false;
     listOrders(token)
       .then((orders) => {
-        if (!cancelled) setOrdering(orders.orderingEnabled);
+        if (!cancelled) setOrdering(serving && orders.orderingEnabled);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, serving]);
 
   const back = backHref;
   const round =
