@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from "@/lib/query/query-provider";
 import { messages } from "@/messages/pt-BR";
 import "./globals.css";
+import "./legacy-browsers.css";
 
 const geistSans = Geist({
   display: "swap",

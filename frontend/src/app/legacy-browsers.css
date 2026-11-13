@@ -1,0 +1,47 @@
+/*
+ * Alternativas para navegadores antigos (o browserslist promete o Chrome 87 e o Safari 15; ex.:
+ * Android 9 sem atualizar). Fica fora do globals.css de propósito: o Tailwind 4 otimiza o CSS dele
+ * só para o Chrome 111 em diante e apagaria estas regras.
+ */
+
+/*
+ * O Tailwind 4 move e aumenta pelas propriedades translate e scale, que só existem no Chrome 104:
+ * antes disso, as janelas centralizadas (top-1/2 left-1/2 -translate-1/2) ficavam com o canto no
+ * meio da tela. Lá, o mesmo efeito vem pelo transform, com as variáveis que as classes já definem.
+ */
+@supports not (translate: 0) {
+  [class*="translate-"],
+  [class*="scale-"] {
+    transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0))
+      scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  }
+  .group[open] .group-open\:rotate-180 {
+    transform: rotate(180deg);
+  }
+}
+
+/* A altura da tela em dvh só existe no Chrome 108 e no Safari 15.4: antes, vale a altura em vh. */
+@supports not (height: 1dvh) {
+  .h-dvh {
+    height: 100vh;
+  }
+  .min-h-dvh {
+    min-height: 100vh;
+  }
+  .h-\[51dvh\] {
+    height: 51vh;
+  }
+  .max-h-\[calc\(100dvh-2rem\)\] {
+    max-height: calc(100vh - 2rem);
+  }
+  @media (min-width: 48rem) {
+    .md\:h-dvh {
+      height: 100vh;
+    }
+  }
+  @media (min-width: 64rem) {
+    .lg\:h-dvh {
+      height: 100vh;
+    }
+  }
+}

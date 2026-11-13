@@ -793,6 +793,7 @@ export const messages = {
     staffPanel: "Painel da equipe",
     menuLabel: "Menu",
     openMenu: "Abrir o menu",
+    back: "Voltar",
     navigation: "Navegação",
     screens: "Telas",
     nav: {

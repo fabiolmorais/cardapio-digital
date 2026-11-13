@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { canPromptInstall, promptInstall, subscribeToInstallPrompt } from "@/lib/pwa/install-prompt";
 import { isStandalone } from "@/lib/pwa/service-worker";
 import { messages } from "@/messages/pt-BR";
+import { cn } from "cn";
 
 const t = messages.pwa.install;
 
@@ -20,7 +21,12 @@ export function InstallGuide() {
   return (
     <>
       <header className="flex items-center gap-3">
-        <Link href="/painel" aria-label={t.back} className={buttonVariants({ variant: "outline", size: "icon-lg" })}>
+        {/* No celular, o voltar fica no cabeçalho do painel. */}
+        <Link
+          href="/painel"
+          aria-label={t.back}
+          className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }), "max-md:hidden")}
+        >
           <ChevronLeft aria-hidden />
         </Link>
         <h1 className="text-2xl font-bold">{t.title}</h1>

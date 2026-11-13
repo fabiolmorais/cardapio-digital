@@ -104,3 +104,22 @@ test("o garçom ativa as notificações no painel, e desativa", async ({ page, r
     "Avisos desligados",
   );
 });
+
+test("no celular, as telas do menu têm o voltar (o app não tem a barra do navegador)", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+  // O Ao vivo é a tela inicial: sem voltar.
+  await expect(page.getByRole("button", { name: "Voltar", exact: true })).toHaveCount(0);
+
+  await openMenu(page);
+  await page.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Mesas", exact: true }).click();
+  await expect(page).toHaveURL(/\/painel\/mesas$/);
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await expect(page).toHaveURL(/\/painel$/);
+
+  // Aberta direto, sem histórico (pelo ícone ou por um aviso): o voltar leva ao Ao vivo.
+  const fresh = await page.context().newPage();
+  await fresh.goto("/painel/instalar");
+  await fresh.getByRole("button", { name: "Voltar", exact: true }).click();
+  await expect(fresh).toHaveURL(/\/painel$/);
+});
