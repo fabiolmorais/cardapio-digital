@@ -150,6 +150,14 @@ test("a mesa paga com item a caminho, e o garçom fecha depois sem cobrar de nov
     await page.getByRole("link", { name: /Pedir a conta/ }).click();
     await expect(page.getByRole("status")).toContainText("Conta paga");
 
+    // Na tela Mesas, a comanda também mostra o que foi pago: a tag e o pagamento com a forma e a hora.
+    await panel.page.goto("/painel/mesas");
+    await panel.page.getByRole("button", { name: /Mesa 04: abrir a comanda/ }).click();
+    const drawer = panel.page.getByRole("complementary", { name: "Mesa 04" });
+    await expect(drawer).toContainText("Tudo pago");
+    await expect(drawer.getByRole("list", { name: "Já pago" })).toContainText(/Pago · Pix · \d{2}:\d{2}/);
+    await expect(drawer).toContainText("Falta receber");
+
     await deliverAll(request, headers);
     await panel.page.goto("/painel/comandas");
     const tabs = panel.page.getByRole("region", { name: /Mesas com comanda aberta/ });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, X } from "lucide-react";
-import { useId, useState, type ChangeEvent, type FormEvent } from "react";
+import { ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { useId, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ToggleRow } from "@/components/toggle-row";
 import { Button } from "@/components/ui/button";
@@ -818,6 +818,7 @@ function BannerPanel({ rodizio }: { rodizio?: Rodizio }) {
   const [url, setUrl] = useState(rodizio?.bannerUrl ?? null);
   const [percent, setPercent] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const b = messages.rodizio.banner;
 
   const send = useMutation({
@@ -843,13 +844,23 @@ function BannerPanel({ rodizio }: { rodizio?: Rodizio }) {
     },
   });
 
-  function onPick(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // a mesma imagem pode ser escolhida de novo
+  function pick(file: File | undefined) {
     if (!file) return;
     setNotice(null);
     remove.reset();
     send.mutate(file);
+  }
+
+  function onPick(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // a mesma imagem pode ser escolhida de novo
+    pick(file);
+  }
+
+  function onDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragOver(false);
+    pick(event.dataTransfer.files[0]);
   }
 
   const busy = send.isPending || remove.isPending;
@@ -858,70 +869,77 @@ function BannerPanel({ rodizio }: { rodizio?: Rodizio }) {
   return (
     <Panel>
       <PanelTitle title={b.title} text={b.text} />
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="relative aspect-[2/1] w-full max-w-[360px] overflow-hidden rounded-2xl border border-border bg-muted">
-          {url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- banner já no tamanho certo, vindo do R2
-            <img src={url} alt={b.preview(rodizio!.name)} className="size-full object-cover" />
-          ) : (
-            <span className="flex size-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
-              {b.automatic}
-            </span>
-          )}
+      {/* Como a foto do produto: a imagem enviada (com o X para voltar à automática) e a área tracejada,
+        que aceita tocar ou arrastar a imagem. */}
+      {url && (
+        <div className="relative aspect-[2/1] w-full max-w-[420px] overflow-hidden rounded-xl border border-border bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element -- banner já no tamanho certo, vindo do R2 */}
+          <img src={url} alt={b.preview(rodizio!.name)} className="size-full object-cover" />
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            aria-label={b.remove}
+            title={b.remove}
+            disabled={busy}
+            onClick={() => remove.mutate()}
+            className="absolute top-2 right-2 size-9 rounded-full bg-black/60 text-white hover:bg-black/80"
+          >
+            <X aria-hidden />
+          </Button>
         </div>
-        <div className="flex min-w-60 flex-1 flex-col gap-2">
-          <p className="text-sm text-muted-foreground">{b.ideal}</p>
-          {rodizio ? (
-            <div className="flex flex-wrap gap-2">
-              <input
-                id={inputId}
-                type="file"
-                accept={BANNER_TYPES.join(",")}
-                disabled={busy}
-                onChange={onPick}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor={inputId}
-                className={cn(
-                  "inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50 dark:bg-input/30",
-                  busy && "pointer-events-none opacity-60",
-                )}
-              >
-                {url ? b.replace : b.send}
-              </label>
-              {url && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-10 px-3"
-                  disabled={busy}
-                  onClick={() => remove.mutate()}
-                >
-                  {b.remove}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm font-medium">{b.saveFirst}</p>
-          )}
-          {send.isPending && (
-            <p role="status" className="text-sm text-muted-foreground">
-              {percent === null ? b.processing : b.sending(percent)}
-            </p>
-          )}
-          {notice && !busy && (
-            <p role="status" className="text-sm text-success">
-              {notice}
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error.message}
-            </p>
-          )}
+      )}
+      {rodizio ? (
+        <>
+          <input
+            id={inputId}
+            type="file"
+            accept={BANNER_TYPES.join(",")}
+            disabled={busy}
+            onChange={onPick}
+            className="sr-only"
+          />
+          <label
+            htmlFor={inputId}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            className={cn(
+              "flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border px-4 py-5 text-center transition-colors hover:bg-muted has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
+              dragOver && "border-primary bg-muted",
+              busy && "pointer-events-none opacity-60",
+            )}
+          >
+            <ImagePlus aria-hidden className="size-6 text-muted-foreground" />
+            <span className="font-medium">{dragOver ? b.drop : url ? b.replace : b.send}</span>
+            <span className="text-sm text-muted-foreground">{b.ideal}</span>
+          </label>
+        </>
+      ) : (
+        <p className="text-sm font-medium">{b.saveFirst}</p>
+      )}
+      {!url && <p className="text-sm text-muted-foreground">{b.automatic}</p>}
+      {send.isPending && (
+        <div role="status" className="flex flex-col gap-1 text-sm">
+          <span>{percent === null ? b.processing : b.sending(percent)}</span>
+          <span aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <span className="block h-full bg-primary transition-[width]" style={{ width: `${percent ?? 100}%` }} />
+          </span>
         </div>
-      </div>
+      )}
+      {notice && !busy && (
+        <p role="status" className="text-sm text-success">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error.message}
+        </p>
+      )}
     </Panel>
   );
 }
