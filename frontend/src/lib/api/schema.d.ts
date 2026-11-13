@@ -3531,7 +3531,11 @@ export interface components {
             orderNumber: number;
             tableLabel: string;
             sectorName: string;
+            /** Format: uuid */
+            productId: string;
             productName: string;
+            /** @description A miniatura da capa do produto; vazio sem foto */
+            photoUrl?: string;
             /** Format: int32 */
             quantity: number;
             note?: string;

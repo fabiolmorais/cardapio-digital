@@ -16,7 +16,9 @@ record KitchenItemResponse(
         @Schema(requiredMode = REQUIRED, description = "O número do pedido no dia") int orderNumber,
         @Schema(requiredMode = REQUIRED) String tableLabel,
         @Schema(requiredMode = REQUIRED) String sectorName,
+        @Schema(requiredMode = REQUIRED) UUID productId,
         @Schema(requiredMode = REQUIRED) String productName,
+        @Schema(description = "A miniatura da capa do produto; vazio sem foto") String photoUrl,
         @Schema(requiredMode = REQUIRED) int quantity,
         String note,
         @Schema(requiredMode = REQUIRED) OrderItemStatus status,
@@ -26,7 +28,7 @@ record KitchenItemResponse(
 ) {
     static KitchenItemResponse from(KitchenItem i) {
         return new KitchenItemResponse(i.id().value(), i.orderId().value(), i.orderNumber(), i.tableLabel(),
-                i.sectorName(), i.productName(), i.quantity(), i.note(), i.status(), i.createdAt(), i.preparingAt(),
+                i.sectorName(), i.productId().value(), i.productName(), i.photoUrl(), i.quantity(), i.note(), i.status(), i.createdAt(), i.preparingAt(),
                 i.readyAt());
     }
 }

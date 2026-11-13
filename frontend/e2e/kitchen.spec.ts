@@ -103,7 +103,7 @@ test("a cozinha cancela um item com motivo, e o cliente vê o motivo", async ({ 
     await dialog.getByLabel("1× Sunomono").check();
     await dialog.getByRole("button", { name: "Outro motivo" }).click();
     await dialog.getByLabel("Escreva o motivo").fill("Acabou o pepino japonês");
-    await expect(dialog).toContainText("Sunomono: Acabou o pepino japonês");
+    await expect(dialog).toContainText("“Sunomono cancelado pela equipe: Acabou o pepino japonês. O valor não entra na conta.”");
     await dialog.getByRole("button", { name: "Cancelar item" }).click();
     await expect(dialog).toBeHidden();
     await expect(ticket).not.toContainText("Sunomono");
@@ -142,8 +142,8 @@ test("a cozinha cancela só parte da quantidade, e o resto continua", async ({ p
     await expect(dialog).toContainText("Todos os 3");
     await dialog.getByRole("button", { name: "Cancelar um a menos" }).click();
     await expect(dialog).toContainText("1 continua no pedido");
-    await dialog.getByRole("button", { name: "Acabou um ingrediente" }).click();
-    await expect(dialog).toContainText("2× Guioza: Acabou um ingrediente");
+    await dialog.getByRole("button", { name: "Acabou o ingrediente" }).click();
+    await expect(dialog).toContainText("2× Guioza cancelado pela equipe: Acabou o ingrediente.");
     await dialog.getByRole("button", { name: "Cancelar item" }).click();
     await expect(dialog).toBeHidden();
     // A ficha continua com o guioza, agora com quantidade 1 (o número fica num quadrado ao lado do nome).
@@ -180,6 +180,41 @@ test("o garçom confirma um pedido e recusa outro", async ({ page, request, brow
     await panel.page.goto("/painel/cozinha");
     await expect(panel.page.getByRole("article", { name: "Mesa 04 · Pedido nº 1" })).toBeVisible();
     await expect(panel.page.getByRole("article", { name: "Mesa 04 · Pedido nº 2" })).toHaveCount(0);
+  } finally {
+    await panel.close();
+  }
+});
+
+test("a cozinha soma por item, com as mesas de cada produto, e lembra a visão escolhida", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email } = await restaurant(request);
+  await order(page, qr, ["Guioza", "Sunomono"]);
+  await order(page, qr, ["Guioza"]);
+
+  const panel = await ownerPanel(browser, email);
+  try {
+    const kitchen = panel.page;
+    await kitchen.goto("/painel/cozinha");
+    await expect(kitchen.getByRole("heading", { name: "Cozinha", exact: true })).toBeVisible();
+    await expect(kitchen.getByText(/· toque no item para avançar$/)).toBeVisible();
+    await expect(kitchen.getByText(/^\d{2}:\d{2}$/)).toBeVisible(); // a hora no topo
+    const views = kitchen.getByRole("group", { name: "Visão" });
+    await expect(views.getByRole("button", { name: "Por pedido" })).toHaveAttribute("aria-pressed", "true");
+
+    await views.getByRole("button", { name: "Por item" }).click();
+    await expect(kitchen.getByRole("heading", { name: "Cozinha · por item" })).toBeVisible();
+    const guioza = kitchen.getByRole("article", { name: "Guioza: 2 no total" });
+    await expect(guioza.getByRole("listitem")).toHaveText(["Mesa 04×2"]);
+    await expect(kitchen.getByRole("article", { name: "Sunomono: 1 no total" })).toBeVisible();
+
+    // O tablet da cozinha abre de novo na visão escolhida.
+    await kitchen.reload();
+    await expect(kitchen.getByRole("heading", { name: "Cozinha · por item" })).toBeVisible();
+    await views.getByRole("button", { name: "Por pedido" }).click();
+    await expect(kitchen.getByRole("region", { name: "Na fila" }).getByRole("article")).toHaveCount(2);
   } finally {
     await panel.close();
   }
