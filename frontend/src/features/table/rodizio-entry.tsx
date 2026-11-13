@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
+import { cn } from "cn";
 import { RodizioInvite } from "./rodizio-invite";
 import { useTableCalls } from "./table-calls";
 import { listRodizios, useTableOrders, type RodizioQuote } from "./table-orders";
@@ -58,10 +59,19 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
   }
   if (offered.length === 0) return null;
   // O banner (desenho 2.1): um por rodízio, com o nome e o preço por pessoa (o da faixa mais cara,
-  // a de adulto), sobre a foto de um prato. Com mais de um, ficam lado a lado e a mesa desliza
-  // entre eles. Com o rodízio já pedido ao garçom, um banner só, dizendo que ele está vindo.
+  // a de adulto), sobre o banner cadastrado no rodízio (ou, sem ele, a foto de um prato). Com mais
+  // de um, ficam lado a lado e a mesa desliza entre eles. Com o rodízio já pedido ao garçom, um
+  // banner só, dizendo que ele está vindo (com a imagem, se o restaurante só tem esse rodízio).
   if (request || offered.length === 1) {
-    return <Banner token={token} photo={photo} rodizio={request ? null : offered[0]} requested={Boolean(request)} />;
+    return (
+      <Banner
+        token={token}
+        photo={photo}
+        image={offered.length === 1 ? offered[0].bannerUrl : undefined}
+        rodizio={request ? null : offered[0]}
+        requested={Boolean(request)}
+      />
+    );
   }
   return (
     <section aria-label={t.eyebrow} className="-mx-5 flex flex-col gap-2">
@@ -71,7 +81,7 @@ export function RodizioEntry({ token, photo }: { token: string; photo?: string }
       >
         {offered.map((rodizio) => (
           <li key={rodizio.id} className="w-[86%] max-w-[340px] shrink-0 snap-start">
-            <Banner token={token} photo={photo} rodizio={rodizio} requested={false} />
+            <Banner token={token} photo={photo} image={rodizio.bannerUrl} rodizio={rodizio} requested={false} />
           </li>
         ))}
       </ul>
@@ -86,15 +96,21 @@ function adultPrice(rodizio: RodizioQuote): number | null {
   return prices.length ? Math.max(...prices) : null;
 }
 
-/** Um banner de rodízio; sem `rodizio`, o banner do pedido já feito ao garçom. */
+/**
+ * Um banner de rodízio; sem `rodizio`, o banner do pedido já feito ao garçom. Com o banner
+ * cadastrado (`image`), ele cobre o cartão todo, escurecido à esquerda para o texto (como na
+ * escolha do rodízio, 6.1); sem ele, a foto de um prato entra pela direita.
+ */
 function Banner({
   token,
   photo,
+  image,
   rodizio,
   requested,
 }: {
   token: string;
   photo?: string;
+  image?: string | null;
   rodizio: RodizioQuote | null;
   requested: boolean;
 }) {
@@ -102,19 +118,38 @@ function Banner({
   return (
     <article
       aria-label={rodizio?.name ?? t.eyebrow}
-      className="relative flex h-[156px] overflow-hidden rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass)"
+      className={cn(
+        "relative flex h-[156px] overflow-hidden rounded-3xl border border-(--mesa-stroke)",
+        image ? "bg-black text-white" : "bg-(--mesa-glass)",
+      )}
     >
-      {photo && (
-        // eslint-disable-next-line @next/next/no-img-element -- foto de um prato, já vinda do R2
-        <img
-          src={photo}
-          alt=""
-          decoding="async"
-          className="absolute top-0 -right-10 h-full w-[260px] object-cover [mask-image:linear-gradient(90deg,transparent_0%,#000_45%)]"
-        />
+      {image ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- banner já no tamanho certo, vindo do R2 */}
+          <img src={image} alt="" decoding="async" className="absolute inset-0 size-full object-cover" />
+          <span
+            aria-hidden
+            className="absolute inset-0 bg-[linear-gradient(90deg,rgb(0_0_0/82%)_0%,rgb(0_0_0/35%)_70%,rgb(0_0_0/10%)_100%)]"
+          />
+        </>
+      ) : (
+        photo && (
+          // eslint-disable-next-line @next/next/no-img-element -- foto de um prato, já vinda do R2
+          <img
+            src={photo}
+            alt=""
+            decoding="async"
+            className="absolute top-0 -right-10 h-full w-[260px] object-cover [mask-image:linear-gradient(90deg,transparent_0%,#000_45%)]"
+          />
+        )
       )}
       <div className="relative flex w-[210px] flex-col justify-between p-4">
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[.3px] text-(--brand-text) uppercase">
+        <span
+          className={cn(
+            "flex items-center gap-1.5 text-[11px] font-semibold tracking-[.3px] uppercase",
+            image ? "text-white/90" : "text-(--brand-text)",
+          )}
+        >
           <Flame aria-hidden className="size-3.5" />
           {rodizio?.name ?? t.eyebrow}
         </span>
@@ -127,7 +162,7 @@ function Banner({
               {price !== null && (
                 <>
                   <br />
-                  <span className="text-(--brand-text)">{formatCents(price)}</span>
+                  <span className={image ? "font-bold text-white" : "text-(--brand-text)"}>{formatCents(price)}</span>
                 </>
               )}
             </>

@@ -114,7 +114,7 @@ async function churrascariaServing(request: APIRequestContext, seated?: Page) {
     data: { rodizioId: churrasco.id, guests: [{ tierName: "Adulto", quantity: 2 }] },
   });
   expect(activated.status()).toBe(201);
-  return { qr: table.publicToken as string, email };
+  return { qr: table.publicToken as string, email, headers, picanhaId: picanha.id as string };
 }
 
 test("a mesa pede uma picanha mal passada, e o passador entrega", async ({ page, request, browser }) => {
@@ -137,4 +137,17 @@ test("a mesa pede uma picanha mal passada, e o passador entrega", async ({ page,
   // Entregue: a mesa pode pedir de novo.
   await expect(picanha.getByRole("button", { name: "Pedir Picanha" })).toBeVisible();
   await owner.close();
+});
+
+test("o corte esgotado aparece apagado e sem o \u201cPedir\u201d", async ({ page, request }) => {
+  const { qr, headers, picanhaId } = await churrascariaServing(request, page);
+  await request.patch(`${API_URL}/api/v1/products/${picanhaId}/availability`, {
+    headers,
+    data: { available: false },
+  });
+
+  await page.goto(`/m/${qr}/cardapio`);
+  const picanha = page.getByRole("group", { name: "Picanha", exact: true });
+  await expect(picanha).toContainText("Esgotado hoje");
+  await expect(picanha.getByRole("button")).toHaveCount(0);
 });

@@ -4,6 +4,7 @@ import { Flame, Pause, Play } from "lucide-react";
 import { useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
+import { MesaNotice } from "./mesa-notice";
 import { turnCard, type TableOrders } from "./table-orders";
 
 const t = tablePage.rodizio;
@@ -75,9 +76,9 @@ export function PassagemCard({ token, rodizio }: { token: string; rodizio: NonNu
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm font-medium text-(--brand-text)">
+        <MesaNotice tone="warning" role="alert">
           {error}
-        </p>
+        </MesaNotice>
       )}
     </section>
   );
