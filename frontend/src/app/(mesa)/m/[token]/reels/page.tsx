@@ -50,6 +50,7 @@ async function ReelsPage({ params, searchParams }: Pick<PageProps<"/m/[token]/re
         logo={brand.logo?.small}
         brandColor={brand.primary}
         backHref={de === "inicio" ? `/m/${token}` : `/m/${token}/cardapio`}
+        serving={table.serving}
       />
     </div>
   );

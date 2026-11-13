@@ -46,7 +46,7 @@ async function Menu({ params }: Pick<PageProps<"/m/[token]/cardapio">, "params">
         <PresenceBadge token={token} />
       </header>
       {/* Mesmo sem nada à la carte, o cardápio monta: a aba Rodízio (e o cartão do passagem) mora nele. */}
-      <MenuBrowser token={token} menu={menu} />
+      <MenuBrowser token={token} menu={menu} serving={table.serving} />
     </TableShell>
   );
 }

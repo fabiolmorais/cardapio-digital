@@ -32,12 +32,15 @@ export function ProductSheet({
   onClose,
   reelsHref,
   onPhoto,
+  canAdd = true,
 }: {
   token: string;
   item: MenuItem | null;
   onClose: () => void;
   reelsHref?: (item: MenuItem) => string | undefined;
   onPhoto?: () => void;
+  /** Falso com o pedido pelo celular desligado ou a assinatura suspensa: o prato abre só para ver. */
+  canAdd?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
@@ -66,6 +69,7 @@ export function ProductSheet({
           id={id}
           onDone={close}
           reelsHref={reelsHref?.(item)}
+          canAdd={canAdd}
           onPhoto={
             onPhoto
               ? () => {
@@ -87,6 +91,7 @@ function SheetBody({
   onDone,
   reelsHref,
   onPhoto,
+  canAdd,
 }: {
   token: string;
   item: MenuItem;
@@ -94,6 +99,7 @@ function SheetBody({
   onDone: () => void;
   reelsHref?: string;
   onPhoto?: () => void;
+  canAdd: boolean;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
@@ -236,21 +242,23 @@ function SheetBody({
             </span>
           </div>
           {item.description && <p className="text-[15px] leading-[22px] text-(--mesa-muted)">{item.description}</p>}
-          <div aria-hidden className="h-px bg-(--mesa-stroke)" />
-          <div className="flex flex-col gap-2">
-            <label htmlFor={`${id}note`} className="font-semibold">
-              {t.note}
-            </label>
-            <input
-              id={`${id}note`}
-              value={note}
-              maxLength={MAX_NOTE}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder={t.notePlaceholder}
-              autoComplete="off"
-              className="h-12 w-full rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) px-4 text-base text-(--mesa-fg) outline-none placeholder:text-(--mesa-muted) focus-visible:ring-3 focus-visible:ring-(--brand)"
-            />
-          </div>
+          {canAdd && <div aria-hidden className="h-px bg-(--mesa-stroke)" />}
+          {canAdd && (
+            <div className="flex flex-col gap-2">
+              <label htmlFor={`${id}note`} className="font-semibold">
+                {t.note}
+              </label>
+              <input
+                id={`${id}note`}
+                value={note}
+                maxLength={MAX_NOTE}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder={t.notePlaceholder}
+                autoComplete="off"
+                className="h-12 w-full rounded-2xl border border-(--mesa-stroke) bg-(--mesa-glass) px-4 text-base text-(--mesa-fg) outline-none placeholder:text-(--mesa-muted) focus-visible:ring-3 focus-visible:ring-(--brand)"
+              />
+            </div>
+          )}
           {full && (
             <p role="alert" className="text-sm font-medium text-(--mesa-danger)">
               {t.full}
@@ -260,41 +268,43 @@ function SheetBody({
       </div>
 
       {/* A quantidade e o "Adicionar · R$" num card flutuante, fixo embaixo (desenho 3.2). */}
-      <div className="absolute inset-x-3 bottom-[max(env(safe-area-inset-bottom),20px)] flex items-center gap-2.5 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-bar) p-2.5 shadow-[0_20px_50px_rgba(0,0,0,.35)] backdrop-blur-xl">
-        <div className="flex items-center">
+      {canAdd && (
+        <div className="absolute inset-x-3 bottom-[max(env(safe-area-inset-bottom),20px)] flex items-center gap-2.5 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-bar) p-2.5 shadow-[0_20px_50px_rgba(0,0,0,.35)] backdrop-blur-xl">
+          <div className="flex items-center">
+            <button
+              type="button"
+              aria-label={t.decrease}
+              disabled={quantity <= 1}
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              className={round}
+            >
+              <Minus aria-hidden className="size-4" />
+            </button>
+            <span aria-live="polite" className="w-7 text-center font-bold">
+              <span className="sr-only">{t.quantity(quantity)}</span>
+              <span aria-hidden>{quantity}</span>
+            </span>
+            <button
+              type="button"
+              aria-label={t.increase}
+              disabled={quantity >= MAX_QUANTITY}
+              onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
+              className={round}
+            >
+              <Plus aria-hidden className="size-4" />
+            </button>
+          </div>
           <button
             type="button"
-            aria-label={t.decrease}
-            disabled={quantity <= 1}
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className={round}
+            onClick={add}
+            className="flex h-13 flex-1 items-center justify-between gap-3 rounded-2xl bg-(--brand) px-5 font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none"
           >
-            <Minus aria-hidden className="size-4" />
-          </button>
-          <span aria-live="polite" className="w-7 text-center font-bold">
-            <span className="sr-only">{t.quantity(quantity)}</span>
-            <span aria-hidden>{quantity}</span>
-          </span>
-          <button
-            type="button"
-            aria-label={t.increase}
-            disabled={quantity >= MAX_QUANTITY}
-            onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
-            className={round}
-          >
-            <Plus aria-hidden className="size-4" />
+            <span>{t.add}</span>
+            <span aria-hidden className="h-5 w-px bg-white/35" />
+            <span>{formatCents(price * quantity)}</span>
           </button>
         </div>
-        <button
-          type="button"
-          onClick={add}
-          className="flex h-13 flex-1 items-center justify-between gap-3 rounded-2xl bg-(--brand) px-5 font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none"
-        >
-          <span>{t.add}</span>
-          <span aria-hidden className="h-5 w-px bg-white/35" />
-          <span>{formatCents(price * quantity)}</span>
-        </button>
-      </div>
+      )}
     </>
   );
 }
