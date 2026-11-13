@@ -128,6 +128,13 @@ export function LoginForm() {
         {t.forgot}
       </Link>
 
+      <Link
+        href="/aparelho"
+        className="self-center text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        {t.device}
+      </Link>
+
       <div aria-hidden className="h-px bg-border" />
 
       <p className="text-center text-sm text-muted-foreground">

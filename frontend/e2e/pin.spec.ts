@@ -95,3 +95,25 @@ test("aparelho desvinculado volta para a tela do código", async ({ browser, req
   await expect(phone.getByTestId("pairing-code")).toBeVisible({ timeout: 10_000 });
   await context.close();
 });
+
+test("o app aberto pelo ícone num aparelho vinculado vai para o PIN", async ({ browser, request }) => {
+  const { context } = await waiterPhone(browser, request);
+  // Uma aba nova, como o app da equipe aberto pelo ícone: sem a marca de por onde entrou.
+  const app = await context.newPage();
+  await app.goto(`${APP_URL}/painel`);
+  await expect(app).toHaveURL(/\/aparelho$/);
+  await expect(app.getByRole("heading", { name: "Quem está entrando?" })).toBeVisible();
+  await context.close();
+});
+
+test("no login do dono, o link do PIN leva ao vínculo do aparelho", async ({ browser }) => {
+  // No iPhone, o app da tela de início não vê o vínculo feito no Safari: vincula de novo por aqui.
+  const context = await browser.newContext({ ...devices["Pixel 7"], locale: "pt-BR" });
+  const app = await context.newPage();
+  await app.goto(`${APP_URL}/painel`);
+  await expect(app).toHaveURL(/\/entrar$/);
+  await app.getByRole("link", { name: "Aparelho da equipe? Entrar com PIN" }).click();
+  await expect(app).toHaveURL(/\/aparelho$/);
+  await expect(app.getByTestId("pairing-code")).toBeVisible();
+  await context.close();
+});
