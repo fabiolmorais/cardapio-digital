@@ -46,6 +46,8 @@ test("garçom entra com PIN, cai no painel e, ao sair, volta para o PIN", async 
   await expect(phone).toHaveURL(/\/painel$/);
   await dismissSoundGate(phone);
   await expect(panelGreeting(phone)).toBeVisible();
+  // No celular, o garçom vai direto aos chamados: sem os números do dia.
+  await expect(phone.getByRole("region", { name: "Resumo" })).toBeHidden();
   await openMenu(phone);
   await expect(phone.getByText("Carlos Souza")).toBeVisible();
   await expect(phone.getByText("Seu papel: Garçom")).toBeVisible();

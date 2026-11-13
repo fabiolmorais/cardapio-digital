@@ -21,6 +21,7 @@ export function SoundTag() {
       type="button"
       aria-pressed={soundOn}
       aria-label={soundOn ? tl.soundOnLabel : tl.soundOffLabel}
+      data-sound-toggle
       onClick={() => void (soundOn ? disableSound() : enableSound())}
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",

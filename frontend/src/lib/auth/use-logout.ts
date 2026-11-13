@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { disablePush } from "@/lib/pwa/push";
+import { detachPush } from "@/lib/pwa/push";
 import { loginPath } from "./login-origin";
 import { endSession } from "./session";
 
@@ -14,8 +14,9 @@ export function useLogout() {
   async function logout() {
     setLeaving(true);
     // Quem sai deixa de receber os avisos neste aparelho (enquanto ainda tem a sessão para avisar
-    // o back). Sem rede, não segura a saída: no máximo 3 segundos.
-    await Promise.race([disablePush().catch(() => {}), new Promise((resolve) => setTimeout(resolve, 3000))]);
+    // o back). O aparelho continua inscrito: quem entrar depois já recebe, sem ligar de novo. Sem
+    // rede, não segura a saída: no máximo 3 segundos.
+    await Promise.race([detachPush().catch(() => {}), new Promise((resolve) => setTimeout(resolve, 3000))]);
     await endSession();
     queryClient.clear();
     // Recarrega a página inteira: nada desta conta (dados, telas guardadas) fica na memória

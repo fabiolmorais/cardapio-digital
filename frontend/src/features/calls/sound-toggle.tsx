@@ -22,6 +22,7 @@ export function SoundToggle({ className, size }: { className?: string; size?: "d
       size={size}
       className={cn(className)}
       aria-pressed={soundOn}
+      data-sound-toggle
       onClick={() => void (soundOn ? disableSound() : enableSound())}
     >
       <Icon aria-hidden />
