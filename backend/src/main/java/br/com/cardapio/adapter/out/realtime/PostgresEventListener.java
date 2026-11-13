@@ -9,6 +9,7 @@ import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,11 @@ import java.util.function.Consumer;
  * Usa uma conexão própria, fora do pool: ela fica parada no LISTEN o tempo todo e não pode
  * voltar para o pool nem ser emprestada a uma consulta. Se cair, reconecta; e encerra as
  * assinaturas, porque os avisos do intervalo se perderam: as telas reconectam e buscam tudo.
+ *
+ * A conexão também é testada de tempos em tempos (app.realtime.heartbeat). Esperando avisos,
+ * ela só lê e nunca escreve, e uma conexão morta sem aviso de fechamento (a máquina suspensa
+ * pelo Fly enquanto o banco fechou o outro lado, ou o Neon dormindo) não dá erro na leitura:
+ * a escuta ficaria surda para sempre. O teste manda uma consulta vazia; sem resposta, reconecta.
  */
 @Component
 class PostgresEventListener implements EventStreamPort, SmartLifecycle {
@@ -52,6 +58,10 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
     private final RealtimeMessages messages;
     private final Clock clock;
     private final Timer delay;
+    /** De quanto em quanto tempo a conexão do LISTEN é testada. */
+    private final Duration heartbeat;
+    /** Quanto o teste espera a resposta do banco: até 5 s, e nunca mais que o intervalo. */
+    private final int checkTimeoutSeconds;
     private final Map<EstablishmentId, Set<Subscriber>> subscribers = new ConcurrentHashMap<>();
     /**
      * Cada entrega numa thread virtual: uma tela lenta não atrasa as outras. É criado em cada
@@ -64,10 +74,12 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
     private volatile Thread thread;
 
     PostgresEventListener(JdbcConnectionDetails database, RealtimeMessages messages, Clock clock,
-                          MeterRegistry meters) {
+                          MeterRegistry meters, @Value("${app.realtime.heartbeat:PT30S}") Duration heartbeat) {
         this.database = database;
         this.messages = messages;
         this.clock = clock;
+        this.heartbeat = heartbeat;
+        this.checkTimeoutSeconds = (int) Math.clamp(heartbeat.toSeconds(), 1, 5);
         // A métrica do CLAUDE.md: do momento do chamado até o aviso sair para as telas.
         this.delay = Timer.builder("realtime.event.delay")
                 .description("Tempo entre o evento acontecer e ser entregue às telas desta instância")
@@ -135,12 +147,19 @@ class PostgresEventListener implements EventStreamPort, SmartLifecycle {
                 started.countDown();
                 backoff = Duration.ofSeconds(1);
                 PGConnection postgres = connection.unwrap(PGConnection.class);
+                long lastCheck = System.nanoTime();
                 while (current()) {
                     PGNotification[] notifications = postgres.getNotifications(POLL_MILLIS);
                     if (notifications != null) {
                         for (PGNotification notification : notifications) {
                             dispatch(notification.getParameter());
                         }
+                    }
+                    if (System.nanoTime() - lastCheck >= heartbeat.toNanos()) {
+                        if (!connection.isValid(checkTimeoutSeconds)) {
+                            throw new SQLException("A conexão do LISTEN não respondeu ao teste", "08006");
+                        }
+                        lastCheck = System.nanoTime();
                     }
                 }
             } catch (SQLException e) {
