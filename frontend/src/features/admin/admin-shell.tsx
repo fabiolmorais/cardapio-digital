@@ -4,6 +4,7 @@ import {
   BellRing,
   BookOpen,
   ChefHat,
+  ChevronLeft,
   CreditCard,
   Flame,
   LayoutGrid,
@@ -22,8 +23,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Suspense, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useLiveCount } from "@/features/live/use-live-count";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
@@ -95,6 +96,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
         className="flex shrink-0 flex-col gap-4 border-b border-border bg-card px-4 py-4 md:sticky md:top-0 md:h-dvh md:w-64 md:overflow-y-auto md:border-r md:border-b-0 md:py-6"
       >
         <div className="flex items-center gap-3 px-2">
+          <Suspense fallback={null}>
+            <BackButton />
+          </Suspense>
           <span
             aria-hidden
             className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary text-[13px] font-bold text-primary-foreground"
@@ -157,6 +161,35 @@ export function AdminShell({ children }: { children: ReactNode }) {
         {children}
       </main>
     </div>
+  );
+}
+
+/** A primeira tela com a moldura que esta página abriu: dela para trás, o histórico já não é do app. */
+let entryPath: string | null = null;
+
+/**
+ * Voltar, no celular, nas telas do menu (/painel/mesas, /admin/cardapio…): o app da equipe abre
+ * sem a barra do navegador, e o iPhone não tem o voltar do sistema. As telas de detalhe (o prato,
+ * a comanda) já têm o próprio voltar, para a lista. Volta pelo histórico só depois de navegar
+ * dentro do app; aberta direto (pelo ícone, por um aviso ou por um link), vai para o "Ao vivo".
+ */
+function BackButton() {
+  const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    entryPath ??= pathname;
+  }, [pathname]);
+  if (pathname?.split("/").filter(Boolean).length !== 2) return null;
+
+  function back() {
+    if (entryPath !== null && pathname !== entryPath) router.back();
+    else router.push("/painel");
+  }
+
+  return (
+    <Button variant="outline" size="icon-lg" className="size-11 shrink-0 md:hidden" aria-label={t.back} onClick={back}>
+      <ChevronLeft aria-hidden className="size-6" />
+    </Button>
   );
 }
 
