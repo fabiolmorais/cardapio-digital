@@ -227,7 +227,7 @@ async function bannerImage(page: Page) {
   return { name: "banner.jpg", mimeType: "image/jpeg", buffer: Buffer.from(base64, "base64") };
 }
 
-test("o dono envia o banner do rodízio, e a mesa vê o banner em \u201cEscolha o rodízio\u201d", async ({
+test("o dono envia o banner do rodízio, e a mesa vê o banner na tela inicial e em \u201cEscolha o rodízio\u201d", async ({
   page,
   request,
   browser,
@@ -245,6 +245,11 @@ test("o dono envia o banner do rodízio, e a mesa vê o banner em \u201cEscolha 
   } finally {
     await owner.close();
   }
+
+  await page.goto(`/m/${qr}`);
+  const banner = page.getByRole("article", { name: "Rodízio Japonês" });
+  await expect(banner).toContainText("R$ 129,90");
+  await expect(banner.locator("img")).toHaveAttribute("src", /\/rodizios\/.+\/banner-.+\.jpg$/);
 
   await page.goto(`/m/${qr}/rodizio`);
   const card = page.getByRole("listitem").filter({ hasText: "Rodízio Japonês" });

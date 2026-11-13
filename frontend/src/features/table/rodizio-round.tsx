@@ -6,6 +6,7 @@ import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { useCart } from "./cart";
 import { MenuItemCard } from "./menu-item";
+import { MesaNotice } from "./mesa-notice";
 import type { MenuItem } from "./table-data";
 import { placeOrder, timeOf, type TableOrders } from "./table-orders";
 
@@ -225,9 +226,9 @@ export function RodizioRound({
           {sent ? t.sent : ""}
         </p>
         {error && (
-          <p role="alert" className="text-center text-sm font-medium text-(--brand-text)">
+          <MesaNotice tone="warning" role="alert">
             {error}
-          </p>
+          </MesaNotice>
         )}
       </div>
     </section>
