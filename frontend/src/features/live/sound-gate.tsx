@@ -4,7 +4,7 @@ import { Volume2 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { enableSound } from "@/features/calls/alert-sound";
+import { enableSound, soundPreference } from "@/features/calls/alert-sound";
 import { useSoundOn } from "@/features/calls/use-live-calls";
 import { messages } from "@/messages/pt-BR";
 
@@ -14,7 +14,9 @@ const DISMISSED = "ohchefe:sound-gate-dismissed";
 
 const noop = () => () => {};
 
+/** Já escolheu o som neste aparelho (ligado ou desligado) ou respondeu "Agora não" nesta aba. */
 function wasDismissed() {
+  if (soundPreference() !== null) return true;
   try {
     return sessionStorage.getItem(DISMISSED) === "1";
   } catch {
@@ -23,8 +25,10 @@ function wasDismissed() {
 }
 
 /**
- * "Ativar alertas sonoros" (desenho 7.4): ao abrir o painel com o som desligado, o aviso pede o
- * toque que o navegador exige para tocar som. "Agora não" fecha até a aba ser fechada.
+ * "Ativar alertas sonoros" (desenho 7.4): na primeira vez que o painel abre neste aparelho, o
+ * aviso pede o toque que o navegador exige para tocar som. Depois de escolher (no aviso ou na tag
+ * do som), não pergunta mais: o som volta sozinho no primeiro toque (restoreSound). "Agora não"
+ * fecha até a aba ser fechada.
  */
 export function SoundGate() {
   const soundOn = useSoundOn();

@@ -114,6 +114,8 @@ test("o painel liga e desliga o som e mostra que está ao vivo", async ({ reques
   const { email } = await restaurant(request);
   const panel = await ownerPanel(browser, email);
   try {
+    // O dono vê os números do dia (no celular, só o dono e o gerente).
+    await expect(panel.page.getByRole("region", { name: "Resumo" })).toContainText("Mesas ocupadas");
     // Desenho 7.1: a data, a hora e "tempo real" embaixo do título; a tag do som no topo.
     await expect(panel.page.getByRole("status").filter({ hasText: "tempo real" })).toBeVisible();
     await panel.page.getByRole("button", { name: "Som desligado. Toque para ligar" }).click();
@@ -125,6 +127,63 @@ test("o painel liga e desliga o som e mostra que está ao vivo", async ({ reques
       "aria-pressed",
       "false",
     );
+  } finally {
+    await panel.close();
+  }
+});
+
+test("chamado novo vibra o celular do painel", async ({ page, request, browser }) => {
+  const { qr, email } = await restaurant(request);
+  const context = await browser.newContext();
+  // O navegador do teste não vibra: a página conta as vibrações pedidas.
+  await context.addInitScript(() => {
+    const calls: unknown[] = [];
+    (window as unknown as { vibrations: unknown[] }).vibrations = calls;
+    navigator.vibrate = (pattern: Iterable<number> | number) => calls.push(pattern) > 0;
+  });
+  const panel = await context.newPage();
+  try {
+    await loginThroughForm(panel, email);
+
+    await page.goto(`/m/${qr}`);
+    await page.getByRole("button", { name: /Chamar garçom/ }).click();
+
+    await expect(panel.getByRole("listitem", { name: "Chamar garçom · Mesa 04" })).toBeVisible();
+    await expect
+      .poll(() => panel.evaluate(() => (window as unknown as { vibrations: unknown[] }).vibrations))
+      .toContainEqual([200, 100, 200]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("o som fica como a pessoa deixou: ligado volta no primeiro toque, sem perguntar de novo", async ({
+  request,
+  browser,
+}) => {
+  const { email } = await restaurant(request);
+  const panel = await ownerPanel(browser, email);
+  const page = panel.page;
+  const soundOff = page.getByRole("button", { name: "Som desligado. Toque para ligar" });
+  const soundOn = page.getByRole("button", { name: "Som ligado. Toque para desligar" });
+  try {
+    await soundOff.click();
+    await expect(soundOn).toBeVisible();
+
+    // Entrando de novo: sem o aviso, e o som volta no primeiro toque em qualquer lugar.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Ao vivo", level: 1 })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Ativar alertas sonoros" })).toHaveCount(0);
+    await page.getByRole("heading", { name: "Ao vivo", level: 1 }).click();
+    await expect(soundOn).toBeVisible();
+
+    // Desligado fica desligado, e também não pergunta.
+    await soundOn.click();
+    await expect(soundOff).toBeVisible();
+    await page.reload();
+    await page.getByRole("heading", { name: "Ao vivo", level: 1 }).click();
+    await expect(page.getByRole("dialog", { name: "Ativar alertas sonoros" })).toHaveCount(0);
+    await expect(soundOff).toBeVisible();
   } finally {
     await panel.close();
   }

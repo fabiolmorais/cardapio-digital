@@ -4,6 +4,9 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
+/** Dois pulsos curtos, o mesmo ritmo do "ding-dong" do painel. */
+const VIBRATION = [200, 100, 200];
+
 self.addEventListener("push", (event) => {
   let message = {};
   try {
@@ -18,6 +21,8 @@ self.addEventListener("push", (event) => {
       // A mesma tag troca o aviso antigo pelo novo, em vez de empilhar.
       tag: message.tag,
       renotify: Boolean(message.tag),
+      // Vibra junto com o som (no Android; no iPhone, quem decide é o ajuste do sistema).
+      vibrate: VIBRATION,
       icon: "/icons/equipe-192.png",
       badge: "/icons/equipe-badge-96.png",
       data: { url: sameOrigin(message.url) },

@@ -37,7 +37,10 @@ export async function pushStatus(): Promise<PushStatus> {
 }
 
 function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const base64 = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const raw = atob(base64);
   const bytes = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
@@ -84,7 +87,18 @@ export async function syncPush(): Promise<void> {
   if (subscription) await sendToServer(subscription);
 }
 
-/** Para de receber os avisos neste aparelho: apaga no back e cancela no navegador. */
+/**
+ * Quem sai deixa de receber os avisos neste aparelho: apaga a inscrição no back, mas o navegador
+ * continua inscrito. Quem entrar depois no mesmo aparelho já recebe (syncPush), sem ligar de novo.
+ */
+export async function detachPush(): Promise<void> {
+  if (!pushSupported()) return;
+  const subscription = await currentSubscription();
+  if (!subscription) return;
+  await api.DELETE("/api/v1/push/subscriptions", { params: { query: { endpoint: subscription.endpoint } } });
+}
+
+/** "Desativar": para de receber os avisos neste aparelho, para qualquer pessoa: apaga no back e cancela no navegador. */
 export async function disablePush(): Promise<void> {
   if (!pushSupported()) return;
   const subscription = await currentSubscription();

@@ -32,7 +32,7 @@ const timeFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "
 
 /**
  * O "Ao vivo" (desenho 7.1): no topo, a data e a hora, o filtro por setor, o "Som ligado" e o
- * "Abrir Modo TV"; depois os números do dia e as três colunas (Chamados, Pedidos e Prontos para
+ * "Abrir Modo TV"; depois os números do dia (no celular, só para o dono e o gerente) e as três colunas (Chamados, Pedidos e Prontos para
  * entregar). No celular, uma coluna só, na mesma ordem. A cozinha vê os atalhos dela primeiro.
  * Confirma no back (GET /api/v1/me) quem está logado.
  */
@@ -136,7 +136,12 @@ function Live({ role }: { role: Role }) {
           </div>
         )}
 
-        <section aria-label={tl.summary} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* No celular, os números do dia são só para o dono e o gerente: o garçom e a cozinha vão
+            direto aos chamados e pedidos. No computador, todos veem. */}
+        <section
+          aria-label={tl.summary}
+          className={cn("grid grid-cols-2 gap-3 lg:grid-cols-4", !canManageTeam(role) && "max-md:hidden")}
+        >
           <Kpi label={tl.occupied}>
             {floor.data ? occupied : "–"}{" "}
             <span className="text-sm font-normal text-muted-foreground">{tl.of(shownTables.length)}</span>
