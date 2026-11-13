@@ -130,6 +130,37 @@ test("o painel liga e desliga o som e mostra que está ao vivo", async ({ reques
   }
 });
 
+test("chamado novo vibra o celular do painel, e o Ao vivo não tem os números do dia", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email } = await restaurant(request);
+  const context = await browser.newContext();
+  // O navegador do teste não vibra: a página conta as vibrações pedidas.
+  await context.addInitScript(() => {
+    const calls: unknown[] = [];
+    (window as unknown as { vibrations: unknown[] }).vibrations = calls;
+    navigator.vibrate = (pattern: Iterable<number> | number) => calls.push(pattern) > 0;
+  });
+  const panel = await context.newPage();
+  try {
+    await loginThroughForm(panel, email);
+    await expect(panel.getByRole("region", { name: "Resumo" })).toHaveCount(0);
+    await expect(panel.getByText("Mesas ocupadas")).toHaveCount(0);
+
+    await page.goto(`/m/${qr}`);
+    await page.getByRole("button", { name: /Chamar garçom/ }).click();
+
+    await expect(panel.getByRole("listitem", { name: "Chamar garçom · Mesa 04" })).toBeVisible();
+    await expect
+      .poll(() => panel.evaluate(() => (window as unknown as { vibrations: unknown[] }).vibrations))
+      .toContainEqual([200, 100, 200]);
+  } finally {
+    await context.close();
+  }
+});
+
 test("o Modo TV mostra o chamado novo em tela cheia, na hora", async ({ page, request, browser }) => {
   const { qr, email } = await restaurant(request);
   const panel = await ownerPanel(browser, email);

@@ -41,8 +41,15 @@ export async function disableSound(): Promise<void> {
   listeners.forEach((listener) => listener());
 }
 
-/** "Ding-dong": duas notas curtas, fáceis de ouvir num salão barulhento. */
+/** Dois pulsos curtos, no ritmo do "ding-dong". */
+const VIBRATION = [200, 100, 200];
+
+/**
+ * "Ding-dong": duas notas curtas, fáceis de ouvir num salão barulhento. O celular também vibra,
+ * para quem está com ele no bolso (no Android; o Safari do iPhone não deixa a página vibrar).
+ */
 export function playChime() {
+  vibrate();
   if (!context || context.state !== "running") return;
   const start = context.currentTime;
   [
@@ -60,4 +67,13 @@ export function playChime() {
     oscillator.start(start + at);
     oscillator.stop(start + at + 0.55);
   });
+}
+
+function vibrate() {
+  try {
+    // Sem suporte (iPhone, computador) ou antes do primeiro toque na página: não faz nada.
+    navigator.vibrate?.(VIBRATION);
+  } catch {
+    // Alguns navegadores bloqueiam a vibração em vez de ignorar.
+  }
 }
