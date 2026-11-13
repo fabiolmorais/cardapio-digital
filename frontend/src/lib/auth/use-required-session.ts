@@ -9,7 +9,8 @@ import { useSession } from "./use-session";
 
 /**
  * Para telas que exigem login: recupera a sessão pelo cookie (depois de um F5) e, sem
- * sessão, manda para a tela de entrar (e-mail ou PIN, conforme a pessoa entrou nesta aba).
+ * sessão, manda para a tela de entrar (e-mail ou PIN, conforme a pessoa entrou nesta aba ou,
+ * sem essa marca, conforme o aparelho esteja vinculado ao restaurante).
  * A tela mostra "carregando" enquanto o status não for
  * "authenticated".
  */
@@ -23,7 +24,13 @@ export function useRequiredSession(): SessionState {
     if (status === "unknown") void restoreSession();
     if (status === "anonymous") {
       queryClient.clear();
-      router.replace(loginPath());
+      let active = true;
+      void loginPath().then((path) => {
+        if (active) router.replace(path);
+      });
+      return () => {
+        active = false;
+      };
     }
   }, [status, router, queryClient]);
 

@@ -243,6 +243,7 @@ export const messages = {
     noAccount: "Ainda não usa?",
     signup: "Teste grátis por 14 dias",
     forgot: "Esqueci a senha",
+    device: "Aparelho da equipe? Entrar com PIN",
     errors: {
       generic: "Não foi possível entrar agora. Tente de novo em instantes.",
       fields: "Preencha o e-mail e a senha.",

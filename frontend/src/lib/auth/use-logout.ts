@@ -20,7 +20,7 @@ export function useLogout() {
     queryClient.clear();
     // Recarrega a página inteira: nada desta conta (dados, telas guardadas) fica na memória
     // para a próxima pessoa que usar o aparelho.
-    window.location.replace(loginPath());
+    window.location.replace(await loginPath());
   }
 
   return { leaving, logout };
