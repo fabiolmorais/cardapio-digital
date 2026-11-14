@@ -1,17 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Images, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ToggleSwitch } from "@/components/toggle-switch";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { OptionGroupDialog } from "./option-group-dialog";
+import { ProductPhotos } from "./product-photos";
 import {
   OPTION_GROUPS_KEY,
   createOptionGroup,
@@ -45,6 +47,7 @@ export function OptionGroupsManager() {
   const groups = useQuery({ queryKey: OPTION_GROUPS_KEY, queryFn: fetchOptionGroups, enabled: allowed });
   const [editing, setEditing] = useState<OptionGroup | "new" | null>(null);
   const [removing, setRemoving] = useState<OptionGroup | null>(null);
+  const [media, setMedia] = useState<{ id: string; name: string } | null>(null);
   const refresh = () => queryClient.invalidateQueries({ queryKey: OPTION_GROUPS_KEY });
   const availability = useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) => setOptionItemAvailability(id, available),
@@ -130,9 +133,24 @@ export function OptionGroupsManager() {
               <ul className="flex flex-col divide-y divide-border rounded-xl border border-border">
                 {group.items.map((item) => (
                   <li key={item.id} className="flex items-center gap-3 px-3 py-2">
-                    <span className={item.available ? "mr-auto" : "mr-auto text-muted-foreground line-through"}>
-                      {item.name}
+                    <span className="mr-auto flex min-w-0 flex-col">
+                      <span className={item.available ? undefined : "text-muted-foreground line-through"}>
+                        {item.name}
+                      </span>
+                      {item.description && (
+                        <span className="line-clamp-1 text-[13px] text-muted-foreground">{item.description}</span>
+                      )}
                     </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-lg"
+                      className="size-10 shrink-0"
+                      aria-label={t.mediaLabel(item.name)}
+                      title={t.media}
+                      onClick={() => setMedia({ id: item.id, name: item.name })}
+                    >
+                      <Images aria-hidden />
+                    </Button>
                     <span className="font-mono text-sm text-muted-foreground">
                       {item.priceCents === 0 ? "—" : formatCents(item.priceCents)}
                     </span>
@@ -160,6 +178,15 @@ export function OptionGroupsManager() {
           await refresh();
         }}
       />
+      <Dialog open={media !== null} onOpenChange={(open) => !open && setMedia(null)}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto p-6 sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{media && t.mediaLabel(media.name)}</DialogTitle>
+            <DialogDescription>{t.mediaHint}</DialogDescription>
+          </DialogHeader>
+          {media && <ProductPhotos owner={{ kind: "option", id: media.id }} name={media.name} />}
+        </DialogContent>
+      </Dialog>
       {removing && (
         <ConfirmDialog
           open

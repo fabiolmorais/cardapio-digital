@@ -26,9 +26,15 @@ export type GroupDraft = { groupId: string; limits: Record<string, LimitDraft> }
 export type OptionsDraft = {
   variants: VariantDraft[];
   groups: GroupDraft[];
-  /** O preço de uma opção num tamanho: chave `${optionId}|${variantKey}`; em branco, o da opção. */
+  /**
+   * O preço de uma opção num tamanho, ou neste produto (a chave {@link IN_PRODUCT}): chave
+   * `${optionId}|${variantKey}`; em branco, o da opção.
+   */
   prices: Record<string, string>;
 };
+
+/** A "coluna" do preço da opção neste produto, para qualquer tamanho sem preço próprio. */
+export const IN_PRODUCT = "produto";
 
 let keys = 0;
 export const newVariantKey = () => `variant-${++keys}`;
@@ -62,8 +68,12 @@ export function fromOptions(options: ProductOptions): OptionsDraft {
   }));
   const prices = Object.fromEntries(
     options.prices
-      .filter((p) => p.variantId !== undefined && keyOf.has(p.variantId))
-      .map((p) => [priceKey(p.optionId, keyOf.get(p.variantId!)!), centsToInput(p.priceCents)]),
+      // Sem tamanho (o back manda null): o preço neste produto.
+      .filter((p) => p.variantId == null || keyOf.has(p.variantId))
+      .map((p) => [
+        priceKey(p.optionId, p.variantId == null ? IN_PRODUCT : keyOf.get(p.variantId)!),
+        centsToInput(p.priceCents),
+      ]),
   );
   return { variants, groups, prices };
 }
@@ -125,7 +135,11 @@ export function toRequest(draft: OptionsDraft, optionIds: Set<string>): ProductO
       if (!valid(cents)) throw new Error(t.invalid);
       return { optionId, variantKey, cents };
     })
-    .filter((p) => index.has(p.variantKey) && optionIds.has(p.optionId))
-    .map((p) => ({ optionId: p.optionId, variant: index.get(p.variantKey)!, priceCents: p.cents }));
+    .filter((p) => (p.variantKey === IN_PRODUCT || index.has(p.variantKey)) && optionIds.has(p.optionId))
+    .map((p) => ({
+      optionId: p.optionId,
+      ...(p.variantKey === IN_PRODUCT ? {} : { variant: index.get(p.variantKey)! }),
+      priceCents: p.cents,
+    }));
   return { variants, groups, prices };
 }

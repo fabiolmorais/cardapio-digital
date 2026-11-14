@@ -396,7 +396,7 @@ function ProductForm({
         {/* As fotos precisam do produto já salvo: o caminho no armazenamento leva o id dele. */}
         <aside className="w-full lg:w-96 lg:shrink-0">
           {product ? (
-            <ProductPhotos productId={product.id} productName={product.name} />
+            <ProductPhotos owner={{ kind: "product", id: product.id }} name={product.name} />
           ) : (
             <p className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
               {messages.menu.photos.saveFirst}

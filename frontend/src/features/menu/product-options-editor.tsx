@@ -13,6 +13,7 @@ import { cn } from "cn";
 import { rulesSummary } from "./option-groups-manager";
 import type { OptionGroup } from "./options-api";
 import {
+  IN_PRODUCT,
   isEmptyDraft,
   newVariantKey,
   priceKey,
@@ -42,6 +43,11 @@ export function ProductOptionsEditor({
   const byId = new Map(library.map((g) => [g.id, g]));
   const linked = draft.groups.filter((g) => byId.has(g.groupId));
   const available = library.filter((g) => !draft.groups.some((l) => l.groupId === g.id));
+  // As colunas da grade de preço: neste produto (vale em qualquer tamanho sem preço próprio) e cada tamanho.
+  const columns = [
+    { key: IN_PRODUCT, name: t.inProduct },
+    ...draft.variants.map((v) => ({ key: v.key, name: v.name || "?" })),
+  ];
 
   function setVariant(index: number, patch: Partial<VariantDraft>) {
     onChange({ ...draft, variants: draft.variants.map((v, i) => (i === index ? { ...v, ...patch } : v)) });
@@ -103,6 +109,7 @@ export function ProductOptionsEditor({
                 />
                 <Money
                   label={t.variantPrice(index + 1)}
+                  placeholder={t.pricePlaceholder}
                   value={variant.price}
                   onChange={(price) => setVariant(index, { price })}
                 />
@@ -271,10 +278,11 @@ export function ProductOptionsEditor({
                 </div>
               )}
 
-              {draft.variants.length > 0 && group.items.some((i) => i.priceCents > 0) && (
+              {group.items.some((i) => i.priceCents > 0) && (
                 <div className="flex flex-col gap-2">
                   <span className="text-sm font-semibold">
-                    {t.prices} <span className="font-normal text-muted-foreground">· {t.pricesHint}</span>
+                    {draft.variants.length > 0 ? t.prices : t.productPrices}{" "}
+                    <span className="font-normal text-muted-foreground">· {t.pricesHint}</span>
                   </span>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -283,13 +291,13 @@ export function ProductOptionsEditor({
                           <th scope="col" className="sr-only">
                             {messages.options.form.items}
                           </th>
-                          {draft.variants.map((v) => (
+                          {columns.map((c) => (
                             <th
-                              key={v.key}
+                              key={c.key}
                               scope="col"
                               className="px-1 pb-1 text-left font-medium text-muted-foreground"
                             >
-                              {v.name || "?"}
+                              {c.name}
                             </th>
                           ))}
                         </tr>
@@ -300,13 +308,15 @@ export function ProductOptionsEditor({
                             <th scope="row" className="pr-2 text-left font-normal">
                               {item.name}
                             </th>
-                            {draft.variants.map((v) => {
-                              const key = priceKey(item.id, v.key);
+                            {columns.map((c) => {
+                              const key = priceKey(item.id, c.key);
                               return (
-                                <td key={v.key} className="p-1">
+                                <td key={c.key} className="p-1">
                                   <Money
                                     compact
-                                    label={t.priceFor(item.name, v.name || "?")}
+                                    label={
+                                      c.key === IN_PRODUCT ? t.priceInProduct(item.name) : t.priceFor(item.name, c.name)
+                                    }
                                     placeholder={centsToInput(item.priceCents)}
                                     value={draft.prices[key] ?? ""}
                                     onChange={(price) =>
