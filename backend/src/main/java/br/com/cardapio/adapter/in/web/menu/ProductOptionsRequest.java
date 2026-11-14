@@ -63,7 +63,8 @@ record ProductOptionsRequest(
     @Schema(name = "OptionPriceRequest")
     record Price(
             @Schema(requiredMode = REQUIRED) @NotNull UUID optionId,
-            @Schema(requiredMode = REQUIRED, description = "A posição do tamanho na lista variants") @Min(0) @Max(9) int variant,
+            @Schema(description = "A posição do tamanho na lista variants. Vazio: o preço neste produto (sem tamanho)")
+            @Min(0) @Max(9) Integer variant,
             @Schema(requiredMode = REQUIRED) @Min(0) @Max(9_999_999) long priceCents
     ) {
     }

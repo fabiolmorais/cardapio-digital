@@ -6,6 +6,8 @@ import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.model.MediaStatus;
 import br.com.cardapio.domain.menu.model.MediaType;
+import br.com.cardapio.domain.menu.model.MediaOwner;
+import br.com.cardapio.domain.menu.model.OptionItemId;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
@@ -31,7 +33,9 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
     @Override
     public void save(ProductMedia m) {
         establishmentFilter.enable(m.establishmentId());
-        media.save(new ProductMediaJpaEntity(m.id().value(), m.establishmentId().value(), m.productId().value(),
+        media.save(new ProductMediaJpaEntity(m.id().value(), m.establishmentId().value(),
+                m.owner() instanceof ProductId p ? p.value() : null,
+                m.owner() instanceof OptionItemId o ? o.value() : null,
                 m.type().name(), m.storagePath(), m.width() > 0 ? m.width() : null, m.height() > 0 ? m.height() : null,
                 m.position(), m.active(), m.status().name(), m.videoId(), m.durationSeconds(), m.failure()));
     }
@@ -43,24 +47,36 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
     }
 
     @Override
-    public List<ProductMedia> findActiveByProduct(EstablishmentId establishmentId, ProductId productId) {
+    public List<ProductMedia> findActiveByOwner(EstablishmentId establishmentId, MediaOwner owner) {
         establishmentFilter.enable(establishmentId);
-        return media.findByEstablishmentIdAndProductIdAndActiveTrueOrderByPositionAscIdAsc(
-                        establishmentId.value(), productId.value())
-                .stream().map(this::toDomain).toList();
+        var found = switch (owner) {
+            case ProductId product -> media.findByEstablishmentIdAndProductIdAndActiveTrueOrderByPositionAscIdAsc(
+                    establishmentId.value(), product.value());
+            case OptionItemId option -> media.findByEstablishmentIdAndOptionItemIdAndActiveTrueOrderByPositionAscIdAsc(
+                    establishmentId.value(), option.value());
+        };
+        return found.stream().map(this::toDomain).toList();
     }
 
     @Override
-    public int nextPosition(EstablishmentId establishmentId, ProductId productId) {
+    public int nextPosition(EstablishmentId establishmentId, MediaOwner owner) {
         establishmentFilter.enable(establishmentId);
-        return media.nextPosition(establishmentId.value(), productId.value());
+        return media.nextPosition(establishmentId.value(), owner.value());
     }
 
     @Override
     public List<ProductMedia> findReadyGalleries(EstablishmentId establishmentId) {
         establishmentFilter.enable(establishmentId);
-        return media.findByEstablishmentIdAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
+        return media.findByEstablishmentIdAndProductIdIsNotNullAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
                 establishmentId.value(), MediaStatus.READY.name()).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<ProductMedia> findReadyOptionGalleries(EstablishmentId establishmentId) {
+        establishmentFilter.enable(establishmentId);
+        return media
+                .findByEstablishmentIdAndOptionItemIdIsNotNullAndActiveTrueAndStatusOrderByOptionItemIdAscPositionAscIdAsc(
+                        establishmentId.value(), MediaStatus.READY.name()).stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -89,7 +105,8 @@ class ProductMediaPersistenceAdapter implements ProductMediaPort {
 
     private ProductMedia toDomain(ProductMediaJpaEntity e) {
         return new ProductMedia(new ProductMediaId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
-                new ProductId(e.getProductId()), MediaType.valueOf(e.getType()), e.getStoragePath(),
+                e.getProductId() != null ? new ProductId(e.getProductId()) : new OptionItemId(e.getOptionItemId()),
+                MediaType.valueOf(e.getType()), e.getStoragePath(),
                 e.getWidth() == null ? 0 : e.getWidth(), e.getHeight() == null ? 0 : e.getHeight(), e.getPosition(),
                 e.isActive(), MediaStatus.valueOf(e.getStatus()), e.getVideoId(), e.getDurationSeconds(),
                 e.getFailure());

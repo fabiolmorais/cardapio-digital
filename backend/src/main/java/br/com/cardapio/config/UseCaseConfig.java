@@ -565,23 +565,26 @@ class UseCaseConfig {
     // Fotos dos produtos (Guia 10)
 
     @Bean
-    StartMediaUploadUseCase startMediaUploadUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+    StartMediaUploadUseCase startMediaUploadUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+            ProductMediaPort productMediaPort,
                                                     MediaStoragePort mediaStoragePort) {
-        return new StartMediaUploadService(productPort, productMediaPort, mediaStoragePort);
+        return new StartMediaUploadService(productPort, optionGroupPort, productMediaPort, mediaStoragePort);
     }
 
     @Bean
-    AddProductMediaUseCase addProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+    AddProductMediaUseCase addProductMediaUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+            ProductMediaPort productMediaPort,
                                                   MediaStoragePort mediaStoragePort,
                                                   ImageProcessorPort imageProcessorPort) {
-        return new AddProductMediaService(productPort, productMediaPort, mediaStoragePort, imageProcessorPort);
+        return new AddProductMediaService(productPort, optionGroupPort, productMediaPort, mediaStoragePort, imageProcessorPort);
     }
 
     @Bean
-    ListProductMediaUseCase listProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+    ListProductMediaUseCase listProductMediaUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+            ProductMediaPort productMediaPort,
                                                     MediaStoragePort mediaStoragePort,
                                                     VideoHostingPort videoHostingPort) {
-        return new ListProductMediaService(productPort, productMediaPort, mediaStoragePort, videoHostingPort);
+        return new ListProductMediaService(productPort, optionGroupPort, productMediaPort, mediaStoragePort, videoHostingPort);
     }
 
     @Bean
@@ -591,8 +594,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    ReorderProductMediaUseCase reorderProductMediaUseCase(ProductPort productPort, ProductMediaPort productMediaPort) {
-        return new ReorderProductMediaService(productPort, productMediaPort);
+    ReorderProductMediaUseCase reorderProductMediaUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+            ProductMediaPort productMediaPort) {
+        return new ReorderProductMediaService(productPort, optionGroupPort, productMediaPort);
     }
 
     // Marca e aparência (Guia 11)
@@ -899,10 +903,11 @@ class UseCaseConfig {
     // O vídeo do prato (Guia 22)
 
     @Bean
-    StartVideoUploadUseCase startVideoUploadUseCase(ProductPort productPort, ProductMediaPort productMediaPort,
+    StartVideoUploadUseCase startVideoUploadUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+            ProductMediaPort productMediaPort,
                                                     VideoHostingPort videoHostingPort,
                                                     SubscriptionPort subscriptionPort) {
-        return new StartVideoUploadService(productPort, productMediaPort, videoHostingPort, subscriptionPort);
+        return new StartVideoUploadService(productPort, optionGroupPort, productMediaPort, videoHostingPort, subscriptionPort);
     }
 
     @Bean

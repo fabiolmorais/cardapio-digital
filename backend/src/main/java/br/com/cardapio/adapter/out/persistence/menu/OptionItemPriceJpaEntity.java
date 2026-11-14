@@ -22,7 +22,7 @@ class OptionItemPriceJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "option_item_id", nullable = false)
     private UUID optionItemId;
 
-    @Column(name = "product_variant_id", nullable = false)
+    @Column(name = "product_variant_id")
     private UUID productVariantId;
 
     @Column(name = "price_cents", nullable = false)

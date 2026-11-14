@@ -45,10 +45,11 @@ export function rulesOf(group: OptionGroup, link: GroupLink, variantId: string |
   };
 }
 
-/** O preço da opção neste tamanho. */
+/** O preço da opção aqui: o do tamanho; sem ele, o deste produto; sem nenhum, o da opção (como o back). */
 export function optionPrice(item: MenuItem, optionId: string, basePrice: number, variantId: string | null) {
-  const own = variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId);
-  return own ? own.priceCents : basePrice;
+  const inSize = variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId);
+  const inProduct = item.optionPrices.find((p) => p.optionId === optionId && !p.variantId);
+  return (inSize || inProduct)?.priceCents ?? basePrice;
 }
 
 /** Na rodada do rodízio, os adicionais pagos (opções com preço em grupos que somam) não entram. */

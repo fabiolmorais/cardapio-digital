@@ -59,3 +59,44 @@ Regras que valem para todos:
 - A cozinha, o Modo TV, a comanda impressa e o "Por item" passam a mostrar as escolhas embaixo do item. O "Por item" só soma itens iguais em produto, tamanho e escolhas.
 - O ponto do corte no rodízio de passagem continua fixo por enquanto e pode migrar para um grupo de opções depois.
 - A modelagem completa (ajustes, fórmula do preço, exemplos por nicho e regras) está na seção "Opções dos produtos" da especificação.
+
+## Complemento (14/11/2026): opções com foto, descrição e vídeo
+
+### Contexto
+
+Testando a pizza no staging, o jeito das pizzarias de verdade mostrou dois problemas:
+
+- **Os sabores apareciam sem foto.** A escolha era uma lista de botões com nome e preço, e as fotos e os vídeos são a principal característica do OhChefe.
+- **O tamanho escondido no produto não é o mais comum.** Na pizzaria de referência, cada tamanho é um prato do cardápio (Pequena, Média e Grande), com foto e "a partir de". Ao tocar no tamanho, abre um segundo cardápio com os sabores, cada um com foto, ingredientes e o preço naquele tamanho, mais a busca pelo nome. A regra ("de 1 a 2 sabores", cobrar pelo maior) é de cada tamanho.
+
+### Decisão
+
+1. **A opção ganha descrição, fotos e vídeos**, com os mesmos limites e o mesmo caminho do prato:
+   - até 8 mídias, das quais até 3 vídeos de até 60 s;
+   - foto por URL assinada, com os três tamanhos gerados pelo back;
+   - vídeo pelo serviço de vídeo, com o aviso do webhook.
+
+   A mídia passa a ter um dono, que é um produto ou uma opção (`product_media.option_item_id`, com exatamente um dos dois preenchido). Vale para qualquer nicho: o adicional com foto, o complemento do açaí, o drinque.
+2. **O preço da opção pode ser por produto**, sem tamanho (`option_item_price.product_variant_id` passa a aceitar vazio). Uma biblioteca só de sabores serve à Pequena, à Média e à Grande, cada uma com a sua coluna de preço. Foto, descrição e "esgotado" do sabor são cadastrados uma vez.
+
+   A ordem do preço da opção:
+   - o preço no tamanho escolhido;
+   - o preço neste produto;
+   - o preço da opção.
+3. **Na mesa, a escolha vira um cardápio:**
+   - a tela cheia mostra a foto do prato no topo;
+   - a busca pelo nome vem logo abaixo;
+   - cada opção aparece com foto, descrição e preço, e tocar na foto abre a galeria com os vídeos;
+   - por fim vêm a observação e o botão com o total.
+
+   Grupo sem nenhuma foto continua como lista simples (o ponto da carne não precisa de imagem).
+4. **Os dois jeitos continuam valendo.** Um produto com os tamanhos dentro (o refrigerante de 300 ou 500 ml) ou um produto por tamanho (a pizzaria). O restaurante escolhe.
+
+"Sabores mais pedidos" no topo da escolha fica para a fase 2.
+
+### Consequências
+
+- Uma migração nova muda `option_item` (descrição), `product_media` (dono) e `option_item_price` (tamanho opcional, com unicidade por produto, opção e tamanho).
+- Os casos de uso de mídia passam a receber o dono (produto ou opção). A API ganha as mesmas rotas de mídia em `/api/v1/option-items/{id}`. O cardápio público traz a galeria de cada opção.
+- O Reels e a capa do prato continuam só com a mídia dos produtos.
+- A tela de escolha da mesa fica mais pesada. As fotos usam o tamanho pequeno e carregam sob demanda, e o orçamento de 200 KB de JavaScript continua conferido pelo e2e.

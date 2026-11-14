@@ -44,7 +44,8 @@ SELECT json_build_object(
                               'nome', g.name, 'pergunta', g.title, 'minimo', g.min_choices, 'maximo', g.max_choices,
                               'divide_o_item', g.splits_item, 'cobranca', g.pricing, 'ativo', g.active,
                               'opcoes', COALESCE((SELECT json_agg(json_build_object(
-                                                      'nome', i.name, 'preco_centavos', i.price_cents,
+                                                      'nome', i.name, 'descricao', i.description,
+                                                      'preco_centavos', i.price_cents,
                                                       'ativa', i.active) ORDER BY i.position)
                                                   FROM option_item i WHERE i.option_group_id = g.id), '[]'))
                           ORDER BY g.name)

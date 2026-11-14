@@ -14,6 +14,7 @@ import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.Product;
+import br.com.cardapio.domain.menu.model.MediaOwner;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
@@ -269,13 +270,18 @@ class KitchenServicesTest {
         }
 
         @Override
-        public List<ProductMedia> findActiveByProduct(EstablishmentId establishmentId, ProductId productId) {
+        public List<ProductMedia> findActiveByOwner(EstablishmentId establishmentId, MediaOwner owner) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public int nextPosition(EstablishmentId establishmentId, ProductId productId) {
+        public int nextPosition(EstablishmentId establishmentId, MediaOwner owner) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<ProductMedia> findReadyOptionGalleries(EstablishmentId establishmentId) {
+            return List.of();
         }
 
         @Override

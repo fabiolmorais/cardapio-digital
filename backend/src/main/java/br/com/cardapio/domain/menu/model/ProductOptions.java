@@ -25,7 +25,8 @@ import java.util.stream.IntStream;
  *
  * @param variants os tamanhos, na ordem
  * @param groups   os grupos ligados, na ordem em que o cliente vê
- * @param prices   o preço de uma opção num tamanho, quando é diferente do preço da opção
+ * @param prices   o preço de uma opção num tamanho (ou no produto todo, sem tamanho), quando é
+ *                 diferente do preço da opção
  */
 public record ProductOptions(ProductId productId, List<ProductVariant> variants, List<LinkedGroup> groups,
                              Map<PriceKey, Money> prices) {
@@ -45,8 +46,15 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
         }
     }
 
-    /** O preço de uma opção num tamanho. */
+    /**
+     * O preço de uma opção num tamanho, ou no produto todo (variantId null): cada tamanho da pizza
+     * pode ser um produto, com a mesma biblioteca de sabores.
+     */
     public record PriceKey(OptionItemId optionId, ProductVariantId variantId) {
+
+        public PriceKey {
+            Objects.requireNonNull(optionId);
+        }
     }
 
     public ProductOptions {
@@ -72,12 +80,16 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
                 .orElse(variants.isEmpty() ? null : variants.getFirst());
     }
 
-    /** O preço da opção neste tamanho (sem tamanho, ou sem preço próprio no tamanho, o da opção). */
+    /**
+     * O preço da opção aqui: o do tamanho escolhido; sem ele, o deste produto; sem nenhum dos dois,
+     * o da opção.
+     */
     public Money priceOf(OptionItem option, ProductVariant variant) {
+        Money inProduct = prices.getOrDefault(new PriceKey(option.id(), null), option.price());
         if (variant == null) {
-            return option.price();
+            return inProduct;
         }
-        return prices.getOrDefault(new PriceKey(option.id(), variant.id()), option.price());
+        return prices.getOrDefault(new PriceKey(option.id(), variant.id()), inProduct);
     }
 
     /** As regras do grupo neste tamanho (com o mínimo e o máximo do tamanho, se houver). */

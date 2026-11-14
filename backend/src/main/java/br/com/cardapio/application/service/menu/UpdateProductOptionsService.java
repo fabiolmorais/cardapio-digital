@@ -91,21 +91,22 @@ public class UpdateProductOptionsService implements UpdateProductOptionsUseCase 
             }
         }
 
-        // Os preços por tamanho: só de opções dos grupos ligados, um por opção e tamanho.
+        // Os preços por tamanho (ou neste produto): só de opções dos grupos ligados, um por opção e tamanho.
         Map<OptionItemId, OptionItem> items = linked.values().stream().flatMap(g -> g.items().stream())
                 .collect(Collectors.toMap(OptionItem::id, Function.identity()));
         List<ProductOptionsChange.Price> prices = new ArrayList<>();
         Set<String> priced = new HashSet<>();
         for (ProductOptionsForm.Price price : form.prices()) {
-            ProductVariant variant = variantAt(active, price.variant());
+            ProductVariant variant = price.variant() == null ? null : variantAt(active, price.variant());
             if (!items.containsKey(price.optionId())) {
                 throw new OptionItemNotFoundException();
             }
             if (!priced.add(price.optionId().value() + "/" + price.variant())) {
-                throw new InvalidValueException(items.get(price.optionId()).name() + ": o preço do tamanho "
-                        + variant.name() + " aparece duas vezes");
+                throw new InvalidValueException(items.get(price.optionId()).name() + ": o preço "
+                        + (variant == null ? "neste produto" : "do tamanho " + variant.name()) + " aparece duas vezes");
             }
-            prices.add(new ProductOptionsChange.Price(price.optionId(), variant.id(), price.price()));
+            prices.add(new ProductOptionsChange.Price(price.optionId(), variant == null ? null : variant.id(),
+                    price.price()));
         }
 
         options.save(new ProductOptionsChange(establishmentId, productId, variants, groupIds, limits, prices));

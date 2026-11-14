@@ -26,6 +26,11 @@ import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import br.com.cardapio.domain.menu.model.OptionItemId;
+import br.com.cardapio.domain.menu.model.OptionItem;
+import java.util.LinkedHashMap;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -91,7 +96,24 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
                 .map(Product::id).collect(Collectors.toSet());
         List<ProductId> mostOrdered = MostOrdered.pick(popular.findMostOrdered(establishmentId,
                 clock.instant().minus(MostOrdered.WINDOW), MostOrdered.MAX * 3), orderable);
-        return new PublicMenu(visible, mostOrdered);
+        return new PublicMenu(visible, mostOrdered, optionMedia(establishmentId, configured.values()));
+    }
+
+    /** As galerias das opções que aparecem em algum produto (a consulta já vem em ordem: opção, posição). */
+    private Map<OptionItemId, List<PublicMenu.Media>> optionMedia(EstablishmentId establishmentId,
+                                                                 Collection<ProductOptions> configured) {
+        Set<OptionItemId> shown = configured.stream().flatMap(o -> o.groups().stream())
+                .flatMap(g -> g.items().stream()).map(OptionItem::id).collect(Collectors.toSet());
+        if (shown.isEmpty()) {
+            return Map.of();
+        }
+        Map<OptionItemId, List<PublicMenu.Media>> result = new LinkedHashMap<>();
+        for (ProductMedia m : media.findReadyOptionGalleries(establishmentId)) {
+            if (m.owner() instanceof OptionItemId option && shown.contains(option)) {
+                result.computeIfAbsent(option, k -> new ArrayList<>()).add(media(m));
+            }
+        }
+        return result;
     }
 
     private PublicMenu.Item item(Product product, List<ProductMedia> gallery, ProductOptions choices) {

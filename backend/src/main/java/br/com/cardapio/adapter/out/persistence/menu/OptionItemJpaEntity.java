@@ -22,6 +22,9 @@ class OptionItemJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "price_cents", nullable = false)
     private long priceCents;
 
@@ -37,11 +40,12 @@ class OptionItemJpaEntity extends EstablishmentScopedEntity {
     protected OptionItemJpaEntity() {
     }
 
-    OptionItemJpaEntity(UUID id, UUID establishmentId, UUID optionGroupId, String name, long priceCents, boolean available, int position, boolean active) {
+    OptionItemJpaEntity(UUID id, UUID establishmentId, UUID optionGroupId, String name, String description, long priceCents, boolean available, int position, boolean active) {
         super(establishmentId);
         this.id = id;
         this.optionGroupId = optionGroupId;
         this.name = name;
+        this.description = description;
         this.priceCents = priceCents;
         this.available = available;
         this.position = position;
@@ -51,6 +55,7 @@ class OptionItemJpaEntity extends EstablishmentScopedEntity {
     UUID getId() { return id; }
     UUID getOptionGroupId() { return optionGroupId; }
     String getName() { return name; }
+    String getDescription() { return description; }
     long getPriceCents() { return priceCents; }
     boolean isAvailable() { return available; }
     int getPosition() { return position; }

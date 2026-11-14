@@ -60,7 +60,7 @@ final class OptionGroupItems {
             } else {
                 throw new OptionItemNotFoundException();
             }
-            result.add(new OptionItem(id, group.establishmentId(), group.id(), item.name(), item.price(),
+            result.add(new OptionItem(id, group.establishmentId(), group.id(), item.name(), item.description(), item.price(),
                     item.available(), position, true));
         }
         existing.stream().filter(i -> !kept.contains(i.id())).map(OptionItem::deactivate).forEach(result::add);

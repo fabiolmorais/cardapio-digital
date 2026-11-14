@@ -33,8 +33,12 @@ public record ProductOptionsForm(List<Variant> variants, List<Group> groups, Lis
     public record Limit(int variant, ChoiceLimit limit) {
     }
 
-    /** O preço de uma opção num tamanho. @param variant a posição do tamanho na lista {@code variants} */
-    public record Price(OptionItemId optionId, int variant, Money price) {
+    /**
+     * O preço de uma opção num tamanho, ou neste produto (cada tamanho da pizza como um produto).
+     *
+     * @param variant a posição do tamanho na lista {@code variants}; null para o produto todo
+     */
+    public record Price(OptionItemId optionId, Integer variant, Money price) {
     }
 
     public ProductOptionsForm {

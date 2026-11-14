@@ -26,11 +26,13 @@ final class OptionDtos {
     record Item(
             @Schema(requiredMode = REQUIRED) UUID id,
             @Schema(requiredMode = REQUIRED, example = "Calabresa") String name,
+            @Schema(requiredMode = REQUIRED, description = "Vazia se o restaurante não escreveu",
+                    example = "Mussarela, calabresa, cebola e orégano") String description,
             @Schema(requiredMode = REQUIRED, example = "500") long priceCents,
             @Schema(requiredMode = REQUIRED, description = "false: esgotada") boolean available
     ) {
         static Item from(OptionItem i) {
-            return new Item(i.id().value(), i.name(), i.price().cents(), i.available());
+            return new Item(i.id().value(), i.name(), i.description(), i.price().cents(), i.available());
         }
     }
 
@@ -95,13 +97,15 @@ final class OptionDtos {
     @Schema(name = "OptionPrice", description = "O preço de uma opção num tamanho, em centavos")
     record Price(
             @Schema(requiredMode = REQUIRED) UUID optionId,
-            @Schema(requiredMode = REQUIRED) UUID variantId,
+            @Schema(description = "Vazio: o preço neste produto (em qualquer tamanho sem preço próprio)") UUID variantId,
             @Schema(requiredMode = REQUIRED) long priceCents
     ) {
         static List<Price> from(ProductOptions options) {
             return options.prices().entrySet().stream()
-                    .filter(e -> options.variants().stream().anyMatch(v -> v.id().equals(e.getKey().variantId())))
-                    .map(e -> new Price(e.getKey().optionId().value(), e.getKey().variantId().value(),
+                    .filter(e -> e.getKey().variantId() == null
+                            || options.variants().stream().anyMatch(v -> v.id().equals(e.getKey().variantId())))
+                    .map(e -> new Price(e.getKey().optionId().value(),
+                            e.getKey().variantId() == null ? null : e.getKey().variantId().value(),
                             e.getValue().cents()))
                     .toList();
         }

@@ -13,6 +13,7 @@ import br.com.cardapio.application.port.out.video.VideoUploadTicket;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.MediaStatus;
+import br.com.cardapio.domain.menu.model.MediaOwner;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
@@ -64,17 +65,17 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
     }
 
     @Override
-    public List<ProductMedia> findActiveByProduct(EstablishmentId establishmentId, ProductId productId) {
+    public List<ProductMedia> findActiveByOwner(EstablishmentId establishmentId, MediaOwner owner) {
         return media.values().stream()
-                .filter(m -> m.establishmentId().equals(establishmentId) && m.productId().equals(productId)
+                .filter(m -> m.establishmentId().equals(establishmentId) && m.owner().equals(owner)
                         && m.active())
                 .sorted(Comparator.comparingInt(ProductMedia::position))
                 .toList();
     }
 
     @Override
-    public int nextPosition(EstablishmentId establishmentId, ProductId productId) {
-        return media.values().stream().filter(m -> m.productId().equals(productId))
+    public int nextPosition(EstablishmentId establishmentId, MediaOwner owner) {
+        return media.values().stream().filter(m -> m.owner().equals(owner))
                 .mapToInt(m -> m.position() + 1).max().orElse(0);
     }
 
@@ -95,8 +96,18 @@ final class MediaFakes implements ProductMediaPort, MediaStoragePort, ImageProce
     public List<ProductMedia> findReadyGalleries(EstablishmentId establishmentId) {
         return media.values().stream()
                 .filter(m -> m.establishmentId().equals(establishmentId) && m.active()
-                        && m.status() == MediaStatus.READY)
+                        && m.status() == MediaStatus.READY && m.productId() != null)
                 .sorted(Comparator.comparing((ProductMedia m) -> m.productId().value())
+                        .thenComparingInt(ProductMedia::position))
+                .toList();
+    }
+
+    @Override
+    public List<ProductMedia> findReadyOptionGalleries(EstablishmentId establishmentId) {
+        return media.values().stream()
+                .filter(m -> m.establishmentId().equals(establishmentId) && m.active()
+                        && m.status() == MediaStatus.READY && m.productId() == null)
+                .sorted(Comparator.comparing((ProductMedia m) -> m.owner().value())
                         .thenComparingInt(ProductMedia::position))
                 .toList();
     }
