@@ -169,7 +169,7 @@ function TvBoard({
   const clock = new Date(now).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <main className="relative flex min-h-dvh flex-col gap-9 bg-background px-6 py-8 lg:h-dvh lg:overflow-hidden lg:px-14 lg:py-12">
+    <main className="relative flex min-h-dvh flex-col gap-9 bg-background px-6 py-8 lg:h-dvh lg:overflow-hidden lg:px-8 lg:py-10 2xl:px-14 2xl:py-12">
       <header className="flex flex-wrap items-center gap-6">
         <span
           aria-hidden
@@ -209,7 +209,7 @@ function TvBoard({
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-3">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-3 lg:gap-5 2xl:gap-7">
         <Column id="tv-chamados" title={calls.title} count={list.length} countClass="bg-primary text-primary-foreground">
           {list.length === 0 ? (
             <p className="text-2xl text-muted-foreground">{t.empty}</p>
@@ -333,7 +333,7 @@ function Column({
   return (
     <section
       aria-labelledby={id}
-      className="flex min-h-0 flex-col gap-[18px] overflow-hidden rounded-[32px] border border-border bg-card p-7"
+      className="flex min-h-0 flex-col gap-[18px] overflow-hidden rounded-[32px] border border-border bg-card p-5 2xl:p-7"
     >
       <div className="flex items-center gap-4">
         <h2 id={id} className="text-[34px] font-bold">
@@ -353,7 +353,11 @@ function Column({
   );
 }
 
-/** Um cartão do Modo TV: a mesa grande, o que é, o setor junto, e à direita o tempo ou a tag. */
+/**
+ * Um cartão do Modo TV: a mesa grande, o que é, o setor junto, e à direita o tempo ou a tag. Abaixo
+ * de 1536 px (a TV de 1280 ou o notebook), a coluna fica estreita: o tempo ou a tag desce para
+ * baixo do texto, para não ficar por cima dele.
+ */
 function TvItem({
   label,
   tone,
@@ -374,14 +378,20 @@ function TvItem({
   return (
     <li
       aria-label={`${calls.table} ${label} · ${title}`}
-      className={cn("flex items-center gap-[22px] rounded-3xl border border-border bg-muted px-[22px] py-5", className)}
+      className={cn(
+        "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 rounded-3xl border border-border bg-muted px-4 py-4",
+        "2xl:grid-cols-[auto_minmax(0,1fr)_auto] 2xl:gap-x-[22px] 2xl:px-[22px] 2xl:py-5",
+        className,
+      )}
     >
-      <TableBox label={label} tone={tone} size="tv" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="text-[30px] leading-9 font-semibold">{title}</span>
+      <span className={cn("self-start 2xl:row-span-1 2xl:self-center", end && "row-span-2")}>
+        <TableBox label={label} tone={tone} size="tv" />
+      </span>
+      <span className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-[26px] leading-8 font-semibold wrap-break-word 2xl:text-[30px] 2xl:leading-9">{title}</span>
         <span className={cn("line-clamp-2 text-[22px] leading-7 text-muted-foreground", detailClass)}>{detail}</span>
       </span>
-      {end}
+      {end && <span className="justify-self-start 2xl:justify-self-end">{end}</span>}
     </li>
   );
 }
