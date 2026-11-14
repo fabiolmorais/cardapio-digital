@@ -48,7 +48,7 @@ class OrderItemTest {
 
         OrderItem preparing = new OrderItem(canceled.id(), canceled.establishmentId(), canceled.orderId(),
                 canceled.productId(), "Sunomono", Money.ofCents(15_90), 1, null, OrderItemStatus.PREPARING, NOW, NOW,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         assertThatThrownBy(() -> preparing.cancelByCustomer(NOW))
                 .isInstanceOf(OrderItemStateException.class).hasMessageContaining("fale com o garçom");
     }

@@ -1,6 +1,10 @@
 package br.com.cardapio.adapter.in.web.order;
 
+import br.com.cardapio.domain.menu.model.OptionItemId;
+import br.com.cardapio.domain.menu.model.OptionSelection;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.ProductVariantId;
+import br.com.cardapio.domain.menu.model.SelectedOption;
 import br.com.cardapio.domain.order.model.OrderLine;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -24,11 +28,24 @@ record PlaceOrderRequest(
     record Line(
             @Schema(requiredMode = REQUIRED) @NotNull UUID productId,
             @Schema(requiredMode = REQUIRED, example = "2") @Min(1) @Max(20) int quantity,
-            @Schema(description = "Observação do item", example = "sem cebolinha") @Size(max = 140) String note
+            @Schema(description = "Observação do item", example = "sem cebolinha") @Size(max = 140) String note,
+            @Schema(description = "O tamanho escolhido; vazio se o produto não tem tamanhos") UUID variantId,
+            @Schema(description = "As opções escolhidas; vazio se o produto não tem opções")
+            @Size(max = 100) List<@NotNull @Valid Choice> options
     ) {
         OrderLine toLine() {
-            return new OrderLine(new ProductId(productId), quantity, note);
+            return new OrderLine(new ProductId(productId), quantity, note, new OptionSelection(
+                    variantId == null ? null : new ProductVariantId(variantId),
+                    options == null ? List.of() : options.stream()
+                            .map(o -> new SelectedOption(new OptionItemId(o.optionId()), o.quantity())).toList()));
         }
+    }
+
+    @Schema(name = "PlaceOrderChoice", description = "Uma opção escolhida e quantas vezes")
+    record Choice(
+            @Schema(requiredMode = REQUIRED) @NotNull UUID optionId,
+            @Schema(requiredMode = REQUIRED, example = "1") @Min(1) @Max(20) int quantity
+    ) {
     }
 
     List<OrderLine> toLines() {

@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioCommand;
 import br.com.cardapio.application.port.in.rodizio.TableRodizio;
@@ -103,7 +104,7 @@ class PassagemServicesTest {
     void theCutRequestIsARoundAtZeroWithThePoint() {
         rodizio(RodizioType.PASSAGEM);
 
-        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
+        var cut = new PlaceOrderService(tables, sessions, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(picanha.id(), 1, "Mal passada")), true));
 

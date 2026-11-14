@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.KitchenItem;
 import br.com.cardapio.application.port.in.order.OrderItemStep;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
@@ -87,7 +88,7 @@ class KitchenServicesTest {
     /** Um pedido da Ana, um minuto depois do anterior (a fila é por ordem de chegada). */
     private TableOrder place(OrderLine... lines) {
         clock = Clock.offset(clock, Duration.ofMinutes(1));
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, "ana", List.of(lines)));
     }

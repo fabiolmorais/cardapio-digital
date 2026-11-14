@@ -6,6 +6,7 @@ import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.MediaType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +21,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 record PublicMenuResponse(
         @Schema(requiredMode = REQUIRED) List<Category> categories,
         @Schema(requiredMode = REQUIRED, description = "Os mais pedidos dos últimos 30 dias (ids, do mais pedido); "
-                + "vazio enquanto houver menos de 3") List<UUID> mostOrdered) {
+                + "vazio enquanto houver menos de 3") List<UUID> mostOrdered,
+        @Schema(requiredMode = REQUIRED, description = "Os grupos de opções usados no cardápio, uma vez cada "
+                + "(os produtos apontam para eles pelo id)") List<OptionDtos.Group> optionGroups) {
 
     @Schema(name = "PublicMenuCategory")
     record Category(
@@ -45,7 +48,23 @@ record PublicMenuResponse(
             Integer serves,
             @Schema(description = "A capa (a primeira foto); null quando o produto não tem foto") Photo photo,
             @Schema(requiredMode = REQUIRED, description = "A galeria pronta, em ordem: fotos e vídeos (o Reels)")
-            List<Media> media
+            List<Media> media,
+            @Schema(description = "O \"a partir de\" quando o preço depende do tamanho ou de uma opção obrigatória; "
+                    + "null no produto de sempre", example = "4990") Long fromPriceCents,
+            @Schema(requiredMode = REQUIRED, description = "Os tamanhos; vazio sem tamanhos")
+            List<OptionDtos.Variant> variants,
+            @Schema(requiredMode = REQUIRED, description = "Os grupos de opções, na ordem em que o cliente vê")
+            List<GroupLink> optionGroups,
+            @Schema(requiredMode = REQUIRED, description = "Preços de opções num tamanho (quando mudam)")
+            List<OptionDtos.Price> optionPrices
+    ) {
+    }
+
+    @Schema(name = "PublicMenuGroupLink", description = "Um grupo de opções de um produto")
+    record GroupLink(
+            @Schema(requiredMode = REQUIRED, description = "O id em optionGroups") UUID groupId,
+            @Schema(requiredMode = REQUIRED, description = "Mínimo e máximo em cada tamanho (quando mudam)")
+            List<OptionDtos.Limit> limits
     ) {
     }
 
@@ -76,13 +95,21 @@ record PublicMenuResponse(
     }
 
     static PublicMenuResponse from(PublicMenu menu) {
+        // Cada grupo uma vez só, na ordem em que aparece no cardápio.
+        Map<UUID, OptionDtos.Group> groups = new LinkedHashMap<>();
+        menu.categories().forEach(c -> c.products().forEach(p -> p.options().groups().forEach(g ->
+                groups.putIfAbsent(g.group().id().value(), OptionDtos.Group.from(g.group(), g.items(), null)))));
         return new PublicMenuResponse(menu.categories().stream()
                 .map(c -> new Category(c.id().value(), c.name(), c.products().stream()
                         .map(p -> new Item(p.id().value(), p.name(), p.description(), p.priceCents(),
                                 p.promoPriceCents(), p.featured(), p.available(), p.aLaCarte(), p.serves(), photo(p.photoUrls()),
-                                p.media().stream().map(PublicMenuResponse::media).toList()))
+                                p.media().stream().map(PublicMenuResponse::media).toList(), p.fromPriceCents(),
+                                p.options().variants().stream().map(OptionDtos.Variant::from).toList(),
+                                p.options().groups().stream().map(g -> new GroupLink(g.group().id().value(),
+                                        OptionDtos.Limit.from(g.limits()))).toList(),
+                                OptionDtos.Price.from(p.options())))
                         .toList()))
-                .toList(), menu.mostOrdered().stream().map(ProductId::value).toList());
+                .toList(), menu.mostOrdered().stream().map(ProductId::value).toList(), List.copyOf(groups.values()));
     }
 
     private static Media media(PublicMenu.Media m) {

@@ -10,6 +10,7 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
+import br.com.cardapio.application.port.out.menu.ProductOptionsPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.service.floor.PublicTableLookup;
@@ -20,6 +21,8 @@ import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductDetails;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductMedia;
+import br.com.cardapio.domain.menu.model.ProductOptions;
+import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -40,14 +43,16 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
     private final MenuCategoryPort categories;
     private final ProductPort products;
     private final ProductMediaPort media;
+    private final ProductOptionsPort options;
     private final MediaStoragePort storage;
     private final VideoHostingPort videos;
     private final PopularProductsPort popular;
     private final Clock clock;
 
     public GetPublicMenuService(DiningTablePort tables, MenuCategoryPort categories, ProductPort products,
-                                ProductMediaPort media, MediaStoragePort storage, VideoHostingPort videos,
-                                PopularProductsPort popular, Clock clock) {
+                                ProductMediaPort media, ProductOptionsPort options, MediaStoragePort storage,
+                                VideoHostingPort videos, PopularProductsPort popular, Clock clock) {
+        this.options = options;
         this.popular = popular;
         this.clock = clock;
         this.tables = tables;
@@ -67,9 +72,12 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         Map<ProductId, List<ProductMedia>> galleries = media.findReadyGalleries(establishmentId).stream()
                 .collect(Collectors.groupingBy(ProductMedia::productId));
         List<Product> all = products.findAllActive(establishmentId);
+        // Os tamanhos e os grupos de todos os produtos de uma vez (ADR 0010).
+        Map<ProductId, ProductOptions> configured = options.findAllActive(establishmentId);
         Map<MenuCategoryId, List<PublicMenu.Item>> byCategory = all.stream()
                 .collect(Collectors.groupingBy(Product::categoryId,
-                        Collectors.mapping(p -> item(p, galleries.getOrDefault(p.id(), List.of())),
+                        Collectors.mapping(p -> item(p, galleries.getOrDefault(p.id(), List.of()),
+                                        configured.getOrDefault(p.id(), ProductOptions.none(p.id()))),
                                 Collectors.toList())));
 
         List<PublicMenu.Category> visible = categories.findActive(establishmentId).stream()
@@ -86,7 +94,7 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         return new PublicMenu(visible, mostOrdered);
     }
 
-    private PublicMenu.Item item(Product product, List<ProductMedia> gallery) {
+    private PublicMenu.Item item(Product product, List<ProductMedia> gallery, ProductOptions choices) {
         ProductDetails d = product.details();
         // A capa é a primeira FOTO: a lista do cardápio mostra foto, e não vídeo.
         Map<ImageVariant, String> cover = gallery.stream().filter(m -> !m.isVideo()).findFirst()
@@ -94,7 +102,16 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
         return new PublicMenu.Item(product.id(), d.name(), d.description(), d.price().cents(),
                 d.onSale() ? d.promoPrice().cents() : null, d.featured(), product.available(), d.aLaCarte(), d.serves(),
                 cover,
-                gallery.stream().map(this::media).toList());
+                gallery.stream().map(this::media).toList(), choices, fromPrice(product, choices));
+    }
+
+    /** O "a partir de", só quando o preço depende de escolha (tamanho ou opção obrigatória com preço). */
+    private static Long fromPrice(Product product, ProductOptions choices) {
+        if (choices.isEmpty()) {
+            return null;
+        }
+        Money from = choices.fromPrice(product.details());
+        return choices.variants().isEmpty() && from.equals(product.details().currentPrice()) ? null : from.cents();
     }
 
     private PublicMenu.Media media(ProductMedia m) {

@@ -1,5 +1,6 @@
 package br.com.cardapio.application.port.in.order;
 
+import br.com.cardapio.domain.menu.model.ItemChoices;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.order.model.OrderId;
@@ -37,10 +38,11 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
      * @param rodizio      veio numa rodada do rodízio (a tela mostra "Rodízio" em vez de R$ 0,00)
      * @param thumbUrl     a miniatura da foto do produto; null se ele não tem foto
      * @param canceledByCustomer foi o próprio cliente que cancelou (e não a equipe)
+     * @param choices            o tamanho e as escolhas copiados no pedido (ADR 0010)
      */
     public record Item(OrderItemId id, String productName, Money unitPrice, int quantity, String note,
                        OrderItemStatus status, String cancelReason, boolean rodizio, String thumbUrl,
-                       boolean canceledByCustomer) {
+                       boolean canceledByCustomer, ItemChoices choices) {
 
         static Item from(OrderItem i) {
             return from(i, product -> null);
@@ -48,7 +50,8 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
 
         static Item from(OrderItem i, Function<ProductId, String> thumbs) {
             return new Item(i.id(), i.productName(), i.unitPrice(), i.quantity(), i.note(), i.status(),
-                    i.cancelReason(), i.inRodizio(), thumbs.apply(i.productId()), i.canceledByCustomer());
+                    i.cancelReason(), i.inRodizio(), thumbs.apply(i.productId()), i.canceledByCustomer(),
+                    i.choices());
         }
     }
 

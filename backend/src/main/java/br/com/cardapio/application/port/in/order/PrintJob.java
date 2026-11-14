@@ -1,5 +1,6 @@
 package br.com.cardapio.application.port.in.order;
 
+import br.com.cardapio.domain.menu.model.ItemChoices;
 import br.com.cardapio.application.port.out.order.PrintJobView;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItemId;
@@ -21,9 +22,10 @@ public record PrintJob(OrderId orderId, TicketKind kind, int orderNumber, String
      *
      * @param rodizio veio numa rodada do rodízio (sem preço)
      * @param cancelReason o motivo, na via "CANCELADO"
+     * @param choices      o tamanho e as escolhas (ADR 0010), embaixo do item na comanda
      */
     public record Line(OrderItemId id, String productName, int quantity, String note, boolean rodizio,
-                       String cancelReason) {
+                       String cancelReason, ItemChoices choices) {
     }
 
     public PrintJob {
@@ -34,6 +36,6 @@ public record PrintJob(OrderId orderId, TicketKind kind, int orderNumber, String
         Instant orderedAt = view.items().stream().map(i -> i.createdAt()).min(Instant::compareTo).orElse(null);
         return new PrintJob(view.orderId(), kind, view.orderNumber(), view.tableLabel(), view.sectorName(), orderedAt,
                 view.items().stream().map(i -> new Line(i.id(), i.productName(), i.quantity(), i.note(), i.inRodizio(),
-                        kind == TicketKind.CANCELLATION ? i.cancelReason() : null)).toList());
+                        kind == TicketKind.CANCELLATION ? i.cancelReason() : null, i.choices())).toList());
     }
 }

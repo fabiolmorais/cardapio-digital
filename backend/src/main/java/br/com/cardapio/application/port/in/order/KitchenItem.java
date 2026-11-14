@@ -1,5 +1,6 @@
 package br.com.cardapio.application.port.in.order;
 
+import br.com.cardapio.domain.menu.model.ItemChoices;
 import br.com.cardapio.application.port.out.order.KitchenItemView;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.order.model.OrderId;
@@ -15,7 +16,8 @@ import java.util.function.Function;
  */
 public record KitchenItem(OrderItemId id, OrderId orderId, int orderNumber, String tableLabel, String sectorName,
                           ProductId productId, String productName, String photoUrl, int quantity, String note,
-                          OrderItemStatus status, Instant createdAt, Instant preparingAt, Instant readyAt) {
+                          OrderItemStatus status, Instant createdAt, Instant preparingAt, Instant readyAt,
+                          ItemChoices choices) {
 
     public static KitchenItem from(KitchenItemView view) {
         return from(view, product -> null);
@@ -26,6 +28,6 @@ public record KitchenItem(OrderItemId id, OrderId orderId, int orderNumber, Stri
         var i = view.item();
         return new KitchenItem(i.id(), i.orderId(), view.orderNumber(), view.tableLabel(), view.sectorName(),
                 i.productId(), i.productName(), photos.apply(i.productId()), i.quantity(), i.note(), i.status(),
-                i.createdAt(), i.preparingAt(), i.readyAt());
+                i.createdAt(), i.preparingAt(), i.readyAt(), i.choices());
     }
 }

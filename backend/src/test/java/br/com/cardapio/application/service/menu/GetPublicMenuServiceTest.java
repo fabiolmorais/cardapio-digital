@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.menu;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.menu.PublicMenu;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
@@ -22,7 +23,7 @@ class GetPublicMenuServiceTest {
     private final MenuFakes menu = new MenuFakes();
     private final MediaFakes media = new MediaFakes();
     private final TablesByToken tables = new TablesByToken();
-    private final GetPublicMenuService service = new GetPublicMenuService(tables, menu, menu, media, media, media,
+    private final GetPublicMenuService service = new GetPublicMenuService(tables, menu, menu, media, new InMemoryProductOptions(), media, media,
             (establishment, since, limit) -> java.util.List.of(), java.time.Clock.systemUTC());
     private final EstablishmentId sakura = EstablishmentId.newId();
 

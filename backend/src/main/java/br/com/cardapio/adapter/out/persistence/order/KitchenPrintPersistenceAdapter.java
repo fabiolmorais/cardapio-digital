@@ -28,10 +28,13 @@ import java.util.stream.Collectors;
 class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
 
     private final KitchenPrintJpaRepository items;
+    private final OrderItemChoices choices;
     private final EstablishmentFilter establishmentFilter;
 
-    KitchenPrintPersistenceAdapter(KitchenPrintJpaRepository items, EstablishmentFilter establishmentFilter) {
+    KitchenPrintPersistenceAdapter(KitchenPrintJpaRepository items, OrderItemChoices choices,
+                                   EstablishmentFilter establishmentFilter) {
         this.items = items;
+        this.choices = choices;
         this.establishmentFilter = establishmentFilter;
     }
 
@@ -57,11 +60,10 @@ class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
     public Optional<PrintJobView> lockPending(EstablishmentId establishmentId, OrderId orderId, TicketKind kind) {
         establishmentFilter.enable(establishmentId);
         UUID id = establishmentId.value();
-        return items.findHeader(id, orderId.value()).map(header -> view(header,
-                (kind == TicketKind.ORDER
+        return items.findHeader(id, orderId.value()).map(header -> view(header, choices.toDomain(id,
+                kind == TicketKind.ORDER
                         ? items.lockPendingOrderItems(id, orderId.value())
-                        : items.lockPendingCancelItems(id, orderId.value()))
-                        .stream().map(OrderPersistenceAdapter::toDomain).toList()));
+                        : items.lockPendingCancelItems(id, orderId.value()))));
     }
 
     @Override
@@ -84,8 +86,8 @@ class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
                                                BiFunction<UUID, Collection<UUID>, List<OrderItemJpaEntity>> lines,
                                                PageQuery page) {
         Map<UUID, List<OrderItem>> byOrder = headers.isEmpty() ? Map.of()
-                : lines.apply(establishmentId, headers.stream().map(PrintJobRow::orderId).toList()).stream()
-                .map(OrderPersistenceAdapter::toDomain)
+                : choices.toDomain(establishmentId,
+                        lines.apply(establishmentId, headers.stream().map(PrintJobRow::orderId).toList())).stream()
                 .collect(Collectors.groupingBy(i -> i.orderId().value()));
         return new ResultPage<>(headers.map(h -> view(h, byOrder.getOrDefault(h.orderId(), List.of()))).getContent(),
                 page.page(), page.size(), headers.getTotalElements());

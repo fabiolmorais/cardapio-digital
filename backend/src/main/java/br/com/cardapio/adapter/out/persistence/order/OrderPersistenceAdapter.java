@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,12 +40,14 @@ class OrderPersistenceAdapter implements OrderPort {
 
     private final OrderJpaRepository orders;
     private final OrderItemJpaRepository items;
+    private final OrderItemChoices choices;
     private final EstablishmentFilter establishmentFilter;
 
-    OrderPersistenceAdapter(OrderJpaRepository orders, OrderItemJpaRepository items,
+    OrderPersistenceAdapter(OrderJpaRepository orders, OrderItemJpaRepository items, OrderItemChoices choices,
                             EstablishmentFilter establishmentFilter) {
         this.orders = orders;
         this.items = items;
+        this.choices = choices;
         this.establishmentFilter = establishmentFilter;
     }
 
@@ -64,8 +67,11 @@ class OrderPersistenceAdapter implements OrderPort {
             OrderItem i = orderItems.get(position);
             return new OrderItemJpaEntity(i.id().value(), i.establishmentId().value(), i.orderId().value(), position,
                     i.productId().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
-                    i.status().name(), i.createdAt(), i.tabRodizioId() == null ? null : i.tabRodizioId().value());
+                    i.status().name(), i.createdAt(), i.tabRodizioId() == null ? null : i.tabRodizioId().value(),
+                    i.choices().variantId() == null ? null : i.choices().variantId().value(),
+                    i.choices().variantName());
         }).toList());
+        choices.insert(orderItems);
     }
 
     @Override
@@ -84,9 +90,9 @@ class OrderPersistenceAdapter implements OrderPort {
         if (found.isEmpty()) {
             return List.of();
         }
-        Map<UUID, List<OrderItem>> byOrder = items.findByEstablishmentIdAndOrderIdInOrderByPositionAsc(
-                        establishmentId.value(), found.stream().map(OrderJpaEntity::getId).toList()).stream()
-                .map(OrderPersistenceAdapter::toDomain)
+        Map<UUID, List<OrderItem>> byOrder = choices.toDomain(establishmentId.value(),
+                        items.findByEstablishmentIdAndOrderIdInOrderByPositionAsc(establishmentId.value(),
+                                found.stream().map(OrderJpaEntity::getId).toList())).stream()
                 .collect(Collectors.groupingBy(i -> i.orderId().value()));
         return found.stream()
                 .map(o -> new OrderWithItems(toDomain(o), byOrder.getOrDefault(o.getId(), List.of())))
@@ -104,7 +110,7 @@ class OrderPersistenceAdapter implements OrderPort {
     public Optional<OrderItem> findItem(EstablishmentId establishmentId, OrderItemId id) {
         establishmentFilter.enable(establishmentId);
         return items.findByIdAndEstablishmentId(id.value(), establishmentId.value())
-                .map(OrderPersistenceAdapter::toDomain);
+                .map(e -> choices.toDomain(establishmentId.value(), List.of(e)).getFirst());
     }
 
     @Override
@@ -131,6 +137,8 @@ class OrderPersistenceAdapter implements OrderPort {
         }
         items.save(original.canceledPart(canceled.id().value(), canceled.quantity(), canceled.canceledAt(),
                 canceled.canceledBy() == null ? null : canceled.canceledBy().value(), canceled.cancelReason()));
+        items.flush();
+        choices.copyTo(canceled);
         return true;
     }
 
@@ -154,9 +162,7 @@ class OrderPersistenceAdapter implements OrderPort {
         establishmentFilter.enable(establishmentId);
         Page<KitchenItemRow> rows = items.findQueue(establishmentId.value(),
                 statuses.stream().map(Enum::name).toList(), PageRequest.of(page.page(), page.size()));
-        return new ResultPage<>(rows.map(r -> new KitchenItemView(toDomain(r.item()), r.orderNumber(),
-                new DiningTableId(r.tableId()), r.tableLabel(), r.sectorName())).getContent(), page.page(),
-                page.size(), rows.getTotalElements());
+        return kitchenPage(establishmentId, rows, page);
     }
 
     @Override
@@ -164,9 +170,22 @@ class OrderPersistenceAdapter implements OrderPort {
         establishmentFilter.enable(establishmentId);
         Page<KitchenItemRow> rows = items.findPassagemQueue(establishmentId.value(),
                 PageRequest.of(page.page(), page.size()));
-        return new ResultPage<>(rows.map(r -> new KitchenItemView(toDomain(r.item()), r.orderNumber(),
-                new DiningTableId(r.tableId()), r.tableLabel(), r.sectorName())).getContent(), page.page(),
-                page.size(), rows.getTotalElements());
+        return kitchenPage(establishmentId, rows, page);
+    }
+
+    /** A página da fila, com as escolhas de todos os itens numa consulta só. */
+    private ResultPage<KitchenItemView> kitchenPage(EstablishmentId establishmentId, Page<KitchenItemRow> rows,
+                                                    PageQuery page) {
+        List<KitchenItemRow> content = rows.getContent();
+        List<OrderItem> found = choices.toDomain(establishmentId.value(),
+                content.stream().map(KitchenItemRow::item).toList());
+        List<KitchenItemView> views = new ArrayList<>();
+        for (int i = 0; i < content.size(); i++) {
+            KitchenItemRow r = content.get(i);
+            views.add(new KitchenItemView(found.get(i), r.orderNumber(), new DiningTableId(r.tableId()),
+                    r.tableLabel(), r.sectorName()));
+        }
+        return new ResultPage<>(views, page.page(), page.size(), rows.getTotalElements());
     }
 
     /** Duas consultas: a página de pedidos (com a mesa), depois os itens de todos eles (IN). */
@@ -176,9 +195,9 @@ class OrderPersistenceAdapter implements OrderPort {
         Page<WaitingOrderRow> rows = orders.findWaitingApproval(establishmentId.value(),
                 PageRequest.of(page.page(), page.size()));
         Map<UUID, List<OrderItem>> byOrder = rows.isEmpty() ? Map.of()
-                : items.findByEstablishmentIdAndOrderIdInOrderByPositionAsc(establishmentId.value(),
-                        rows.stream().map(r -> r.order().getId()).toList()).stream()
-                .map(OrderPersistenceAdapter::toDomain)
+                : choices.toDomain(establishmentId.value(),
+                        items.findByEstablishmentIdAndOrderIdInOrderByPositionAsc(establishmentId.value(),
+                                rows.stream().map(r -> r.order().getId()).toList())).stream()
                 .collect(Collectors.groupingBy(i -> i.orderId().value()));
         return new ResultPage<>(rows.map(r -> new WaitingOrderView(toDomain(r.order()), r.tableLabel(),
                 r.sectorName(), byOrder.getOrDefault(r.order().getId(), List.of()))).getContent(), page.page(),
@@ -190,15 +209,5 @@ class OrderPersistenceAdapter implements OrderPort {
                 new DiningTableId(e.getTableId()), new TableSessionId(e.getSessionId()), e.getNumber(),
                 OrderStatus.valueOf(e.getStatus()), e.getCreatedAt(),
                 e.getApprovedBy() == null ? null : new UserId(e.getApprovedBy()), e.getApprovedAt());
-    }
-
-    static OrderItem toDomain(OrderItemJpaEntity e) {
-        return new OrderItem(new OrderItemId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
-                new OrderId(e.getOrderId()), new ProductId(e.getProductId()), e.getProductName(),
-                Money.ofCents(e.getUnitPriceCents()), e.getQuantity(), e.getNote(),
-                OrderItemStatus.valueOf(e.getStatus()), e.getCreatedAt(), e.getPreparingAt(), e.getReadyAt(),
-                e.getDeliveredAt(), e.getDeliveredBy() == null ? null : new UserId(e.getDeliveredBy()),
-                e.getCanceledAt(), e.getCanceledBy() == null ? null : new UserId(e.getCanceledBy()),
-                e.getCancelReason(), e.getTabRodizioId() == null ? null : new TabRodizioId(e.getTabRodizioId()));
     }
 }

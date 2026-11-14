@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
 import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.menu.ProductOptionsPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
@@ -19,8 +20,10 @@ import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.application.service.tablesession.TableVisits;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.menu.model.PricedSelection;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.ProductOptions;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.exception.OrderingDisabledException;
 import br.com.cardapio.domain.order.exception.ProductUnavailableException;
@@ -49,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,6 +70,7 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private final TableSessionPort sessions;
     private final OrderSettingsPort settings;
     private final ProductPort products;
+    private final ProductOptionsPort productOptions;
     private final TabPort tabs;
     private final OrderPort orders;
     private final TabRodizioPort tabRodizios;
@@ -76,9 +81,10 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private final Clock clock;
 
     public PlaceOrderService(DiningTablePort tables, TableSessionPort sessions, OrderSettingsPort settings,
-                             ProductPort products, TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios,
-                             RodizioPort rodizios, RodizioPhonePort phones, SubscriptionPort subscriptions,
-                             EventPublisherPort events, Clock clock) {
+                             ProductPort products, ProductOptionsPort productOptions, TabPort tabs, OrderPort orders,
+                             TabRodizioPort tabRodizios, RodizioPort rodizios, RodizioPhonePort phones,
+                             SubscriptionPort subscriptions, EventPublisherPort events, Clock clock) {
+        this.productOptions = productOptions;
         this.phones = phones;
         this.tables = tables;
         this.sessions = sessions;
@@ -147,20 +153,31 @@ public class PlaceOrderService implements PlaceOrderUseCase {
                 throw new ProductOnlyInRodizioException(p.details().name());
             });
         }
+        // O preço de cada linha com o tamanho e as opções (ADR 0010), calculado aqui e conferido contra
+        // o cardápio de agora: o que esgotou, saiu ou passou do limite do grupo volta para o cliente.
+        Map<ProductId, ProductOptions> configured = productOptions.findFor(establishmentId, menu.keySet());
+        List<PricedSelection> priced = command.lines().stream()
+                .map(line -> configured.getOrDefault(line.productId(), ProductOptions.none(line.productId()))
+                        .price(menu.get(line.productId()).details(), line.selection(), rodizio != null))
+                .toList();
         Tab tab = Tabs.openOrCreate(tabs, establishmentId, tableId, now);
         int number = orders.nextNumber(establishmentId, now);
-        Money total = rodizio != null ? Money.ZERO : command.lines().stream()
-                .map(line -> menu.get(line.productId()).details().currentPrice().times(line.quantity()))
-                .reduce(Money.ZERO, Money::plus);
+        Money total = Money.ZERO;
+        for (int i = 0; i < command.lines().size(); i++) {
+            total = total.plus(priced.get(i).unitPrice().times(command.lines().get(i).quantity()));
+        }
         int count = command.lines().stream().mapToInt(OrderLine::quantity).sum();
 
         Order order = Order.place(establishmentId, tab.id(), tableId, visit.session().id(), number,
                 rules.needsApproval(total, count), now);
-        List<OrderItem> items = command.lines().stream()
-                .map(line -> rodizio != null
-                        ? OrderItem.inRound(order.id(), menu.get(line.productId()), line, rodizio.id(), now)
-                        : OrderItem.from(order.id(), menu.get(line.productId()), line, now))
-                .toList();
+        List<OrderItem> items = new ArrayList<>();
+        for (int i = 0; i < command.lines().size(); i++) {
+            OrderLine line = command.lines().get(i);
+            Product product = menu.get(line.productId());
+            items.add(rodizio != null
+                    ? OrderItem.inRound(order.id(), product, line, rodizio.id(), priced.get(i).choices(), now)
+                    : OrderItem.from(order.id(), product, line, priced.get(i), now));
+        }
         orders.insert(order, items);
         events.publish(new OrderChanged(establishmentId, tableId, order.id(), order.status(), now));
         return TableOrder.from(new OrderWithItems(order, items), visit.session().id());

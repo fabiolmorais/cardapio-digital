@@ -29,7 +29,9 @@ record PrintJobResponse(
             @Schema(requiredMode = REQUIRED) int quantity,
             String note,
             @Schema(requiredMode = REQUIRED, description = "Veio numa rodada do rodízio") boolean rodizio,
-            @Schema(description = "O motivo, na via \"CANCELADO\"") String cancelReason
+            @Schema(description = "O motivo, na via \"CANCELADO\"") String cancelReason,
+            @Schema(requiredMode = REQUIRED, description = "O tamanho e as escolhas, embaixo do item")
+            ChoicesResponse choices
     ) {
     }
 
@@ -37,7 +39,7 @@ record PrintJobResponse(
         return new PrintJobResponse(job.orderId().value(), job.kind(), job.orderNumber(), job.tableLabel(),
                 job.sectorName(), job.orderedAt(), job.items().stream()
                 .map(l -> new Line(l.id().value(), l.productName(), l.quantity(), l.note(), l.rodizio(),
-                        l.cancelReason()))
+                        l.cancelReason(), ChoicesResponse.from(l.choices())))
                 .toList());
     }
 }

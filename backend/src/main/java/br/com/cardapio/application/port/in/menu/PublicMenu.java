@@ -4,6 +4,7 @@ import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.MediaType;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.ProductOptions;
 
 import java.util.List;
 import java.util.Map;
@@ -32,16 +33,21 @@ public record PublicMenu(List<Category> categories, List<ProductId> mostOrdered)
      * @param media           a galeria pronta, em ordem: fotos e vídeos (o Reels do prato)
      */
     /**
-     * @param aLaCarte false: só do rodízio (a mesa mostra só na aba Rodízio)
-     * @param serves   quantas pessoas o prato serve; null quando não informado
+     * @param aLaCarte       false: só do rodízio (a mesa mostra só na aba Rodízio)
+     * @param serves         quantas pessoas o prato serve; null quando não informado
+     * @param options        os tamanhos e os grupos de opções (ADR 0010); vazio no produto de sempre
+     * @param fromPriceCents o "a partir de": o menor preço possível com as escolhas obrigatórias;
+     *                       null quando o preço não depende de escolha
      */
     public record Item(ProductId id, String name, String description, long priceCents, Long promoPriceCents,
                        boolean featured, boolean available, boolean aLaCarte, Integer serves,
-                       Map<ImageVariant, String> photoUrls, List<Media> media) {
+                       Map<ImageVariant, String> photoUrls, List<Media> media, ProductOptions options,
+                       Long fromPriceCents) {
 
         public Item {
             photoUrls = Map.copyOf(photoUrls);
             media = List.copyOf(media);
+            options = options == null ? ProductOptions.none(id) : options;
         }
     }
 
