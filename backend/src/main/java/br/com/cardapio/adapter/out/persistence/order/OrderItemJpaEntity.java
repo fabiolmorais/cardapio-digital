@@ -66,6 +66,13 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "tab_rodizio_id")
     private UUID tabRodizioId;
 
+    /** O tamanho escolhido (ADR 0010); null sem tamanhos. O nome vem copiado ao lado. */
+    @Column(name = "product_variant_id")
+    private UUID productVariantId;
+
+    @Column(name = "variant_name")
+    private String variantName;
+
     /** Quando saiu na impressora da cozinha (a comanda de papel). */
     @Column(name = "printed_at")
     private Instant printedAt;
@@ -79,7 +86,7 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
 
     OrderItemJpaEntity(UUID id, UUID establishmentId, UUID orderId, int position, UUID productId, String productName,
                        long unitPriceCents, int quantity, String note, String status, Instant createdAt,
-                       UUID tabRodizioId) {
+                       UUID tabRodizioId, UUID productVariantId, String variantName) {
         super(establishmentId);
         this.id = id;
         this.orderId = orderId;
@@ -92,6 +99,8 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
         this.status = status;
         this.createdAt = createdAt;
         this.tabRodizioId = tabRodizioId;
+        this.productVariantId = productVariantId;
+        this.variantName = variantName;
     }
 
     /**
@@ -101,7 +110,8 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
      */
     OrderItemJpaEntity canceledPart(UUID partId, int partQuantity, Instant at, UUID by, String reason) {
         OrderItemJpaEntity part = new OrderItemJpaEntity(partId, getEstablishmentId(), orderId, position, productId,
-                productName, unitPriceCents, partQuantity, note, "CANCELED", createdAt, tabRodizioId);
+                productName, unitPriceCents, partQuantity, note, "CANCELED", createdAt, tabRodizioId,
+                productVariantId, variantName);
         part.preparingAt = preparingAt;
         part.readyAt = readyAt;
         part.canceledAt = at;
@@ -128,6 +138,8 @@ class OrderItemJpaEntity extends EstablishmentScopedEntity {
     UUID getCanceledBy() { return canceledBy; }
     String getCancelReason() { return cancelReason; }
     UUID getTabRodizioId() { return tabRodizioId; }
+    UUID getProductVariantId() { return productVariantId; }
+    String getVariantName() { return variantName; }
     Instant getPrintedAt() { return printedAt; }
     Instant getCancelPrintedAt() { return cancelPrintedAt; }
 }

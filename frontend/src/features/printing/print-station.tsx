@@ -58,6 +58,7 @@ const TEST_JOB: PrintJob = {
       productName: "Comanda de teste",
       quantity: 1,
       rodizio: false,
+      choices: { options: [] },
     },
   ],
 };

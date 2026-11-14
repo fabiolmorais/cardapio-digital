@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.in.order.TableOrders;
@@ -86,7 +87,7 @@ class RodizioRulesServicesTest {
     }
 
     private TableOrder send(boolean round, Instant at, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock(at)).place(new PlaceOrderCommand(QR_04, "ana",
                 List.of(new OrderLine(product.id(), quantity, null)), round));
     }

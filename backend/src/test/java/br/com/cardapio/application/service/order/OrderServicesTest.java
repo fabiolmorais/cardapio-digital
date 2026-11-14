@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.in.order.TableOrders;
@@ -73,7 +74,7 @@ class OrderServicesTest {
     }
 
     private TableOrder place(String qr, String phone, OrderLine... lines) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(qr, phone, List.of(lines)));
     }

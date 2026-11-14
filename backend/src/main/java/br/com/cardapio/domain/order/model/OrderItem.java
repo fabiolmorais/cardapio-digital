@@ -2,6 +2,8 @@ package br.com.cardapio.domain.order.model;
 
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
+import br.com.cardapio.domain.menu.model.ItemChoices;
+import br.com.cardapio.domain.menu.model.PricedSelection;
 import br.com.cardapio.domain.menu.model.Product;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.order.exception.OrderItemStateException;
@@ -22,6 +24,7 @@ import java.util.Objects;
  * @param canceledBy   quem da equipe cancelou; null se foi o próprio cliente (ou se não foi cancelado)
  * @param cancelReason o motivo, que o cliente vê ("acabou o salmão")
  * @param tabRodizioId o rodízio da comanda, se o item veio numa rodada (preço zero); senão null
+ * @param choices      o tamanho e as escolhas copiados na hora (ADR 0010); {@link ItemChoices#NONE} sem opções
  */
 public record OrderItem(
         OrderItemId id,
@@ -41,7 +44,8 @@ public record OrderItem(
         Instant canceledAt,
         UserId canceledBy,
         String cancelReason,
-        TabRodizioId tabRodizioId
+        TabRodizioId tabRodizioId,
+        ItemChoices choices
 ) {
 
     /** O motivo quando quem cancela é o cliente. */
@@ -60,13 +64,24 @@ public record OrderItem(
         Objects.requireNonNull(unitPrice);
         Objects.requireNonNull(status);
         Objects.requireNonNull(createdAt);
+        choices = choices == null ? ItemChoices.NONE : choices;
     }
 
     /** O item novo, com o nome e o preço de agora (o promocional, se estiver em promoção). */
     public static OrderItem from(OrderId orderId, Product product, OrderLine line, Instant now) {
+        return from(orderId, product, line, new PricedSelection(product.details().currentPrice(), ItemChoices.NONE),
+                now);
+    }
+
+    /**
+     * O item novo com o preço calculado com as escolhas (o do tamanho e das opções, ADR 0010) e a
+     * cópia delas.
+     */
+    public static OrderItem from(OrderId orderId, Product product, OrderLine line, PricedSelection priced,
+                                 Instant now) {
         return new OrderItem(OrderItemId.newId(), product.establishmentId(), orderId, product.id(),
-                product.details().name(), product.details().currentPrice(), line.quantity(), line.note(),
-                OrderItemStatus.PENDING, now, null, null, null, null, null, null, null, null);
+                product.details().name(), priced.unitPrice(), line.quantity(), line.note(),
+                OrderItemStatus.PENDING, now, null, null, null, null, null, null, null, null, priced.choices());
     }
 
     /**
@@ -75,9 +90,15 @@ public record OrderItem(
      */
     public static OrderItem inRound(OrderId orderId, Product product, OrderLine line, TabRodizioId tabRodizioId,
                                     Instant now) {
+        return inRound(orderId, product, line, tabRodizioId, ItemChoices.NONE, now);
+    }
+
+    /** O item da rodada com as escolhas (os sabores, o ponto), também a preço zero. */
+    public static OrderItem inRound(OrderId orderId, Product product, OrderLine line, TabRodizioId tabRodizioId,
+                                    ItemChoices choices, Instant now) {
         return new OrderItem(OrderItemId.newId(), product.establishmentId(), orderId, product.id(),
                 product.details().name(), Money.ZERO, line.quantity(), line.note(), OrderItemStatus.PENDING, now,
-                null, null, null, null, null, null, null, Objects.requireNonNull(tabRodizioId));
+                null, null, null, null, null, null, null, Objects.requireNonNull(tabRodizioId), choices);
     }
 
     /** Veio numa rodada do rodízio? */
@@ -102,7 +123,7 @@ public record OrderItem(
         }
         return new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice, quantity, note,
                 OrderItemStatus.CANCELED, createdAt, preparingAt, readyAt, deliveredAt, deliveredBy, now, null,
-                CANCELED_BY_CUSTOMER, tabRodizioId);
+                CANCELED_BY_CUSTOMER, tabRodizioId, choices);
     }
 
     /** "Em preparo": a cozinha começou. Só a partir da fila. */
@@ -189,11 +210,11 @@ public record OrderItem(
         }
         OrderItem kept = new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice,
                 quantity - cancelQuantity, note, status, createdAt, preparingAt, readyAt, deliveredAt, deliveredBy,
-                canceledAt, canceledBy, cancelReason, tabRodizioId);
+                canceledAt, canceledBy, cancelReason, tabRodizioId, choices);
         OrderItem part = new OrderItem(OrderItemId.newId(), establishmentId, orderId, productId, productName,
                 unitPrice, cancelQuantity, note, OrderItemStatus.CANCELED, createdAt, preparingAt, readyAt,
                 deliveredAt, deliveredBy, canceled.canceledAt(), canceled.canceledBy(), canceled.cancelReason(),
-                tabRodizioId);
+                tabRodizioId, choices);
         return new StaffCancel(kept, part);
     }
 
@@ -216,6 +237,6 @@ public record OrderItem(
                            UserId deliveredByUser, Instant canceled, UserId canceledByUser, String reason) {
         return new OrderItem(id, establishmentId, orderId, productId, productName, unitPrice, quantity, note,
                 newStatus, createdAt, preparing, ready, delivered, deliveredByUser, canceled, canceledByUser, reason,
-                tabRodizioId);
+                tabRodizioId, choices);
     }
 }

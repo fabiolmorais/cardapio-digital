@@ -37,11 +37,13 @@ record TableOrderResponse(
             @Schema(requiredMode = REQUIRED, description = "Veio numa rodada do rodízio (preço zero)") boolean rodizio,
             @Schema(description = "Miniatura da foto do produto; vazio se ele não tem foto") String thumbUrl,
             @Schema(requiredMode = REQUIRED, description = "Foi o próprio cliente que cancelou (e não a equipe)")
-            boolean canceledByCustomer
+            boolean canceledByCustomer,
+            @Schema(requiredMode = REQUIRED, description = "O tamanho e as escolhas") ChoicesResponse choices
     ) {
         static Item from(TableOrder.Item i) {
             return new Item(i.id().value(), i.productName(), i.unitPrice().cents(), i.quantity(), i.note(),
-                    i.status(), i.cancelReason(), i.rodizio(), i.thumbUrl(), i.canceledByCustomer());
+                    i.status(), i.cancelReason(), i.rodizio(), i.thumbUrl(), i.canceledByCustomer(),
+                    ChoicesResponse.from(i.choices()));
         }
     }
 

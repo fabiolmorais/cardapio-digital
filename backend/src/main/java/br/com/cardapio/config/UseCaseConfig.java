@@ -115,6 +115,8 @@ import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
 import br.com.cardapio.application.port.out.menu.PopularProductsPort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
+import br.com.cardapio.application.port.out.menu.OptionGroupPort;
+import br.com.cardapio.application.port.out.menu.ProductOptionsPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
@@ -487,6 +489,54 @@ class UseCaseConfig {
         return new GetProductService(productPort);
     }
 
+    // Opções dos produtos (ADR 0010): a biblioteca de grupos e os tamanhos e grupos de cada produto
+
+    @Bean
+    ListOptionGroupsUseCase listOptionGroupsUseCase(OptionGroupPort optionGroupPort) {
+        return new ListOptionGroupsService(optionGroupPort);
+    }
+
+    @Bean
+    GetOptionGroupUseCase getOptionGroupUseCase(OptionGroupPort optionGroupPort) {
+        return new GetOptionGroupService(optionGroupPort);
+    }
+
+    @Bean
+    CreateOptionGroupUseCase createOptionGroupUseCase(OptionGroupPort optionGroupPort) {
+        return new CreateOptionGroupService(optionGroupPort);
+    }
+
+    @Bean
+    UpdateOptionGroupUseCase updateOptionGroupUseCase(OptionGroupPort optionGroupPort) {
+        return new UpdateOptionGroupService(optionGroupPort);
+    }
+
+    @Bean
+    DeactivateOptionGroupUseCase deactivateOptionGroupUseCase(OptionGroupPort optionGroupPort) {
+        return new DeactivateOptionGroupService(optionGroupPort);
+    }
+
+    @Bean
+    ChangeOptionItemAvailabilityUseCase changeOptionItemAvailabilityUseCase(OptionGroupPort optionGroupPort) {
+        return new ChangeOptionItemAvailabilityService(optionGroupPort);
+    }
+
+    @Bean
+    GetProductOptionsUseCase getProductOptionsUseCase(ProductPort productPort, ProductOptionsPort productOptionsPort) {
+        return new GetProductOptionsService(productPort, productOptionsPort);
+    }
+
+    @Bean
+    UpdateProductOptionsUseCase updateProductOptionsUseCase(ProductPort productPort, OptionGroupPort optionGroupPort,
+                                                            ProductOptionsPort productOptionsPort) {
+        return new UpdateProductOptionsService(productPort, optionGroupPort, productOptionsPort);
+    }
+
+    @Bean
+    ChangeVariantAvailabilityUseCase changeVariantAvailabilityUseCase(ProductOptionsPort productOptionsPort) {
+        return new ChangeVariantAvailabilityService(productOptionsPort);
+    }
+
     @Bean
     CreateProductUseCase createProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
         return new CreateProductService(menuCategoryPort, productPort);
@@ -578,11 +628,12 @@ class UseCaseConfig {
     @Bean
     GetPublicMenuUseCase getPublicMenuUseCase(DiningTablePort diningTablePort, MenuCategoryPort menuCategoryPort,
                                               ProductPort productPort, ProductMediaPort productMediaPort,
+                                              ProductOptionsPort productOptionsPort,
                                               MediaStoragePort mediaStoragePort,
                                               VideoHostingPort videoHostingPort,
                                               PopularProductsPort popularProductsPort, Clock clock) {
         return new GetPublicMenuService(diningTablePort, menuCategoryPort, productPort, productMediaPort,
-                mediaStoragePort, videoHostingPort, popularProductsPort, clock);
+                productOptionsPort, mediaStoragePort, videoHostingPort, popularProductsPort, clock);
     }
 
     @Bean
@@ -714,12 +765,14 @@ class UseCaseConfig {
 
     @Bean
     PlaceOrderUseCase placeOrderUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
-                                        OrderSettingsPort orderSettingsPort, ProductPort productPort, TabPort tabPort,
+                                        OrderSettingsPort orderSettingsPort, ProductPort productPort,
+                                        ProductOptionsPort productOptionsPort, TabPort tabPort,
                                         OrderPort orderPort, TabRodizioPort tabRodizioPort, RodizioPort rodizioPort,
                                         RodizioPhonePort rodizioPhonePort, SubscriptionPort subscriptionPort,
                                         EventPublisherPort eventPublisherPort, Clock clock) {
-        return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort, tabPort,
-                orderPort, tabRodizioPort, rodizioPort, rodizioPhonePort, subscriptionPort, eventPublisherPort, clock);
+        return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort,
+                productOptionsPort, tabPort, orderPort, tabRodizioPort, rodizioPort, rodizioPhonePort,
+                subscriptionPort, eventPublisherPort, clock);
     }
 
     @Bean

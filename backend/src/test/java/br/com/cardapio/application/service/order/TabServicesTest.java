@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.BillSummary;
 import br.com.cardapio.application.port.in.order.ClosedTab;
 import br.com.cardapio.application.port.in.order.OpenTab;
@@ -79,7 +80,7 @@ class TabServicesTest {
     }
 
     private TableOrder place(String phone, Product product, int quantity) {
-        return new PlaceOrderService(tables, sessions, fakes, fakes, fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
+        return new PlaceOrderService(tables, sessions, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios, rodizios, rodizios, subscriptions,
                 published::add, clock)
                 .place(new PlaceOrderCommand(QR_04, phone, List.of(new OrderLine(product.id(), quantity, null))));
     }

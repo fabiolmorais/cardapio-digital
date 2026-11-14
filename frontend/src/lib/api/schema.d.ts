@@ -127,6 +127,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{id}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os tamanhos e os grupos de opções do produto */
+        get: operations["getProductOptions"];
+        /** Salva os tamanhos e os grupos do produto (tudo de uma vez; o que sai é desativado) */
+        put: operations["updateProductOptions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/presence-rule": {
         parameters: {
             query?: never;
@@ -158,6 +176,25 @@ export interface paths {
         put: operations["updateOrderSettings"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/option-groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Um grupo de opções, para a tela de edição */
+        get: operations["getOptionGroup"];
+        /** Salva o grupo e as opções (vale para todos os produtos que usam o grupo) */
+        put: operations["updateOptionGroup"];
+        post?: never;
+        /** Tira o grupo da biblioteca e dos produtos (o registro fica, para os pedidos antigos) */
+        delete: operations["deactivateOptionGroup"];
         options?: never;
         head?: never;
         patch?: never;
@@ -752,6 +789,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/option-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os grupos de opções ativos, por nome, com as opções */
+        get: operations["listOptionGroups"];
+        put?: never;
+        /** Cria um grupo de opções na biblioteca */
+        post: operations["createOptionGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/menu-categories": {
         parameters: {
             query?: never;
@@ -1164,6 +1219,40 @@ export interface paths {
         head?: never;
         /** Disponível ou "Esgotado hoje" */
         patch: operations["changeProductAvailability"];
+        trace?: never;
+    };
+    "/api/v1/product-variants/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Tamanho disponível ou esgotado */
+        patch: operations["changeVariantAvailability"];
+        trace?: never;
+    };
+    "/api/v1/option-items/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Opção disponível ou esgotada (em todos os produtos que usam o grupo) */
+        patch: operations["changeOptionItemAvailability"];
         trace?: never;
     };
     "/api/v1/menu-categories/{id}": {
@@ -2135,6 +2224,170 @@ export interface components {
         ProductRodizios: {
             rodizioIds: string[];
         };
+        OptionGroupLimitRequest: {
+            /**
+             * Format: int32
+             * @description A posição do tamanho na lista variants
+             */
+            variant: number;
+            /** Format: int32 */
+            minChoices: number;
+            /** Format: int32 */
+            maxChoices: number;
+        };
+        OptionPriceRequest: {
+            /** Format: uuid */
+            optionId: string;
+            /**
+             * Format: int32
+             * @description A posição do tamanho na lista variants
+             */
+            variant: number;
+            /** Format: int64 */
+            priceCents: number;
+        };
+        ProductOptionGroupRequest: {
+            /** Format: uuid */
+            groupId: string;
+            /** @description Mínimo e máximo do grupo em cada tamanho (quando mudam) */
+            limits: components["schemas"]["OptionGroupLimitRequest"][];
+        };
+        ProductOptionsRequest: {
+            variants: components["schemas"]["ProductVariantRequest"][];
+            /** @description Os grupos ligados, na ordem em que o cliente vê */
+            groups: components["schemas"]["ProductOptionGroupRequest"][];
+            /** @description Preços de opções num tamanho (quando mudam) */
+            prices: components["schemas"]["OptionPriceRequest"][];
+        };
+        ProductVariantRequest: {
+            /**
+             * Format: uuid
+             * @description Vazio num tamanho novo; o id de um que já existe para editá-lo
+             */
+            id?: string;
+            /** @example Grande */
+            name: string;
+            /**
+             * Format: int64
+             * @example 5990
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description Vazio: sem promoção
+             */
+            promoPriceCents?: number;
+            available: boolean;
+            /** @description É o tamanho que vale no rodízio (no máximo um) */
+            rodizioDefault: boolean;
+        };
+        /** @description Um grupo de opções da biblioteca do restaurante */
+        OptionGroup: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description O nome na lista da gestão
+             * @example Sabores da pizza
+             */
+            name: string;
+            /**
+             * @description O que o cliente vê
+             * @example Escolha os sabores
+             */
+            title: string;
+            /**
+             * Format: int32
+             * @description 0 = opcional
+             */
+            minChoices: number;
+            /** Format: int32 */
+            maxChoices: number;
+            /**
+             * Format: int32
+             * @description Vezes que a mesma opção pode ser escolhida
+             */
+            maxPerOption: number;
+            /** @description As escolhas são partes do mesmo item (meio a meio) */
+            splitsItem: boolean;
+            /** @enum {string} */
+            pricing: "SUM" | "HIGHEST" | "AVERAGE";
+            /**
+             * Format: int32
+             * @description As primeiras N escolhas não cobram (só ao somar)
+             */
+            freeQuantity: number;
+            /**
+             * Format: int64
+             * @description Em quantos produtos ativos o grupo está; null dentro de um produto
+             */
+            productCount?: number;
+            /** @description As opções ativas, na ordem */
+            items: components["schemas"]["OptionItem"][];
+        };
+        /** @description O mínimo e o máximo de um grupo num tamanho */
+        OptionGroupLimit: {
+            /** Format: uuid */
+            variantId: string;
+            /** Format: int32 */
+            minChoices: number;
+            /** Format: int32 */
+            maxChoices: number;
+        };
+        /** @description Uma opção de um grupo. Preço em centavos (pode ser zero) */
+        OptionItem: {
+            /** Format: uuid */
+            id: string;
+            /** @example Calabresa */
+            name: string;
+            /**
+             * Format: int64
+             * @example 500
+             */
+            priceCents: number;
+            /** @description false: esgotada */
+            available: boolean;
+        };
+        /** @description O preço de uma opção num tamanho, em centavos */
+        OptionPrice: {
+            /** Format: uuid */
+            optionId: string;
+            /** Format: uuid */
+            variantId: string;
+            /** Format: int64 */
+            priceCents: number;
+        };
+        ProductOptionGroup: {
+            group: components["schemas"]["OptionGroup"];
+            limits: components["schemas"]["OptionGroupLimit"][];
+        };
+        /** @description Os tamanhos e os grupos de um produto (ADR 0010) */
+        ProductOptions: {
+            variants: components["schemas"]["ProductVariant"][];
+            /** @description Os grupos ligados, na ordem em que o cliente vê */
+            groups: components["schemas"]["ProductOptionGroup"][];
+            prices: components["schemas"]["OptionPrice"][];
+        };
+        /** @description Um tamanho do produto. Preços em centavos */
+        ProductVariant: {
+            /** Format: uuid */
+            id: string;
+            /** @example Grande */
+            name: string;
+            /**
+             * Format: int64
+             * @example 5990
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description null quando não há promoção
+             */
+            promoPriceCents?: number;
+            /** @description false: esgotado */
+            available: boolean;
+            /** @description É o tamanho que vale no rodízio */
+            rodizioDefault: boolean;
+        };
         PresenceLocation: {
             /**
              * Format: double
@@ -2214,6 +2467,54 @@ export interface components {
             maxAmountCents?: number;
             /** Format: int32 */
             maxItems?: number;
+        };
+        OptionGroupRequest: {
+            /**
+             * @description O nome na lista da gestão; vazio: usa a pergunta
+             * @example Sabores da pizza
+             */
+            name?: string;
+            /** @example Escolha os sabores */
+            title: string;
+            /**
+             * Format: int32
+             * @description 0 = opcional
+             */
+            minChoices: number;
+            /** Format: int32 */
+            maxChoices: number;
+            /**
+             * Format: int32
+             * @description 1 = sem repetir
+             */
+            maxPerOption: number;
+            /** @description As escolhas são partes do mesmo item (meio a meio) */
+            splitsItem: boolean;
+            /** @enum {string} */
+            pricing: "SUM" | "HIGHEST" | "AVERAGE";
+            /**
+             * Format: int32
+             * @description As primeiras N escolhas não cobram (só ao somar)
+             */
+            freeQuantity: number;
+            items: components["schemas"]["OptionItemRequest"][];
+        };
+        OptionItemRequest: {
+            /**
+             * Format: uuid
+             * @description Vazio numa opção nova; o id de uma opção que já existe para editá-la
+             */
+            id?: string;
+            /** @example Calabresa */
+            name: string;
+            /**
+             * Format: int64
+             * @description Em centavos (pode ser zero)
+             * @example 0
+             */
+            priceCents: number;
+            /** @description false: esgotada */
+            available: boolean;
         };
         BrandRequest: {
             /** @example Sakura Sushi */
@@ -2316,6 +2617,28 @@ export interface components {
              */
             paymentMethod?: "PIX" | "CARD" | "CASH";
         };
+        ItemChoice: {
+            /** @example Escolha os sabores */
+            groupTitle: string;
+            /** @example Calabresa */
+            name: string;
+            /**
+             * Format: int32
+             * @description Quantas vezes ("2× bacon")
+             */
+            quantity: number;
+            /** @description Parte de um item dividido: a tela mostra a fração (½, ⅓, ¼) pelo número de partes */
+            splitsItem: boolean;
+        };
+        ItemChoices: {
+            /**
+             * @description O tamanho escolhido; null sem tamanhos
+             * @example Grande
+             */
+            variantName?: string;
+            /** @description As escolhas, na ordem dos grupos; vazio sem opções */
+            options: components["schemas"]["ItemChoice"][];
+        };
         StaffTab: {
             /** Format: uuid */
             id: string;
@@ -2409,6 +2732,8 @@ export interface components {
             thumbUrl?: string;
             /** @description Foi o próprio cliente que cancelou (e não a equipe) */
             canceledByCustomer: boolean;
+            /** @description O tamanho e as escolhas */
+            choices: components["schemas"]["ItemChoices"];
         };
         CreateTableRequest: {
             /** @example 04 */
@@ -2543,6 +2868,16 @@ export interface components {
              */
             expiresAt: string;
         };
+        /** @description Uma opção escolhida e quantas vezes */
+        PlaceOrderChoice: {
+            /** Format: uuid */
+            optionId: string;
+            /**
+             * Format: int32
+             * @example 1
+             */
+            quantity: number;
+        };
         PlaceOrderLine: {
             /** Format: uuid */
             productId: string;
@@ -2556,6 +2891,13 @@ export interface components {
              * @example sem cebolinha
              */
             note?: string;
+            /**
+             * Format: uuid
+             * @description O tamanho escolhido; vazio se o produto não tem tamanhos
+             */
+            variantId?: string;
+            /** @description As opções escolhidas; vazio se o produto não tem opções */
+            options?: components["schemas"]["PlaceOrderChoice"][];
         };
         PlaceOrderRequest: {
             items: components["schemas"]["PlaceOrderLine"][];
@@ -2800,6 +3142,8 @@ export interface components {
             rodizio: boolean;
             /** @description O motivo, na via "CANCELADO" */
             cancelReason?: string;
+            /** @description O tamanho e as escolhas, embaixo do item */
+            choices: components["schemas"]["ItemChoices"];
         };
         CancelItemRequest: {
             /**
@@ -3298,6 +3642,8 @@ export interface components {
             categories: components["schemas"]["PublicMenuCategory"][];
             /** @description Os mais pedidos dos últimos 30 dias (ids, do mais pedido); vazio enquanto houver menos de 3 */
             mostOrdered: string[];
+            /** @description Os grupos de opções usados no cardápio, uma vez cada (os produtos apontam para eles pelo id) */
+            optionGroups: components["schemas"]["OptionGroup"][];
         };
         PublicMenuCategory: {
             /** Format: uuid */
@@ -3305,6 +3651,16 @@ export interface components {
             /** @example Entradas */
             name: string;
             products: components["schemas"]["PublicMenuItem"][];
+        };
+        /** @description Um grupo de opções de um produto */
+        PublicMenuGroupLink: {
+            /**
+             * Format: uuid
+             * @description O id em optionGroups
+             */
+            groupId: string;
+            /** @description Mínimo e máximo em cada tamanho (quando mudam) */
+            limits: components["schemas"]["OptionGroupLimit"][];
         };
         /** @description Preços em centavos */
         PublicMenuItem: {
@@ -3339,6 +3695,18 @@ export interface components {
             photo?: components["schemas"]["PublicMenuPhoto"];
             /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
             media: components["schemas"]["PublicMenuMedia"][];
+            /**
+             * Format: int64
+             * @description O "a partir de" quando o preço depende do tamanho ou de uma opção obrigatória; null no produto de sempre
+             * @example 4990
+             */
+            fromPriceCents?: number;
+            /** @description Os tamanhos; vazio sem tamanhos */
+            variants: components["schemas"]["ProductVariant"][];
+            /** @description Os grupos de opções, na ordem em que o cliente vê */
+            optionGroups: components["schemas"]["PublicMenuGroupLink"][];
+            /** @description Preços de opções num tamanho (quando mudam) */
+            optionPrices: components["schemas"]["OptionPrice"][];
         };
         /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
         PublicMenuMedia: {
@@ -3556,9 +3924,22 @@ export interface components {
              * @description Quando ficou pronto
              */
             readyAt?: string;
+            /** @description O tamanho e as escolhas */
+            choices: components["schemas"]["ItemChoices"];
         };
         PageResponseKitchenItem: {
             content: components["schemas"]["KitchenItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseOptionGroup: {
+            content: components["schemas"]["OptionGroup"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4224,6 +4605,81 @@ export interface operations {
             };
         };
     };
+    getProductOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A configuração (vazia no produto de sempre) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOptions"];
+                };
+            };
+            /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateProductOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductOptionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Salvo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOptions"];
+                };
+            };
+            /** @description Tamanhos, limites ou preços inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Produto, tamanho, grupo ou opção não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getPresenceRule: {
         parameters: {
             query?: never;
@@ -4317,6 +4773,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderSettings"];
+                };
+            };
+        };
+    };
+    getOptionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O grupo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionGroup"];
+                };
+            };
+            /** @description Não é um grupo ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateOptionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Salvo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionGroup"];
+                };
+            };
+            /** @description Grupo ou opção não encontrado neste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deactivateOptionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desativado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é um grupo ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -6121,6 +6672,64 @@ export interface operations {
             };
         };
     };
+    listOptionGroups: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de grupos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseOptionGroup"];
+                };
+            };
+        };
+    };
+    createOptionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Criado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionGroup"];
+                };
+            };
+            /** @description Regras ou opções inválidas */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listMenuCategories: {
         parameters: {
             query?: {
@@ -7194,6 +7803,76 @@ export interface operations {
                 };
             };
             /** @description Não é um produto ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    changeVariantAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Alterado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductVariant"];
+                };
+            };
+            /** @description Não é um tamanho ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    changeOptionItemAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Alterada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionItem"];
+                };
+            };
+            /** @description Não é uma opção ativa deste restaurante */
             404: {
                 headers: {
                     [name: string]: unknown;
