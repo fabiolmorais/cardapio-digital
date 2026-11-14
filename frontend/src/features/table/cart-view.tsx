@@ -9,6 +9,7 @@ import { cn } from "cn";
 import { clearCart, MAX_NOTE, MAX_QUANTITY, setNote, setQuantity, useCart, useHydrated, type CartLine } from "./cart";
 import { listOrders, placeOrder, timeOf, type TableOrder } from "./table-orders";
 import { MesaNotice } from "./mesa-notice";
+import { Choices } from "./choices-line";
 import { ItemThumb, StatusBadge } from "./order-status";
 
 const t = tablePage.cart;
@@ -167,6 +168,7 @@ function Line({ token, line }: { token: string; line: CartLine }) {
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <h2 className="font-semibold">{line.name}</h2>
+        {line.choices && <p className="text-sm text-(--mesa-muted)">{line.choices}</p>}
         {editing ? (
           <div className="flex gap-2">
             <label htmlFor={`${id}note`} className="sr-only">
@@ -304,8 +306,11 @@ function Sent({
         {order.items.map((item) => (
           <li key={item.id} className="flex items-center gap-3 p-2.5 text-sm">
             <ItemThumb src={thumbs.get(item.productName)} size="sm" />
-            <span className="flex-1 text-left">
-              {item.quantity}× {item.productName}
+            <span className="flex flex-1 flex-col text-left">
+              <span>
+                {item.quantity}× {item.productName}
+              </span>
+              <Choices of={item.choices} />
             </span>
             {waiting ? (
               <StatusBadge tone="PENDING">{tablePage.orders.orderStatus.PENDING_APPROVAL}</StatusBadge>

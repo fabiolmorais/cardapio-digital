@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
+import { Choices } from "./choices-line";
 import { ItemThumb, StatusBadge } from "./order-status";
 import { TabClosed } from "./tab-closed";
 import { timeOf, useTableOrders, type TableOrder, type TableOrderItem } from "./table-orders";
@@ -258,6 +259,7 @@ function OnTheWayItem({
           </span>
           <span className="shrink-0 pt-0.5 text-sm text-(--mesa-muted)">{t.minutes(minutes)}</span>
         </div>
+        <Choices of={item.choices} />
         {item.rodizio && (
           <span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">
             {tablePage.rodizio.item}
@@ -326,8 +328,13 @@ function HistoryOrder({ order }: { order: TableOrder }) {
           return (
             <li key={item.id} className="flex items-center gap-3 py-2">
               <ItemThumb src={item.thumbUrl} size="sm" />
-              <span className={cn("min-w-0 flex-1 text-sm", canceled && "text-(--mesa-muted) line-through")}>
-                {item.quantity}× {item.productName}
+              <span
+                className={cn("flex min-w-0 flex-1 flex-col text-sm", canceled && "text-(--mesa-muted) line-through")}
+              >
+                <span>
+                  {item.quantity}× {item.productName}
+                </span>
+                <Choices of={item.choices} />
               </span>
               {rejected ? (
                 <StatusBadge tone="CANCELED">{t.orderStatus.REJECTED}</StatusBadge>

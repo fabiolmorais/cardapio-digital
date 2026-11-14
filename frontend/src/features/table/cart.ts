@@ -19,7 +19,22 @@ export type CartLine = {
   thumb: string | null;
   quantity: number;
   note: string;
+  /** O tamanho escolhido (ADR 0010); ausente no produto sem tamanhos. */
+  variantId?: string;
+  /** As opções escolhidas e quantas vezes; ausente no produto sem opções. */
+  options?: { optionId: string; quantity: number }[];
+  /** As escolhas numa linha, para mostrar ("Grande · ½ Calabresa · ½ Frango"). */
+  choices?: string;
 };
+
+/** A linha é a mesma quando o produto, o tamanho, as opções e a observação são iguais. */
+function keyOf(line: Pick<CartLine, "productId" | "variantId" | "options">, note: string) {
+  const options = (line.options ?? [])
+    .map((o) => `${o.optionId}x${o.quantity}`)
+    .sort()
+    .join(",");
+  return `${line.productId}|${line.variantId ?? ""}|${options}|${note}`;
+}
 
 const EMPTY: CartLine[] = [];
 const listeners = new Set<() => void>();
@@ -82,12 +97,13 @@ export function useCart(token: string) {
 }
 
 /**
- * Põe no carrinho. O mesmo produto com a mesma observação soma na linha que já existe; com outra
- * observação, vira outra linha (um guioza "sem cebolinha" e outro normal).
+ * Põe no carrinho. O mesmo produto com as mesmas escolhas e a mesma observação soma na linha que já
+ * existe; com outra escolha ou outra observação, vira outra linha (um guioza "sem cebolinha" e
+ * outro normal; uma pizza calabresa e outra meio a meio).
  */
 export function addToCart(token: string, line: Omit<CartLine, "key">): boolean {
   const note = line.note.trim().slice(0, MAX_NOTE);
-  const key = `${line.productId}|${note}`;
+  const key = keyOf(line, note);
   const lines = read(token);
   const existing = lines.find((l) => l.key === key);
   if (existing) {
@@ -119,7 +135,7 @@ export function setNote(token: string, key: string, text: string) {
   const line = lines.find((l) => l.key === key);
   if (!line) return;
   const note = text.trim().slice(0, MAX_NOTE);
-  const newKey = `${line.productId}|${note}`;
+  const newKey = keyOf(line, note);
   if (newKey === key) return;
   const twin = lines.find((l) => l.key === newKey);
   write(

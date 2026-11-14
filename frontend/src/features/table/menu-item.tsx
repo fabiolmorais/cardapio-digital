@@ -142,7 +142,7 @@ export function MenuItemCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
         <span className="flex items-center gap-2">
           <h3 className={cn("font-semibold", !item.available && "text-(--mesa-muted)")}>{item.name}</h3>
-          {item.available && off !== null && price === undefined && (
+          {item.available && off !== null && price === undefined && item.fromPriceCents == null && (
             <span className="rounded-md bg-(--brand) px-1.5 py-0.5 text-[11px] font-bold text-white">{t.off(off)}</span>
           )}
         </span>
@@ -159,6 +159,12 @@ export function MenuItemCard({
           ) : !item.available ? (
             <span className="rounded-full bg-(--mesa-danger-soft) px-2.5 py-0.5 text-xs font-semibold text-(--mesa-danger)">
               {t.soldOut}
+            </span>
+          ) : item.fromPriceCents != null ? (
+            // O preço depende do tamanho ou das escolhas (ADR 0010): o menor possível.
+            <span className="flex flex-col">
+              <span className="text-xs text-(--mesa-muted)">{tablePage.choices.from}</span>
+              <span className="font-bold">{formatCents(item.fromPriceCents)}</span>
             </span>
           ) : item.promoPriceCents != null ? (
             // O "de" em cima, pequeno, e o "por" embaixo: cabe ao lado do "Adicionar".

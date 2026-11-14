@@ -160,6 +160,22 @@ export const tablePage = {
     off: (percent: number) => `-${percent}%`,
     serves: (count: number) => (count === 1 ? "Serve 1 pessoa" : `Serve ${count} pessoas`),
   },
+  /** As escolhas do prato (ADR 0010): tamanho, sabores, ponto, adicionais. */
+  choices: {
+    size: "Tamanho",
+    required: "Obrigatório",
+    rule: (min: number, max: number) =>
+      min === max ? `Escolha ${max}` : min === 0 ? `Opcional · até ${max}` : `Escolha de ${min} a ${max}`,
+    free: (n: number) => (n === 1 ? "1 grátis" : `${n} grátis`),
+    splits: "Cada escolha é uma parte do item",
+    missingSize: "Escolha o tamanho",
+    missing: (title: string) => `Falta: ${title}`,
+    soldOut: "Esgotado",
+    more: (name: string) => `Mais ${name}`,
+    less: (name: string) => `Menos ${name}`,
+    from: "a partir de",
+    addToRound: "Adicionar à rodada",
+  },
   cartBar: {
     see: "Ver pedido",
     notSent: "Ainda não enviado",

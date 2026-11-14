@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { useCart } from "./cart";
+import { hasChoices, type GroupsById } from "./choices";
+import { ProductSheet, type RoundPick } from "./product-sheet";
 import { MenuItemCard } from "./menu-item";
 import { MesaNotice } from "./mesa-notice";
 import type { MenuItem } from "./table-data";
@@ -39,22 +41,31 @@ export function RodizioRound({
   token,
   rodizio,
   items,
+  groups,
   rounds,
   limits,
 }: {
   token: string;
   rodizio: NonNullable<TableOrders["rodizio"]>;
   items: MenuItem[];
+  /** Os grupos de opções do cardápio: o prato com escolhas (os sabores) abre o detalhe para escolher. */
+  groups: GroupsById;
   rounds: number;
   limits: TableOrders["rodizioLimits"];
 }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
+  // Os pratos com escolhas entram na rodada um a um, cada um com as suas (ADR 0010).
+  const [picks, setPicks] = useState<{ key: number; productId: string; pick: RoundPick }[]>([]);
+  const [choosing, setChoosing] = useState<MenuItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const { count: inCart } = useCart(token);
   const now = useNow();
-  const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
+  const picked = (productId: string) =>
+    picks.filter((p) => p.productId === productId).reduce((sum, p) => sum + p.pick.quantity, 0);
+  const total =
+    Object.values(counts).reduce((sum, n) => sum + n, 0) + picks.reduce((sum, p) => sum + p.pick.quantity, 0);
   const maxPerItem = Math.min(20, limits?.maxPerItem ?? 20);
   const room = limits?.room ?? null;
   const endsAt = limits?.endsAt ? Date.parse(limits.endsAt) : null;
@@ -64,7 +75,7 @@ export function RodizioRound({
   const blocked = ended || nextRoundAt !== null || room === 0;
 
   function canAdd(id: string) {
-    return (counts[id] ?? 0) < maxPerItem && (room === null || total < room) && !ended;
+    return (counts[id] ?? 0) + picked(id) < maxPerItem && (room === null || total < room) && !ended;
   }
 
   function change(id: string, delta: number) {
@@ -79,12 +90,22 @@ export function RodizioRound({
     try {
       await placeOrder(
         token,
-        Object.entries(counts)
-          .filter(([, n]) => n > 0)
-          .map(([productId, quantity]) => ({ productId, quantity, note: "" })),
+        [
+          ...Object.entries(counts)
+            .filter(([, n]) => n > 0)
+            .map(([productId, quantity]) => ({ productId, quantity, note: "" })),
+          ...picks.map(({ productId, pick }) => ({
+            productId,
+            quantity: pick.quantity,
+            note: "",
+            variantId: pick.variantId,
+            options: pick.options,
+          })),
+        ],
         "/rounds",
       );
       setCounts({});
+      setPicks([]);
       setSent(true);
     } catch (e) {
       setError((e as Error).message);
@@ -137,6 +158,57 @@ export function RodizioRound({
 
       {items.length === 0 && <p className="text-(--mesa-muted)">{t.empty}</p>}
       {items.map((item) => {
+        if (hasChoices(item)) {
+          const mine = picks.filter((p) => p.productId === item.id);
+          return (
+            <div key={item.id} className="flex flex-col gap-1.5">
+              <MenuItemCard
+                item={item}
+                selected={mine.length > 0}
+                price={
+                  <span className="text-xs font-semibold tracking-wide text-(--brand-text) uppercase">
+                    {t.included}
+                  </span>
+                }
+                action={
+                  <button
+                    type="button"
+                    aria-label={t.add(item.name)}
+                    disabled={!canAdd(item.id)}
+                    onClick={() => setChoosing(item)}
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--brand) text-white disabled:opacity-40",
+                      focus,
+                    )}
+                  >
+                    <Plus aria-hidden className="size-4" />
+                  </button>
+                }
+              />
+              {mine.map(({ key, pick }) => (
+                <div
+                  key={key}
+                  className="ml-4 flex items-center gap-2 rounded-xl border border-(--mesa-stroke) px-3 py-1.5 text-sm"
+                >
+                  <span className="mr-auto">
+                    {pick.quantity}× {pick.choices || item.name}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={t.remove(`${item.name} · ${pick.choices}`)}
+                    onClick={() => {
+                      setSent(false);
+                      setPicks((all) => all.filter((p) => p.key !== key));
+                    }}
+                    className={cn("flex size-10 items-center justify-center rounded-xl bg-(--mesa-stroke)", focus)}
+                  >
+                    <Minus aria-hidden className="size-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          );
+        }
         const n = counts[item.id] ?? 0;
         return (
           <MenuItemCard
@@ -231,6 +303,31 @@ export function RodizioRound({
           </MesaNotice>
         )}
       </div>
+
+      <ProductSheet
+        token={token}
+        item={choosing}
+        onClose={() => setChoosing(null)}
+        groups={groups}
+        onRound={(pick) => {
+          if (!choosing) return;
+          // A quantidade respeita o máximo por item e o que ainda cabe na rodada.
+          const left = Math.min(
+            maxPerItem - (counts[choosing.id] ?? 0) - picked(choosing.id),
+            room === null ? Infinity : room - total,
+          );
+          if (left <= 0) return;
+          setSent(false);
+          setPicks((all) => [
+            ...all,
+            {
+              key: Date.now() + all.length,
+              productId: choosing.id,
+              pick: { ...pick, quantity: Math.min(pick.quantity, left) },
+            },
+          ]);
+        }}
+      />
     </section>
   );
 }
