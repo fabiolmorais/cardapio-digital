@@ -115,7 +115,8 @@ class ProductOptionsPersistenceAdapter implements ProductOptionsPort {
                 establishment, product, l.groupId().value(), l.variantId().value(), l.limit().minChoices(),
                 l.limit().maxChoices())).toList());
         prices.saveAll(change.prices().stream().map(p -> new OptionItemPriceJpaEntity(UUID.randomUUID(),
-                establishment, product, p.optionId().value(), p.variantId().value(), p.price().cents())).toList());
+                establishment, product, p.optionId().value(), p.variantId() == null ? null : p.variantId().value(),
+                p.price().cents())).toList());
     }
 
     @Override
@@ -163,7 +164,8 @@ class ProductOptionsPersistenceAdapter implements ProductOptionsPort {
         for (OptionItemPriceJpaEntity p : foundPrices) {
             pricesByProduct.computeIfAbsent(p.getProductId(), k -> new HashMap<>())
                     .put(new ProductOptions.PriceKey(new OptionItemId(p.getOptionItemId()),
-                            new ProductVariantId(p.getProductVariantId())), Money.ofCents(p.getPriceCents()));
+                            p.getProductVariantId() == null ? null : new ProductVariantId(p.getProductVariantId())),
+                            Money.ofCents(p.getPriceCents()));
         }
 
         Set<UUID> products = new HashSet<>(variantsByProduct.keySet());

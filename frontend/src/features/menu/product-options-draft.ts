@@ -62,8 +62,8 @@ export function fromOptions(options: ProductOptions): OptionsDraft {
   }));
   const prices = Object.fromEntries(
     options.prices
-      .filter((p) => keyOf.has(p.variantId))
-      .map((p) => [priceKey(p.optionId, keyOf.get(p.variantId)!), centsToInput(p.priceCents)]),
+      .filter((p) => p.variantId !== undefined && keyOf.has(p.variantId))
+      .map((p) => [priceKey(p.optionId, keyOf.get(p.variantId!)!), centsToInput(p.priceCents)]),
   );
   return { variants, groups, prices };
 }

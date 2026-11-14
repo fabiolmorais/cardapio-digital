@@ -5,7 +5,7 @@ import br.com.cardapio.application.port.out.menu.ProductMediaPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.exception.ProductMediaNotFoundException;
-import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.MediaOwner;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.menu.model.ProductMediaId;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +22,10 @@ public class RemoveProductMediaService implements RemoveProductMediaUseCase {
 
     @Override
     @Transactional
-    public void remove(EstablishmentId establishmentId, ProductId productId, ProductMediaId mediaId) {
-        // A foto precisa ser deste produto: o id da URL não pode apontar para a foto de outro.
+    public void remove(EstablishmentId establishmentId, MediaOwner owner, ProductMediaId mediaId) {
+        // A foto precisa ser deste dono: o id da URL não pode apontar para a foto de outro.
         ProductMedia found = media.find(establishmentId, mediaId)
-                .filter(m -> m.productId().equals(productId))
+                .filter(m -> m.owner().equals(owner))
                 .orElseThrow(ProductMediaNotFoundException::new);
         if (found.active()) {
             media.save(found.deactivate());

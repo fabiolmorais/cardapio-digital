@@ -14,6 +14,13 @@ import br.com.cardapio.domain.menu.model.ProductMedia;
 import br.com.cardapio.domain.shared.exception.InvalidImageException;
 import br.com.cardapio.domain.shared.exception.OutdatedListException;
 import br.com.cardapio.domain.shared.exception.UploadNotFoundException;
+import br.com.cardapio.domain.menu.exception.OptionItemNotFoundException;
+import br.com.cardapio.domain.menu.model.OptionGroup;
+import br.com.cardapio.domain.menu.model.OptionGroupRules;
+import br.com.cardapio.domain.menu.model.OptionItem;
+import br.com.cardapio.domain.menu.model.OptionItemId;
+import br.com.cardapio.domain.menu.model.OptionPricing;
+import br.com.cardapio.domain.shared.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,11 +34,12 @@ class MediaServicesTest {
 
     private final MenuFakes menu = new MenuFakes();
     private final MediaFakes fakes = new MediaFakes();
-    private final StartMediaUploadService start = new StartMediaUploadService(menu, fakes, fakes);
-    private final AddProductMediaService add = new AddProductMediaService(menu, fakes, fakes, fakes);
-    private final ListProductMediaService list = new ListProductMediaService(menu, fakes, fakes, fakes);
+    private final OptionGroupFakes options = new OptionGroupFakes();
+    private final StartMediaUploadService start = new StartMediaUploadService(menu, options, fakes, fakes);
+    private final AddProductMediaService add = new AddProductMediaService(menu, options, fakes, fakes, fakes);
+    private final ListProductMediaService list = new ListProductMediaService(menu, options, fakes, fakes, fakes);
     private final RemoveProductMediaService remove = new RemoveProductMediaService(fakes, fakes);
-    private final ReorderProductMediaService reorder = new ReorderProductMediaService(menu, fakes);
+    private final ReorderProductMediaService reorder = new ReorderProductMediaService(menu, options, fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();
     private final PhotoFile jpeg = new PhotoFile("image/jpeg", 2_000_000);
     private Product guioza;
@@ -47,6 +55,54 @@ class MediaServicesTest {
         MediaUpload upload = start.start(sakura, guioza.id(), jpeg);
         fakes.browserUploads(upload.url(), content.getBytes());
         return add.add(sakura, guioza.id(), upload.uploadId());
+    }
+
+    /** Um grupo de sabores com a Calabresa, na biblioteca do Sakura (complemento da ADR 0010). */
+    private OptionItem givenFlavor(boolean groupActive) {
+        OptionGroup flavors = OptionGroup.create(sakura, null, "Escolha os sabores",
+                new OptionGroupRules(1, 2, 1, true, OptionPricing.HIGHEST, 0));
+        OptionItem calabresa = new OptionItem(OptionItemId.newId(), sakura, flavors.id(), "Calabresa",
+                "Mussarela, calabresa e cebola", Money.ofCents(3900), true, 0, true);
+        options.save(groupActive ? flavors : flavors.deactivate(), List.of(calabresa));
+        return calabresa;
+    }
+
+    @Test
+    void anOptionGetsPhotosLikeAProductInItsOwnFolder() {
+        OptionItem calabresa = givenFlavor(true);
+
+        MediaUpload upload = start.start(sakura, calabresa.id(), jpeg);
+        assertThat(upload.url()).isEqualTo("https://r2.test/uploads/" + sakura.value() + "/"
+                + calabresa.id().value() + "/" + upload.uploadId());
+        fakes.browserUploads(upload.url(), "FOTO da calabresa".getBytes());
+        ProductMediaSummary photo = add.add(sakura, calabresa.id(), upload.uploadId());
+
+        assertThat(fakes.media.get(photo.id()).storagePath())
+                .startsWith("options/" + sakura.value() + "/" + calabresa.id().value() + "/");
+        assertThat(list.list(sakura, calabresa.id()).content()).extracting(ProductMediaSummary::id)
+                .containsExactly(photo.id());
+        // A galeria da opção não se mistura com a do produto (nem entra na capa do prato).
+        assertThat(list.list(sakura, guioza.id()).content()).isEmpty();
+        assertThat(fakes.findReadyGalleries(sakura)).isEmpty();
+        assertThat(fakes.findReadyOptionGalleries(sakura)).hasSize(1);
+        // Remover pelo produto não alcança a foto da opção.
+        assertThatThrownBy(() -> remove.remove(sakura, guioza.id(), photo.id()))
+                .isInstanceOf(ProductMediaNotFoundException.class);
+        remove.remove(sakura, calabresa.id(), photo.id());
+        assertThat(list.list(sakura, calabresa.id()).content()).isEmpty();
+    }
+
+    @Test
+    void anOptionOfAnotherRestaurantOrOfAnInactiveGroupIsNotFound() {
+        OptionItem calabresa = givenFlavor(true);
+        OptionItem inactive = givenFlavor(false);
+
+        assertThatThrownBy(() -> start.start(EstablishmentId.newId(), calabresa.id(), jpeg))
+                .isInstanceOf(OptionItemNotFoundException.class);
+        assertThatThrownBy(() -> start.start(sakura, inactive.id(), jpeg))
+                .isInstanceOf(OptionItemNotFoundException.class);
+        assertThatThrownBy(() -> start.start(sakura, OptionItemId.newId(), jpeg))
+                .isInstanceOf(OptionItemNotFoundException.class);
     }
 
     @Test

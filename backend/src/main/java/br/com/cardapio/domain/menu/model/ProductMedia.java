@@ -6,9 +6,11 @@ import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import java.util.Objects;
 
 /**
- * Uma foto ou um vídeo curto de um produto, na galeria do prato. A primeira FOTO da ordem é a
- * capa (a lista do cardápio mostra foto, e não vídeo).
+ * Uma foto ou um vídeo curto de um produto, na galeria do prato, ou de uma opção (o sabor da pizza;
+ * complemento da ADR 0010). A primeira FOTO da ordem é a capa (a lista do cardápio mostra foto, e
+ * não vídeo).
  *
+ * @param owner           o produto ou a opção dona da galeria
  * @param storagePath     pasta da mídia no armazenamento; cada tamanho da foto é um arquivo dentro dela
  * @param width           largura (da foto grande, ou do vídeo convertido); 0 no vídeo ainda em conversão
  * @param height          altura, idem
@@ -20,7 +22,7 @@ import java.util.Objects;
 public record ProductMedia(
         ProductMediaId id,
         EstablishmentId establishmentId,
-        ProductId productId,
+        MediaOwner owner,
         MediaType type,
         String storagePath,
         int width,
@@ -43,7 +45,7 @@ public record ProductMedia(
     public ProductMedia {
         Objects.requireNonNull(id);
         Objects.requireNonNull(establishmentId);
-        Objects.requireNonNull(productId);
+        Objects.requireNonNull(owner);
         Objects.requireNonNull(type);
         Objects.requireNonNull(storagePath);
         Objects.requireNonNull(status);
@@ -63,13 +65,13 @@ public record ProductMedia(
     }
 
     /**
-     * Foto nova, no fim da galeria. A pasta leva o restaurante e o produto: dá para achar (e,
-     * se um dia for preciso, apagar) tudo de um restaurante pelo começo do caminho.
+     * Foto nova, no fim da galeria. A pasta leva o restaurante e o dono: dá para achar (e, se um
+     * dia for preciso, apagar) tudo de um restaurante pelo começo do caminho.
      */
-    public static ProductMedia newImage(EstablishmentId establishmentId, ProductId productId, int width, int height,
+    public static ProductMedia newImage(EstablishmentId establishmentId, MediaOwner owner, int width, int height,
                                         int position) {
         ProductMediaId id = ProductMediaId.newId();
-        return new ProductMedia(id, establishmentId, productId, MediaType.IMAGE, folder(establishmentId, productId, id),
+        return new ProductMedia(id, establishmentId, owner, MediaType.IMAGE, folder(establishmentId, owner, id),
                 width, height, position, true, MediaStatus.READY, null, null, null);
     }
 
@@ -77,15 +79,20 @@ public record ProductMedia(
      * Vídeo novo, no fim da galeria, em conversão: o arquivo vai direto do navegador para o
      * serviço de vídeo, que avisa quando terminar.
      */
-    public static ProductMedia newVideo(EstablishmentId establishmentId, ProductId productId, String videoId,
+    public static ProductMedia newVideo(EstablishmentId establishmentId, MediaOwner owner, String videoId,
                                         int position) {
         ProductMediaId id = ProductMediaId.newId();
-        return new ProductMedia(id, establishmentId, productId, MediaType.VIDEO, folder(establishmentId, productId, id),
+        return new ProductMedia(id, establishmentId, owner, MediaType.VIDEO, folder(establishmentId, owner, id),
                 0, 0, position, true, MediaStatus.PROCESSING, Objects.requireNonNull(videoId), null, null);
     }
 
-    private static String folder(EstablishmentId establishmentId, ProductId productId, ProductMediaId id) {
-        return "products/" + establishmentId.value() + "/" + productId.value() + "/" + id.value();
+    private static String folder(EstablishmentId establishmentId, MediaOwner owner, ProductMediaId id) {
+        return owner.folder() + "/" + establishmentId.value() + "/" + owner.value() + "/" + id.value();
+    }
+
+    /** O produto dono; null se a galeria é de uma opção. */
+    public ProductId productId() {
+        return owner instanceof ProductId product ? product : null;
     }
 
     public boolean isVideo() {
@@ -109,14 +116,14 @@ public record ProductMedia(
         if (seconds > MAX_VIDEO_SECONDS) {
             return failed("O vídeo tem " + seconds + " segundos. Envie um de até " + MAX_VIDEO_SECONDS + ".");
         }
-        return new ProductMedia(id, establishmentId, productId, type, storagePath, videoWidth, videoHeight, position,
+        return new ProductMedia(id, establishmentId, owner, type, storagePath, videoWidth, videoHeight, position,
                 active, MediaStatus.READY, videoId, seconds, null);
     }
 
     /** A conversão falhou (o arquivo não era um vídeo de verdade, por exemplo). */
     public ProductMedia failed(String reason) {
         requireProcessingVideo();
-        return new ProductMedia(id, establishmentId, productId, type, storagePath, 0, 0, position, active,
+        return new ProductMedia(id, establishmentId, owner, type, storagePath, 0, 0, position, active,
                 MediaStatus.FAILED, videoId, null, Objects.requireNonNull(reason));
     }
 
@@ -127,13 +134,13 @@ public record ProductMedia(
     }
 
     public ProductMedia at(int newPosition) {
-        return new ProductMedia(id, establishmentId, productId, type, storagePath, width, height, newPosition, active,
+        return new ProductMedia(id, establishmentId, owner, type, storagePath, width, height, newPosition, active,
                 status, videoId, durationSeconds, failure);
     }
 
     /** O registro fica, como todo cadastro. Os arquivos da foto também (a limpeza vem com a Etapa 15). */
     public ProductMedia deactivate() {
-        return new ProductMedia(id, establishmentId, productId, type, storagePath, width, height, position, false,
+        return new ProductMedia(id, establishmentId, owner, type, storagePath, width, height, position, false,
                 status, videoId, durationSeconds, failure);
     }
 }

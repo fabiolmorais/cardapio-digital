@@ -33,13 +33,13 @@ final class OptionMapper {
 
     static OptionItem toDomain(OptionItemJpaEntity e) {
         return new OptionItem(new OptionItemId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
-                new OptionGroupId(e.getOptionGroupId()), e.getName(), Money.ofCents(e.getPriceCents()),
+                new OptionGroupId(e.getOptionGroupId()), e.getName(), e.getDescription(), Money.ofCents(e.getPriceCents()),
                 e.isAvailable(), e.getPosition(), e.isActive());
     }
 
     static OptionItemJpaEntity toEntity(OptionItem i) {
         return new OptionItemJpaEntity(i.id().value(), i.establishmentId().value(), i.groupId().value(), i.name(),
-                i.price().cents(), i.available(), i.position(), i.active());
+                i.description().isEmpty() ? null : i.description(), i.price().cents(), i.available(), i.position(), i.active());
     }
 
     static ProductVariant toDomain(ProductVariantJpaEntity e) {

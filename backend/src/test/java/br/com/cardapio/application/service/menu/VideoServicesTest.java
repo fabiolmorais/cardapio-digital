@@ -28,9 +28,10 @@ class VideoServicesTest {
 
     private final MenuFakes menu = new MenuFakes();
     private final MediaFakes fakes = new MediaFakes();
+    private final OptionGroupFakes options = new OptionGroupFakes();
     private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
-    private final StartVideoUploadService start = new StartVideoUploadService(menu, fakes, fakes, subscriptions);
-    private final ListProductMediaService list = new ListProductMediaService(menu, fakes, fakes, fakes);
+    private final StartVideoUploadService start = new StartVideoUploadService(menu, options, fakes, fakes, subscriptions);
+    private final ListProductMediaService list = new ListProductMediaService(menu, options, fakes, fakes, fakes);
     private final SyncVideoService sync = new SyncVideoService(fakes, fakes);
     private final RemoveProductMediaService remove = new RemoveProductMediaService(fakes, fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();

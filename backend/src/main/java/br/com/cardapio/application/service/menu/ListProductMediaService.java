@@ -4,11 +4,12 @@ import br.com.cardapio.application.port.in.menu.ListProductMediaUseCase;
 import br.com.cardapio.application.port.in.menu.ProductMediaSummary;
 import br.com.cardapio.application.port.out.media.MediaStoragePort;
 import br.com.cardapio.application.port.out.menu.ProductMediaPort;
+import br.com.cardapio.application.port.out.menu.OptionGroupPort;
 import br.com.cardapio.application.port.out.menu.ProductPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
-import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.menu.model.MediaOwner;
 import br.com.cardapio.domain.menu.model.ProductMedia;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,13 +18,15 @@ import java.util.List;
 public class ListProductMediaService implements ListProductMediaUseCase {
 
     private final ProductPort products;
+    private final OptionGroupPort groups;
     private final ProductMediaPort media;
     private final MediaStoragePort storage;
     private final VideoHostingPort videos;
 
-    public ListProductMediaService(ProductPort products, ProductMediaPort media, MediaStoragePort storage,
+    public ListProductMediaService(ProductPort products, OptionGroupPort groups, ProductMediaPort media, MediaStoragePort storage,
                                    VideoHostingPort videos) {
         this.products = products;
+        this.groups = groups;
         this.media = media;
         this.storage = storage;
         this.videos = videos;
@@ -36,9 +39,9 @@ public class ListProductMediaService implements ListProductMediaUseCase {
      */
     @Override
     @Transactional
-    public ResultPage<ProductMediaSummary> list(EstablishmentId establishmentId, ProductId productId) {
-        MenuLookups.activeProduct(products, establishmentId, productId);
-        List<ProductMediaSummary> all = media.findActiveByProduct(establishmentId, productId).stream()
+    public ResultPage<ProductMediaSummary> list(EstablishmentId establishmentId, MediaOwner owner) {
+        MediaOwners.requireActive(products, groups, establishmentId, owner);
+        List<ProductMediaSummary> all = media.findActiveByOwner(establishmentId, owner).stream()
                 .map(m -> {
                     ProductMedia synced = VideoSync.sync(m, videos);
                     if (synced != m) {

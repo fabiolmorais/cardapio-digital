@@ -23,7 +23,17 @@ record PublicMenuResponse(
         @Schema(requiredMode = REQUIRED, description = "Os mais pedidos dos últimos 30 dias (ids, do mais pedido); "
                 + "vazio enquanto houver menos de 3") List<UUID> mostOrdered,
         @Schema(requiredMode = REQUIRED, description = "Os grupos de opções usados no cardápio, uma vez cada "
-                + "(os produtos apontam para eles pelo id)") List<OptionDtos.Group> optionGroups) {
+                + "(os produtos apontam para eles pelo id)") List<OptionDtos.Group> optionGroups,
+        @Schema(requiredMode = REQUIRED, description = "A galeria de cada opção com foto ou vídeo (o sabor da "
+                + "pizza); a opção sem mídia não aparece") List<OptionGallery> optionMedia) {
+
+    @Schema(name = "PublicOptionGallery", description = "As fotos e os vídeos de uma opção, em ordem (a primeira "
+            + "foto é a capa)")
+    record OptionGallery(
+            @Schema(requiredMode = REQUIRED) UUID optionId,
+            @Schema(requiredMode = REQUIRED) List<Media> media
+    ) {
+    }
 
     @Schema(name = "PublicMenuCategory")
     record Category(
@@ -109,7 +119,9 @@ record PublicMenuResponse(
                                         OptionDtos.Limit.from(g.limits()))).toList(),
                                 OptionDtos.Price.from(p.options())))
                         .toList()))
-                .toList(), menu.mostOrdered().stream().map(ProductId::value).toList(), List.copyOf(groups.values()));
+                .toList(), menu.mostOrdered().stream().map(ProductId::value).toList(), List.copyOf(groups.values()),
+                menu.optionMedia().entrySet().stream().map(e -> new OptionGallery(e.getKey().value(),
+                        e.getValue().stream().map(PublicMenuResponse::media).toList())).toList());
     }
 
     private static Media media(PublicMenu.Media m) {

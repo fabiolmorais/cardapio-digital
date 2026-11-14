@@ -22,6 +22,7 @@ public record ProductOptionsChange(EstablishmentId establishmentId, ProductId pr
     public record Limit(OptionGroupId groupId, ProductVariantId variantId, ChoiceLimit limit) {
     }
 
+    /** @param variantId null: o preço da opção neste produto, em qualquer tamanho sem preço próprio */
     public record Price(OptionItemId optionId, ProductVariantId variantId, Money price) {
     }
 

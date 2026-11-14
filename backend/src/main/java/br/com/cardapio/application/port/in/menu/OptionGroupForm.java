@@ -19,7 +19,7 @@ public record OptionGroupForm(String name, String title, OptionGroupRules rules,
      *
      * @param id null para uma opção nova; o id de uma opção que já existe para editá-la
      */
-    public record Item(OptionItemId id, String name, Money price, boolean available) {
+    public record Item(OptionItemId id, String name, String description, Money price, boolean available) {
     }
 
     public OptionGroupForm {

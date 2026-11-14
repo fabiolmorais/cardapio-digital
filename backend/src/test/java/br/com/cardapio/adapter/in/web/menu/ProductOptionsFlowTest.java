@@ -317,6 +317,100 @@ class ProductOptionsFlowTest {
                 """)).hasStatus(HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * O jeito da pizzaria de verdade (complemento da ADR 0010): cada tamanho é um produto, todos com
+     * a mesma biblioteca de sabores; o sabor tem descrição e foto, e o preço muda com o produto.
+     */
+    @Test
+    void oneProductPerSizeWithFlavorsThatHavePhotosAndAPriceInEachProduct() throws Exception {
+        MvcTestResult flavors = createGroup(forno, """
+                {"title":"Escolha os sabores","minChoices":1,"maxChoices":2,"maxPerOption":1,
+                 "splitsItem":true,"pricing":"HIGHEST","freeQuantity":0,
+                 "items":[{"name":"Calabresa","description":"Mussarela, calabresa e cebola","priceCents":3900,
+                           "available":true},
+                          {"name":"Frango com catupiry","priceCents":4500,"available":true}]}
+                """);
+        String calabresa = json(flavors, "$.items[0].id");
+        String frango = json(flavors, "$.items[1].id");
+        assertThat(flavors).bodyJson().extractingPath("$.items[*].description").asArray()
+                .containsExactly("Mussarela, calabresa e cebola", "");
+        String pequena = product(forno, "Pequena", 0);
+        String grande = product(forno, "Grande", 0);
+        String flavorsId = json(flavors, "$.id");
+        assertThat(send("PUT", forno.owner(), "/api/v1/products/" + pequena + "/options", """
+                {"variants":[],"groups":[{"groupId":"%s","limits":[]}],
+                 "prices":[{"optionId":"%s","priceCents":2900},{"optionId":"%s","priceCents":3400}]}
+                """.formatted(flavorsId, calabresa, frango))).hasStatus(HttpStatus.OK)
+                .bodyJson().extractingPath("$.prices[*].variantId").asArray().containsOnlyNulls();
+        assertThat(send("PUT", forno.owner(), "/api/v1/products/" + grande + "/options", """
+                {"variants":[],"groups":[{"groupId":"%s","limits":[]}],"prices":[]}
+                """.formatted(flavorsId))).hasStatus(HttpStatus.OK);
+        // O mesmo preço "neste produto" duas vezes não passa.
+        assertThat(send("PUT", forno.owner(), "/api/v1/products/" + pequena + "/options", """
+                {"variants":[],"groups":[{"groupId":"%s","limits":[]}],
+                 "prices":[{"optionId":"%s","priceCents":2900},{"optionId":"%s","priceCents":3000}]}
+                """.formatted(flavorsId, calabresa, calabresa))).hasStatus(HttpStatus.BAD_REQUEST);
+
+        // A foto da Calabresa, pelo mesmo caminho da foto do prato.
+        String media = "/api/v1/option-items/" + calabresa + "/media";
+        byte[] photo = br.com.cardapio.support.TestImages.encode("jpeg", 800, 600);
+        MvcTestResult upload = send("POST", forno.owner(), media + "/uploads",
+                "{\"contentType\":\"image/jpeg\",\"sizeBytes\":%d}".formatted(photo.length));
+        assertThat(upload).hasStatusOk();
+        var put = java.net.http.HttpRequest.newBuilder(java.net.URI.create(json(upload, "$.url")))
+                .header("Content-Type", "image/jpeg")
+                .PUT(java.net.http.HttpRequest.BodyPublishers.ofByteArray(photo)).build();
+        assertThat(java.net.http.HttpClient.newHttpClient()
+                .send(put, java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(200);
+        assertThat(send("POST", forno.owner(), media, "{\"uploadId\":\"%s\"}".formatted(json(upload, "$.uploadId"))))
+                .hasStatus(HttpStatus.CREATED);
+        assertThat(send("GET", forno.owner(), media, null)).bodyJson().extractingPath("$.content.length()")
+                .isEqualTo(1);
+
+        MvcTestResult menu = mvc.get().uri("/api/v1/public/tables/" + forno.qr() + "/menu").exchange();
+        assertThat(menu).bodyJson().extractingPath("$.optionMedia[*].optionId").asArray().containsExactly(calabresa);
+        assertThat(menu).bodyJson().extractingPath("$.optionMedia[0].media[0].image.thumb").asString()
+                .contains("/options/");
+        String small = "$.categories[0].products[?(@.id == '" + pequena + "')]";
+        assertThat(menu).bodyJson().extractingPath(small + ".fromPriceCents").asArray().containsExactly(2900);
+        assertThat(menu).bodyJson().extractingPath(small + ".media.length()").asArray().containsExactly(0);
+        String big = "$.categories[0].products[?(@.id == '" + grande + "')]";
+        assertThat(menu).bodyJson().extractingPath(big + ".fromPriceCents").asArray().containsExactly(3900);
+
+        // Na Pequena, o sabor sai pelo preço da Pequena; na Grande, pelo da opção.
+        Cookie ana = phone(forno.qr());
+        String line = "{\"productId\":\"%s\",\"quantity\":1,\"options\":[{\"optionId\":\"%s\",\"quantity\":1},"
+                + "{\"optionId\":\"%s\",\"quantity\":1}]}";
+        MvcTestResult placed = order(forno.qr(), ana, line.formatted(pequena, calabresa, frango) + ","
+                + line.formatted(grande, calabresa, frango));
+        assertThat(placed).hasStatus(HttpStatus.CREATED);
+        assertThat(placed).bodyJson().extractingPath("$.items[*].unitPriceCents").asArray()
+                .containsExactly(3400, 4500);
+    }
+
+    /** As fotos e os vídeos da opção: outro restaurante recebe 404 em cada rota (CLAUDE.md). */
+    @Test
+    void anotherRestaurantCannotTouchTheOptionMedia() throws Exception {
+        Pizzeria p = pizzeria(forno);
+        Restaurant other = newRestaurant("Cantina Teste");
+        String media = "/api/v1/option-items/" + p.calabresa();
+        String anyMedia = UUID.randomUUID().toString();
+
+        assertThat(send("POST", other.owner(), media + "/media/uploads",
+                "{\"contentType\":\"image/jpeg\",\"sizeBytes\":1000}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.owner(), media + "/media",
+                "{\"uploadId\":\"%s\"}".formatted(UUID.randomUUID()))).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("POST", other.owner(), media + "/videos",
+                "{\"contentType\":\"video/mp4\",\"sizeBytes\":1000}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("GET", other.owner(), media + "/media", null)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("DELETE", other.owner(), media + "/media/" + anyMedia, null))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("PUT", other.owner(), media + "/media-order", "{\"ids\":[]}"))
+                .hasStatus(HttpStatus.NOT_FOUND);
+        // E o dono enxerga a galeria (vazia) normalmente.
+        assertThat(send("GET", forno.owner(), media + "/media", null)).hasStatusOk();
+    }
+
     /** A regra crítica do CLAUDE.md: outro restaurante não vê nem mexe em nada disto (404). */
     @Test
     void anotherRestaurantGetsNotFoundEverywhere() throws Exception {

@@ -181,6 +181,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/option-items/{optionId}/media-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Nova ordem das fotos (todas, a primeira vira a capa) */
+        put: operations["reorderOptionMedia"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/option-groups/{id}": {
         parameters: {
             query?: never;
@@ -783,6 +800,58 @@ export interface paths {
         put?: never;
         /** Cancela o item, com o motivo que o cliente vê */
         post: operations["cancelOrderItemByStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/option-items/{optionId}/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria o vídeo (em conversão, no fim da galeria) e devolve como enviar o arquivo por TUS */
+        post: operations["startOptionVideoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/option-items/{optionId}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As fotos e os vídeos da opção, na ordem (a primeira foto é a capa) */
+        get: operations["listOptionMedia"];
+        put?: never;
+        /** Passo 2: o arquivo já foi enviado; confere a foto, gera os 3 tamanhos e a põe na galeria */
+        post: operations["addOptionMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/option-items/{optionId}/media/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passo 1: pede a URL assinada para enviar uma foto */
+        post: operations["startOptionMediaUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1837,6 +1906,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/option-items/{optionId}/media/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Tira a foto da galeria */
+        delete: operations["removeOptionMedia"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/devices/{id}": {
         parameters: {
             query?: never;
@@ -2240,9 +2326,9 @@ export interface components {
             optionId: string;
             /**
              * Format: int32
-             * @description A posição do tamanho na lista variants
+             * @description A posição do tamanho na lista variants. Vazio: o preço neste produto (sem tamanho)
              */
-            variant: number;
+            variant?: number;
             /** Format: int64 */
             priceCents: number;
         };
@@ -2340,6 +2426,11 @@ export interface components {
             /** @example Calabresa */
             name: string;
             /**
+             * @description Vazia se o restaurante não escreveu
+             * @example Mussarela, calabresa, cebola e orégano
+             */
+            description: string;
+            /**
              * Format: int64
              * @example 500
              */
@@ -2351,8 +2442,11 @@ export interface components {
         OptionPrice: {
             /** Format: uuid */
             optionId: string;
-            /** Format: uuid */
-            variantId: string;
+            /**
+             * Format: uuid
+             * @description Vazio: o preço neste produto (em qualquer tamanho sem preço próprio)
+             */
+            variantId?: string;
             /** Format: int64 */
             priceCents: number;
         };
@@ -2507,6 +2601,11 @@ export interface components {
             id?: string;
             /** @example Calabresa */
             name: string;
+            /**
+             * @description Os ingredientes, por exemplo. Vazio: sem descrição
+             * @example Mussarela, calabresa, cebola e orégano
+             */
+            description?: string;
             /**
              * Format: int64
              * @description Em centavos (pode ser zero)
@@ -3644,6 +3743,8 @@ export interface components {
             mostOrdered: string[];
             /** @description Os grupos de opções usados no cardápio, uma vez cada (os produtos apontam para eles pelo id) */
             optionGroups: components["schemas"]["OptionGroup"][];
+            /** @description A galeria de cada opção com foto ou vídeo (o sabor da pizza); a opção sem mídia não aparece */
+            optionMedia: components["schemas"]["PublicOptionGallery"][];
         };
         PublicMenuCategory: {
             /** Format: uuid */
@@ -3739,6 +3840,12 @@ export interface components {
             poster?: string;
             /** Format: int32 */
             durationSeconds: number;
+        };
+        /** @description As fotos e os vídeos de uma opção, em ordem (a primeira foto é a capa) */
+        PublicOptionGallery: {
+            /** Format: uuid */
+            optionId: string;
+            media: components["schemas"]["PublicMenuMedia"][];
         };
         SseEmitter: {
             /** Format: int64 */
@@ -4773,6 +4880,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderSettings"];
+                };
+            };
+        };
+    };
+    reorderOptionMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Reordenadas */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma opção ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A galeria mudou desde que a tela carregou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -6663,6 +6812,196 @@ export interface operations {
             };
             /** @description Já foi entregue ou cancelado */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startOptionVideoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description A mídia criada e a autorização do envio */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito (MP4, MOV ou WebM, até 200 MB) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é uma opção ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A opção já tem 3 vídeos */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A opção já tem 8 fotos e vídeos */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listOptionMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Toda a galeria, numa página só (são no máximo 8) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseProductMedia"];
+                };
+            };
+            /** @description Não é uma opção ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    addOptionMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Foto adicionada (no fim da galeria) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMedia"];
+                };
+            };
+            /** @description O arquivo não é uma foto JPG ou PNG que dá para usar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O arquivo não chegou, ou o produto já tem 8 fotos */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    startOptionMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Como enviar o arquivo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUpload"];
+                };
+            };
+            /** @description Tipo ou tamanho não aceito */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é uma opção ativa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A opção já tem 8 fotos */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9009,6 +9348,36 @@ export interface operations {
                 content?: never;
             };
             /** @description Não é uma foto deste produto */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    removeOptionMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                optionId: string;
+                mediaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removida */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma foto desta opção */
             404: {
                 headers: {
                     [name: string]: unknown;

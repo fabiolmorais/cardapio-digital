@@ -16,15 +16,25 @@ interface ProductMediaJpaRepository extends JpaRepository<ProductMediaJpaEntity,
     List<ProductMediaJpaEntity> findByEstablishmentIdAndProductIdAndActiveTrueOrderByPositionAscIdAsc(
             UUID establishmentId, UUID productId);
 
-    /** As galerias prontas do restaurante, por produto e na ordem de cada galeria. */
-    List<ProductMediaJpaEntity> findByEstablishmentIdAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
+    List<ProductMediaJpaEntity> findByEstablishmentIdAndOptionItemIdAndActiveTrueOrderByPositionAscIdAsc(
+            UUID establishmentId, UUID optionItemId);
+
+    /** As galerias prontas dos produtos do restaurante, por produto e na ordem de cada galeria. */
+    List<ProductMediaJpaEntity>
+    findByEstablishmentIdAndProductIdIsNotNullAndActiveTrueAndStatusOrderByProductIdAscPositionAscIdAsc(
             UUID establishmentId, String status);
 
+    /** As galerias prontas das opções do restaurante, por opção e na ordem de cada galeria. */
+    List<ProductMediaJpaEntity>
+    findByEstablishmentIdAndOptionItemIdIsNotNullAndActiveTrueAndStatusOrderByOptionItemIdAscPositionAscIdAsc(
+            UUID establishmentId, String status);
+
+    /** Os ids de produto e de opção são UUIDs aleatórios: o mesmo id nunca é dos dois. */
     @Query("""
             SELECT coalesce(max(m.position) + 1, 0) FROM ProductMediaJpaEntity m
-             WHERE m.establishmentId = :establishmentId AND m.productId = :productId
+             WHERE m.establishmentId = :establishmentId AND (m.productId = :ownerId OR m.optionItemId = :ownerId)
             """)
-    int nextPosition(@Param("establishmentId") UUID establishmentId, @Param("productId") UUID productId);
+    int nextPosition(@Param("establishmentId") UUID establishmentId, @Param("ownerId") UUID ownerId);
 
     Optional<ProductMediaJpaEntity> findByVideoId(String videoId);
 

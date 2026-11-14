@@ -3,6 +3,7 @@ package br.com.cardapio.application.port.in.menu;
 import br.com.cardapio.domain.menu.model.ImageVariant;
 import br.com.cardapio.domain.menu.model.MediaType;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
+import br.com.cardapio.domain.menu.model.OptionItemId;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.menu.model.ProductOptions;
 
@@ -12,12 +13,17 @@ import java.util.Map;
 /**
  * O cardápio como o cliente vê: as categorias na ordem, cada uma com os produtos dela.
  * Categoria sem produto ativo não aparece. Produto esgotado aparece (com available = false).
+ *
+ * @param optionMedia a galeria pronta de cada opção que tem foto ou vídeo (o sabor da pizza), só
+ *                    das opções dos grupos ligados a algum produto do cardápio
  */
-public record PublicMenu(List<Category> categories, List<ProductId> mostOrdered) {
+public record PublicMenu(List<Category> categories, List<ProductId> mostOrdered,
+                         Map<OptionItemId, List<Media>> optionMedia) {
 
     public PublicMenu {
         categories = List.copyOf(categories);
         mostOrdered = List.copyOf(mostOrdered);
+        optionMedia = Map.copyOf(optionMedia);
     }
 
     public record Category(MenuCategoryId id, String name, List<Item> products) {

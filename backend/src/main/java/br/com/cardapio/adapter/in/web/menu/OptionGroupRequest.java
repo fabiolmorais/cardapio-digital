@@ -39,6 +39,8 @@ record OptionGroupRequest(
     record Item(
             @Schema(description = "Vazio numa opção nova; o id de uma opção que já existe para editá-la") UUID id,
             @Schema(requiredMode = REQUIRED, example = "Calabresa") @NotBlank @Size(max = 60) String name,
+            @Schema(description = "Os ingredientes, por exemplo. Vazio: sem descrição",
+                    example = "Mussarela, calabresa, cebola e orégano") @Size(max = 300) String description,
             @Schema(requiredMode = REQUIRED, description = "Em centavos (pode ser zero)", example = "0")
             @Min(0) @Max(9_999_999) long priceCents,
             @Schema(requiredMode = REQUIRED, description = "false: esgotada") boolean available
@@ -49,6 +51,6 @@ record OptionGroupRequest(
         return new OptionGroupForm(name, title,
                 new OptionGroupRules(minChoices, maxChoices, maxPerOption, splitsItem, pricing, freeQuantity),
                 items.stream().map(i -> new OptionGroupForm.Item(i.id() == null ? null : new OptionItemId(i.id()),
-                        i.name(), Money.ofCents(i.priceCents()), i.available())).toList());
+                        i.name(), i.description(), Money.ofCents(i.priceCents()), i.available())).toList());
     }
 }

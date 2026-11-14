@@ -38,7 +38,7 @@ class ProductOptionsTest {
     }
 
     private static OptionItem option(OptionGroup group, String name, long cents, int position) {
-        return new OptionItem(OptionItemId.newId(), SAKURA, group.id(), name, brl(cents), true, position, true);
+        return new OptionItem(OptionItemId.newId(), SAKURA, group.id(), name, "", brl(cents), true, position, true);
     }
 
     private static OptionSelection pick(ProductVariant variant, OptionItem... options) {
@@ -62,6 +62,73 @@ class ProductOptionsTest {
         assertThat(priced.choices().isEmpty()).isTrue();
         assertThatThrownBy(() -> none.price(guioza, new OptionSelection(ProductVariantId.newId(), List.of()), false))
                 .isInstanceOf(ChoiceUnavailableException.class);
+    }
+
+    @Test
+    void theOptionDescriptionIsOptionalAndShort() {
+        OptionGroup flavors = group("Sabores", new OptionGroupRules(1, 2, 1, true, OptionPricing.HIGHEST, 0));
+        OptionItem calabresa = new OptionItem(OptionItemId.newId(), SAKURA, flavors.id(), "Calabresa",
+                "  Mussarela, calabresa e cebola  ", brl(3900), true, 0, true);
+
+        assertThat(calabresa.description()).isEqualTo("Mussarela, calabresa e cebola");
+        assertThat(option(flavors, "Mussarela", 3900, 1).withAvailability(false).description()).isEmpty();
+        assertThatThrownBy(() -> new OptionItem(OptionItemId.newId(), SAKURA, flavors.id(), "Longa", "x".repeat(301),
+                brl(0), true, 0, true)).isInstanceOf(InvalidValueException.class);
+    }
+
+    /**
+     * O jeito da pizzaria de verdade (complemento da ADR 0010): cada tamanho é um produto, todos
+     * com a mesma biblioteca de sabores, e o preço do sabor muda com o produto.
+     */
+    @Nested
+    class OneProductPerSize {
+
+        final OptionGroup flavors = group("Escolha os sabores",
+                new OptionGroupRules(1, 2, 1, true, OptionPricing.HIGHEST, 0));
+        final OptionItem calabresa = option(flavors, "Calabresa", 3900, 0);
+        final OptionItem frango = option(flavors, "Frango com catupiry", 4500, 1);
+        final OptionItem mussarela = option(flavors, "Mussarela", 3900, 2);
+        final ProductDetails pequena = product("Pequena", 0);
+        final ProductOptions pequenaOptions = new ProductOptions(PIZZA, List.of(),
+                List.of(new ProductOptions.LinkedGroup(flavors, List.of(calabresa, frango, mussarela), Map.of())),
+                Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(2900),
+                        new ProductOptions.PriceKey(frango.id(), null), brl(3400)));
+
+        @Test
+        void theFlavorCostsWhatThisProductSays() {
+            PricedSelection priced = pequenaOptions.price(pequena, pick(null, calabresa, frango), false);
+
+            assertThat(priced.unitPrice()).isEqualTo(brl(3400));
+            assertThat(priced.choices().variantName()).isNull();
+            assertThat(priced.choices().options()).extracting(ChosenOption::price)
+                    .containsExactly(brl(2900), brl(3400));
+        }
+
+        @Test
+        void withoutAPriceInTheProductTheFlavorKeepsItsOwn() {
+            assertThat(pequenaOptions.price(pequena, pick(null, mussarela), false).unitPrice()).isEqualTo(brl(3900));
+        }
+
+        @Test
+        void theFromPriceUsesThePriceInThisProduct() {
+            assertThat(pequenaOptions.fromPrice(pequena)).isEqualTo(brl(2900));
+        }
+
+        @Test
+        void aSizePriceWinsOverTheProductPriceThatWinsOverTheOptionPrice() {
+            ProductVariant media = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Média", brl(0), null,
+                    true, false, 0, true);
+            ProductVariant grande = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Grande", brl(0),
+                    null, true, false, 1, true);
+            ProductOptions both = new ProductOptions(PIZZA, List.of(media, grande),
+                    List.of(new ProductOptions.LinkedGroup(flavors, List.of(calabresa, mussarela), Map.of())),
+                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(3500),
+                            new ProductOptions.PriceKey(calabresa.id(), grande.id()), brl(3900)));
+
+            assertThat(both.price(pequena, pick(grande, calabresa), false).unitPrice()).isEqualTo(brl(3900));
+            assertThat(both.price(pequena, pick(media, calabresa), false).unitPrice()).isEqualTo(brl(3500));
+            assertThat(both.price(pequena, pick(media, mussarela), false).unitPrice()).isEqualTo(brl(3900));
+        }
     }
 
     @Nested

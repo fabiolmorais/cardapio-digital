@@ -15,8 +15,13 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
     @Id
     private UUID id;
 
-    @Column(name = "product_id", nullable = false)
+    /** O produto dono; null quando a galeria é de uma opção. */
+    @Column(name = "product_id")
     private UUID productId;
+
+    /** A opção dona (o sabor da pizza); null quando a galeria é de um produto. */
+    @Column(name = "option_item_id")
+    private UUID optionItemId;
 
     @Column(nullable = false)
     private String type;
@@ -49,12 +54,13 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
     protected ProductMediaJpaEntity() {
     }
 
-    ProductMediaJpaEntity(UUID id, UUID establishmentId, UUID productId, String type, String storagePath,
+    ProductMediaJpaEntity(UUID id, UUID establishmentId, UUID productId, UUID optionItemId, String type, String storagePath,
                           Integer width, Integer height, int position, boolean active, String status, String videoId,
                           Integer durationSeconds, String failure) {
         super(establishmentId);
         this.id = id;
         this.productId = productId;
+        this.optionItemId = optionItemId;
         this.type = type;
         this.storagePath = storagePath;
         this.width = width;
@@ -69,6 +75,7 @@ class ProductMediaJpaEntity extends EstablishmentScopedEntity {
 
     UUID getId() { return id; }
     UUID getProductId() { return productId; }
+    UUID getOptionItemId() { return optionItemId; }
     String getType() { return type; }
     String getStoragePath() { return storagePath; }
     Integer getWidth() { return width; }
