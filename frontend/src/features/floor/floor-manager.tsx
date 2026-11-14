@@ -219,7 +219,7 @@ export function FloorManager() {
 
             {/* relative: o texto sr-only (absolute) fica dentro da caixa com rolagem (ver a tela da equipe). */}
             <div className="relative overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full min-w-[680px] border-collapse text-sm">
+              <table className="w-full min-w-[680px] border-collapse text-sm xl:max-2xl:min-w-0">
                 <thead>
                   <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
                     <th scope="col" className="px-4 py-3 font-semibold">
@@ -228,7 +228,7 @@ export function FloorManager() {
                     <th scope="col" className="px-4 py-3 font-semibold">
                       {t.columns.sector}
                     </th>
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                    <th scope="col" className="px-4 py-3 font-semibold xl:max-2xl:hidden">
                       {t.columns.qr}
                     </th>
                     <th scope="col" className="px-4 py-3 font-semibold">
@@ -267,7 +267,7 @@ export function FloorManager() {
                         </button>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{sectorName.get(table.sectorId) ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-3 text-muted-foreground xl:max-2xl:hidden">
                         {t.qrIssued(day.format(new Date(table.tokenIssuedAt)))}
                       </td>
                       <td className="px-4 py-3">
@@ -461,7 +461,7 @@ function TablePanel({
 
   if (!table) {
     return (
-      <aside className="w-full rounded-2xl border border-border bg-card p-5 text-muted-foreground xl:max-w-sm">
+      <aside className="w-full rounded-2xl border border-border bg-card p-5 text-muted-foreground xl:max-w-80 2xl:max-w-sm">
         {t.panel.empty}
       </aside>
     );
@@ -469,7 +469,7 @@ function TablePanel({
   return (
     <aside
       aria-label={t.tableName(table.label)}
-      className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 xl:max-w-sm"
+      className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 xl:max-w-80 2xl:max-w-sm"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{t.tableName(table.label)}</h2>
@@ -482,6 +482,7 @@ function TablePanel({
           {table.active ? t.panel.qrActive : t.panel.inactive}
         </span>
       </div>
+      <p className="-mt-2 text-sm text-muted-foreground">{t.qrIssued(day.format(new Date(table.tokenIssuedAt)))}</p>
 
       {/* Prévia do display impresso (o PDF sai igual a isto). */}
       <div className="mx-auto flex w-60 flex-col items-center gap-3 rounded-[22px] bg-white px-5 py-5.5 text-[#16130F] shadow-[0_20px_50px_rgba(0,0,0,.45)]">
@@ -524,7 +525,7 @@ function TablePanel({
         {sectorName && (
           <Button
             variant="outline"
-            className="h-11"
+            className="h-auto min-h-11 py-2 whitespace-normal"
             disabled={downloading}
             onClick={() => void download(() => fetchSectorDisplays(table.sectorId))}
           >

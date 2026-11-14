@@ -60,7 +60,7 @@ export function DevicesPanel() {
   return (
     <aside
       aria-labelledby="devices-title"
-      className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 xl:max-w-sm"
+      className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 2xl:max-w-sm"
     >
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">

@@ -66,7 +66,7 @@ export function TableBox({ label, tone, size = "md" }: { label: string; tone?: T
       className={cn(
         "flex shrink-0 flex-col items-center justify-center font-bold",
         tv
-          ? "size-[110px] rounded-[26px] text-[56px] leading-[56px]"
+          ? "size-[88px] rounded-[22px] text-[44px] leading-[44px] 2xl:size-[110px] 2xl:rounded-[26px] 2xl:text-[56px] 2xl:leading-[56px]"
           : "h-13 min-w-13 rounded-[14px] px-2 text-xl leading-5",
         tone ? TONE[tone] : "bg-secondary",
       )}
