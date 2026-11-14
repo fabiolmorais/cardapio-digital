@@ -1,5 +1,6 @@
 "use client";
 
+import { choicesText } from "@/features/table/choices";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Volume2, X } from "lucide-react";
 import Link from "next/link";
@@ -251,7 +252,9 @@ function TvBoard({
                 key={item.id}
                 label={item.tableLabel}
                 title={`${item.quantity}× ${item.productName}`}
-                detail={[item.sectorName, item.note ?? orders.order(item.orderNumber)].join(" · ")}
+                detail={[choicesText(item.choices), item.sectorName, item.note ?? orders.order(item.orderNumber)]
+                  .filter(Boolean)
+                  .join(" · ")}
                 end={
                   <Badge tone={ITEM_TONE[item.status]} className="h-10 px-4 text-xl">
                     {status[item.status]}
@@ -273,9 +276,13 @@ function TvBoard({
                 tone="info"
                 className="border-info/45"
                 title={`${item.quantity}× ${item.productName}`}
-                detail={`${item.sectorName} · ${t.readySince(
-                  Math.max(0, Math.floor((now - Date.parse(item.readyAt ?? item.createdAt)) / 60_000)),
-                )}`}
+                detail={[
+                  choicesText(item.choices),
+                  item.sectorName,
+                  t.readySince(Math.max(0, Math.floor((now - Date.parse(item.readyAt ?? item.createdAt)) / 60_000))),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               />
             ))
           )}

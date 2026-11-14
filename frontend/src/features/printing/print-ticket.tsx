@@ -1,4 +1,5 @@
 import { messages } from "@/messages/pt-BR";
+import { choiceLines } from "@/features/table/choices";
 import type { PrintJob } from "./print-api";
 
 const t = messages.panel.printing.ticket;
@@ -40,6 +41,12 @@ export function PrintTicket({ ticket, restaurant }: { ticket: Ticket; restaurant
               {item.quantity}x {item.productName}
               {item.rodizio && ` (${t.rodizio})`}
             </span>
+            {/* O tamanho e as escolhas, uma por linha e em negrito: é o que a cozinha lê (ADR 0010). */}
+            {choiceLines(item.choices).map((line) => (
+              <span key={line} className="pl-3 text-[15px] font-bold">
+                {line}
+              </span>
+            ))}
             {item.note && <span className="pl-3">{t.note(item.note)}</span>}
             {canceled && item.cancelReason && <span className="pl-3">{t.reason(item.cancelReason)}</span>}
           </li>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -194,6 +195,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
                   <li key={item.id} className="flex items-center gap-2 text-sm">
                     <span className={cn("flex-1", canceled && "text-muted-foreground line-through")}>
                       {item.quantity}× {item.productName}
+                      <ItemChoicesText of={item.choices} />
                     </span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{ts[item.status]}</span>
                     <span className="w-20 text-right font-mono tabular-nums">

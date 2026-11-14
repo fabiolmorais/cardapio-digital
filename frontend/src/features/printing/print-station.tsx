@@ -1,5 +1,6 @@
 "use client";
 
+import { choicesText } from "@/features/table/choices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Pause, Play, Printer } from "lucide-react";
 import Link from "next/link";
@@ -250,7 +251,12 @@ function Station({ restaurant }: { restaurant: string }) {
                     {messages.panel.kitchen.table} {job.tableLabel} · {messages.panel.kitchen.order(job.orderNumber)}
                   </span>
                   <span className="truncate text-sm text-muted-foreground">
-                    {job.items.map((i) => `${i.quantity}× ${i.productName}`).join(", ")}
+                    {job.items
+                      .map((i) => {
+                        const choices = choicesText(i.choices);
+                        return `${i.quantity}× ${i.productName}${choices ? ` (${choices})` : ""}`;
+                      })
+                      .join(", ")}
                   </span>
                 </span>
                 <Button

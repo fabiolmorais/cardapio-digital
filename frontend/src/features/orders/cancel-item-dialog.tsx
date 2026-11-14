@@ -1,5 +1,7 @@
 "use client";
 
+import type { ItemChoices } from "@/features/table/choices";
+import { ItemChoicesText } from "./item-choices";
 import { useMutation } from "@tanstack/react-query";
 import { Minus, Plus, X } from "lucide-react";
 import { useId, useState } from "react";
@@ -18,6 +20,8 @@ export type CancelableItem = {
   productName: string;
   quantity: number;
   orderNumber?: number;
+  /** O tamanho e as escolhas, para a cozinha saber qual dos itens iguais cancelar. */
+  choices?: ItemChoices;
 };
 
 const t = messages.panel.cancelItem;
@@ -126,8 +130,11 @@ function Body({ items, onDone }: { items: CancelableItem[]; onDone: () => void }
               >
                 {on && <span className="size-2.5 rounded-full bg-destructive" />}
               </span>
-              <span className="flex-1 font-semibold">
-                {i.quantity}× {i.productName}
+              <span className="flex flex-1 flex-col font-semibold">
+                <span>
+                  {i.quantity}× {i.productName}
+                </span>
+                <ItemChoicesText of={i.choices} className="font-normal" />
               </span>
             </label>
           );
