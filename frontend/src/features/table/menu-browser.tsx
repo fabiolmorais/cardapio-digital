@@ -44,7 +44,7 @@ export function MenuBrowser({ token, menu, serving }: { token: string; menu: Pub
   const inputId = useId();
   const [open, setOpen] = useState<MenuItem | null>(null);
   // Os grupos de opções do cardápio (ADR 0010), uma vez só: cada prato aponta para eles.
-  const groups = useMemo(() => groupsById(menu.optionGroups), [menu.optionGroups]);
+  const groups = useMemo(() => groupsById(menu.optionGroups, menu.optionMedia), [menu.optionGroups, menu.optionMedia]);
   // A categoria selecionada (branca): a que está na tela, ou a que o cliente tocou.
   const [current, setCurrent] = useState<string | null>(null);
   const chips = useRef<HTMLElement>(null);

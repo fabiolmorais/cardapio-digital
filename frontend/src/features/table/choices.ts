@@ -5,7 +5,11 @@ import type { MenuItem } from "./table-data";
  * As escolhas do prato na mesa (ADR 0010): o tamanho e as opções. Espelha a regra do back só para
  * MOSTRAR o preço enquanto o cliente escolhe; quem calcula e confere de verdade é o back, no envio.
  */
-export type OptionGroup = Schemas["OptionGroup"];
+type Media = Schemas["PublicMenuMedia"];
+/** Um grupo de opções com a galeria de cada opção (complemento da ADR 0010; vazia sem foto). */
+export type OptionGroup = Omit<Schemas["OptionGroup"], "items"> & {
+  items: (Schemas["OptionGroup"]["items"][number] & { media: Media[] })[];
+};
 export type GroupLink = MenuItem["optionGroups"][number];
 export type GroupsById = Map<string, OptionGroup>;
 /** As opções escolhidas: o id da opção e quantas vezes. */
@@ -22,8 +26,25 @@ export type Rules = {
   free: number;
 };
 
-export function groupsById(groups: OptionGroup[]): GroupsById {
-  return new Map(groups.map((g) => [g.id, g]));
+/** Os grupos do cardápio por id, cada opção com a sua galeria (as fotos e os vídeos do sabor). */
+export function groupsById(
+  groups: Schemas["OptionGroup"][],
+  galleries: Schemas["PublicOptionGallery"][] = [],
+): GroupsById {
+  const media = new Map(galleries.map((g) => [g.optionId, g.media]));
+  return new Map(
+    groups.map((g) => [g.id, { ...g, items: g.items.map((i) => ({ ...i, media: media.get(i.id) ?? [] })) }]),
+  );
+}
+
+/** O grupo tem opção com foto ou vídeo: a escolha vira um cardápio, com a foto ao lado de cada opção. */
+export function hasPhotos(group: OptionGroup) {
+  return group.items.some((i) => i.media.length > 0);
+}
+
+/** A busca sem acento nem maiúsculas ("pao" acha "Pão"). */
+export function searchable(text: string) {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
 /** O produto pede escolha antes de ir para o pedido: tem tamanhos ou grupos. */
