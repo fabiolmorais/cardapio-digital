@@ -1,7 +1,7 @@
 "use client";
 
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Plus, Search } from "lucide-react";
+import { GripVertical, ListChecks, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useId, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -130,6 +130,10 @@ export function MenuManager({ initialCategoryId }: { initialCategoryId?: string 
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.subtitle(totalProducts, categoryList.length)}</p>
         </div>
+        <Link href="/admin/cardapio/opcoes" className={buttonVariants({ size: "xl", variant: "outline" })}>
+          <ListChecks aria-hidden />
+          {messages.options.link}
+        </Link>
         {categoryList.length > 0 && (
           <Link href={newProductHref} className={buttonVariants({ size: "xl" })}>
             <Plus aria-hidden />

@@ -17,6 +17,7 @@ import { useSession } from "@/lib/auth/use-session";
 import { centsToInput, parseCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import type { OptionGroup } from "./options-api";
 import {
   createProduct,
   deactivateProduct,
@@ -27,6 +28,15 @@ import {
   type Product,
   type ProductRequest,
 } from "./menu-api";
+import { ProductOptionsEditor } from "./product-options-editor";
+import { EMPTY_DRAFT, cheapestVariant, fromOptions, toRequest, type OptionsDraft } from "./product-options-draft";
+import {
+  OPTION_GROUPS_KEY,
+  fetchOptionGroups,
+  fetchProductOptions,
+  updateProductOptions,
+  type ProductOptions,
+} from "./options-api";
 import { ProductPhotos } from "./product-photos";
 
 const t = messages.menu.product;
@@ -49,6 +59,14 @@ export function ProductEditor({ productId, initialCategoryId }: { productId?: st
     enabled: allowed && productId !== undefined,
     retry: false,
   });
+  // Os tamanhos e os grupos do produto (ADR 0010) e a biblioteca de grupos para escolher.
+  const options = useQuery({
+    queryKey: ["product-options", productId],
+    queryFn: () => fetchProductOptions(productId!),
+    enabled: allowed && productId !== undefined,
+    retry: false,
+  });
+  const library = useQuery({ queryKey: OPTION_GROUPS_KEY, queryFn: fetchOptionGroups, enabled: allowed });
   const [round, setRound] = useState(0);
   // O Next guarda as telas visitadas (escondidas, com o estado) para a volta ser instantânea. Ao
   // sair desta tela, os efeitos dela são desligados: é a hora de marcar uma visita nova, para o
@@ -56,7 +74,10 @@ export function ProductEditor({ productId, initialCategoryId }: { productId?: st
   const [visit, setVisit] = useState(0);
   useEffect(() => () => setVisit((n) => n + 1), []);
 
-  if (status !== "authenticated" || (allowed && (categories.isPending || (productId && product.isPending)))) {
+  if (
+    status !== "authenticated" ||
+    (allowed && (categories.isPending || (productId && (product.isPending || options.isPending))))
+  ) {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
   }
   if (!allowed) {
@@ -83,10 +104,12 @@ export function ProductEditor({ productId, initialCategoryId }: { productId?: st
     <ProductForm
       key={
         product.data
-          ? `${product.data.id}-${product.dataUpdatedAt}-${visit}`
+          ? `${product.data.id}-${product.dataUpdatedAt}-${options.dataUpdatedAt}-${visit}`
           : `new-${initialCategoryId ?? ""}-${round}-${visit}`
       }
       product={product.data}
+      options={options.data}
+      library={library.data ?? []}
       categories={categories.data}
       initialCategoryId={initialCategoryId}
       onSaved={() => setRound((n) => n + 1)}
@@ -108,11 +131,15 @@ function BackLink({ href, children }: { href: string; children: React.ReactNode 
 
 function ProductForm({
   product,
+  options,
+  library,
   categories,
   initialCategoryId,
   onSaved,
 }: {
   product?: Product;
+  options?: ProductOptions;
+  library: OptionGroup[];
   categories: MenuCategory[];
   initialCategoryId?: string;
   onSaved: () => void;
@@ -137,13 +164,18 @@ function ProductForm({
     picked ??
     new Set((rodizios.data ?? []).filter((r) => product && r.productIds.includes(product.id)).map((r) => r.id));
   const [confirming, setConfirming] = useState(false);
+  // Os tamanhos e as opções: só vão ao back se a pessoa mexeu (o rascunho começa do que está salvo).
+  const [optionsDraft, setOptionsDraft] = useState<OptionsDraft>(() => (options ? fromOptions(options) : EMPTY_DRAFT));
+  const [optionsTouched, setOptionsTouched] = useState(false);
+  // Com tamanhos, o preço do produto deixa de valer: fica o menor preço dos tamanhos.
+  const hasVariants = optionsDraft.variants.length > 0;
   // O Next mantém telas já visitadas escondidas na página: ids fixos se repetiriam, e um
   // rótulo apontaria para o campo da tela escondida. useId dá um id único a cada formulário.
   const id = useId();
   const formId = `${id}form`;
 
-  const priceCents = parseCents(price);
-  const promoCents = parseCents(promo);
+  const priceCents = hasVariants ? (cheapestVariant(optionsDraft) ?? 0) : parseCents(price);
+  const promoCents = hasVariants ? null : parseCents(promo);
   const priceInvalid = price !== "" && Number.isNaN(priceCents);
   const promoInvalid = Number.isNaN(promoCents);
   const category = categories.find((c) => c.id === (product?.categoryId ?? categoryId));
@@ -154,6 +186,8 @@ function ProductForm({
       queryClient.invalidateQueries({ queryKey: ["menu-categories"] }),
       queryClient.invalidateQueries({ queryKey: ["products"] }),
       queryClient.invalidateQueries({ queryKey: ["product"] }),
+      queryClient.invalidateQueries({ queryKey: ["product-options"] }),
+      queryClient.invalidateQueries({ queryKey: OPTION_GROUPS_KEY }),
     ]);
     router.push(`/admin/cardapio?categoria=${savedCategoryId}`);
     onSaved();
@@ -161,7 +195,15 @@ function ProductForm({
 
   const save = useMutation({
     mutationFn: async (body: ProductRequest) => {
+      // Confere os tamanhos e as opções antes de salvar qualquer coisa (o erro sai na tela).
+      const linkedOptions = new Set(
+        library
+          .filter((g) => optionsDraft.groups.some((l) => l.groupId === g.id))
+          .flatMap((g) => g.items.map((i) => i.id)),
+      );
+      const optionsBody = optionsTouched ? toRequest(optionsDraft, linkedOptions) : null;
       const saved = await (product ? updateProduct(product.id, body) : createProduct(body));
+      if (optionsBody) await updateProductOptions(saved.id, optionsBody);
       if (picked !== null) {
         await setProductRodizios(saved.id, [...picked]);
         await queryClient.invalidateQueries({ queryKey: ["rodizios"] });
@@ -219,124 +261,137 @@ function ProductForm({
       </header>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <form
-          id={formId}
-          onSubmit={onSubmit}
-          className="flex min-w-0 flex-1 flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:max-w-3xl"
-        >
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}name`} className="text-muted-foreground">
-              {t.name}
-            </Label>
-            <Input
-              id={`${id}name`}
-              name="name"
-              required
-              maxLength={80}
-              autoComplete="off"
-              defaultValue={product?.name}
-              placeholder={t.namePlaceholder}
-              className="h-12 rounded-xl px-4 text-base"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}description`} className="text-muted-foreground">
-              {t.description}
-            </Label>
-            <textarea
-              id={`${id}description`}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              maxLength={DESCRIPTION_MAX}
-              rows={3}
-              aria-describedby={`${id}description-hint`}
-              className="min-h-24 rounded-xl border border-input bg-transparent px-4 py-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            />
-            <span id={`${id}description-hint`} className="text-sm text-muted-foreground">
-              {t.descriptionHint(description.length, DESCRIPTION_MAX)}
-            </span>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-6 lg:max-w-3xl">
+          <form
+            id={formId}
+            onSubmit={onSubmit}
+            className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6"
+          >
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${id}category`} className="text-muted-foreground">
-                {t.category}
+              <Label htmlFor={`${id}name`} className="text-muted-foreground">
+                {t.name}
               </Label>
-              <Select
-                id={`${id}category`}
-                value={categoryId}
-                onValueChange={setCategoryId}
+              <Input
+                id={`${id}name`}
+                name="name"
                 required
-                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                maxLength={80}
+                autoComplete="off"
+                defaultValue={product?.name}
+                placeholder={t.namePlaceholder}
+                className="h-12 rounded-xl px-4 text-base"
               />
             </div>
-            <MoneyField
-              id={`${id}price`}
-              label={t.price}
-              value={price}
-              onChange={setPrice}
-              onBlur={() => tidy(price, setPrice)}
-              invalid={priceInvalid}
-              hint={t.priceHint}
-              required
-            />
-            <MoneyField
-              id={`${id}promo`}
-              label={`${t.promoPrice} (${t.optional})`}
-              value={promo}
-              onChange={setPromo}
-              onBlur={() => tidy(promo, setPromo)}
-              invalid={promoInvalid}
-              hint={t.promoHint}
-            />
-          </div>
 
-          <div className="grid gap-5 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${id}serves`} className="text-muted-foreground">
-                {`${t.serves} (${t.optional})`}
+              <Label htmlFor={`${id}description`} className="text-muted-foreground">
+                {t.description}
               </Label>
-              <Select
-                id={`${id}serves`}
-                value={serves || NOT_INFORMED}
-                onValueChange={(value) => setServes(value === NOT_INFORMED ? "" : value)}
-                options={[
-                  { value: NOT_INFORMED, label: t.servesNone },
-                  ...Array.from({ length: SERVES_MAX }, (_, i) => ({
-                    value: String(i + 1),
-                    label: t.servesOption(i + 1),
-                  })),
-                ]}
+              <textarea
+                id={`${id}description`}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                maxLength={DESCRIPTION_MAX}
+                rows={3}
+                aria-describedby={`${id}description-hint`}
+                className="min-h-24 rounded-xl border border-input bg-transparent px-4 py-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               />
-              <span className="text-sm text-muted-foreground">{t.servesHint}</span>
+              <span id={`${id}description-hint`} className="text-sm text-muted-foreground">
+                {t.descriptionHint(description.length, DESCRIPTION_MAX)}
+              </span>
             </div>
-          </div>
 
-          <div className="border-t border-border" />
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor={`${id}category`} className="text-muted-foreground">
+                  {t.category}
+                </Label>
+                <Select
+                  id={`${id}category`}
+                  value={categoryId}
+                  onValueChange={setCategoryId}
+                  required
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                />
+              </div>
+              <MoneyField
+                id={`${id}price`}
+                label={t.price}
+                value={hasVariants ? centsToInput(priceCents ?? 0) : price}
+                onChange={setPrice}
+                onBlur={() => tidy(price, setPrice)}
+                invalid={!hasVariants && priceInvalid}
+                hint={hasVariants ? messages.options.product.priceLocked : t.priceHint}
+                disabled={hasVariants}
+                required
+              />
+              <MoneyField
+                id={`${id}promo`}
+                label={`${t.promoPrice} (${t.optional})`}
+                value={hasVariants ? "" : promo}
+                onChange={setPromo}
+                onBlur={() => tidy(promo, setPromo)}
+                invalid={promoInvalid}
+                hint={t.promoHint}
+                disabled={hasVariants}
+              />
+            </div>
 
-          <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
-          <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
-          <ToggleRow title={t.aLaCarteTitle} text={t.aLaCarteText} checked={aLaCarte} onChange={setALaCarte} />
-          {(rodizios.data ?? []).map((rodizio) => (
-            <ToggleRow
-              key={rodizio.id}
-              title={t.inRodizioTitle(rodizio.name)}
-              text={rodizio.active ? t.inRodizioText : t.inRodizioPaused}
-              checked={inRodizios.has(rodizio.id)}
-              onChange={(on) => {
-                const next = new Set(inRodizios);
-                if (on) next.add(rodizio.id);
-                else next.delete(rodizio.id);
-                setPicked(next);
-              }}
-            />
-          ))}
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor={`${id}serves`} className="text-muted-foreground">
+                  {`${t.serves} (${t.optional})`}
+                </Label>
+                <Select
+                  id={`${id}serves`}
+                  value={serves || NOT_INFORMED}
+                  onValueChange={(value) => setServes(value === NOT_INFORMED ? "" : value)}
+                  options={[
+                    { value: NOT_INFORMED, label: t.servesNone },
+                    ...Array.from({ length: SERVES_MAX }, (_, i) => ({
+                      value: String(i + 1),
+                      label: t.servesOption(i + 1),
+                    })),
+                  ]}
+                />
+                <span className="text-sm text-muted-foreground">{t.servesHint}</span>
+              </div>
+            </div>
 
-          <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
-            {save.error?.message ?? ""}
-          </p>
-        </form>
+            <div className="border-t border-border" />
+
+            <ToggleRow title={t.availableTitle} text={t.availableText} checked={available} onChange={setAvailable} />
+            <ToggleRow title={t.featuredTitle} text={t.featuredText} checked={featured} onChange={setFeatured} />
+            <ToggleRow title={t.aLaCarteTitle} text={t.aLaCarteText} checked={aLaCarte} onChange={setALaCarte} />
+            {(rodizios.data ?? []).map((rodizio) => (
+              <ToggleRow
+                key={rodizio.id}
+                title={t.inRodizioTitle(rodizio.name)}
+                text={rodizio.active ? t.inRodizioText : t.inRodizioPaused}
+                checked={inRodizios.has(rodizio.id)}
+                onChange={(on) => {
+                  const next = new Set(inRodizios);
+                  if (on) next.add(rodizio.id);
+                  else next.delete(rodizio.id);
+                  setPicked(next);
+                }}
+              />
+            ))}
+
+            <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
+              {save.error?.message ?? ""}
+            </p>
+          </form>
+
+          <ProductOptionsEditor
+            draft={optionsDraft}
+            library={library}
+            onChange={(next) => {
+              setOptionsDraft(next);
+              setOptionsTouched(true);
+            }}
+          />
+        </div>
 
         {/* As fotos precisam do produto já salvo: o caminho no armazenamento leva o id dele. */}
         <aside className="w-full lg:w-96 lg:shrink-0">
@@ -376,6 +431,7 @@ function MoneyField({
   invalid,
   hint,
   required,
+  disabled,
 }: {
   id: string;
   label: string;
@@ -385,6 +441,7 @@ function MoneyField({
   invalid: boolean;
   hint: string;
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -403,6 +460,7 @@ function MoneyField({
           inputMode="decimal"
           autoComplete="off"
           required={required}
+          disabled={disabled}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}
