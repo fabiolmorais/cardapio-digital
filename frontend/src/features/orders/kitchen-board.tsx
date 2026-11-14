@@ -1,5 +1,7 @@
 "use client";
 
+import { choicesText } from "@/features/table/choices";
+import { ItemChoicesText } from "./item-choices";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChefHat, ChevronLeft, Soup, X } from "lucide-react";
 import Link from "next/link";
@@ -249,6 +251,8 @@ function Board() {
                               </span>
                               <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
                                 <span className="font-semibold">{item.productName}</span>
+                                {/* As escolhas em destaque: é o que a cozinha precisa ler (o sabor, o ponto). */}
+                                <ItemChoicesText of={item.choices} className="text-sm font-medium text-foreground" />
                                 {item.note && (
                                   <span className="rounded-lg bg-warning/15 px-2 py-0.5 text-sm font-semibold text-warning">
                                     {item.note}
@@ -332,20 +336,26 @@ type Aggregate = {
   key: string;
   name: string;
   photoUrl?: string;
+  /** As escolhas do item (o tamanho, os sabores): só somam juntos os itens iguais nisso também. */
+  choices: string;
   total: number;
   tables: { label: string; quantity: number; since: number }[];
   notes: { note: string; table: string }[];
 };
 
-/** Soma a fila e o preparo por produto, mantendo a ordem de chegada das mesas. */
+/**
+ * Soma a fila e o preparo por produto e escolhas, mantendo a ordem de chegada das mesas: "Pizza
+ * Grande ½ Calabresa ½ Frango" não se mistura com "Pizza Grande Calabresa" (ADR 0010).
+ */
 function aggregate(queue: KitchenItem[]): Aggregate[] {
   const byProduct = new Map<string, Aggregate>();
   for (const item of queue) {
     if (item.status === "READY") continue;
-    const key = item.productId ?? item.productName;
+    const choices = choicesText(item.choices);
+    const key = `${item.productId ?? item.productName}|${choices}`;
     let entry = byProduct.get(key);
     if (!entry) {
-      entry = { key, name: item.productName, photoUrl: item.photoUrl, total: 0, tables: [], notes: [] };
+      entry = { key, name: item.productName, choices, photoUrl: item.photoUrl, total: 0, tables: [], notes: [] };
       byProduct.set(key, entry);
     }
     entry.total += item.quantity;
@@ -381,7 +391,10 @@ function ByItem({ queue, now }: { queue: KitchenItem[]; now: number }) {
         return (
           <article
             key={product.key}
-            aria-label={t.itemTotal(product.name, product.total)}
+            aria-label={t.itemTotal(
+              product.choices ? `${product.name} · ${product.choices}` : product.name,
+              product.total,
+            )}
             className="flex flex-col gap-3.5 rounded-[22px] border border-border bg-card p-4"
           >
             <div className="flex items-center gap-3.5">
@@ -393,7 +406,10 @@ function ByItem({ queue, now }: { queue: KitchenItem[]; now: number }) {
                   <Soup aria-hidden className="size-6.5" />
                 )}
               </span>
-              <span className="min-w-0 flex-1 font-semibold">{product.name}</span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-semibold">{product.name}</span>
+                {product.choices && <span className="text-sm font-medium">{product.choices}</span>}
+              </span>
               <span
                 aria-hidden
                 className={cn("font-mono text-[44px] leading-[44px] font-bold", late && "text-destructive")}

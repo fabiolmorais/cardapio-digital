@@ -1,5 +1,6 @@
 "use client";
 
+import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -265,6 +266,7 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
                       <div key={item.id} className="flex items-center gap-2.5 text-[13px]">
                         <span className={cn("flex-1", canceled && "text-muted-foreground line-through")}>
                           {item.quantity}× {item.productName}
+                          <ItemChoicesText of={item.choices} className="text-[12px]" />
                         </span>
                         <Badge tone={ITEM_TONE[item.status]} plain>
                           {status[item.status]}

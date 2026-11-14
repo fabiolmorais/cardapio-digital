@@ -107,17 +107,20 @@ function partLabel(name: string, quantity: number, parts: number) {
   return quantity > 1 ? `${quantity}× ${name}` : name;
 }
 
-/** O tamanho e as escolhas numa linha: "Grande · ½ Calabresa · ½ Frango · Catupiry". */
-export function choicesText(choices: ItemChoices | undefined): string {
-  if (!choices) return "";
+/** O tamanho e cada escolha, um por linha (a comanda impressa): ["Grande", "½ Calabresa", "½ Frango"]. */
+export function choiceLines(choices: ItemChoices | undefined): string[] {
+  if (!choices) return [];
   const byGroup = new Map<string, number>();
   for (const o of choices.options) if (o.splitsItem) byGroup.set(o.groupTitle, (byGroup.get(o.groupTitle) ?? 0) + 1);
   return [
     choices.variantName,
     ...choices.options.map((o) => partLabel(o.name, o.quantity, o.splitsItem ? (byGroup.get(o.groupTitle) ?? 1) : 1)),
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  ].filter((line): line is string => Boolean(line));
+}
+
+/** O tamanho e as escolhas numa linha: "Grande · ½ Calabresa · ½ Frango · Catupiry". */
+export function choicesText(choices: ItemChoices | undefined): string {
+  return choiceLines(choices).join(" · ");
 }
 
 /** As escolhas desta tela no mesmo formato do pedido (para o carrinho mostrar igual a Meus pedidos). */

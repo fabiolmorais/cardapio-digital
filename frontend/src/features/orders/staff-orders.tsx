@@ -1,5 +1,6 @@
 "use client";
 
+import { ItemChoicesText } from "./item-choices";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChefHat, ChevronRight, Flame } from "lucide-react";
 import Link from "next/link";
@@ -159,6 +160,7 @@ export function OrdersColumn({ sector = null, canReview }: { sector?: string | n
                         <span>
                           {i.quantity}× {i.productName}
                           {i.note && <span className="text-muted-foreground"> · {i.note}</span>}
+                          <ItemChoicesText of={i.choices} className="text-[12px]" />
                         </span>
                         <span className="shrink-0 text-muted-foreground">
                           {formatCents(i.unitPriceCents * i.quantity)}
@@ -215,6 +217,7 @@ export function OrdersColumn({ sector = null, canReview }: { sector?: string | n
                         <span>
                           {i.quantity}× {i.productName}
                           {i.note && ` · ${i.note}`}
+                          <ItemChoicesText of={i.choices} className="text-[12px]" />
                         </span>
                         <span className={i.status === "PREPARING" ? "text-warning" : undefined}>
                           {t.kitchenStatus[i.status as "PENDING" | "PREPARING"]}
@@ -294,6 +297,7 @@ export function ReadyColumn({ sector = null, canDeliver }: { sector?: string | n
                   <TableBox label={item.tableLabel} />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="font-semibold">{name}</span>
+                    <ItemChoicesText of={item.choices} />
                     <span className="truncate text-[13px] text-muted-foreground">
                       {item.sectorName} ·{" "}
                       {tt.readyFor(t.kitchen.since((now - Date.parse(item.readyAt ?? item.createdAt)) / 1000))}
