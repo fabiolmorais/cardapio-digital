@@ -7,10 +7,22 @@ import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { addToCart, MAX_NOTE, MAX_QUANTITY } from "./cart";
+import { ChoicePicker } from "./choice-picker";
+import { choicesText, evaluate, hasChoices, rulesOf, toChoices, type GroupsById, type Picked } from "./choices";
 import { discountPercent } from "./discount";
 import type { MenuItem } from "./table-data";
 
 const t = tablePage.product;
+const tc = tablePage.choices;
+const NO_GROUPS: GroupsById = new Map();
+
+/** Uma linha da rodada do rodízio com as escolhas (os sabores, o ponto): sem preço. */
+export type RoundPick = {
+  variantId?: string;
+  options: { optionId: string; quantity: number }[];
+  choices: string;
+  quantity: number;
+};
 
 /** O preço que vale agora: o promocional, se houver. O back confere de novo ao receber o pedido. */
 export function currentPriceCents(item: MenuItem) {
@@ -33,6 +45,8 @@ export function ProductSheet({
   reelsHref,
   onPhoto,
   canAdd = true,
+  groups = NO_GROUPS,
+  onRound,
 }: {
   token: string;
   item: MenuItem | null;
@@ -41,6 +55,10 @@ export function ProductSheet({
   onPhoto?: () => void;
   /** Falso com o pedido pelo celular desligado ou a assinatura suspensa: o prato abre só para ver. */
   canAdd?: boolean;
+  /** Os grupos de opções do cardápio (ADR 0010): o prato mostra as escolhas dele. */
+  groups?: GroupsById;
+  /** A rodada do rodízio: sem preço, e o "Adicionar" põe na rodada, e não no carrinho. */
+  onRound?: (pick: RoundPick) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
@@ -70,6 +88,8 @@ export function ProductSheet({
           onDone={close}
           reelsHref={reelsHref?.(item)}
           canAdd={canAdd}
+          groups={groups}
+          onRound={onRound}
           onPhoto={
             onPhoto
               ? () => {
@@ -92,6 +112,8 @@ function SheetBody({
   reelsHref,
   onPhoto,
   canAdd,
+  groups,
+  onRound,
 }: {
   token: string;
   item: MenuItem;
@@ -100,18 +122,58 @@ function SheetBody({
   reelsHref?: string;
   onPhoto?: () => void;
   canAdd: boolean;
+  groups: GroupsById;
+  onRound?: (pick: RoundPick) => void;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
   const [full, setFull] = useState(false);
   const [shown, setShown] = useState(0);
-  const price = currentPriceCents(item);
+  // As escolhas (ADR 0010). Com um tamanho só, ele já vem escolhido.
+  const choosing = hasChoices(item);
+  const inRoundMode = onRound !== undefined;
+  // Na rodada, vale o tamanho do rodízio (o marcado, ou o primeiro): os limites são os dele.
+  const [variantId, setVariantId] = useState<string | null>(() =>
+    inRoundMode
+      ? ((item.variants.find((v) => v.rodizioDefault) ?? item.variants[0])?.id ?? null)
+      : item.variants.length === 1
+        ? item.variants[0].id
+        : null,
+  );
+  const [picked, setPicked] = useState<Picked>({});
+  const evaluation = evaluate(item, groups, variantId, picked, inRoundMode);
+  const ready = evaluation.missing === undefined;
+  // Sem o tamanho escolhido, o preço do topo é o "a partir de".
+  const fromPrice = choosing && !variantId && item.variants.length > 0 ? (item.fromPriceCents ?? null) : null;
+  const price = choosing ? evaluation.unitCents : currentPriceCents(item);
+
+  function chooseVariant(next: string) {
+    setVariantId(next);
+    // Num tamanho com menos escolhas (broto: 1 sabor), o que passou do novo máximo sai.
+    const kept = { ...picked };
+    for (const link of item.optionGroups) {
+      const group = groups.get(link.groupId);
+      if (!group) continue;
+      const max = rulesOf(group, link, next).max;
+      const mine = group.items.filter((o) => kept[o.id]);
+      if (mine.reduce((sum, o) => sum + kept[o.id], 0) > max) mine.forEach((o) => delete kept[o.id]);
+    }
+    setPicked(kept);
+  }
   const off = discountPercent(item);
   const photos = item.media.flatMap((m) => (m.image ? [m.image.large] : []));
   if (photos.length === 0 && item.photo) photos.push(item.photo.medium);
   const video = item.media.find((m) => m.video)?.video;
 
   function add() {
+    if (!ready) return;
+    const options = Object.entries(picked).map(([optionId, times]) => ({ optionId, quantity: times }));
+    const choices = choosing ? choicesText(toChoices(item, groups, variantId, picked)) : undefined;
+    if (onRound) {
+      onRound({ variantId: variantId ?? undefined, options, choices: choices ?? "", quantity });
+      onDone();
+      return;
+    }
     const added = addToCart(token, {
       productId: item.id,
       name: item.name,
@@ -119,6 +181,7 @@ function SheetBody({
       thumb: item.photo?.thumb ?? null,
       quantity,
       note,
+      ...(choosing ? { variantId: variantId ?? undefined, options, choices } : {}),
     });
     if (added) onDone();
     else setFull(true);
@@ -234,16 +297,36 @@ function SheetBody({
             <h2 id={`${id}name`} className="text-[26px] leading-[31px] font-bold tracking-tight">
               {item.name}
             </h2>
-            <span className="flex flex-col items-end pt-1">
-              {item.promoPriceCents != null && (
-                <s className="text-xs text-(--mesa-muted)">{formatCents(item.priceCents)}</s>
-              )}
-              <span className="text-xl font-bold whitespace-nowrap text-(--brand-text)">{formatCents(price)}</span>
-            </span>
+            {!inRoundMode && (
+              <span className="flex flex-col items-end pt-1">
+                {fromPrice !== null ? (
+                  <span className="text-xs text-(--mesa-muted)">{tc.from}</span>
+                ) : (
+                  !choosing &&
+                  item.promoPriceCents != null && (
+                    <s className="text-xs text-(--mesa-muted)">{formatCents(item.priceCents)}</s>
+                  )
+                )}
+                <span className="text-xl font-bold whitespace-nowrap text-(--brand-text)">
+                  {formatCents(fromPrice ?? price)}
+                </span>
+              </span>
+            )}
           </div>
           {item.description && <p className="text-[15px] leading-[22px] text-(--mesa-muted)">{item.description}</p>}
-          {canAdd && <div aria-hidden className="h-px bg-(--mesa-stroke)" />}
-          {canAdd && (
+          {canAdd && choosing && (
+            <ChoicePicker
+              item={item}
+              groups={groups}
+              variantId={variantId}
+              onVariant={chooseVariant}
+              picked={picked}
+              onPicked={setPicked}
+              round={inRoundMode}
+            />
+          )}
+          {canAdd && !inRoundMode && <div aria-hidden className="h-px bg-(--mesa-stroke)" />}
+          {canAdd && !inRoundMode && (
             <div className="flex flex-col gap-2">
               <label htmlFor={`${id}note`} className="font-semibold">
                 {t.note}
@@ -297,11 +380,25 @@ function SheetBody({
           <button
             type="button"
             onClick={add}
-            className="flex h-13 flex-1 items-center justify-between gap-3 rounded-2xl bg-(--brand) px-5 font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none"
+            disabled={!ready}
+            className="flex h-13 flex-1 items-center justify-between gap-3 rounded-2xl bg-(--brand) px-5 font-semibold text-white focus-visible:ring-3 focus-visible:ring-(--brand-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--mesa-bg) focus-visible:outline-none disabled:opacity-60"
           >
-            <span>{t.add}</span>
-            <span aria-hidden className="h-5 w-px bg-white/35" />
-            <span>{formatCents(price * quantity)}</span>
+            {/* O que falta escolher fica no próprio botão: "Escolha o tamanho", "Falta: Escolha os sabores". */}
+            <span>
+              {!ready
+                ? evaluation.missing === null
+                  ? tc.missingSize
+                  : tc.missing(evaluation.missing!)
+                : inRoundMode
+                  ? tc.addToRound
+                  : t.add}
+            </span>
+            {!inRoundMode && (
+              <>
+                <span aria-hidden className="h-5 w-px bg-white/35" />
+                <span>{formatCents(price * quantity)}</span>
+              </>
+            )}
           </button>
         </div>
       )}

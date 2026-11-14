@@ -38,10 +38,16 @@ export async function listOrders(token: string): Promise<TableOrders> {
  */
 export async function placeOrder(
   token: string,
-  lines: Pick<CartLine, "productId" | "quantity" | "note">[],
+  lines: Pick<CartLine, "productId" | "quantity" | "note" | "variantId" | "options">[],
   path: "/orders" | "/rounds" = "/orders"): Promise<TableOrder> {
   const body: PlaceOrderRequest = {
-    items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, note: l.note || undefined })),
+    items: lines.map((l) => ({
+      productId: l.productId,
+      quantity: l.quantity,
+      note: l.note || undefined,
+      variantId: l.variantId,
+      options: l.options,
+    })),
   };
   const response = await send(token, path, {
     method: "POST",

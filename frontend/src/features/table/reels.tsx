@@ -9,6 +9,7 @@ import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { useCart } from "./cart";
 import { aLaCarte } from "./carte";
+import { groupsById } from "./choices";
 import { currentPriceCents, ProductSheet } from "./product-sheet";
 import type { MenuItem, PublicMenu } from "./table-data";
 import { listOrders } from "./table-orders";
@@ -64,6 +65,7 @@ export function Reels({
   const [muted, setMuted] = useState(true);
   const [ordering, setOrdering] = useState(serving);
   const [adding, setAdding] = useState<MenuItem | null>(null);
+  const groups = useMemo(() => groupsById(menu.optionGroups), [menu.optionGroups]);
   const { count, totalCents } = useCart(token);
   const sections = useRef<(HTMLElement | null)[]>([]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -208,7 +210,7 @@ export function Reels({
       )}
 
       {/* O "Adicionar" abre o detalhe do prato (3.2); tocar na foto dele volta ao vídeo. */}
-      <ProductSheet token={token} item={adding} onClose={() => setAdding(null)} onPhoto={() => {}} />
+      <ProductSheet token={token} item={adding} onClose={() => setAdding(null)} onPhoto={() => {}} groups={groups} />
     </div>
   );
 }
@@ -473,8 +475,12 @@ function ProductReel({
         )}
         <div className="flex items-center gap-3 rounded-[22px] border border-white/15 bg-black/35 py-2 pr-2 pl-4.5 backdrop-blur-xl">
           <span className="flex flex-1 flex-col">
-            {item.promoPriceCents != null && <s className="text-xs text-white/70">{formatCents(item.priceCents)}</s>}
-            <span className="text-xl font-bold">{formatCents(price)}</span>
+            {item.fromPriceCents != null ? (
+              <span className="text-xs text-white/70">{tablePage.choices.from}</span>
+            ) : (
+              item.promoPriceCents != null && <s className="text-xs text-white/70">{formatCents(item.priceCents)}</s>
+            )}
+            <span className="text-xl font-bold">{formatCents(item.fromPriceCents ?? price)}</span>
           </span>
           {canAdd && (
             <button

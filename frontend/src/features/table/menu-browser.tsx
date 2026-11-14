@@ -2,13 +2,14 @@
 
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useId, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "cn";
 import { tablePage } from "@/messages/table.pt-BR";
 import { aLaCarte, showcase } from "./carte";
 import { MenuItemCard } from "./menu-item";
 import { PassagemCard } from "./passagem-card";
 import { PassagemCuts } from "./passagem-cuts";
+import { groupsById } from "./choices";
 import { ProductSheet } from "./product-sheet";
 import { RodizioRound } from "./rodizio-round";
 import type { MenuItem, PublicMenu } from "./table-data";
@@ -42,6 +43,8 @@ export function MenuBrowser({ token, menu, serving }: { token: string; menu: Pub
   const query = plain(useDeferredValue(search).trim());
   const inputId = useId();
   const [open, setOpen] = useState<MenuItem | null>(null);
+  // Os grupos de opções do cardápio (ADR 0010), uma vez só: cada prato aponta para eles.
+  const groups = useMemo(() => groupsById(menu.optionGroups), [menu.optionGroups]);
   // A categoria selecionada (branca): a que está na tela, ou a que o cliente tocou.
   const [current, setCurrent] = useState<string | null>(null);
   const chips = useRef<HTMLElement>(null);
@@ -236,6 +239,7 @@ export function MenuBrowser({ token, menu, serving }: { token: string; menu: Pub
               token={token}
               rodizio={rodizio}
               items={rodizioItems}
+              groups={groups}
               rounds={rounds}
               limits={orders?.rodizioLimits}
             />
@@ -262,6 +266,7 @@ export function MenuBrowser({ token, menu, serving }: { token: string; menu: Pub
         item={open}
         onClose={() => setOpen(null)}
         canAdd={ordering}
+        groups={groups}
         reelsHref={(item) => (item.media.length > 0 ? reels(item) : undefined)}
       />
     </div>
