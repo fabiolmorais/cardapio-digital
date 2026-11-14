@@ -393,10 +393,11 @@ function SheetBody({
                   ? tc.addToRound
                   : t.add}
             </span>
-            {!inRoundMode && (
+            {/* Enquanto falta escolher, o botão diz só o que falta (o "a partir de" está no topo). */}
+            {!inRoundMode && ready && (
               <>
                 <span aria-hidden className="h-5 w-px bg-white/35" />
-                <span>{formatCents((fromPrice ?? price) * quantity)}</span>
+                <span>{formatCents(price * quantity)}</span>
               </>
             )}
           </button>

@@ -130,7 +130,7 @@ export const tablePage = {
     title: "Cardápio",
     empty: "O cardápio ainda está sendo montado. Peça ajuda ao garçom.",
     search: "Buscar no cardápio",
-    searchPlaceholder: "Buscar sushi, temaki, bebida…",
+    searchPlaceholder: "Buscar prato, bebida…",
     noResults: (text: string) => `Nada encontrado para “${text}”.`,
     results: (count: number) => (count === 1 ? "1 item encontrado" : `${count} itens encontrados`),
     soldOut: "Esgotado hoje",
