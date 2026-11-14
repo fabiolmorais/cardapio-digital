@@ -143,8 +143,8 @@ function SheetBody({
   const [picked, setPicked] = useState<Picked>({});
   const evaluation = evaluate(item, groups, variantId, picked, inRoundMode);
   const ready = evaluation.missing === undefined;
-  // Sem o tamanho escolhido, o preço do topo é o "a partir de".
-  const fromPrice = choosing && !variantId && item.variants.length > 0 ? (item.fromPriceCents ?? null) : null;
+  // Enquanto falta escolher (o tamanho, os sabores), o preço do topo é o "a partir de", e não R$ 0,00.
+  const fromPrice = choosing && !ready && !inRoundMode ? (item.fromPriceCents ?? null) : null;
   const price = choosing ? evaluation.unitCents : currentPriceCents(item);
 
   function chooseVariant(next: string) {
@@ -396,7 +396,7 @@ function SheetBody({
             {!inRoundMode && (
               <>
                 <span aria-hidden className="h-5 w-px bg-white/35" />
-                <span>{formatCents(price * quantity)}</span>
+                <span>{formatCents((fromPrice ?? price) * quantity)}</span>
               </>
             )}
           </button>

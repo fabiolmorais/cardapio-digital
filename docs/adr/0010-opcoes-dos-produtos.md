@@ -86,7 +86,8 @@ Testando a pizza no staging, o jeito das pizzarias de verdade mostrou dois probl
 3. **Na mesa, a escolha vira um cardápio:**
    - a tela cheia mostra a foto do prato no topo;
    - a busca pelo nome vem logo abaixo;
-   - cada opção aparece com foto, descrição e preço, e tocar na foto abre a galeria com os vídeos;
+   - cada opção aparece com foto, descrição e preço;
+   - tocar na foto abre o **Reels das opções** do grupo, igual ao do cardápio: uma opção por tela deslizando para cima, as fotos e os vídeos deslizando para o lado, o vídeo tocando sozinho sem som e o botão **Escolher**, que marca a opção com as mesmas regras da lista;
    - por fim vêm a observação e o botão com o total.
 
    Grupo sem nenhuma foto continua como lista simples (o ponto da carne não precisa de imagem).
