@@ -7,11 +7,12 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import {
-  fetchProductMedia,
-  removeProductMedia,
-  reorderProductMedia,
-  uploadProductPhoto,
-  uploadProductVideo,
+  fetchMedia,
+  removeMedia,
+  reorderMedia,
+  uploadPhoto,
+  uploadVideo,
+  type MediaOwner,
   type ProductMedia,
 } from "./menu-api";
 import { ErrorText } from "@/features/subscription/error-text";
@@ -40,11 +41,12 @@ type Sending = { key: string; name: string; percent: number | null };
  * arrastar para ordenar, remover e enviar com barra de progresso. O vídeo vai em pedaços (TUS)
  * direto para o serviço de vídeo, e aparece "convertendo" até ficar pronto.
  */
-export function ProductPhotos({ productId, productName }: { productId: string; productName: string }) {
+export function ProductPhotos({ owner, name }: { owner: MediaOwner; name: string }) {
   const queryClient = useQueryClient();
+  const queryKey = ["media", owner.kind, owner.id];
   const media = useQuery({
-    queryKey: ["product-media", productId],
-    queryFn: () => fetchProductMedia(productId),
+    queryKey,
+    queryFn: () => fetchMedia(owner),
     // Um vídeo em conversão? A galeria pergunta de novo até ele ficar pronto (o back confere no serviço).
     refetchInterval: (query) =>
       query.state.data?.some((m) => m.status === "PROCESSING") ? PROCESSING_REFRESH_MS : false,
@@ -59,14 +61,14 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
   const hintId = useId();
 
   const photos = media.data ?? [];
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["product-media", productId] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey });
 
   const reorder = useReorder(
     photos,
     async (ids) => {
       setErrors([]);
       try {
-        await reorderProductMedia(productId, ids);
+        await reorderMedia(owner, ids);
       } catch (error) {
         setErrors([(error as Error).message]);
       }
@@ -100,9 +102,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
         setSending((list) => list.map((item) => (item.key === key ? { ...item, percent } : item)));
       try {
         // Enviado o arquivo (100%), o back ainda confere e gera os tamanhos: "preparando…".
-        await uploadProductPhoto(productId, file, (fraction) =>
-          update(fraction < 1 ? Math.round(fraction * 100) : null),
-        );
+        await uploadPhoto(owner, file, (fraction) => update(fraction < 1 ? Math.round(fraction * 100) : null));
         sent++;
         await refresh();
       } catch (error) {
@@ -122,7 +122,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
     setErrors([]);
     setVideoSending({ name: file.name, percent: 0 });
     try {
-      await uploadProductVideo(productId, file, (fraction) =>
+      await uploadVideo(owner, file, (fraction) =>
         setVideoSending({ name: file.name, percent: Math.round(fraction * 100) }),
       );
       setNotice(tv.sent);
@@ -217,7 +217,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
                   // eslint-disable-next-line @next/next/no-img-element -- miniatura já no tamanho certo, vinda do R2
                   <img
                     src={photo.urls?.thumb}
-                    alt={t.alt(productName, index + 1)}
+                    alt={t.alt(name, index + 1)}
                     width={96}
                     height={96}
                     draggable={false}
@@ -356,7 +356,7 @@ export function ProductPhotos({ productId, productName }: { productId: string; p
         confirmLabel={t.confirm}
         onConfirm={async () => {
           if (!removing) return;
-          await removeProductMedia(productId, removing.photo.id);
+          await removeMedia(owner, removing.photo.id);
           await refresh();
         }}
       />

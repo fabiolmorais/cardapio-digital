@@ -104,60 +104,68 @@ export async function deactivateProduct(id: string): Promise<void> {
   if (!response.ok) throw failure(response, error);
 }
 
-// Fotos do produto (Guia 10). O arquivo vai direto do navegador para o armazenamento (R2).
+// Fotos e vídeos (Guias 10 e 22) do prato ou da opção (o sabor da pizza; complemento da ADR 0010).
+// O arquivo vai direto do navegador para o armazenamento (R2) ou para o serviço de vídeo (TUS).
 
 export type ProductMedia = Schemas["ProductMedia"];
 type MediaUpload = Schemas["MediaUpload"];
+type VideoUpload = Schemas["VideoUpload"];
 
-export async function fetchProductMedia(productId: string): Promise<ProductMedia[]> {
-  const { data, error, response } = await api.GET("/api/v1/products/{productId}/media", {
-    params: { path: { productId } },
-  });
+/** De quem é a galeria: de um prato ou de uma opção. Os passos e os limites são os mesmos. */
+export type MediaOwner = { kind: "product" | "option"; id: string };
+
+const product = (owner: MediaOwner) => ({ params: { path: { productId: owner.id } } });
+const option = (owner: MediaOwner) => ({ params: { path: { optionId: owner.id } } });
+
+export async function fetchMedia(owner: MediaOwner): Promise<ProductMedia[]> {
+  const { data, error, response } =
+    owner.kind === "product"
+      ? await api.GET("/api/v1/products/{productId}/media", product(owner))
+      : await api.GET("/api/v1/option-items/{optionId}/media", option(owner));
   if (data) return data.content;
   throw failure(response, error);
 }
 
-/** Passo 1: o back confere o produto, o tipo e o tamanho e devolve a URL assinada. */
-async function startMediaUpload(productId: string, file: File): Promise<MediaUpload> {
-  const { data, error, response } = await api.POST("/api/v1/products/{productId}/media/uploads", {
-    params: { path: { productId } },
-    body: { contentType: file.type, sizeBytes: file.size },
-  });
+/** Passo 1: o back confere o dono, o tipo e o tamanho e devolve a URL assinada. */
+async function startMediaUpload(owner: MediaOwner, file: File): Promise<MediaUpload> {
+  const body = { contentType: file.type, sizeBytes: file.size };
+  const { data, error, response } =
+    owner.kind === "product"
+      ? await api.POST("/api/v1/products/{productId}/media/uploads", { ...product(owner), body })
+      : await api.POST("/api/v1/option-items/{optionId}/media/uploads", { ...option(owner), body });
   if (data) return data;
   throw failure(response, error);
 }
 
 /** Passo 3: o back confere a foto, gera os tamanhos e a põe no fim da galeria. */
-async function addProductMedia(productId: string, uploadId: string): Promise<ProductMedia> {
-  const { data, error, response } = await api.POST("/api/v1/products/{productId}/media", {
-    params: { path: { productId } },
-    body: { uploadId },
-  });
+async function addMedia(owner: MediaOwner, uploadId: string): Promise<ProductMedia> {
+  const body = { uploadId };
+  const { data, error, response } =
+    owner.kind === "product"
+      ? await api.POST("/api/v1/products/{productId}/media", { ...product(owner), body })
+      : await api.POST("/api/v1/option-items/{optionId}/media", { ...option(owner), body });
   if (data) return data;
   throw failure(response, error);
 }
 
 /** Os três passos de uma foto. */
-export async function uploadProductPhoto(
-  productId: string,
+export async function uploadPhoto(
+  owner: MediaOwner,
   file: File,
   onProgress: (fraction: number) => void,
 ): Promise<ProductMedia> {
-  const upload = await startMediaUpload(productId, file);
+  const upload = await startMediaUpload(owner, file);
   await sendToStorage(upload, file, onProgress); // passo 2: direto no R2
-  return addProductMedia(productId, upload.uploadId);
+  return addMedia(owner, upload.uploadId);
 }
 
-// Vídeo do produto (Guia 22). O arquivo vai direto do navegador para o serviço de vídeo, por TUS.
-
-type VideoUpload = Schemas["VideoUpload"];
-
 /** O back cria o vídeo (em conversão, no fim da galeria) e devolve a autorização do envio. */
-async function startVideoUpload(productId: string, file: File): Promise<VideoUpload> {
-  const { data, error, response } = await api.POST("/api/v1/products/{productId}/videos", {
-    params: { path: { productId } },
-    body: { contentType: file.type, sizeBytes: file.size },
-  });
+async function startVideoUpload(owner: MediaOwner, file: File): Promise<VideoUpload> {
+  const body = { contentType: file.type, sizeBytes: file.size };
+  const { data, error, response } =
+    owner.kind === "product"
+      ? await api.POST("/api/v1/products/{productId}/videos", { ...product(owner), body })
+      : await api.POST("/api/v1/option-items/{optionId}/videos", { ...option(owner), body });
   if (data) return data;
   throw failure(response, error);
 }
@@ -167,31 +175,37 @@ async function startVideoUpload(productId: string, file: File): Promise<VideoUpl
  * "convertendo" até ficar pronto. Se o envio falhar, o vídeo criado sai da galeria (e do serviço
  * de vídeo): sem isso, ele ficaria "convertendo" para sempre.
  */
-export async function uploadProductVideo(
-  productId: string,
+export async function uploadVideo(
+  owner: MediaOwner,
   file: File,
   onProgress: (fraction: number) => void,
 ): Promise<void> {
-  const upload = await startVideoUpload(productId, file);
+  const upload = await startVideoUpload(owner, file);
   try {
     await tusUpload(upload, file, onProgress);
   } catch (error) {
-    await removeProductMedia(productId, upload.mediaId).catch(() => undefined);
+    await removeMedia(owner, upload.mediaId).catch(() => undefined);
     throw error;
   }
 }
 
-export async function removeProductMedia(productId: string, mediaId: string): Promise<void> {
-  const { error, response } = await api.DELETE("/api/v1/products/{productId}/media/{mediaId}", {
-    params: { path: { productId, mediaId } },
-  });
+export async function removeMedia(owner: MediaOwner, mediaId: string): Promise<void> {
+  const { error, response } =
+    owner.kind === "product"
+      ? await api.DELETE("/api/v1/products/{productId}/media/{mediaId}", {
+          params: { path: { productId: owner.id, mediaId } },
+        })
+      : await api.DELETE("/api/v1/option-items/{optionId}/media/{mediaId}", {
+          params: { path: { optionId: owner.id, mediaId } },
+        });
   if (!response.ok) throw failure(response, error);
 }
 
-export async function reorderProductMedia(productId: string, ids: string[]): Promise<void> {
-  const { error, response } = await api.PUT("/api/v1/products/{productId}/media-order", {
-    params: { path: { productId } },
-    body: { ids },
-  });
+export async function reorderMedia(owner: MediaOwner, ids: string[]): Promise<void> {
+  const body = { ids };
+  const { error, response } =
+    owner.kind === "product"
+      ? await api.PUT("/api/v1/products/{productId}/media-order", { ...product(owner), body })
+      : await api.PUT("/api/v1/option-items/{optionId}/media-order", { ...option(owner), body });
   if (!response.ok) throw failure(response, error);
 }

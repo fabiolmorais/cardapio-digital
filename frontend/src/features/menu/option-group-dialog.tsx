@@ -20,7 +20,7 @@ const MAX_CHOICES = 20;
 const MAX_PARTS = 4;
 const BLANK = "blank";
 
-type ItemDraft = { key: string; id?: string; name: string; price: string; available: boolean };
+type ItemDraft = { key: string; id?: string; name: string; description: string; price: string; available: boolean };
 
 let keys = 0;
 const newKey = () => `item-${++keys}`;
@@ -49,7 +49,7 @@ function fromGroup(group?: OptionGroup): Draft {
       splits: false,
       pricing: "SUM",
       free: 0,
-      items: [{ key: newKey(), name: "", price: "", available: true }],
+      items: [{ key: newKey(), name: "", description: "", price: "", available: true }],
     };
   }
   return {
@@ -65,6 +65,7 @@ function fromGroup(group?: OptionGroup): Draft {
       key: newKey(),
       id: i.id,
       name: i.name,
+      description: i.description,
       price: i.priceCents === 0 ? "" : centsToInput(i.priceCents),
       available: i.available,
     })),
@@ -128,7 +129,7 @@ function GroupForm({
         splits: tpl.splits,
         pricing: tpl.pricing,
         free: tpl.free,
-        items: tpl.items.map((name) => ({ key: newKey(), name, price: "", available: true })),
+        items: tpl.items.map((name) => ({ key: newKey(), name, description: "", price: "", available: true })),
       }),
     );
   }
@@ -166,6 +167,7 @@ function GroupForm({
       items: draft.items.map((it, i) => ({
         ...(it.id ? { id: it.id } : {}),
         name: it.name.trim(),
+        ...(it.description.trim() ? { description: it.description.trim() } : {}),
         priceCents: prices[i],
         available: it.available,
       })),
@@ -325,7 +327,7 @@ function GroupForm({
           {draft.items.map((item, index) => {
             const label = item.name || `${index + 1}`;
             return (
-              <li key={item.key} className="flex items-center gap-2">
+              <li key={item.key} className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-2">
                 <Input
                   aria-label={t.itemName(index + 1)}
                   required
@@ -390,6 +392,15 @@ function GroupForm({
                 >
                   <X aria-hidden />
                 </Button>
+                <Input
+                  aria-label={t.itemDescription(label)}
+                  maxLength={300}
+                  autoComplete="off"
+                  value={item.description}
+                  onChange={(e) => setItem(index, { description: e.target.value })}
+                  placeholder={t.itemDescriptionPlaceholder}
+                  className="h-11 w-full rounded-xl px-3 text-sm"
+                />
               </li>
             );
           })}
@@ -400,7 +411,10 @@ function GroupForm({
           className="h-11 self-start"
           disabled={draft.items.length >= 50}
           onClick={() =>
-            setDraft((d) => ({ ...d, items: [...d.items, { key: newKey(), name: "", price: "", available: true }] }))
+            setDraft((d) => ({
+              ...d,
+              items: [...d.items, { key: newKey(), name: "", description: "", price: "", available: true }],
+            }))
           }
         >
           <Plus aria-hidden />

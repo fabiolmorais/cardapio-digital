@@ -1281,6 +1281,10 @@ export const messages = {
     deactivateText:
       "O grupo sai da biblioteca e de todos os produtos que o usam. Os pedidos já feitos continuam com as escolhas de antes.",
     itemAvailable: (name: string) => `${name} disponível`,
+    media: "Fotos e vídeos",
+    mediaLabel: (name: string) => `Fotos e vídeos de ${name}`,
+    mediaHint:
+      "Aparecem na escolha da mesa, com a foto pequena ao lado da opção; tocar nela abre as fotos e os vídeos como no Reels.",
     form: {
       newTitle: "Novo grupo de opções",
       editTitle: (name: string) => `Editar ${name}`,
@@ -1313,6 +1317,8 @@ export const messages = {
       itemName: (n: number) => `Nome da opção ${n}`,
       itemPrice: (n: number) => `Preço da opção ${n}`,
       itemPlaceholder: "Ex.: Calabresa",
+      itemDescription: (name: string) => `Descrição de ${name}`,
+      itemDescriptionPlaceholder: "Descrição (opcional): os ingredientes, por exemplo",
       moveUp: (name: string) => `Subir ${name}`,
       moveDown: (name: string) => `Descer ${name}`,
       remove: (name: string) => `Tirar ${name}`,
@@ -1454,8 +1460,12 @@ export const messages = {
       limitMin: (variant: string) => `Mínimo no tamanho ${variant}`,
       limitMax: (variant: string) => `Máximo no tamanho ${variant}`,
       prices: "Preço por tamanho",
-      pricesHint: "Em branco: vale o preço da opção.",
+      productPrices: "Preço neste produto",
+      pricesHint: "Em branco: vale o preço da opção. Neste produto: vale nos tamanhos sem preço próprio.",
+      inProduct: "Neste produto",
       priceFor: (option: string, variant: string) => `Preço de ${option} no tamanho ${variant}`,
+      priceInProduct: (option: string) => `Preço de ${option} neste produto`,
+      pricePlaceholder: "Preço",
       priceLocked: "Com tamanhos, vale o preço de cada tamanho (aqui fica o menor).",
       invalid: "Confira os tamanhos: nome e preço em todos, promoção menor que o preço.",
       invalidLimits: "Confira as escolhas por tamanho: o mínimo não pode passar do máximo.",
