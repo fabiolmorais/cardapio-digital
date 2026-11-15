@@ -282,7 +282,9 @@ export function ProductOptionsEditor({
                 <div className="flex flex-col gap-2">
                   <span className="text-sm font-semibold">
                     {draft.variants.length > 0 ? t.prices : t.productPrices}{" "}
-                    <span className="font-normal text-muted-foreground">· {t.pricesHint}</span>
+                    <span className="font-normal text-muted-foreground">
+                      · {draft.variants.length > 0 ? t.pricesHintSizes : t.pricesHint}
+                    </span>
                   </span>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
