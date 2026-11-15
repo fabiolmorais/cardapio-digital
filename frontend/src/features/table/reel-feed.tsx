@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Schemas } from "@/lib/api/client";
 import { formatCents } from "@/lib/format";
@@ -163,6 +163,11 @@ function Reel({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  /**
+   * O navegador recusou tocar sozinho (no iPhone, o modo de pouca bateria recusa sempre): mostra o
+   * ▶, e o primeiro toque toca o vídeo, em vez de pausar.
+   */
+  const [blocked, setBlocked] = useState(false);
   const [expanded, setExpanded] = useState(false);
   /** Quanto da mídia à vista já passou (0 a 1): enche a barra do topo, como no Instagram. */
   const [progress, setProgress] = useState(0);
@@ -171,21 +176,43 @@ function Reel({
   const media = entry.media;
   const several = media.length > 1;
 
+  /** A mídia que deve estar tocando agora (-1: nenhuma): a nova tentativa confere se ainda vale. */
+  const wanted = useRef(-1);
+
+  /**
+   * Toca o vídeo. Recusado (no iPhone, a primeira tentativa às vezes é recusada mesmo com o vídeo
+   * mudo e pronto)? Tenta de novo logo depois; recusado outra vez, o navegador não deixa tocar
+   * sozinho, e aparece o ▶ para o cliente tocar.
+   *
+   * @param retry falso no toque do cliente: ali não há por que tentar de novo
+   */
+  function start(video: HTMLVideoElement, i: number, retry = true) {
+    video.muted = muted;
+    void video.play().then(
+      () => setBlocked(false),
+      () => {
+        if (wanted.current !== i || !video.paused) return; // já saiu da tela, ou outra tentativa tocou
+        if (retry) setTimeout(() => wanted.current === i && video.paused && start(video, i, false), 300);
+        else setBlocked(true);
+      },
+    );
+  }
+
   // Só o vídeo da tela atual, na mídia que está à vista, toca. Os outros param e voltam ao começo.
   useEffect(() => {
+    wanted.current = active && !paused ? index : -1;
     videos.current.forEach((video, i) => {
       if (!video) return;
       if (active && i === index) {
         if (paused) video.pause();
-        else
-          void video.play().catch(() => {
-            // O navegador recusou tocar sozinho (economia de dados, por exemplo): fica parado.
-          });
+        else start(video, i);
       } else {
         video.pause();
         video.currentTime = 0;
       }
     });
+    // start() lê o som da renderização atual, de propósito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, index, paused, mounted]);
 
   /** Mostra a mídia `target` (rolando a faixa: o índice segue a rolagem). */
@@ -216,6 +243,9 @@ function Reel({
     () =>
       media.map((_, i) => (el: HTMLVideoElement | null) => {
         videos.current[i] = el;
+        // O vídeo nasce sem som também no atributo (o React só liga a propriedade): o Safari do
+        // iPhone olha o atributo para deixar tocar sozinho.
+        if (el) el.defaultMuted = true;
         // Ao sair da tela (fechar o Reels), o vídeo para: a página fica guardada escondida
         // para voltar rápido, e o som seguiria tocando pelo cardápio.
         return () => {
@@ -283,14 +313,20 @@ function Reel({
               mounted ? (
                 <video
                   ref={videoRefs[i]}
+                  // Sem som e na própria tela ANTES do endereço: o vídeo já começa a carregar mudo.
+                  muted={muted}
+                  playsInline
                   src={m.video.url}
                   poster={m.video.poster ?? undefined}
                   // O vídeo à vista carrega; o primeiro da próxima tela também, para não ficar preto.
                   preload={(active && i === index) || (preloadFirst && i === 0) ? "auto" : "none"}
-                  muted={muted}
                   // Com uma mídia só, o vídeo repete; com várias, ao acabar passa para a próxima.
                   loop={!several}
-                  playsInline
+                  onCanPlay={(event) => {
+                    // A primeira tentativa foi antes do vídeo ficar pronto: tenta de novo agora.
+                    if (active && i === index && !paused && event.currentTarget.paused) start(event.currentTarget, i);
+                  }}
+                  onPlaying={() => setBlocked(false)}
                   onTimeUpdate={(event) => {
                     const video = event.currentTarget;
                     if (active && i === index && video.duration) setProgress(video.currentTime / video.duration);
@@ -298,8 +334,12 @@ function Reel({
                   onEnded={() => {
                     if (active && i === index && several) next();
                   }}
-                  onClick={() => setPaused((p) => !p)}
-                  aria-label={paused ? t.play : t.pause}
+                  onClick={(event) => {
+                    // Parado sem o cliente ter pausado (o navegador recusou): o toque toca.
+                    if (!paused && event.currentTarget.paused) start(event.currentTarget, i, false);
+                    else setPaused((p) => !p);
+                  }}
+                  aria-label={paused || blocked ? t.play : t.pause}
                   className="size-full object-cover"
                 />
               ) : (
@@ -364,6 +404,14 @@ function Reel({
       )}
       {media.length > 1 && <span className="sr-only">{t.mediaOf(index + 1, media.length)}</span>}
 
+      {current?.video && blocked && !paused && active && (
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="flex size-18 items-center justify-center rounded-full bg-black/45">
+            <Play aria-hidden className="size-8 fill-current" />
+            <span className="sr-only">{t.tapToPlay}</span>
+          </span>
+        </span>
+      )}
       {(current?.video || several) && paused && active && (
         <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="flex size-18 items-center justify-center rounded-full bg-black/45">
