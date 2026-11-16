@@ -20,6 +20,10 @@ import java.util.stream.IntStream;
  * soma (menos as escolhas grátis), maior preço ou média arredondada para cima no centavo. Quem
  * calcula é sempre o back: o celular só mostra a conta.
  *
+ * <p>Um grupo que cobra o maior preço ou a média (os sabores da pizza) DEFINE o preço: com uma escolha
+ * nele, o preço base não soma (a Grande a R$ 40 com Calabresa a R$ 40 e Frango a R$ 45 sai por R$ 45,
+ * e não R$ 85). Os grupos que somam (a borda, os adicionais) continuam somando por cima.
+ *
  * <p>Só entram aqui os tamanhos, grupos e opções ativos. Produto sem nada disso fica com
  * {@link #isEmpty()} e se comporta exatamente como antes.
  *
@@ -123,7 +127,10 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
             }
         }
 
-        Money total = base;
+        // Um grupo que cobra o maior preço ou a média, com escolha, define o preço: a base não soma.
+        boolean definesPrice = groups.stream().anyMatch(linked -> definesPrice(rulesOf(linked, variant))
+                && linked.items().stream().anyMatch(i -> wanted.containsKey(i.id())));
+        Money total = definesPrice ? Money.ZERO : base;
         List<ChosenOption> chosen = new ArrayList<>();
         for (LinkedGroup linked : groups) {
             OptionGroupRules rules = rulesOf(linked, variant);
@@ -184,7 +191,10 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
     }
 
     private Money cheapest(Money base, ProductVariant variant) {
-        Money total = base;
+        // Com um grupo obrigatório que define o preço (os sabores), o "a partir de" é o do sabor mais barato.
+        boolean definesPrice = groups.stream().map(linked -> rulesOf(linked, variant))
+                .anyMatch(rules -> rules.required() && definesPrice(rules));
+        Money total = definesPrice ? Money.ZERO : base;
         for (LinkedGroup linked : groups) {
             OptionGroupRules rules = rulesOf(linked, variant);
             if (!rules.required()) {
@@ -201,6 +211,16 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
                     .reduce(Money.ZERO, Money::plus));
         }
         return total;
+    }
+
+    /** Tem grupo que define o preço (os sabores): o preço depende da escolha, e o cardápio mostra o "a partir de". */
+    public boolean choiceDefinesPrice() {
+        return groups.stream().anyMatch(linked -> definesPrice(linked.group().rules()));
+    }
+
+    /** O grupo que cobra o maior preço ou a média define o preço do item (a base não soma). */
+    static boolean definesPrice(OptionGroupRules rules) {
+        return rules.pricing() == OptionPricing.HIGHEST || rules.pricing() == OptionPricing.AVERAGE;
     }
 
     /** Quanto cada opção entra no preço, pela regra do grupo. */

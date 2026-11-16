@@ -133,7 +133,9 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
             return null;
         }
         Money from = choices.fromPrice(product.details());
-        return choices.variants().isEmpty() && from.equals(product.details().currentPrice()) ? null : from.cents();
+        boolean fixed = choices.variants().isEmpty() && !choices.choiceDefinesPrice()
+                && from.equals(product.details().currentPrice());
+        return fixed ? null : from.cents();
     }
 
     private PublicMenu.Media media(ProductMedia m) {

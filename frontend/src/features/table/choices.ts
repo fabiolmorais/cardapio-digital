@@ -108,8 +108,11 @@ export function evaluate(
   round = false,
 ): Evaluation {
   const variant = item.variants.find((v) => v.id === variantId);
-  let unitCents = variant ? (variant.promoPriceCents ?? variant.priceCents) : (item.promoPriceCents ?? item.priceCents);
+  const base = variant ? (variant.promoPriceCents ?? variant.priceCents) : (item.promoPriceCents ?? item.priceCents);
   let missing: string | null | undefined = !round && item.variants.length > 0 && !variant ? null : undefined;
+  let parts = 0;
+  // Um grupo que cobra o maior preço ou a média (os sabores), com escolha, define o preço: a base não soma.
+  let definesPrice = false;
   for (const link of item.optionGroups) {
     const group = groups.get(link.groupId);
     if (!group) continue;
@@ -118,8 +121,10 @@ export function evaluate(
       Array<number>(picked[option.id] ?? 0).fill(optionPrice(item, option.id, option.priceCents, variantId)),
     );
     if (units.length < rules.min && missing === undefined) missing = group.title;
-    unitCents += groupCents(rules, units);
+    if (units.length > 0 && rules.pricing !== "SUM") definesPrice = true;
+    parts += groupCents(rules, units);
   }
+  const unitCents = (definesPrice ? 0 : base) + parts;
   return { unitCents: round ? 0 : unitCents, missing };
 }
 

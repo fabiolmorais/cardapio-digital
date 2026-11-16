@@ -40,6 +40,7 @@ A pizza meio a meio não é um tipo especial: é um produto com tamanhos e um gr
 Regras que valem para todos:
 
 - **O back-end calcula o preço** do item (base do tamanho, com a promoção, mais a parte de cada grupo). O celular só mostra a conta; o servidor confere de novo, como já faz com o preço promocional.
+- **O grupo que cobra o maior preço ou a média define o preço** (decidido em 16/11/2026, nos testes do staging). Com uma escolha nele, a base do tamanho ou do produto não soma: a Grande a R$ 40 com Calabresa a R$ 40 e Frango a R$ 45 sai por R$ 45, e não R$ 85. Os grupos que somam (borda, adicionais) continuam somando por cima. O "a partir de" segue a mesma regra.
 - **Tudo é copiado no pedido** (`order_item_option`): os nomes, os títulos e os preços de cada escolha. Mudar o cardápio depois não altera pedidos feitos.
 - **Produto sem tamanhos nem opções funciona exatamente como hoje**, com o "Adicionar" de um toque. Nas telas da gestão, a parte de opções fica recolhida até o restaurante querer usar.
 - **Modelos prontos** ("Ponto da carne", "Pizza: sabores meio a meio", "Adicionais", "Complementos do açaí"…) para começar sem entender a configuração.

@@ -203,6 +203,9 @@ export function ProductOptionsEditor({
                 <div className="mr-auto flex min-w-0 flex-col">
                   <span className="font-semibold break-words">{group.title}</span>
                   <span className="text-[13px] text-muted-foreground">{rulesSummary(group)}</span>
+                  {group.pricing !== "SUM" && (
+                    <span className="text-[13px] font-medium text-foreground">{t.definesPrice}</span>
+                  )}
                 </div>
                 <Button
                   type="button"
