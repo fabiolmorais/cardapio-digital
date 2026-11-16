@@ -103,3 +103,16 @@ Testando a pizza no staging, o jeito das pizzarias de verdade mostrou dois probl
 - Os casos de uso de mídia passam a receber o dono (produto ou opção). A API ganha as mesmas rotas de mídia em `/api/v1/option-items/{id}`. O cardápio público traz a galeria de cada opção.
 - O Reels e a capa do prato continuam só com a mídia dos produtos.
 - A tela de escolha da mesa fica mais pesada. As fotos usam o tamanho pequeno e carregam sob demanda, e o orçamento de 200 KB de JavaScript continua conferido pelo e2e.
+
+## Complemento (16/11/2026): os preços por tamanho ficam no grupo
+
+### Contexto
+
+Nos testes do staging, cadastrar uma pizza com tamanhos pedia o preço de cada sabor em dois lugares: no grupo (o preço da opção) e na grade de preço por tamanho, dentro do produto. Para incluir um sabor novo, era preciso ir ao grupo e depois ao produto.
+
+### Decisão
+
+- A grade de preço por tamanho passa a ficar **no grupo**, ao lado do nome e da descrição de cada sabor: uma coluna por tamanho de cada produto que usa o grupo. O produto sem tamanhos (a Pequena, a Média e a Grande cadastradas como produtos) vira uma coluna só.
+- Os **tamanhos continuam no produto**: são dele (o preço, o "disponível", a marcação de rodízio) e existem sem grupo nenhum (o refrigerante de 300 ou 500 ml).
+- O preço da opção no grupo continua como o preço padrão: vale onde a grade fica em branco.
+- O banco não muda (`option_item_price`). A API ganha `GET` e `PUT /api/v1/option-groups/{id}/prices`, que leem e trocam a grade inteira do grupo. A tela do produto deixa de editar esses preços.

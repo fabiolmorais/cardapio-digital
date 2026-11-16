@@ -1,5 +1,6 @@
 package br.com.cardapio.support;
 
+import br.com.cardapio.application.port.out.menu.OptionPriceChange;
 import br.com.cardapio.application.port.out.menu.ProductOptionsChange;
 import br.com.cardapio.application.port.out.menu.ProductOptionsPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -48,6 +49,11 @@ public class InMemoryProductOptions implements ProductOptionsPort {
 
     @Override
     public void save(ProductOptionsChange change) {
+        throw new UnsupportedOperationException("use put()");
+    }
+
+    @Override
+    public void replaceOptionPrices(OptionPriceChange change) {
         throw new UnsupportedOperationException("use put()");
     }
 

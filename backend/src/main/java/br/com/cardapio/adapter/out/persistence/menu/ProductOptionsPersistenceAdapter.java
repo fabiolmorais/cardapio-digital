@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.out.persistence.menu;
 
 import br.com.cardapio.adapter.out.persistence.shared.EstablishmentFilter;
+import br.com.cardapio.application.port.out.menu.OptionPriceChange;
 import br.com.cardapio.application.port.out.menu.ProductOptionsChange;
 import br.com.cardapio.application.port.out.menu.ProductOptionsPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -116,6 +117,18 @@ class ProductOptionsPersistenceAdapter implements ProductOptionsPort {
                 l.limit().maxChoices())).toList());
         prices.saveAll(change.prices().stream().map(p -> new OptionItemPriceJpaEntity(UUID.randomUUID(),
                 establishment, product, p.optionId().value(), p.variantId() == null ? null : p.variantId().value(),
+                p.price().cents())).toList());
+    }
+
+    @Override
+    public void replaceOptionPrices(OptionPriceChange change) {
+        establishmentFilter.enable(change.establishmentId());
+        UUID establishment = change.establishmentId().value();
+        if (!change.optionIds().isEmpty()) {
+            prices.deleteByOptions(establishment, change.optionIds().stream().map(OptionItemId::value).toList());
+        }
+        prices.saveAll(change.prices().stream().map(p -> new OptionItemPriceJpaEntity(UUID.randomUUID(), establishment,
+                p.productId().value(), p.optionId().value(), p.variantId() == null ? null : p.variantId().value(),
                 p.price().cents())).toList());
     }
 

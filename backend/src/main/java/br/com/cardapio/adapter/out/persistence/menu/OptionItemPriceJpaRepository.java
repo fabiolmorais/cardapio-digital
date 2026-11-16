@@ -19,4 +19,8 @@ interface OptionItemPriceJpaRepository extends JpaRepository<OptionItemPriceJpaE
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM OptionItemPriceJpaEntity p WHERE p.establishmentId = :establishmentId AND p.productId = :productId")
     void deleteByProduct(@Param("establishmentId") UUID establishmentId, @Param("productId") UUID productId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM OptionItemPriceJpaEntity p WHERE p.establishmentId = :establishmentId AND p.optionItemId IN :optionIds")
+    void deleteByOptions(@Param("establishmentId") UUID establishmentId, @Param("optionIds") Collection<UUID> optionIds);
 }

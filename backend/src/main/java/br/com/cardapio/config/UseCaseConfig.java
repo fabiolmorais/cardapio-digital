@@ -501,6 +501,13 @@ class UseCaseConfig {
         return new GetOptionGroupService(optionGroupPort);
     }
 
+    /** A grade de preços dos grupos: um serviço só para ler e salvar (complemento da ADR 0010). */
+    @Bean
+    OptionGroupPricesService optionGroupPricesService(OptionGroupPort optionGroupPort, ProductPort productPort,
+                                                      ProductOptionsPort productOptionsPort) {
+        return new OptionGroupPricesService(optionGroupPort, productPort, productOptionsPort);
+    }
+
     @Bean
     CreateOptionGroupUseCase createOptionGroupUseCase(OptionGroupPort optionGroupPort) {
         return new CreateOptionGroupService(optionGroupPort);
