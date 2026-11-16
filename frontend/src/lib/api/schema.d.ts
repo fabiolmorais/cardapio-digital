@@ -217,6 +217,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/option-groups/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A grade de preços do grupo: cada opção em cada tamanho dos produtos que usam o grupo */
+        get: operations["getOptionGroupPrices"];
+        /** Troca a grade de preços do grupo inteira (o que não vier fica em branco) */
+        put: operations["updateOptionGroupPrices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/menu-categories/{id}/product-order": {
         parameters: {
             query?: never;
@@ -2615,6 +2633,49 @@ export interface components {
             /** @description false: esgotada */
             available: boolean;
         };
+        /** @description O preço de uma opção numa coluna da grade */
+        OptionGroupPrice: {
+            /** Format: uuid */
+            productId: string;
+            /**
+             * Format: uuid
+             * @description Vazio: o produto sem tamanhos
+             */
+            variantId?: string;
+            /** Format: uuid */
+            optionId: string;
+            /**
+             * Format: int64
+             * @example 6800
+             */
+            priceCents: number;
+        };
+        /** @description A grade inteira: o que não vier fica em branco */
+        OptionGroupPricesRequest: {
+            prices: components["schemas"]["OptionGroupPrice"][];
+        };
+        /** @description Um tamanho de um produto, ou o produto sem tamanhos */
+        OptionGroupPriceColumn: {
+            /** Format: uuid */
+            productId: string;
+            /** @example Pizza */
+            productName: string;
+            /**
+             * Format: uuid
+             * @description Vazio: o produto sem tamanhos
+             */
+            variantId?: string;
+            /**
+             * @description Vazio: o produto sem tamanhos
+             * @example Grande
+             */
+            variantName?: string;
+        };
+        /** @description As colunas (tamanhos dos produtos que usam o grupo) e os preços preenchidos. Em branco, vale o preço da opção. Preços em centavos */
+        OptionGroupPrices: {
+            columns: components["schemas"]["OptionGroupPriceColumn"][];
+            prices: components["schemas"]["OptionGroupPrice"][];
+        };
         BrandRequest: {
             /** @example Sakura Sushi */
             name: string;
@@ -5009,6 +5070,81 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Não é um grupo ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getOptionGroupPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As colunas e os preços preenchidos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionGroupPrices"];
+                };
+            };
+            /** @description Não é um grupo ativo deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateOptionGroupPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionGroupPricesRequest"];
+            };
+        };
+        responses: {
+            /** @description Salva; a grade como ficou */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionGroupPrices"];
+                };
+            };
+            /** @description Opção, produto ou tamanho que não usa o grupo, ou preço repetido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
             };
             /** @description Não é um grupo ativo deste restaurante */
             404: {

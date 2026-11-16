@@ -28,6 +28,9 @@ public interface ProductOptionsPort {
 
     void save(ProductOptionsChange change);
 
+    /** Troca os preços das opções de um grupo em todos os produtos (a grade de preços do grupo). */
+    void replaceOptionPrices(OptionPriceChange change);
+
     Optional<ProductVariant> findVariant(EstablishmentId establishmentId, ProductVariantId id);
 
     void saveVariant(ProductVariant variant);

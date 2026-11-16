@@ -5,7 +5,9 @@ import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.menu.ChangeOptionItemAvailabilityUseCase;
 import br.com.cardapio.application.port.in.menu.CreateOptionGroupUseCase;
 import br.com.cardapio.application.port.in.menu.DeactivateOptionGroupUseCase;
+import br.com.cardapio.application.port.in.menu.GetOptionGroupPricesUseCase;
 import br.com.cardapio.application.port.in.menu.GetOptionGroupUseCase;
+import br.com.cardapio.application.port.in.menu.UpdateOptionGroupPricesUseCase;
 import br.com.cardapio.application.port.in.menu.ListOptionGroupsUseCase;
 import br.com.cardapio.application.port.in.menu.UpdateOptionGroupUseCase;
 import br.com.cardapio.application.port.in.menu.OptionGroupSummary;
@@ -58,11 +60,16 @@ class OptionGroupController {
     private final UpdateOptionGroupUseCase updateGroup;
     private final DeactivateOptionGroupUseCase deactivateGroup;
     private final ChangeOptionItemAvailabilityUseCase changeItemAvailability;
+    private final GetOptionGroupPricesUseCase getPrices;
+    private final UpdateOptionGroupPricesUseCase updatePrices;
 
     OptionGroupController(ListOptionGroupsUseCase listGroups, GetOptionGroupUseCase getGroup,
                           CreateOptionGroupUseCase createGroup, UpdateOptionGroupUseCase updateGroup,
                           DeactivateOptionGroupUseCase deactivateGroup,
-                          ChangeOptionItemAvailabilityUseCase changeItemAvailability) {
+                          ChangeOptionItemAvailabilityUseCase changeItemAvailability,
+                          GetOptionGroupPricesUseCase getPrices, UpdateOptionGroupPricesUseCase updatePrices) {
+        this.getPrices = getPrices;
+        this.updatePrices = updatePrices;
         this.listGroups = listGroups;
         this.getGroup = getGroup;
         this.createGroup = createGroup;
@@ -94,6 +101,30 @@ class OptionGroupController {
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     OptionDtos.Group get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return OptionDtos.Group.from(getGroup.get(establishment(jwt), new OptionGroupId(id)));
+    }
+
+    @GetMapping(GROUPS + "/{id}/prices")
+    @Operation(operationId = "getOptionGroupPrices",
+            summary = "A grade de preços do grupo: cada opção em cada tamanho dos produtos que usam o grupo")
+    @ApiResponse(responseCode = "200", description = "As colunas e os preços preenchidos")
+    @ApiResponse(responseCode = "404", description = "Não é um grupo ativo deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    OptionGroupPricesDtos.Response prices(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return OptionGroupPricesDtos.Response.from(getPrices.get(establishment(jwt), new OptionGroupId(id)));
+    }
+
+    @PutMapping(GROUPS + "/{id}/prices")
+    @Operation(operationId = "updateOptionGroupPrices",
+            summary = "Troca a grade de preços do grupo inteira (o que não vier fica em branco)")
+    @ApiResponse(responseCode = "200", description = "Salva; a grade como ficou")
+    @ApiResponse(responseCode = "400", description = "Opção, produto ou tamanho que não usa o grupo, ou preço repetido",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Não é um grupo ativo deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    OptionGroupPricesDtos.Response updatePrices(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                                @Valid @RequestBody OptionGroupPricesDtos.Request request) {
+        return OptionGroupPricesDtos.Response.from(updatePrices.update(establishment(jwt), new OptionGroupId(id),
+                request.prices().stream().map(OptionGroupPricesDtos.Price::toPrice).toList()));
     }
 
     @PostMapping(GROUPS)

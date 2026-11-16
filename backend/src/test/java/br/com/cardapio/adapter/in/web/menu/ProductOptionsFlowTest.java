@@ -412,6 +412,83 @@ class ProductOptionsFlowTest {
         assertThat(placed).bodyJson().extractingPath("$.items[0].unitPriceCents").isEqualTo(4500);
     }
 
+    /**
+     * A grade de preços no grupo (complemento da ADR 0010): o preço de cada sabor em cada tamanho dos
+     * produtos que usam o grupo, num lugar só. A Pizza (com tamanhos) dá uma coluna por tamanho; o
+     * Calzone (sem tamanhos), uma coluna só.
+     */
+    @Test
+    void theGroupEditsThePriceOfEachFlavorInEachSize() throws Exception {
+        Pizzeria p = pizzeria(forno);
+        String calzone = product(forno, "Calzone", 0);
+        assertThat(send("PUT", forno.owner(), "/api/v1/products/" + calzone + "/options", """
+                {"variants":[],"groups":[{"groupId":"%s","limits":[]}],"prices":[]}
+                """.formatted(p.flavors()))).hasStatus(HttpStatus.OK);
+        String prices = GROUPS + "/" + p.flavors() + "/prices";
+
+        MvcTestResult grid = send("GET", forno.owner(), prices, null);
+        assertThat(grid).hasStatusOk();
+        assertThat(grid).bodyJson().extractingPath("$.columns[*].variantName").asArray()
+                .containsExactlyInAnyOrder("Broto", "Grande", null);
+        // Os preços do Grande que a pizzaria já tinha posto pelo produto.
+        assertThat(grid).bodyJson().extractingPath("$.prices[*].priceCents").asArray()
+                .containsExactlyInAnyOrder(5490, 5990);
+
+        MvcTestResult saved = send("PUT", forno.owner(), prices, """
+                {"prices":[{"productId":"%s","variantId":"%s","optionId":"%s","priceCents":6800},
+                           {"productId":"%s","variantId":"%s","optionId":"%s","priceCents":4500},
+                           {"productId":"%s","optionId":"%s","priceCents":3300}]}
+                """.formatted(p.pizza(), p.grande(), p.calabresa(), p.pizza(), p.broto(), p.calabresa(), calzone,
+                p.frango()));
+        assertThat(saved).hasStatusOk();
+        assertThat(saved).bodyJson().extractingPath("$.prices.length()").isEqualTo(3);
+        // O Frango no Grande saiu da grade: volta ao preço da opção.
+        Cookie ana = phone(forno.qr());
+        MvcTestResult placed = order(forno.qr(), ana, pizzaLine(p, p.grande(), 1, p.calabresa()) + ","
+                + pizzaLine(p, p.broto(), 1, p.calabresa()) + ","
+                + "{\"productId\":\"%s\",\"quantity\":1,\"options\":[{\"optionId\":\"%s\",\"quantity\":1}]}"
+                .formatted(calzone, p.frango()));
+        assertThat(placed).hasStatus(HttpStatus.CREATED);
+        assertThat(placed).bodyJson().extractingPath("$.items[*].unitPriceCents").asArray()
+                .containsExactly(6800, 4500, 3300);
+        // A tela do produto continua vendo os mesmos preços.
+        assertThat(send("GET", forno.owner(), "/api/v1/products/" + p.pizza() + "/options", null))
+                .bodyJson().extractingPath("$.prices[*].priceCents").asArray().containsExactlyInAnyOrder(6800, 4500);
+    }
+
+    @Test
+    void theGroupPricesAreChecked() throws Exception {
+        Pizzeria p = pizzeria(forno);
+        String prices = GROUPS + "/" + p.flavors() + "/prices";
+        String loose = product(forno, "Fora do grupo", 0);
+        String row = "{\"productId\":\"%s\",\"variantId\":%s,\"optionId\":\"%s\",\"priceCents\":%d}";
+
+        // Preço "neste produto" num produto com tamanhos: não vale.
+        assertThat(send("PUT", forno.owner(), prices,
+                "{\"prices\":[" + row.formatted(p.pizza(), "null", p.calabresa(), 4000) + "]}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        // Produto que não usa o grupo, opção de outro grupo, preço repetido.
+        assertThat(send("PUT", forno.owner(), prices,
+                "{\"prices\":[" + row.formatted(loose, "null", p.calabresa(), 4000) + "]}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(send("PUT", forno.owner(), prices,
+                "{\"prices\":[" + row.formatted(p.pizza(), "\"" + p.grande() + "\"", p.catupiry(), 900) + "]}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        String twice = row.formatted(p.pizza(), "\"" + p.grande() + "\"", p.calabresa(), 6000);
+        assertThat(send("PUT", forno.owner(), prices, "{\"prices\":[" + twice + "," + twice + "]}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        // Nada mudou.
+        assertThat(send("GET", forno.owner(), prices, null)).bodyJson().extractingPath("$.prices[*].priceCents")
+                .asArray().containsExactlyInAnyOrder(5490, 5990);
+
+        // A regra crítica: outro restaurante recebe 404 nas duas rotas.
+        Restaurant other = newRestaurant("Cantina Teste");
+        assertThat(send("GET", other.owner(), prices, null)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("PUT", other.owner(), prices, "{\"prices\":[]}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("GET", forno.owner(), prices, null)).bodyJson().extractingPath("$.prices.length()")
+                .isEqualTo(2);
+    }
+
     /** As fotos e os vídeos da opção: outro restaurante recebe 404 em cada rota (CLAUDE.md). */
     @Test
     void anotherRestaurantCannotTouchTheOptionMedia() throws Exception {
