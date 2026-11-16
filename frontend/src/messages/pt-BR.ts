@@ -1224,7 +1224,11 @@ export const messages = {
       sent: (count: number) => (count === 1 ? "Foto adicionada." : `${count} fotos adicionadas.`),
       wrongType: (name: string) => `${name}: envie uma foto JPG ou PNG.`,
       tooBig: (name: string) => `${name}: a foto precisa ter até 8 MB.`,
-      full: (max: number) => `Cada produto pode ter até ${max} fotos.`,
+      full: (max: number) => `Chegou ao limite de ${max} fotos e vídeos. Remova uma para enviar outra.`,
+      tooMany: (room: number, max: number) =>
+        room === 0
+          ? `Não cabe mais nada: o limite é de ${max} fotos e vídeos.`
+          : `Só ${room === 1 ? "cabia mais 1" : `cabiam mais ${room}`}: o limite é de ${max} fotos e vídeos.`,
       confirmTitle: (position: number) => `Remover a foto ${position}?`,
       confirmText: "A foto sai da galeria do produto e do cardápio.",
       confirm: "Remover",
@@ -1244,7 +1248,7 @@ export const messages = {
         tooBig: (name: string) => `${name}: o vídeo precisa ter até 200 MB.`,
         uploadFailed: (name: string, reason: string) =>
           `${name}: o serviço de vídeo não aceitou o envio (${reason}). Tente de novo; se continuar, avise o suporte com esta mensagem.`,
-        full: "Cada produto pode ter até 3 vídeos.",
+        full: "Chegou ao limite de 3 vídeos. Remova um para enviar outro.",
         confirmTitle: (position: number) => `Remover o vídeo ${position}?`,
         confirmText: "O vídeo sai da galeria do produto e do cardápio, e é apagado do serviço de vídeo.",
       },
