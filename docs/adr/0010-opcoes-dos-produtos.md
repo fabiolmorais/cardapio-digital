@@ -81,9 +81,10 @@ Testando a pizza no staging, o jeito das pizzarias de verdade mostrou dois probl
 2. **O preço da opção pode ser por produto**, sem tamanho (`option_item_price.product_variant_id` passa a aceitar vazio). Uma biblioteca só de sabores serve à Pequena, à Média e à Grande, cada uma com a sua coluna de preço. Foto, descrição e "esgotado" do sabor são cadastrados uma vez.
 
    A ordem do preço da opção:
-   - o preço no tamanho escolhido;
-   - o preço neste produto;
-   - o preço da opção.
+   - num produto com tamanhos: o preço no tamanho escolhido, ou o preço da opção;
+   - num produto sem tamanhos: o preço neste produto, ou o preço da opção.
+
+   O preço "neste produto" não vale num produto com tamanhos (decidido em 16/11/2026): ali a grade é só por tamanho, e um preço escondido podia valer sem ninguém ver.
 3. **Na mesa, a escolha vira um cardápio:**
    - a tela cheia mostra a foto do prato no topo;
    - a busca pelo nome vem logo abaixo;

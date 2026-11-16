@@ -43,11 +43,11 @@ export function ProductOptionsEditor({
   const byId = new Map(library.map((g) => [g.id, g]));
   const linked = draft.groups.filter((g) => byId.has(g.groupId));
   const available = library.filter((g) => !draft.groups.some((l) => l.groupId === g.id));
-  // As colunas da grade de preço: neste produto (vale em qualquer tamanho sem preço próprio) e cada tamanho.
-  const columns = [
-    { key: IN_PRODUCT, name: t.inProduct },
-    ...draft.variants.map((v) => ({ key: v.key, name: v.name || "?" })),
-  ];
+  // As colunas da grade de preço: uma por tamanho; sem tamanhos, uma só, a deste produto.
+  const columns =
+    draft.variants.length > 0
+      ? draft.variants.map((v) => ({ key: v.key, name: v.name || "?" }))
+      : [{ key: IN_PRODUCT, name: t.inProduct }];
 
   function setVariant(index: number, patch: Partial<VariantDraft>) {
     onChange({ ...draft, variants: draft.variants.map((v, i) => (i === index ? { ...v, ...patch } : v)) });
@@ -285,9 +285,7 @@ export function ProductOptionsEditor({
                 <div className="flex flex-col gap-2">
                   <span className="text-sm font-semibold">
                     {draft.variants.length > 0 ? t.prices : t.productPrices}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      · {draft.variants.length > 0 ? t.pricesHintSizes : t.pricesHint}
-                    </span>
+                    <span className="font-normal text-muted-foreground">· {t.pricesHint}</span>
                   </span>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

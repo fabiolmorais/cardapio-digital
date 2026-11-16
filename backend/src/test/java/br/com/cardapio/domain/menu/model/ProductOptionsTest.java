@@ -151,19 +151,21 @@ class ProductOptionsTest {
         }
 
         @Test
-        void aSizePriceWinsOverTheProductPriceThatWinsOverTheOptionPrice() {
+        void withSizesTheSizePriceOrTheOptionPriceCountsAndTheProductPriceDoesNot() {
             ProductVariant media = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Média", brl(0), null,
                     true, false, 0, true);
             ProductVariant grande = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Grande", brl(0),
                     null, true, false, 1, true);
+            // Um preço "neste produto" que sobrou de antes (R$ 380) não pode valer num produto com tamanhos.
             ProductOptions both = new ProductOptions(PIZZA, List.of(media, grande),
                     List.of(new ProductOptions.LinkedGroup(flavors, List.of(calabresa, mussarela), Map.of())),
-                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(3500),
+                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(38000),
                             new ProductOptions.PriceKey(calabresa.id(), grande.id()), brl(3900)));
 
             assertThat(both.price(pequena, pick(grande, calabresa), false).unitPrice()).isEqualTo(brl(3900));
-            assertThat(both.price(pequena, pick(media, calabresa), false).unitPrice()).isEqualTo(brl(3500));
+            assertThat(both.price(pequena, pick(media, calabresa), false).unitPrice()).isEqualTo(brl(3900));
             assertThat(both.price(pequena, pick(media, mussarela), false).unitPrice()).isEqualTo(brl(3900));
+            assertThat(both.fromPrice(pequena)).isEqualTo(brl(3900));
         }
     }
 

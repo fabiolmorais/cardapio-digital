@@ -85,15 +85,15 @@ public record ProductOptions(ProductId productId, List<ProductVariant> variants,
     }
 
     /**
-     * O preço da opção aqui: o do tamanho escolhido; sem ele, o deste produto; sem nenhum dos dois,
-     * o da opção.
+     * O preço da opção aqui. Com tamanhos: o do tamanho escolhido, ou o da opção. Sem tamanhos (cada
+     * tamanho da pizza como um produto): o deste produto, ou o da opção.
      */
     public Money priceOf(OptionItem option, ProductVariant variant) {
-        Money inProduct = prices.getOrDefault(new PriceKey(option.id(), null), option.price());
         if (variant == null) {
-            return inProduct;
+            return prices.getOrDefault(new PriceKey(option.id(), null), option.price());
         }
-        return prices.getOrDefault(new PriceKey(option.id(), variant.id()), inProduct);
+        // Com tamanhos, o preço "neste produto" não vale: o tamanho em branco usa o preço da opção.
+        return prices.getOrDefault(new PriceKey(option.id(), variant.id()), option.price());
     }
 
     /** As regras do grupo neste tamanho (com o mínimo e o máximo do tamanho, se houver). */

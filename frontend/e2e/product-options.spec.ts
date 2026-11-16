@@ -90,6 +90,9 @@ test("o produto ganha tamanhos, o grupo, o limite e o preço por tamanho, num Sa
   await page.getByRole("option", { name: "Escolha os sabores" }).click();
   await page.getByRole("button", { name: "Adicionar grupo" }).click();
   await page.getByLabel("Máximo no tamanho Broto").fill("1");
+  // Com tamanhos, a grade é só por tamanho: o preço "neste produto" não vale (e não aparece).
+  await expect(page.getByLabel("Preço de Calabresa neste produto")).toHaveCount(0);
+  await expect(page.getByText("Neste produto", { exact: true })).toHaveCount(0);
   await page.getByLabel("Preço de Calabresa no tamanho Grande").fill("54,90");
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);

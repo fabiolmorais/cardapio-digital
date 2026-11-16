@@ -135,7 +135,12 @@ export function toRequest(draft: OptionsDraft, optionIds: Set<string>): ProductO
       if (!valid(cents)) throw new Error(t.invalid);
       return { optionId, variantKey, cents };
     })
-    .filter((p) => (p.variantKey === IN_PRODUCT || index.has(p.variantKey)) && optionIds.has(p.optionId))
+    // O preço "neste produto" só vale sem tamanhos: com tamanhos, o que sobrou de antes sai ao salvar.
+    .filter(
+      (p) =>
+        (p.variantKey === IN_PRODUCT ? draft.variants.length === 0 : index.has(p.variantKey)) &&
+        optionIds.has(p.optionId),
+    )
     .map((p) => ({
       optionId: p.optionId,
       ...(p.variantKey === IN_PRODUCT ? {} : { variant: index.get(p.variantKey)! }),

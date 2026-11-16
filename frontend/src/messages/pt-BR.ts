@@ -1467,7 +1467,6 @@ export const messages = {
       productPrices: "Preço neste produto",
       definesPrice: "Este grupo define o preço: com a escolha feita, o preço do produto (ou do tamanho) não soma.",
       pricesHint: "Em branco: vale o preço da opção.",
-      pricesHintSizes: "Em branco: vale o preço da opção. Neste produto: vale nos tamanhos sem preço próprio.",
       inProduct: "Neste produto",
       priceFor: (option: string, variant: string) => `Preço de ${option} no tamanho ${variant}`,
       priceInProduct: (option: string) => `Preço de ${option} neste produto`,

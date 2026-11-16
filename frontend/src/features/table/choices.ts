@@ -66,11 +66,16 @@ export function rulesOf(group: OptionGroup, link: GroupLink, variantId: string |
   };
 }
 
-/** O preço da opção aqui: o do tamanho; sem ele, o deste produto; sem nenhum, o da opção (como o back). */
+/**
+ * O preço da opção aqui, como o back. Com tamanhos: o do tamanho, ou o da opção. Sem tamanhos (cada
+ * tamanho da pizza como um produto): o deste produto, ou o da opção.
+ */
 export function optionPrice(item: MenuItem, optionId: string, basePrice: number, variantId: string | null) {
-  const inSize = variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId);
-  const inProduct = item.optionPrices.find((p) => p.optionId === optionId && !p.variantId);
-  return (inSize || inProduct)?.priceCents ?? basePrice;
+  const own =
+    item.variants.length > 0
+      ? variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId)
+      : item.optionPrices.find((p) => p.optionId === optionId && !p.variantId);
+  return own ? own.priceCents : basePrice;
 }
 
 /** Na rodada do rodízio, os adicionais pagos (opções com preço em grupos que somam) não entram. */
