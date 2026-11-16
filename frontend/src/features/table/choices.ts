@@ -66,11 +66,16 @@ export function rulesOf(group: OptionGroup, link: GroupLink, variantId: string |
   };
 }
 
-/** O preço da opção aqui: o do tamanho; sem ele, o deste produto; sem nenhum, o da opção (como o back). */
+/**
+ * O preço da opção aqui, como o back. Com tamanhos: o do tamanho, ou o da opção. Sem tamanhos (cada
+ * tamanho da pizza como um produto): o deste produto, ou o da opção.
+ */
 export function optionPrice(item: MenuItem, optionId: string, basePrice: number, variantId: string | null) {
-  const inSize = variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId);
-  const inProduct = item.optionPrices.find((p) => p.optionId === optionId && !p.variantId);
-  return (inSize || inProduct)?.priceCents ?? basePrice;
+  const own =
+    item.variants.length > 0
+      ? variantId && item.optionPrices.find((p) => p.optionId === optionId && p.variantId === variantId)
+      : item.optionPrices.find((p) => p.optionId === optionId && !p.variantId);
+  return own ? own.priceCents : basePrice;
 }
 
 /** Na rodada do rodízio, os adicionais pagos (opções com preço em grupos que somam) não entram. */
@@ -108,8 +113,11 @@ export function evaluate(
   round = false,
 ): Evaluation {
   const variant = item.variants.find((v) => v.id === variantId);
-  let unitCents = variant ? (variant.promoPriceCents ?? variant.priceCents) : (item.promoPriceCents ?? item.priceCents);
+  const base = variant ? (variant.promoPriceCents ?? variant.priceCents) : (item.promoPriceCents ?? item.priceCents);
   let missing: string | null | undefined = !round && item.variants.length > 0 && !variant ? null : undefined;
+  let parts = 0;
+  // Um grupo que cobra o maior preço ou a média (os sabores), com escolha, define o preço: a base não soma.
+  let definesPrice = false;
   for (const link of item.optionGroups) {
     const group = groups.get(link.groupId);
     if (!group) continue;
@@ -118,8 +126,10 @@ export function evaluate(
       Array<number>(picked[option.id] ?? 0).fill(optionPrice(item, option.id, option.priceCents, variantId)),
     );
     if (units.length < rules.min && missing === undefined) missing = group.title;
-    unitCents += groupCents(rules, units);
+    if (units.length > 0 && rules.pricing !== "SUM") definesPrice = true;
+    parts += groupCents(rules, units);
   }
+  const unitCents = (definesPrice ? 0 : base) + parts;
   return { unitCents: round ? 0 : unitCents, missing };
 }
 

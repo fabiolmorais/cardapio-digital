@@ -40,6 +40,7 @@ A pizza meio a meio não é um tipo especial: é um produto com tamanhos e um gr
 Regras que valem para todos:
 
 - **O back-end calcula o preço** do item (base do tamanho, com a promoção, mais a parte de cada grupo). O celular só mostra a conta; o servidor confere de novo, como já faz com o preço promocional.
+- **O grupo que cobra o maior preço ou a média define o preço** (decidido em 16/11/2026, nos testes do staging). Com uma escolha nele, a base do tamanho ou do produto não soma: a Grande a R$ 40 com Calabresa a R$ 40 e Frango a R$ 45 sai por R$ 45, e não R$ 85. Os grupos que somam (borda, adicionais) continuam somando por cima. O "a partir de" segue a mesma regra.
 - **Tudo é copiado no pedido** (`order_item_option`): os nomes, os títulos e os preços de cada escolha. Mudar o cardápio depois não altera pedidos feitos.
 - **Produto sem tamanhos nem opções funciona exatamente como hoje**, com o "Adicionar" de um toque. Nas telas da gestão, a parte de opções fica recolhida até o restaurante querer usar.
 - **Modelos prontos** ("Ponto da carne", "Pizza: sabores meio a meio", "Adicionais", "Complementos do açaí"…) para começar sem entender a configuração.
@@ -80,9 +81,10 @@ Testando a pizza no staging, o jeito das pizzarias de verdade mostrou dois probl
 2. **O preço da opção pode ser por produto**, sem tamanho (`option_item_price.product_variant_id` passa a aceitar vazio). Uma biblioteca só de sabores serve à Pequena, à Média e à Grande, cada uma com a sua coluna de preço. Foto, descrição e "esgotado" do sabor são cadastrados uma vez.
 
    A ordem do preço da opção:
-   - o preço no tamanho escolhido;
-   - o preço neste produto;
-   - o preço da opção.
+   - num produto com tamanhos: o preço no tamanho escolhido, ou o preço da opção;
+   - num produto sem tamanhos: o preço neste produto, ou o preço da opção.
+
+   O preço "neste produto" não vale num produto com tamanhos (decidido em 16/11/2026): ali a grade é só por tamanho, e um preço escondido podia valer sem ninguém ver.
 3. **Na mesa, a escolha vira um cardápio:**
    - a tela cheia mostra a foto do prato no topo;
    - a busca pelo nome vem logo abaixo;

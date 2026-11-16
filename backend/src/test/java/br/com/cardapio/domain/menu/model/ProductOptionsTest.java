@@ -114,20 +114,58 @@ class ProductOptionsTest {
             assertThat(pequenaOptions.fromPrice(pequena)).isEqualTo(brl(2900));
         }
 
+        /**
+         * O sabor define o preço: o restaurante pôs R$ 40 na Grande e os sabores a R$ 40 e R$ 45; meio
+         * a meio sai pelo sabor mais caro (R$ 45), e não R$ 40 + R$ 45. A borda, que soma, entra por cima.
+         */
         @Test
-        void aSizePriceWinsOverTheProductPriceThatWinsOverTheOptionPrice() {
+        void theFlavorDefinesThePriceAndTheProductPriceDoesNotAdd() {
+            OptionGroup crust = group("Borda", new OptionGroupRules(0, 1, 1, false, OptionPricing.SUM, 0));
+            OptionItem catupiry = option(crust, "Catupiry", 800, 0);
+            ProductDetails grande = product("Grande", 4000);
+            ProductOptions grandeOptions = new ProductOptions(PIZZA, List.of(),
+                    List.of(new ProductOptions.LinkedGroup(flavors, List.of(calabresa, frango), Map.of()),
+                            new ProductOptions.LinkedGroup(crust, List.of(catupiry), Map.of())),
+                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(4000)));
+
+            assertThat(grandeOptions.price(grande, pick(null, calabresa, frango), false).unitPrice())
+                    .isEqualTo(brl(4500));
+            assertThat(grandeOptions.price(grande, pick(null, calabresa), false).unitPrice()).isEqualTo(brl(4000));
+            assertThat(grandeOptions.price(grande, pick(null, calabresa, frango, catupiry), false).unitPrice())
+                    .isEqualTo(brl(4500 + 800));
+            assertThat(grandeOptions.fromPrice(grande)).isEqualTo(brl(4000));
+        }
+
+        @Test
+        void anOptionalFlavorGroupWithoutChoiceKeepsTheProductPrice() {
+            OptionGroup extra = group("Sabor extra", new OptionGroupRules(0, 1, 1, false, OptionPricing.HIGHEST, 0));
+            OptionItem doce = option(extra, "Chocolate", 1500, 0);
+            ProductOptions options = new ProductOptions(PIZZA, List.of(),
+                    List.of(new ProductOptions.LinkedGroup(extra, List.of(doce), Map.of())), Map.of());
+
+            assertThat(options.price(product("Calzone", 3000), OptionSelection.NONE, false).unitPrice())
+                    .isEqualTo(brl(3000));
+            assertThat(options.price(product("Calzone", 3000), pick(null, doce), false).unitPrice())
+                    .isEqualTo(brl(1500));
+            assertThat(options.fromPrice(product("Calzone", 3000))).isEqualTo(brl(3000));
+        }
+
+        @Test
+        void withSizesTheSizePriceOrTheOptionPriceCountsAndTheProductPriceDoesNot() {
             ProductVariant media = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Média", brl(0), null,
                     true, false, 0, true);
             ProductVariant grande = new ProductVariant(ProductVariantId.newId(), SAKURA, PIZZA, "Grande", brl(0),
                     null, true, false, 1, true);
+            // Um preço "neste produto" que sobrou de antes (R$ 380) não pode valer num produto com tamanhos.
             ProductOptions both = new ProductOptions(PIZZA, List.of(media, grande),
                     List.of(new ProductOptions.LinkedGroup(flavors, List.of(calabresa, mussarela), Map.of())),
-                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(3500),
+                    Map.of(new ProductOptions.PriceKey(calabresa.id(), null), brl(38000),
                             new ProductOptions.PriceKey(calabresa.id(), grande.id()), brl(3900)));
 
             assertThat(both.price(pequena, pick(grande, calabresa), false).unitPrice()).isEqualTo(brl(3900));
-            assertThat(both.price(pequena, pick(media, calabresa), false).unitPrice()).isEqualTo(brl(3500));
+            assertThat(both.price(pequena, pick(media, calabresa), false).unitPrice()).isEqualTo(brl(3900));
             assertThat(both.price(pequena, pick(media, mussarela), false).unitPrice()).isEqualTo(brl(3900));
+            assertThat(both.fromPrice(pequena)).isEqualTo(brl(3900));
         }
     }
 

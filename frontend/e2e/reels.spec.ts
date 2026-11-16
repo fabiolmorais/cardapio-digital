@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { API_URL } from "./support/account";
 import { addVideo, recordVideo, restaurant } from "./support/reels";
 
 test.describe.configure({ timeout: 90_000 });
@@ -91,4 +92,46 @@ test("o destaque com vídeo abre o Reels, tocar na borda passa a mídia, e fecha
 
   await page.getByRole("link", { name: "Fechar os vídeos" }).click();
   await expect(page).toHaveURL(new RegExp(`/m/${qr}$`));
+});
+
+test("fechar o Reels volta para o mesmo lugar do cardápio, e não para o topo", async ({ page, request }) => {
+  const video = await recordVideo(page);
+  const { qr, headers } = await restaurant(request, video);
+  // Pratos o bastante para o cardápio rolar, e um com vídeo lá embaixo.
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const pratos = await post("/api/v1/menu-categories", { name: "Pratos" });
+  for (let i = 1; i <= 10; i++) {
+    await post("/api/v1/products", {
+      categoryId: pratos.id,
+      name: `Prato ${i}`,
+      priceCents: 3000,
+      featured: false,
+      available: true,
+    });
+  }
+  const sobremesas = await post("/api/v1/menu-categories", { name: "Sobremesas" });
+  const mochi = await post("/api/v1/products", {
+    categoryId: sobremesas.id,
+    name: "Mochi",
+    priceCents: 1500,
+    featured: false,
+    available: true,
+  });
+  await addVideo(request, headers, mochi.id, video);
+
+  await page.goto(`/m/${qr}/cardapio`);
+  const link = page.getByRole("link", { name: "Ver Mochi em fotos e vídeos" });
+  await link.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  const before = await page.evaluate(() => scrollY);
+  expect(before).toBeGreaterThan(300);
+  await link.click();
+  await expect(page).toHaveURL(/\/reels\?produto=/);
+  await expect(page.getByRole("region", { name: "Mochi" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Fechar os vídeos" }).click();
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before - 80);
+  await expect(page.getByRole("link", { name: "Ver Mochi em fotos e vídeos" })).toBeInViewport();
 });

@@ -90,6 +90,9 @@ test("o produto ganha tamanhos, o grupo, o limite e o preço por tamanho, num Sa
   await page.getByRole("option", { name: "Escolha os sabores" }).click();
   await page.getByRole("button", { name: "Adicionar grupo" }).click();
   await page.getByLabel("Máximo no tamanho Broto").fill("1");
+  // Com tamanhos, a grade é só por tamanho: o preço "neste produto" não vale (e não aparece).
+  await expect(page.getByLabel("Preço de Calabresa neste produto")).toHaveCount(0);
+  await expect(page.getByText("Neste produto", { exact: true })).toHaveCount(0);
   await page.getByLabel("Preço de Calabresa no tamanho Grande").fill("54,90");
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);
@@ -200,4 +203,56 @@ test("um produto sem opções não mostra nada diferente", async ({ page, reques
   await expect(page.getByRole("button", { name: "Configurar tamanhos e opções" })).toBeVisible();
   await expect(page.getByLabel("Preço", { exact: true })).toBeEnabled();
   await expect(page.getByLabel("Nome do tamanho 1")).toHaveCount(0);
+});
+
+test("com muitas fotos, o modal das fotos do sabor rola as fotos por dentro, sem passar da tela", async ({
+  page,
+  request,
+}) => {
+  const { email, headers } = await pizzeria(request);
+  const group = await (
+    await request.post(`${API_URL}/api/v1/option-groups`, {
+      headers,
+      data: {
+        title: "Escolha os sabores",
+        minChoices: 1,
+        maxChoices: 2,
+        maxPerOption: 1,
+        splitsItem: true,
+        pricing: "HIGHEST",
+        freeQuantity: 0,
+        items: [{ name: "Calabresa", priceCents: 3900, available: true }],
+      },
+    })
+  ).json();
+  const calabresa = group.items[0].id;
+  await page.goto("about:blank");
+  const jpeg = (await photo(page, "calabresa.jpg")).buffer;
+  for (let i = 0; i < 8; i++) {
+    const up = await (
+      await request.post(`${API_URL}/api/v1/option-items/${calabresa}/media/uploads`, {
+        headers,
+        data: { contentType: "image/jpeg", sizeBytes: jpeg.length },
+      })
+    ).json();
+    expect((await request.put(up.url, { headers: up.headers, data: jpeg })).ok()).toBe(true);
+    const added = await request.post(`${API_URL}/api/v1/option-items/${calabresa}/media`, {
+      headers,
+      data: { uploadId: up.uploadId },
+    });
+    expect(added.status()).toBe(201);
+  }
+
+  await loginThroughForm(page, email);
+  await page.goto("/admin/cardapio/opcoes");
+  await page.getByRole("button", { name: "Fotos e vídeos de Calabresa" }).click();
+  const dialog = page.getByRole("dialog", { name: "Fotos e vídeos de Calabresa" });
+  await expect(dialog.getByRole("img")).toHaveCount(8);
+  await expect(dialog.getByText("Chegou ao limite de 8 fotos e vídeos. Remova uma para enviar outra.")).toBeVisible();
+  // O modal cabe na tela, sem rolagem para o lado; quem rola é a fileira de fotos.
+  const box = (await dialog.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect(dialog.getByRole("button", { name: "Fechar" })).toBeInViewport();
 });

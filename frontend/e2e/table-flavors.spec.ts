@@ -52,11 +52,11 @@ async function pizzeria(page: Page, request: APIRequestContext) {
     ],
   });
   const [calabresa, frango, mussarela] = flavors.items.map((i: { id: string }) => i.id);
-  const product = async (name: string, prices: [string, number][]) => {
+  const product = async (name: string, prices: [string, number][], priceCents = 0) => {
     const created = await post("/api/v1/products", {
       categoryId: category.id,
       name,
-      priceCents: 0,
+      priceCents,
       featured: false,
       available: true,
     });
@@ -75,7 +75,8 @@ async function pizzeria(page: Page, request: APIRequestContext) {
     [frango, 3400],
     [mussarela, 2900],
   ]);
-  await product("Grande", []);
+  // A Grande com preço próprio (R$ 40): o sabor define o preço, e o da Grande não soma.
+  await product("Grande", [], 4000);
 
   // A foto da Calabresa, pelo caminho do navegador: URL assinada, envio direto e o aviso ao back.
   const photo = await jpeg(page);
@@ -152,4 +153,21 @@ test("tocar na foto do sabor abre o Reels dos sabores, e o Escolher marca na esc
   await expect(pizza).toBeVisible();
   await expect(pizza.getByRole("button", { name: /^Calabresa/ })).toHaveAttribute("aria-pressed", "true");
   await expect(pizza.getByRole("button", { name: /^Adicionar/ })).toContainText("R$ 29,00");
+});
+
+test("o sabor define o preço: a Grande a R$ 40 com Calabresa e Frango sai por R$ 45, e não R$ 85", async ({
+  page,
+  request,
+}) => {
+  const { qr } = await pizzeria(page, request);
+  await page.goto(`/m/${qr}/cardapio`);
+  await page.getByRole("button", { name: "Adicionar Grande" }).click();
+  const pizza = page.getByRole("dialog", { name: "Grande" });
+  await expect(pizza.getByText("a partir de")).toBeVisible();
+  await expect(pizza.getByText("R$ 39,00").first()).toBeVisible();
+
+  await pizza.getByRole("button", { name: /^Calabresa/ }).click();
+  await expect(pizza.getByRole("button", { name: /^Adicionar/ })).toContainText("R$ 39,00");
+  await pizza.getByRole("button", { name: /^Frango com catupiry/ }).click();
+  await expect(pizza.getByRole("button", { name: /^Adicionar/ })).toContainText("R$ 45,00");
 });

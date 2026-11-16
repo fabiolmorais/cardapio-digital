@@ -2,6 +2,7 @@
 
 import { Plus, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { useEffect, useMemo, useState } from "react";
 import { formatCents } from "@/lib/format";
@@ -82,6 +83,19 @@ export function Reels({
   const entries = useMemo(() => items.map(itemEntry), [items]);
   const byId = new Map(items.map((item) => [item.id, item]));
   const { count, totalCents } = useCart(token);
+  const router = useRouter();
+
+  /**
+   * Fechar volta para onde o cliente estava: veio do cardápio (ou do início) nesta aba, o histórico
+   * devolve a página na mesma posição, e não no topo. Aberto direto por um link, vai para o cardápio.
+   */
+  function close(event: React.MouseEvent) {
+    const first = performance.getEntriesByType("navigation")[0]?.name;
+    const openedHere = first !== undefined && new URL(first).pathname === location.pathname;
+    if (openedHere || history.length < 2) return;
+    event.preventDefault();
+    router.back();
+  }
 
   // O restaurante desligou o pedido pelo celular (ou a assinatura está suspensa)? O "Adicionar"
   // some (o Reels continua).
@@ -133,7 +147,7 @@ export function Reels({
           <BrandLogo logo={logo} name={establishmentName} color={brandColor} alt="" className="size-8 text-xs" />
           <span className="truncate text-sm font-semibold drop-shadow">{establishmentName}</span>
         </span>
-        <Link href={backHref} aria-label={t.close} className={cn(round, "pointer-events-auto")}>
+        <Link href={backHref} onClick={close} aria-label={t.close} className={cn(round, "pointer-events-auto")}>
           <X aria-hidden className="size-5" />
         </Link>
       </div>

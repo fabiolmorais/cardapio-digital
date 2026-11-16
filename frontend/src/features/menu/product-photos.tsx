@@ -89,7 +89,7 @@ export function ProductPhotos({ owner, name }: { owner: MediaOwner; name: string
       return false;
     });
     const room = MAX_PHOTOS - photos.length;
-    if (accepted.length > room) problems.push(t.full(MAX_PHOTOS));
+    if (accepted.length > room) problems.push(t.tooMany(Math.max(0, room), MAX_PHOTOS));
     const queue = accepted.slice(0, Math.max(0, room));
     setErrors(problems);
     const items = queue.map((file, i) => ({ key: `${Date.now()}-${i}`, name: file.name, percent: 0 as number | null }));
@@ -175,7 +175,8 @@ export function ProductPhotos({ owner, name }: { owner: MediaOwner; name: string
   return (
     <section
       aria-labelledby={`${inputId}title`}
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6"
+      // min-w-0: num modal (as fotos do sabor), a fileira de fotos rola dentro do painel, sem alargar o modal.
+      className="flex min-w-0 flex-col gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6"
     >
       <div className="flex flex-col gap-1">
         <h2 id={`${inputId}title`} className="font-semibold">

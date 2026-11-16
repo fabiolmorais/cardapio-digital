@@ -388,6 +388,30 @@ class ProductOptionsFlowTest {
                 .containsExactly(3400, 4500);
     }
 
+    /** O sabor define o preço: a Grande a R$ 40 com Calabresa e Frango sai pelo Frango (R$ 45), e não R$ 85. */
+    @Test
+    void theFlavorGroupDefinesThePriceAndTheProductPriceDoesNotAdd() throws Exception {
+        MvcTestResult flavors = createGroup(forno, """
+                {"title":"Escolha os sabores","minChoices":1,"maxChoices":2,"maxPerOption":1,
+                 "splitsItem":true,"pricing":"HIGHEST","freeQuantity":0,
+                 "items":[{"name":"Calabresa","priceCents":4000,"available":true},
+                          {"name":"Frango com catupiry","priceCents":4500,"available":true}]}
+                """);
+        String grande = product(forno, "Grande", 4000);
+        assertThat(send("PUT", forno.owner(), "/api/v1/products/" + grande + "/options", """
+                {"variants":[],"groups":[{"groupId":"%s","limits":[]}],"prices":[]}
+                """.formatted(json(flavors, "$.id")))).hasStatus(HttpStatus.OK);
+
+        MvcTestResult menu = mvc.get().uri("/api/v1/public/tables/" + forno.qr() + "/menu").exchange();
+        assertThat(menu).bodyJson().extractingPath("$.categories[0].products[0].fromPriceCents").isEqualTo(4000);
+        Cookie ana = phone(forno.qr());
+        MvcTestResult placed = order(forno.qr(), ana, """
+                {"productId":"%s","quantity":1,"options":[{"optionId":"%s","quantity":1},{"optionId":"%s","quantity":1}]}
+                """.formatted(grande, json(flavors, "$.items[0].id"), json(flavors, "$.items[1].id")));
+        assertThat(placed).hasStatus(HttpStatus.CREATED);
+        assertThat(placed).bodyJson().extractingPath("$.items[0].unitPriceCents").isEqualTo(4500);
+    }
+
     /** As fotos e os vídeos da opção: outro restaurante recebe 404 em cada rota (CLAUDE.md). */
     @Test
     void anotherRestaurantCannotTouchTheOptionMedia() throws Exception {
