@@ -90,26 +90,48 @@ test("o produto ganha tamanhos, o grupo, o limite e o preço por tamanho, num Sa
   await page.getByRole("option", { name: "Escolha os sabores" }).click();
   await page.getByRole("button", { name: "Adicionar grupo" }).click();
   await page.getByLabel("Máximo no tamanho Broto").fill("1");
-  // Com tamanhos, a grade é só por tamanho: o preço "neste produto" não vale (e não aparece).
-  await expect(page.getByLabel("Preço de Calabresa neste produto")).toHaveCount(0);
-  await expect(page.getByText("Neste produto", { exact: true })).toHaveCount(0);
-  await page.getByLabel("Preço de Calabresa no tamanho Grande").fill("54,90");
+  // Os preços por tamanho não ficam mais no produto: ficam no grupo (o aviso leva até lá).
+  await expect(page.getByRole("link", { name: "Grupos de opções → Editar" })).toBeVisible();
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);
+
+  // No grupo: o preço de cada sabor em cada tamanho, e um sabor novo já com o preço do Grande.
+  await page.goto("/admin/cardapio/opcoes");
+  await page.getByRole("button", { name: "Editar Escolha os sabores" }).click();
+  const dialog = page.getByRole("dialog", { name: "Editar Escolha os sabores" });
+  await dialog.getByLabel("Preço de Calabresa em Grande").fill("54,90");
+  await dialog.getByRole("button", { name: "Opção", exact: true }).click();
+  await dialog.getByLabel("Nome da opção 3").fill("Portuguesa");
+  await dialog.getByLabel("Preço da opção 3").fill("42");
+  await dialog.getByLabel("Preço de Portuguesa em Grande").fill("60");
+  await dialog.getByRole("button", { name: "Salvar grupo" }).click();
+  await expect(dialog).toBeHidden();
 
   const saved = await (await request.get(`${API_URL}/api/v1/products/${pizzaId}/options`, { headers })).json();
   expect(saved.variants.map((v: { name: string }) => v.name)).toEqual(["Broto", "Grande"]);
   expect(saved.variants[0].rodizioDefault).toBe(true);
   expect(saved.groups[0].group.id).toBe(group.id);
   expect(saved.groups[0].limits).toEqual([{ variantId: saved.variants[0].id, minChoices: 0, maxChoices: 1 }]);
-  expect(saved.prices).toEqual([{ optionId: group.items[0].id, variantId: saved.variants[1].id, priceCents: 5490 }]);
+  const portuguesa = saved.groups[0].group.items.find((i: { name: string }) => i.name === "Portuguesa").id;
+  expect(saved.prices).toEqual(
+    expect.arrayContaining([
+      { optionId: group.items[0].id, variantId: saved.variants[1].id, priceCents: 5490 },
+      { optionId: portuguesa, variantId: saved.variants[1].id, priceCents: 6000 },
+    ]),
+  );
+  expect(saved.prices).toHaveLength(2);
   const product = await (await request.get(`${API_URL}/api/v1/products/${pizzaId}`, { headers })).json();
   expect(product.priceCents).toBe(0);
 
-  // De volta ao produto: tudo como foi salvo, e tirar o Grande o desativa.
+  // De volta ao grupo: os preços como foram salvos.
+  await page.getByRole("button", { name: "Editar Escolha os sabores" }).click();
+  await expect(dialog.getByLabel("Preço de Calabresa em Grande")).toHaveValue("54,90");
+  await expect(dialog.getByLabel("Preço de Calabresa em Broto")).toHaveValue("");
+  await dialog.getByRole("button", { name: "Cancelar" }).click();
+
+  // No produto: tudo como foi salvo (salvar o produto não apaga os preços), e tirar o Grande o desativa.
   await page.goto(`/admin/cardapio/produtos/${pizzaId}`);
   await expect(page.getByLabel("Nome do tamanho 2")).toHaveValue("Grande");
-  await expect(page.getByLabel("Preço de Calabresa no tamanho Grande")).toHaveValue("54,90");
   await page.getByRole("button", { name: "Tirar o tamanho Grande" }).click();
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);
@@ -180,15 +202,20 @@ test("um produto por tamanho: o sabor ganha descrição, foto e o preço neste p
   await page.getByLabel("Escolha um grupo").click();
   await page.getByRole("option", { name: "Escolha os sabores" }).click();
   await page.getByRole("button", { name: "Adicionar grupo" }).click();
-  await expect(page.getByText("Preço neste produto")).toBeVisible();
-  await page.getByLabel("Preço de Calabresa neste produto").fill("29");
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page).toHaveURL(/\/admin\/cardapio\?categoria=/);
 
+  // No grupo, o produto sem tamanhos (a Pizza) é uma coluna só.
+  await page.goto("/admin/cardapio/opcoes");
+  await page.getByRole("button", { name: "Editar Escolha os sabores" }).click();
+  await dialog.getByLabel("Preço de Calabresa em Pizza").fill("29");
+  await dialog.getByRole("button", { name: "Salvar grupo" }).click();
+  await expect(dialog).toBeHidden();
+
   const saved = await (await request.get(`${API_URL}/api/v1/products/${pizzaId}/options`, { headers })).json();
   expect(saved.prices).toEqual([{ optionId: group.items[0].id, variantId: null, priceCents: 2900 }]);
-  await page.goto(`/admin/cardapio/produtos/${pizzaId}`);
-  await expect(page.getByLabel("Preço de Calabresa neste produto")).toHaveValue("29,00");
+  await page.getByRole("button", { name: "Editar Escolha os sabores" }).click();
+  await expect(dialog.getByLabel("Preço de Calabresa em Pizza")).toHaveValue("29,00");
   const item = (await (await request.get(`${API_URL}/api/v1/option-groups/${group.id}`, { headers })).json()).items[0];
   expect(item.description).toBe("Mussarela, calabresa e cebola");
   const gallery = await (await request.get(`${API_URL}/api/v1/option-items/${item.id}/media`, { headers })).json();
