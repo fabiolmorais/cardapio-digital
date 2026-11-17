@@ -123,9 +123,11 @@ jobs:
       - name: Confere a versão do Playwright da imagem
         working-directory: frontend
         run: |
+          # A versão esperada vem da própria linha "container:" deste arquivo: muda num lugar só.
           PW=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
-          test "$PW" = "1.64.1" \
-            || (echo "Playwright $PW no package-lock: atualize a imagem do container do job e2e" && exit 1)
+          IMAGE=$(sed -n 's|^ *container: mcr.microsoft.com/playwright:v\([0-9.]*\)-noble.*|\1|p' ../.github/workflows/ci.yml)
+          test -n "$IMAGE" && test "$PW" = "$IMAGE" \
+            || (echo "Playwright $PW no package-lock e $IMAGE na imagem: atualize a imagem do container do job e2e" && exit 1)
       - name: Gera o .jar do back-end (sem os testes)
         working-directory: backend
         run: ./mvnw -B -Dmaven.test.skip=true package
