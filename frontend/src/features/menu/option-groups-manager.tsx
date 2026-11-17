@@ -174,8 +174,11 @@ export function OptionGroupsManager() {
         onOpenChange={(open) => !open && setEditing(null)}
         group={editing === "new" || editing === null ? undefined : editing}
         onSave={async (body) => {
-          await (editing && editing !== "new" ? updateOptionGroup(editing.id, body) : createOptionGroup(body));
+          const saved = await (editing && editing !== "new"
+            ? updateOptionGroup(editing.id, body)
+            : createOptionGroup(body));
           await refresh();
+          return saved;
         }}
       />
       <Dialog open={media !== null} onOpenChange={(open) => !open && setMedia(null)}>

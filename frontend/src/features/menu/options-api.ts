@@ -9,6 +9,9 @@ export type OptionPricing = OptionGroup["pricing"];
 export type ProductOptions = Schemas["ProductOptions"];
 export type ProductOptionsRequest = Schemas["ProductOptionsRequest"];
 export type ProductVariant = Schemas["ProductVariant"];
+export type OptionGroupPrices = Schemas["OptionGroupPrices"];
+export type OptionGroupPrice = Schemas["OptionGroupPrice"];
+export type OptionGroupPriceColumn = Schemas["OptionGroupPriceColumn"];
 
 const t = messages.menu.errors;
 
@@ -78,6 +81,25 @@ export async function setVariantAvailability(id: string, available: boolean): Pr
   const { data, error, response } = await api.PATCH("/api/v1/product-variants/{id}/availability", {
     params: { path: { id } },
     body: { available },
+  });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+// A grade de preços do grupo (complemento da ADR 0010): o preço de cada opção em cada tamanho dos
+// produtos que usam o grupo.
+
+export async function fetchGroupPrices(id: string): Promise<OptionGroupPrices> {
+  const { data, error, response } = await api.GET("/api/v1/option-groups/{id}/prices", { params: { path: { id } } });
+  if (data) return data;
+  throw failure(response, error);
+}
+
+/** Troca a grade inteira: o que não vier fica em branco (vale o preço da opção). */
+export async function saveGroupPrices(id: string, prices: OptionGroupPrice[]): Promise<OptionGroupPrices> {
+  const { data, error, response } = await api.PUT("/api/v1/option-groups/{id}/prices", {
+    params: { path: { id } },
+    body: { prices },
   });
   if (data) return data;
   throw failure(response, error);

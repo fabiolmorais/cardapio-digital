@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { ToggleRow } from "@/components/toggle-row";
@@ -11,7 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { centsToInput, parseCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
-import type { OptionGroup, OptionGroupRequest, OptionPricing } from "./options-api";
+import {
+  fetchGroupPrices,
+  saveGroupPrices,
+  type OptionGroup,
+  type OptionGroupPrice,
+  type OptionGroupPriceColumn,
+  type OptionGroupPrices,
+  type OptionGroupRequest,
+  type OptionPricing,
+} from "./options-api";
 
 const t = messages.options.form;
 const TEMPLATES = messages.options.templates;
@@ -20,7 +29,26 @@ const MAX_CHOICES = 20;
 const MAX_PARTS = 4;
 const BLANK = "blank";
 
-type ItemDraft = { key: string; id?: string; name: string; description: string; price: string; available: boolean };
+type ItemDraft = {
+  key: string;
+  id?: string;
+  name: string;
+  description: string;
+  price: string;
+  available: boolean;
+  /** O preço em cada coluna da grade (um tamanho de um produto): chave de {@link columnKey}; em branco, o padrão. */
+  prices: Record<string, string>;
+};
+
+/** A chave de uma coluna da grade: o produto e o tamanho (ou o produto todo, sem tamanhos). */
+const columnKey = (c: { productId: string; variantId?: string | null }) => `${c.productId}|${c.variantId ?? "produto"}`;
+
+/** O nome da coluna: só o tamanho, quando todas são do mesmo produto; senão, o produto e o tamanho. */
+function columnLabel(column: OptionGroupPriceColumn, columns: OptionGroupPriceColumn[]) {
+  const oneProduct = columns.every((c) => c.productId === column.productId);
+  if (!column.variantName) return column.productName;
+  return oneProduct ? column.variantName : `${column.productName} · ${column.variantName}`;
+}
 
 let keys = 0;
 const newKey = () => `item-${++keys}`;
@@ -38,7 +66,7 @@ type Draft = {
   items: ItemDraft[];
 };
 
-function fromGroup(group?: OptionGroup): Draft {
+function fromGroup(group?: OptionGroup, grid?: OptionGroupPrices): Draft {
   if (!group) {
     return {
       title: "",
@@ -49,7 +77,7 @@ function fromGroup(group?: OptionGroup): Draft {
       splits: false,
       pricing: "SUM",
       free: 0,
-      items: [{ key: newKey(), name: "", description: "", price: "", available: true }],
+      items: [{ key: newKey(), name: "", description: "", price: "", available: true, prices: {} }],
     };
   }
   return {
@@ -68,6 +96,9 @@ function fromGroup(group?: OptionGroup): Draft {
       description: i.description,
       price: i.priceCents === 0 ? "" : centsToInput(i.priceCents),
       available: i.available,
+      prices: Object.fromEntries(
+        (grid?.prices ?? []).filter((p) => p.optionId === i.id).map((p) => [columnKey(p), centsToInput(p.priceCents)]),
+      ),
     })),
   };
 }
@@ -82,7 +113,8 @@ export function OptionGroupDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   group?: OptionGroup;
-  onSave: (body: OptionGroupRequest) => Promise<unknown>;
+  /** Salva o grupo e devolve como ficou (as opções novas ganham id, para a grade de preços). */
+  onSave: (body: OptionGroupRequest) => Promise<OptionGroup>;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,28 +123,77 @@ export function OptionGroupDialog({
           <DialogTitle className="text-lg">{group ? t.editTitle(group.name) : t.newTitle}</DialogTitle>
         </DialogHeader>
         {/* A chave recomeça o formulário a cada abertura. */}
-        {open && (
-          <GroupForm key={group?.id ?? "new"} group={group} onSave={onSave} onDone={() => onOpenChange(false)} />
-        )}
+        {open && <GroupLoader group={group} onSave={onSave} onDone={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-function GroupForm({
+/** Busca a grade de preços do grupo (o grupo novo ainda não tem) antes de abrir o formulário. */
+function GroupLoader({
   group,
   onSave,
   onDone,
 }: {
   group?: OptionGroup;
-  onSave: (body: OptionGroupRequest) => Promise<unknown>;
+  onSave: (body: OptionGroupRequest) => Promise<OptionGroup>;
+  onDone: () => void;
+}) {
+  const grid = useQuery({
+    queryKey: ["group-prices", group?.id],
+    queryFn: () => fetchGroupPrices(group!.id),
+    enabled: group !== undefined,
+    staleTime: 0,
+  });
+  if (group && grid.isPending) return <p className="text-sm text-muted-foreground">{t.loadingPrices}</p>;
+  if (group && grid.isError)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {grid.error.message}
+      </p>
+    );
+  return <GroupForm key={group?.id ?? "new"} group={group} grid={grid.data} onSave={onSave} onDone={onDone} />;
+}
+
+function GroupForm({
+  group,
+  grid,
+  onSave,
+  onDone,
+}: {
+  group?: OptionGroup;
+  grid?: OptionGroupPrices;
+  onSave: (body: OptionGroupRequest) => Promise<OptionGroup>;
   onDone: () => void;
 }) {
   const id = useId();
-  const [draft, setDraft] = useState<Draft>(() => fromGroup(group));
+  const queryClient = useQueryClient();
+  const columns = grid?.columns ?? [];
+  const [draft, setDraft] = useState<Draft>(() => fromGroup(group, grid));
   const [template, setTemplate] = useState(BLANK);
   const [invalid, setInvalid] = useState(false);
-  const mutation = useMutation({ mutationFn: onSave, onSuccess: onDone });
+  const mutation = useMutation({
+    mutationFn: async ({ body, prices }: { body: OptionGroupRequest; prices: Record<string, number>[] }) => {
+      const saved = await onSave(body);
+      // As opções voltam na ordem do formulário: as novas ganham o id aqui, e só então entram na grade.
+      if (columns.length > 0) {
+        const rows: OptionGroupPrice[] = [];
+        prices.forEach((byColumn, index) => {
+          const optionId = saved.items[index]?.id;
+          if (!optionId) return;
+          for (const column of columns) {
+            const cents = byColumn[columnKey(column)];
+            if (cents !== undefined)
+              rows.push({ productId: column.productId, variantId: column.variantId, optionId, priceCents: cents });
+          }
+        });
+        await saveGroupPrices(saved.id, rows);
+        await queryClient.invalidateQueries({ queryKey: ["group-prices", saved.id] });
+      }
+      return saved;
+    },
+    onSuccess: onDone,
+  });
   const set = (patch: Partial<Draft>) => setDraft((d) => normalize({ ...d, ...patch }));
 
   function applyTemplate(key: string) {
@@ -129,7 +210,14 @@ function GroupForm({
         splits: tpl.splits,
         pricing: tpl.pricing,
         free: tpl.free,
-        items: tpl.items.map((name) => ({ key: newKey(), name, description: "", price: "", available: true })),
+        items: tpl.items.map((name) => ({
+          key: newKey(),
+          name,
+          description: "",
+          price: "",
+          available: true,
+          prices: {},
+        })),
       }),
     );
   }
@@ -150,27 +238,39 @@ function GroupForm({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const prices = draft.items.map((it) => parseCents(it.price) ?? 0);
-    if (prices.some((p) => Number.isNaN(p))) {
+    // A grade: só o que foi preenchido, em centavos (em branco vale o preço padrão da opção).
+    const grid = draft.items.map((it) => {
+      const row: Record<string, number> = {};
+      for (const c of columns) {
+        const cents = parseCents(it.prices[columnKey(c)] ?? "");
+        if (cents !== null) row[columnKey(c)] = cents;
+      }
+      return row;
+    });
+    if (prices.some((p) => Number.isNaN(p)) || grid.some((row) => Object.values(row).some((c) => Number.isNaN(c)))) {
       setInvalid(true);
       return;
     }
     setInvalid(false);
     mutation.mutate({
-      name: draft.name.trim() || undefined,
-      title: draft.title.trim(),
-      minChoices: draft.min,
-      maxChoices: draft.max,
-      maxPerOption: draft.maxPerOption,
-      splitsItem: draft.splits,
-      pricing: draft.pricing,
-      freeQuantity: draft.pricing === "SUM" ? draft.free : 0,
-      items: draft.items.map((it, i) => ({
-        ...(it.id ? { id: it.id } : {}),
-        name: it.name.trim(),
-        ...(it.description.trim() ? { description: it.description.trim() } : {}),
-        priceCents: prices[i],
-        available: it.available,
-      })),
+      prices: grid,
+      body: {
+        name: draft.name.trim() || undefined,
+        title: draft.title.trim(),
+        minChoices: draft.min,
+        maxChoices: draft.max,
+        maxPerOption: draft.maxPerOption,
+        splitsItem: draft.splits,
+        pricing: draft.pricing,
+        freeQuantity: draft.pricing === "SUM" ? draft.free : 0,
+        items: draft.items.map((it, i) => ({
+          ...(it.id ? { id: it.id } : {}),
+          name: it.name.trim(),
+          ...(it.description.trim() ? { description: it.description.trim() } : {}),
+          priceCents: prices[i],
+          available: it.available,
+        })),
+      },
     });
   }
 
@@ -323,6 +423,7 @@ function GroupForm({
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 font-semibold">{t.items}</legend>
         <p className="-mt-1 text-sm text-muted-foreground">{t.itemsHint}</p>
+        <p className="-mt-1 text-sm text-muted-foreground">{columns.length > 0 ? t.gridHint : t.noGrid}</p>
         <ol className="flex flex-col gap-2">
           {draft.items.map((item, index) => {
             const label = item.name || `${index + 1}`;
@@ -401,6 +502,25 @@ function GroupForm({
                   placeholder={t.itemDescriptionPlaceholder}
                   className="h-11 w-full rounded-xl px-3 text-sm"
                 />
+                {columns.length > 0 && (
+                  <div className="flex w-full flex-wrap gap-2">
+                    {columns.map((column) => {
+                      const k = columnKey(column);
+                      const name = columnLabel(column, columns);
+                      return (
+                        <label key={k} className="flex w-28 flex-col gap-1 text-xs text-muted-foreground">
+                          <span className="truncate">{name}</span>
+                          <PriceInput
+                            label={t.itemPriceIn(label, name)}
+                            value={item.prices[k] ?? ""}
+                            placeholder={item.price || "0,00"}
+                            onChange={(value) => setItem(index, { prices: { ...item.prices, [k]: value } })}
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -413,7 +533,7 @@ function GroupForm({
           onClick={() =>
             setDraft((d) => ({
               ...d,
-              items: [...d.items, { key: newKey(), name: "", description: "", price: "", available: true }],
+              items: [...d.items, { key: newKey(), name: "", description: "", price: "", available: true, prices: {} }],
             }))
           }
         >
@@ -433,6 +553,44 @@ function GroupForm({
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+/** Um campo de preço curto da grade, que se arruma ao sair ("27,9" vira "27,90"). */
+function PriceInput({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[11px] font-semibold text-muted-foreground"
+      >
+        R$
+      </span>
+      <Input
+        aria-label={label}
+        inputMode="decimal"
+        autoComplete="off"
+        value={value}
+        placeholder={placeholder}
+        aria-invalid={Number.isNaN(parseCents(value)) || undefined}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={() => {
+          const cents = parseCents(value);
+          if (cents !== null && !Number.isNaN(cents)) onChange(centsToInput(cents));
+        }}
+        className="h-10 rounded-xl pr-2 pl-8 font-mono text-sm"
+      />
+    </div>
   );
 }
 

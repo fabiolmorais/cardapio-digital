@@ -13,10 +13,8 @@ import { cn } from "cn";
 import { rulesSummary } from "./option-groups-manager";
 import type { OptionGroup } from "./options-api";
 import {
-  IN_PRODUCT,
   isEmptyDraft,
   newVariantKey,
-  priceKey,
   type GroupDraft,
   type OptionsDraft,
   type VariantDraft,
@@ -43,11 +41,6 @@ export function ProductOptionsEditor({
   const byId = new Map(library.map((g) => [g.id, g]));
   const linked = draft.groups.filter((g) => byId.has(g.groupId));
   const available = library.filter((g) => !draft.groups.some((l) => l.groupId === g.id));
-  // As colunas da grade de preço: uma por tamanho; sem tamanhos, uma só, a deste produto.
-  const columns =
-    draft.variants.length > 0
-      ? draft.variants.map((v) => ({ key: v.key, name: v.name || "?" }))
-      : [{ key: IN_PRODUCT, name: t.inProduct }];
 
   function setVariant(index: number, patch: Partial<VariantDraft>) {
     onChange({ ...draft, variants: draft.variants.map((v, i) => (i === index ? { ...v, ...patch } : v)) });
@@ -282,59 +275,15 @@ export function ProductOptionsEditor({
               )}
 
               {group.items.some((i) => i.priceCents > 0) && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-semibold">
-                    {draft.variants.length > 0 ? t.prices : t.productPrices}{" "}
-                    <span className="font-normal text-muted-foreground">· {t.pricesHint}</span>
-                  </span>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th scope="col" className="sr-only">
-                            {messages.options.form.items}
-                          </th>
-                          {columns.map((c) => (
-                            <th
-                              key={c.key}
-                              scope="col"
-                              className="px-1 pb-1 text-left font-medium text-muted-foreground"
-                            >
-                              {c.name}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {group.items.map((item) => (
-                          <tr key={item.id}>
-                            <th scope="row" className="pr-2 text-left font-normal">
-                              {item.name}
-                            </th>
-                            {columns.map((c) => {
-                              const key = priceKey(item.id, c.key);
-                              return (
-                                <td key={c.key} className="p-1">
-                                  <Money
-                                    compact
-                                    label={
-                                      c.key === IN_PRODUCT ? t.priceInProduct(item.name) : t.priceFor(item.name, c.name)
-                                    }
-                                    placeholder={centsToInput(item.priceCents)}
-                                    value={draft.prices[key] ?? ""}
-                                    onChange={(price) =>
-                                      onChange({ ...draft, prices: { ...draft.prices, [key]: price } })
-                                    }
-                                  />
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t.pricesInGroup}{" "}
+                  <Link
+                    href="/admin/cardapio/opcoes"
+                    className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
+                  >
+                    {t.pricesInGroupLink}
+                  </Link>
+                </p>
               )}
             </div>
           );
