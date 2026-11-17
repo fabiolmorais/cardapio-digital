@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-fc5q-39xc-vjpf",
+    "pacote": "picomatch",
+    "motivo": "ReDoS com padrões de glob montados pelo atacante. Ainda não há versão corrigida (afeta até a 4.0.7, a mais recente). No OhChefe, o picomatch só roda em ferramentas de build e de linha de comando (o plugin do Sentry no build, a CLI do shadcn, o eslint), com padrões fixos do próprio código: ninguém de fora consegue mandar um glob.",
+    "revisarAte": "2026-12-17"
+  }
+]
