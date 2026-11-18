@@ -535,7 +535,7 @@ export const messages = {
       phone: "Celular da mesa",
       ago: (minutes: number) => (minutes < 1 ? "agora" : `há ${minutes} min`),
       addLine: (total: string | null) => `Adicionar${total ? ` · ${total}` : ""}`,
-      missing: (what: string) => `Escolha: ${what}`,
+      missing: (what: string) => `Falta: ${what}`,
       size: "o tamanho",
     },
     floorLive: {
