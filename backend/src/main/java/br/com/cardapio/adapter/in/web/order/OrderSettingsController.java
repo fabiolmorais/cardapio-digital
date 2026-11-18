@@ -49,6 +49,6 @@ class OrderSettingsController {
     OrderSettingsResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderSettingsRequest body) {
         return OrderSettingsResponse.from(updateSettings.update(new UpdateOrderSettingsCommand(
                 AuthenticatedUser.from(jwt).establishmentId(), body.orderingEnabled(), body.approvalRequired(),
-                body.maxAmountCents() == null ? null : Money.ofCents(body.maxAmountCents()), body.maxItems())));
+                body.staffOrderingEnabled(), body.maxAmountCents() == null ? null : Money.ofCents(body.maxAmountCents()), body.maxItems())));
     }
 }

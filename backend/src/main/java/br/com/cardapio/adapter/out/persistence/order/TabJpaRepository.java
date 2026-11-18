@@ -20,6 +20,14 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
             """)
     Optional<TabJpaEntity> findOpen(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId);
 
+    /** Trava a linha da comanda aberta até o fim da transação; vazio se ela já foi fechada. */
+    @Query(nativeQuery = true, value = """
+            SELECT id FROM tab
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
+               FOR UPDATE
+            """)
+    Optional<UUID> lockOpen(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
+
     /** Abre a comanda, a menos que o índice "uma aberta por mesa" já tenha uma (aí não grava: 0 linhas). */
     @Modifying
     @Query(nativeQuery = true, value = """

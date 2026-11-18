@@ -391,6 +391,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tables/{id}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lança um pedido na comanda da mesa: vai direto para a cozinha */
+        post: operations["placeStaffOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signup": {
         parameters: {
             query?: never;
@@ -1411,6 +1428,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tables/{id}/staff-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A situação da mesa para lançar um pedido: se está liberado, o que já foi pedido e o rodízio */
+        get: operations["getStaffOrderSheet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tables/{id}/display": {
         parameters: {
             query?: never;
@@ -1437,6 +1471,23 @@ export interface paths {
         };
         /** A assinatura deste restaurante, com o uso dos limites */
         get: operations["getSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff-menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O cardápio do restaurante para lançar pedidos: preços e opções, sem fotos e sem vídeos */
+        get: operations["getStaffMenu"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2559,6 +2610,8 @@ export interface components {
             orderingEnabled: boolean;
             /** @description Todo pedido espera o garçom confirmar */
             approvalRequired: boolean;
+            /** @description A equipe do salão pode lançar pedidos nas mesas; vazio mantém como está */
+            staffOrderingEnabled?: boolean;
             /**
              * Format: int64
              * @description Acima deste valor (em centavos), o pedido espera o garçom; vazio = sem limite
@@ -2575,6 +2628,7 @@ export interface components {
         OrderSettings: {
             orderingEnabled: boolean;
             approvalRequired: boolean;
+            staffOrderingEnabled: boolean;
             /** Format: int64 */
             maxAmountCents?: number;
             /** Format: int32 */
@@ -2860,6 +2914,12 @@ export interface components {
             status: "PENDING_APPROVAL" | "SENT" | "REJECTED";
             /** Format: date-time */
             createdAt: string;
+            /** @description Foi a equipe que lançou (senão, um celular da mesa) */
+            byStaff: boolean;
+            /** @description Quem da equipe lançou */
+            placedByName?: string;
+            /** @description Quem lançou viu o aviso de item repetido e confirmou */
+            duplicateConfirmed: boolean;
             items: components["schemas"]["TableOrderItem"][];
         };
         TabPayment: {
@@ -2927,6 +2987,82 @@ export interface components {
             /** Format: uuid */
             rodizioId: string;
             guests: components["schemas"]["RodizioGuestCount"][];
+        };
+        /** @description Uma opção escolhida e quantas vezes */
+        PlaceOrderChoice: {
+            /** Format: uuid */
+            optionId: string;
+            /**
+             * Format: int32
+             * @example 1
+             */
+            quantity: number;
+        };
+        PlaceOrderLine: {
+            /** Format: uuid */
+            productId: string;
+            /**
+             * Format: int32
+             * @example 2
+             */
+            quantity: number;
+            /**
+             * @description Observação do item
+             * @example sem cebolinha
+             */
+            note?: string;
+            /**
+             * Format: uuid
+             * @description O tamanho escolhido; vazio se o produto não tem tamanhos
+             */
+            variantId?: string;
+            /** @description As opções escolhidas; vazio se o produto não tem opções */
+            options?: components["schemas"]["PlaceOrderChoice"][];
+        };
+        PlaceStaffOrderRequest: {
+            /**
+             * Format: uuid
+             * @description Gerado pela tela a cada envio: repetir não cria outro pedido
+             */
+            clientRequestId: string;
+            items: components["schemas"]["PlaceOrderLine"][];
+            /** @description Uma rodada do rodízio da comanda */
+            round: boolean;
+            /** @description Os produtos do aviso que quem lança confirmou que são outro pedido */
+            confirmedDuplicates?: string[];
+        };
+        /** @description Um item que a mesa acabou de pedir ou que ainda não chegou */
+        AlreadyOrderedItem: {
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            choices: components["schemas"]["ItemChoices"];
+            /** @enum {string} */
+            status: "PENDING" | "PREPARING" | "READY" | "DELIVERED" | "CANCELED";
+            /** Format: date-time */
+            orderedAt: string;
+            /** @description Foi a equipe que lançou (senão, um celular da mesa) */
+            byStaff: boolean;
+            /** @description Quem da equipe lançou */
+            placedByName?: string;
+        };
+        /** @description O envio parou: a mesa já pediu estes itens */
+        DuplicateOrderProblem: {
+            detail: string;
+            duplicates: components["schemas"]["AlreadyOrderedItem"][];
+        };
+        StaffOrder: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description O número do pedido no dia
+             */
+            number: number;
+            /** Format: uuid */
+            tabId: string;
         };
         /** @description Cadastro self-service do restaurante */
         SignupRequest: {
@@ -3028,37 +3164,6 @@ export interface components {
              */
             expiresAt: string;
         };
-        /** @description Uma opção escolhida e quantas vezes */
-        PlaceOrderChoice: {
-            /** Format: uuid */
-            optionId: string;
-            /**
-             * Format: int32
-             * @example 1
-             */
-            quantity: number;
-        };
-        PlaceOrderLine: {
-            /** Format: uuid */
-            productId: string;
-            /**
-             * Format: int32
-             * @example 2
-             */
-            quantity: number;
-            /**
-             * @description Observação do item
-             * @example sem cebolinha
-             */
-            note?: string;
-            /**
-             * Format: uuid
-             * @description O tamanho escolhido; vazio se o produto não tem tamanhos
-             */
-            variantId?: string;
-            /** @description As opções escolhidas; vazio se o produto não tem opções */
-            options?: components["schemas"]["PlaceOrderChoice"][];
-        };
         PlaceOrderRequest: {
             items: components["schemas"]["PlaceOrderLine"][];
         };
@@ -3078,9 +3183,11 @@ export interface components {
             mine: boolean;
             /**
              * Format: int32
-             * @description De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido
+             * @description De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido; 0 se foi o garçom
              */
             phone: number;
+            /** @description Foi o garçom que lançou (o celular não cancela estes itens) */
+            byStaff: boolean;
             items: components["schemas"]["TableOrderItem"][];
         };
         RodizioJoin: {
@@ -3646,6 +3753,132 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        StaffOrderRodizio: {
+            name: string;
+            /** @description Os produtos que podem entrar nas rodadas */
+            productIds: string[];
+        };
+        StaffOrderSheet: {
+            /** Format: uuid */
+            tableId: string;
+            tableLabel: string;
+            /** @description O restaurante liberou o lançamento pela equipe */
+            orderingEnabled: boolean;
+            /** @description O que conta para a trava de pedido duplicado */
+            alreadyOrdered: components["schemas"]["AlreadyOrderedItem"][];
+            /** @description O rodízio ativo na comanda; ausente se não houver */
+            rodizio?: components["schemas"]["StaffOrderRodizio"];
+        };
+        PublicMenu: {
+            categories: components["schemas"]["PublicMenuCategory"][];
+            /** @description Os mais pedidos dos últimos 30 dias (ids, do mais pedido); vazio enquanto houver menos de 3 */
+            mostOrdered: string[];
+            /** @description Os grupos de opções usados no cardápio, uma vez cada (os produtos apontam para eles pelo id) */
+            optionGroups: components["schemas"]["OptionGroup"][];
+            /** @description A galeria de cada opção com foto ou vídeo (o sabor da pizza); a opção sem mídia não aparece */
+            optionMedia: components["schemas"]["PublicOptionGallery"][];
+        };
+        PublicMenuCategory: {
+            /** Format: uuid */
+            id: string;
+            /** @example Entradas */
+            name: string;
+            products: components["schemas"]["PublicMenuItem"][];
+        };
+        /** @description Um grupo de opções de um produto */
+        PublicMenuGroupLink: {
+            /**
+             * Format: uuid
+             * @description O id em optionGroups
+             */
+            groupId: string;
+            /** @description Mínimo e máximo em cada tamanho (quando mudam) */
+            limits: components["schemas"]["OptionGroupLimit"][];
+        };
+        /** @description Preços em centavos */
+        PublicMenuItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Vazia quando o restaurante não escreveu */
+            description: string;
+            /**
+             * Format: int64
+             * @example 1990
+             */
+            priceCents: number;
+            /**
+             * Format: int64
+             * @description null quando não há promoção
+             * @example 1590
+             */
+            promoPriceCents?: number;
+            featured: boolean;
+            /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
+            available: boolean;
+            /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
+            aLaCarte: boolean;
+            /**
+             * Format: int32
+             * @description Quantas pessoas o prato serve; null quando não informado
+             * @example 2
+             */
+            serves?: number;
+            /** @description A capa (a primeira foto); null quando o produto não tem foto */
+            photo?: components["schemas"]["PublicMenuPhoto"];
+            /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
+            media: components["schemas"]["PublicMenuMedia"][];
+            /**
+             * Format: int64
+             * @description O "a partir de" quando o preço depende do tamanho ou de uma opção obrigatória; null no produto de sempre
+             * @example 4990
+             */
+            fromPriceCents?: number;
+            /** @description Os tamanhos; vazio sem tamanhos */
+            variants: components["schemas"]["ProductVariant"][];
+            /** @description Os grupos de opções, na ordem em que o cliente vê */
+            optionGroups: components["schemas"]["PublicMenuGroupLink"][];
+            /** @description Preços de opções num tamanho (quando mudam) */
+            optionPrices: components["schemas"]["OptionPrice"][];
+        };
+        /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
+        PublicMenuMedia: {
+            /** @enum {string} */
+            type: "IMAGE" | "VIDEO";
+            /**
+             * Format: int32
+             * @description Largura, para a tela reservar o espaço
+             */
+            width: number;
+            /** Format: int32 */
+            height: number;
+            /** @description Os tamanhos da foto; null no vídeo */
+            image?: components["schemas"]["PublicMenuPhoto"];
+            /** @description O vídeo; null na foto */
+            video?: components["schemas"]["PublicMenuVideo"];
+        };
+        PublicMenuPhoto: {
+            /** @description Quadrada, 240 px */
+            thumb: string;
+            /** @description Até 720 px */
+            medium: string;
+            /** @description Até 1440 px */
+            large: string;
+        };
+        PublicMenuVideo: {
+            /** @description O MP4 para tocar */
+            url: string;
+            /** @description A capa do vídeo, se o serviço gera uma */
+            poster?: string;
+            /** Format: int32 */
+            durationSeconds: number;
+        };
+        /** @description As fotos e os vídeos de uma opção, em ordem (a primeira foto é a capa) */
+        PublicOptionGallery: {
+            /** Format: uuid */
+            optionId: string;
+            media: components["schemas"]["PublicMenuMedia"][];
+        };
         PageResponseSector: {
             content: components["schemas"]["Sector"][];
             /** Format: int32 */
@@ -3797,116 +4030,6 @@ export interface components {
              * @enum {string}
              */
             rodizioParticipation?: "NONE" | "REQUESTED" | "JOINED";
-        };
-        PublicMenu: {
-            categories: components["schemas"]["PublicMenuCategory"][];
-            /** @description Os mais pedidos dos últimos 30 dias (ids, do mais pedido); vazio enquanto houver menos de 3 */
-            mostOrdered: string[];
-            /** @description Os grupos de opções usados no cardápio, uma vez cada (os produtos apontam para eles pelo id) */
-            optionGroups: components["schemas"]["OptionGroup"][];
-            /** @description A galeria de cada opção com foto ou vídeo (o sabor da pizza); a opção sem mídia não aparece */
-            optionMedia: components["schemas"]["PublicOptionGallery"][];
-        };
-        PublicMenuCategory: {
-            /** Format: uuid */
-            id: string;
-            /** @example Entradas */
-            name: string;
-            products: components["schemas"]["PublicMenuItem"][];
-        };
-        /** @description Um grupo de opções de um produto */
-        PublicMenuGroupLink: {
-            /**
-             * Format: uuid
-             * @description O id em optionGroups
-             */
-            groupId: string;
-            /** @description Mínimo e máximo em cada tamanho (quando mudam) */
-            limits: components["schemas"]["OptionGroupLimit"][];
-        };
-        /** @description Preços em centavos */
-        PublicMenuItem: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @description Vazia quando o restaurante não escreveu */
-            description: string;
-            /**
-             * Format: int64
-             * @example 1990
-             */
-            priceCents: number;
-            /**
-             * Format: int64
-             * @description null quando não há promoção
-             * @example 1590
-             */
-            promoPriceCents?: number;
-            featured: boolean;
-            /** @description false: "Esgotado hoje" (aparece, mas não pode ser pedido) */
-            available: boolean;
-            /** @description false: só do rodízio (só na aba Rodízio, sem preço) */
-            aLaCarte: boolean;
-            /**
-             * Format: int32
-             * @description Quantas pessoas o prato serve; null quando não informado
-             * @example 2
-             */
-            serves?: number;
-            /** @description A capa (a primeira foto); null quando o produto não tem foto */
-            photo?: components["schemas"]["PublicMenuPhoto"];
-            /** @description A galeria pronta, em ordem: fotos e vídeos (o Reels) */
-            media: components["schemas"]["PublicMenuMedia"][];
-            /**
-             * Format: int64
-             * @description O "a partir de" quando o preço depende do tamanho ou de uma opção obrigatória; null no produto de sempre
-             * @example 4990
-             */
-            fromPriceCents?: number;
-            /** @description Os tamanhos; vazio sem tamanhos */
-            variants: components["schemas"]["ProductVariant"][];
-            /** @description Os grupos de opções, na ordem em que o cliente vê */
-            optionGroups: components["schemas"]["PublicMenuGroupLink"][];
-            /** @description Preços de opções num tamanho (quando mudam) */
-            optionPrices: components["schemas"]["OptionPrice"][];
-        };
-        /** @description Uma foto (image) ou um vídeo (video) da galeria do prato */
-        PublicMenuMedia: {
-            /** @enum {string} */
-            type: "IMAGE" | "VIDEO";
-            /**
-             * Format: int32
-             * @description Largura, para a tela reservar o espaço
-             */
-            width: number;
-            /** Format: int32 */
-            height: number;
-            /** @description Os tamanhos da foto; null no vídeo */
-            image?: components["schemas"]["PublicMenuPhoto"];
-            /** @description O vídeo; null na foto */
-            video?: components["schemas"]["PublicMenuVideo"];
-        };
-        PublicMenuPhoto: {
-            /** @description Quadrada, 240 px */
-            thumb: string;
-            /** @description Até 720 px */
-            medium: string;
-            /** @description Até 1440 px */
-            large: string;
-        };
-        PublicMenuVideo: {
-            /** @description O MP4 para tocar */
-            url: string;
-            /** @description A capa do vídeo, se o serviço gera uma */
-            poster?: string;
-            /** Format: int32 */
-            durationSeconds: number;
-        };
-        /** @description As fotos e os vídeos de uma opção, em ordem (a primeira foto é a capa) */
-        PublicOptionGallery: {
-            /** Format: uuid */
-            optionId: string;
-            media: components["schemas"]["PublicMenuMedia"][];
         };
         SseEmitter: {
             /** Format: int64 */
@@ -5610,6 +5733,50 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    placeStaffOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceStaffOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Pedido lançado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrder"];
+                };
+            };
+            /** @description Não é uma mesa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesa já pediu estes itens (a lista vem em duplicates), o lançamento está desligado, ou um item esgotou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DuplicateOrderProblem"];
                 };
             };
         };
@@ -8542,6 +8709,37 @@ export interface operations {
             };
         };
     };
+    getStaffOrderSheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A situação da mesa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrderSheet"];
+                };
+            };
+            /** @description Não é uma mesa deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     downloadTableDisplay: {
         parameters: {
             query?: {
@@ -8594,6 +8792,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Subscription"];
+                };
+            };
+        };
+    };
+    getStaffMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O cardápio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicMenu"];
                 };
             };
         };

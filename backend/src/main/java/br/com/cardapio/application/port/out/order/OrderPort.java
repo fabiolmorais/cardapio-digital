@@ -15,8 +15,10 @@ import br.com.cardapio.domain.tablesession.model.TableSessionId;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 public interface OrderPort {
 
@@ -36,6 +38,12 @@ public interface OrderPort {
     List<OrderWithItems> findByTab(EstablishmentId establishmentId, TabId tabId);
 
     Optional<Order> findOrder(EstablishmentId establishmentId, OrderId id);
+
+    /** O pedido já criado por este envio da equipe (a repetição por falha de rede). */
+    Optional<Order> findByClientRequest(EstablishmentId establishmentId, UUID clientRequestId);
+
+    /** O nome de cada pessoa da equipe deste restaurante, numa consulta só. */
+    Map<UserId, String> findStaffNames(EstablishmentId establishmentId, Set<UserId> ids);
 
     Optional<OrderItem> findItem(EstablishmentId establishmentId, OrderItemId id);
 

@@ -47,7 +47,10 @@ public class CancelOrderItemService implements CancelOrderItemUseCase {
         if (!order.tableId().equals(visit.table().id())) {
             throw new OrderItemNotFoundException();
         }
-        if (!order.sessionId().equals(visit.session().id())) {
+        if (order.byStaff()) {
+            throw new OrderItemStateException("Este item foi lançado pelo garçom. Para cancelar, fale com ele.");
+        }
+        if (!order.placedBy(visit.session().id())) {
             throw new OrderItemStateException("Só quem pediu pode cancelar este item.");
         }
         OrderItem canceled = item.cancelByCustomer(now);

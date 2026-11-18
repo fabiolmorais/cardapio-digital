@@ -54,6 +54,11 @@ record StaffTabResponse(
             @Schema(requiredMode = REQUIRED) int number,
             @Schema(requiredMode = REQUIRED) OrderStatus status,
             @Schema(requiredMode = REQUIRED) Instant createdAt,
+            @Schema(requiredMode = REQUIRED, description = "Foi a equipe que lançou (senão, um celular da mesa)")
+            boolean byStaff,
+            @Schema(description = "Quem da equipe lançou") String placedByName,
+            @Schema(requiredMode = REQUIRED, description = "Quem lançou viu o aviso de item repetido e confirmou")
+            boolean duplicateConfirmed,
             @Schema(requiredMode = REQUIRED) List<TableOrderResponse.Item> items
     ) {
     }
@@ -66,6 +71,7 @@ record StaffTabResponse(
                 t.paymentMethod(), t.billRequestedWith(),
                 t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.orders().stream().map(o -> new Order(o.id().value(), o.number(), o.status(), o.createdAt(),
+                        o.byStaff(), o.placedByName(), o.duplicateConfirmed(),
                         o.items().stream().map(TableOrderResponse.Item::from).toList())).toList());
     }
 }

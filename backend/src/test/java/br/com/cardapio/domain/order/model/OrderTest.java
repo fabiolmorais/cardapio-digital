@@ -7,7 +7,9 @@ import br.com.cardapio.domain.order.exception.OrderStateException;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,5 +49,42 @@ class OrderTest {
         Order rejected = order(true).reject(carlos, NOW);
         assertThatThrownBy(() -> rejected.approve(carlos, NOW))
                 .isInstanceOf(OrderStateException.class).hasMessage("Este pedido já foi recusado");
+    }
+
+    private Order byStaff() {
+        return Order.placeByStaff(EstablishmentId.newId(), TabId.newId(), DiningTableId.newId(), carlos, 8,
+                UUID.randomUUID(), false, NOW);
+    }
+
+    @Test
+    void theStaffOrderGoesStraightToTheKitchen() {
+        Order order = byStaff();
+
+        assertThat(order.status()).isEqualTo(OrderStatus.SENT);
+        assertThat(order.byStaff()).isTrue();
+        assertThat(order.origin()).isEqualTo(new OrderOrigin.Staff(carlos));
+        assertThat(order.placedBy(TableSessionId.newId())).isFalse();
+    }
+
+    @Test
+    void thePhoneOrderBelongsToWhoSentIt() {
+        TableSessionId phone = TableSessionId.newId();
+        Order order = Order.place(EstablishmentId.newId(), TabId.newId(), DiningTableId.newId(), phone, 1, false, NOW);
+
+        assertThat(order.byStaff()).isFalse();
+        assertThat(order.placedBy(phone)).isTrue();
+        assertThat(order.placedBy(TableSessionId.newId())).isFalse();
+    }
+
+    @Test
+    void aPhoneOrderFromBeforeTheVisitStaysHidden() {
+        assertThat(order(false).belongsToVisit(NOW)).isTrue();
+        assertThat(order(false).belongsToVisit(NOW.plusSeconds(1))).isFalse();
+    }
+
+    @Test
+    void aStaffOrderUpToTwoHoursBeforeTheVisitIsPartOfIt() {
+        assertThat(byStaff().belongsToVisit(NOW.plus(Duration.ofHours(2)))).isTrue();
+        assertThat(byStaff().belongsToVisit(NOW.plus(Duration.ofHours(2)).plusSeconds(1))).isFalse();
     }
 }

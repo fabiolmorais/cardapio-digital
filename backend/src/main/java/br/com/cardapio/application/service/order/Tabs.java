@@ -3,6 +3,7 @@ package br.com.cardapio.application.service.order;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.exception.TabStateException;
 import br.com.cardapio.domain.order.model.Tab;
 
 import java.time.Instant;
@@ -11,6 +12,13 @@ import java.time.Instant;
 public final class Tabs {
 
     private Tabs() {
+    }
+
+    /** Trava a comanda até o fim da transação (ADR 0011); se ela acabou de fechar, o envio volta com o aviso. */
+    public static void lock(TabPort tabs, Tab tab) {
+        if (!tabs.lockOpen(tab.establishmentId(), tab.id())) {
+            throw new TabStateException("Esta comanda acabou de ser fechada. Tente de novo.");
+        }
     }
 
     /**

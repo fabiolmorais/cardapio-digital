@@ -228,6 +228,7 @@ export const tablePage = {
     byPhone: "Por celular",
     thisPhone: "Este celular",
     phone: (n: number) => `Celular ${n}`,
+    waiter: "Garçom",
     rodizioShare: (people: number) => `Rodízio · ${people} ${people === 1 ? "pessoa" : "pessoas"}`,
     loading: "Carregando os pedidos…",
     empty: "Nenhum pedido ainda nesta mesa.",

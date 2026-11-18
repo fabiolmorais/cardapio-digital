@@ -23,10 +23,12 @@ public class UpdateOrderSettingsService implements UpdateOrderSettingsUseCase {
     @Transactional
     public OrderSettings update(UpdateOrderSettingsCommand command) {
         Instant now = clock.instant();
-        OrderSettings updated = settings.find(command.establishmentId())
-                .orElseGet(() -> OrderSettings.defaults(command.establishmentId(), now))
-                .update(command.orderingEnabled(), command.approvalRequired(), command.maxAmount(),
-                        command.maxItems(), now);
+        OrderSettings current = settings.find(command.establishmentId())
+                .orElseGet(() -> OrderSettings.defaults(command.establishmentId(), now));
+        boolean staffOrdering = command.staffOrderingEnabled() != null
+                ? command.staffOrderingEnabled() : current.staffOrderingEnabled();
+        OrderSettings updated = current.update(command.orderingEnabled(), command.approvalRequired(), staffOrdering,
+                command.maxAmount(), command.maxItems(), now);
         settings.save(updated);
         return updated;
     }

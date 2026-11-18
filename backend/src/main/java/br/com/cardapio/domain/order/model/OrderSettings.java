@@ -12,6 +12,7 @@ import java.util.Objects;
  *
  * @param orderingEnabled  desligado, a mesa só chama o garçom e vê o cardápio
  * @param approvalRequired todo pedido espera o garçom confirmar antes de ir para a cozinha
+ * @param staffOrderingEnabled a equipe do salão pode lançar pedidos (ADR 0011); independe do pedido pelo celular
  * @param maxAmount        acima deste valor, o pedido espera o garçom; null = sem limite
  * @param maxItems         acima desta quantidade de itens (somando as quantidades), também; null = sem limite
  */
@@ -20,6 +21,7 @@ public record OrderSettings(
         EstablishmentId establishmentId,
         boolean orderingEnabled,
         boolean approvalRequired,
+        boolean staffOrderingEnabled,
         Money maxAmount,
         Integer maxItems,
         Instant updatedAt
@@ -43,14 +45,21 @@ public record OrderSettings(
     }
 
     public static OrderSettings defaults(EstablishmentId establishmentId, Instant now) {
-        return new OrderSettings(OrderSettingsId.newId(), establishmentId, true, false, DEFAULT_MAX_AMOUNT,
+        return new OrderSettings(OrderSettingsId.newId(), establishmentId, true, false, false, DEFAULT_MAX_AMOUNT,
                 DEFAULT_MAX_ITEMS, now);
     }
 
+    public OrderSettings update(boolean newOrderingEnabled, boolean newApprovalRequired,
+                                boolean newStaffOrderingEnabled, Money newMaxAmount, Integer newMaxItems,
+                                Instant now) {
+        return new OrderSettings(id, establishmentId, newOrderingEnabled, newApprovalRequired,
+                newStaffOrderingEnabled, newMaxAmount, newMaxItems, now);
+    }
+
+    /** Muda o pedido pelo celular e mantém o que vale para a equipe. */
     public OrderSettings update(boolean newOrderingEnabled, boolean newApprovalRequired, Money newMaxAmount,
                                 Integer newMaxItems, Instant now) {
-        return new OrderSettings(id, establishmentId, newOrderingEnabled, newApprovalRequired, newMaxAmount,
-                newMaxItems, now);
+        return update(newOrderingEnabled, newApprovalRequired, staffOrderingEnabled, newMaxAmount, newMaxItems, now);
     }
 
     /**

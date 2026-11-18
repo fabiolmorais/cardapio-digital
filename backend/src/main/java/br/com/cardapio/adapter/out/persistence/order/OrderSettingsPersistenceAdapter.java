@@ -26,7 +26,7 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
         establishmentFilter.enable(establishmentId);
         return settings.findByEstablishmentId(establishmentId.value()).map(e -> new OrderSettings(
                 new OrderSettingsId(e.getId()), new EstablishmentId(e.getEstablishmentId()), e.isOrderingEnabled(),
-                e.isApprovalRequired(), e.getMaxAmountCents() == null ? null : Money.ofCents(e.getMaxAmountCents()),
+                e.isApprovalRequired(), e.isStaffOrderingEnabled(), e.getMaxAmountCents() == null ? null : Money.ofCents(e.getMaxAmountCents()),
                 e.getMaxItems(), e.getUpdatedAt()));
     }
 
@@ -34,7 +34,7 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
     public void save(OrderSettings s) {
         establishmentFilter.enable(s.establishmentId());
         settings.save(new OrderSettingsJpaEntity(s.id().value(), s.establishmentId().value(), s.orderingEnabled(),
-                s.approvalRequired(), s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
+                s.approvalRequired(), s.staffOrderingEnabled(), s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
                 s.updatedAt()));
     }
 }

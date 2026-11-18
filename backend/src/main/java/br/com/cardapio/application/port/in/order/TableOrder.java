@@ -7,6 +7,7 @@ import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
+import br.com.cardapio.domain.order.model.OrderOrigin;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.tablesession.model.TableSessionId;
@@ -24,10 +25,11 @@ import java.util.function.Function;
  *
  * @param mine  foi este celular que mandou (só ele cancela os itens)
  * @param phone de qual celular da mesa é o pedido, sem dizer quem: 1 é sempre o celular que está
- *              olhando; os outros, 2, 3… na ordem do primeiro pedido de cada um
+ *              olhando; os outros, 2, 3… na ordem do primeiro pedido de cada um; 0 no pedido do garçom
+ * @param byStaff foi o garçom que lançou (o cliente não cancela esses itens pelo celular)
  */
 public record TableOrder(OrderId id, int number, OrderStatus status, Instant createdAt, boolean mine, int phone,
-                         List<Item> items) {
+                         boolean byStaff, List<Item> items) {
 
     public TableOrder {
         items = List.copyOf(items);
@@ -68,7 +70,9 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
                                   Function<TableSessionId, Integer> phones) {
         var order = found.order();
         return new TableOrder(order.id(), order.number(), order.status(), order.createdAt(),
-                order.sessionId().equals(viewer), phones.apply(order.sessionId()),
+                order.placedBy(viewer),
+                order.origin() instanceof OrderOrigin.Phone phone ? phones.apply(phone.sessionId()) : 0,
+                order.byStaff(),
                 found.items().stream().map(i -> Item.from(i, thumbs)).toList());
     }
 
@@ -82,7 +86,9 @@ public record TableOrder(OrderId id, int number, OrderStatus status, Instant cre
         Map<TableSessionId, Integer> numbers = new LinkedHashMap<>();
         numbers.put(viewer, 1);
         for (OrderWithItems o : orders) {
-            numbers.putIfAbsent(o.order().sessionId(), numbers.size() + 1);
+            if (o.order().origin() instanceof OrderOrigin.Phone phone) {
+                numbers.putIfAbsent(phone.sessionId(), numbers.size() + 1);
+            }
         }
         return numbers;
     }

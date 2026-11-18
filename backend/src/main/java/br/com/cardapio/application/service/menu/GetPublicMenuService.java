@@ -128,7 +128,7 @@ public class GetPublicMenuService implements GetPublicMenuUseCase {
     }
 
     /** O "a partir de", só quando o preço depende de escolha (tamanho ou opção obrigatória com preço). */
-    private static Long fromPrice(Product product, ProductOptions choices) {
+    static Long fromPrice(Product product, ProductOptions choices) {
         if (choices.isEmpty()) {
             return null;
         }

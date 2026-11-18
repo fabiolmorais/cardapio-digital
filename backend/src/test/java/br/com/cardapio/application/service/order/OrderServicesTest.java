@@ -183,7 +183,7 @@ class OrderServicesTest {
     @Test
     void theRestaurantCanTurnOrderingOff() {
         new UpdateOrderSettingsService(fakes, clock)
-                .update(new UpdateOrderSettingsCommand(sakura, false, false, null, null));
+                .update(new UpdateOrderSettingsCommand(sakura, false, false, false, null, null));
 
         assertThatThrownBy(() -> place("ana", line(guioza, 1))).isInstanceOf(OrderingDisabledException.class);
         assertThat(list("ana").orderingEnabled()).isFalse();

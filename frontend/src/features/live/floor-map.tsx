@@ -2,13 +2,14 @@
 
 import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useNow } from "@/features/calls/call-queue";
 import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
 import { clock } from "@/features/tabs/open-tabs";
+import { fetchStaffOrderSheet } from "@/features/staff-order/staff-order-api";
 import { fetchTab } from "@/features/tabs/tabs-api";
 import { formatCents } from "@/lib/format";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
@@ -167,6 +168,12 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
     enabled: table.tabId != null,
     retry: false,
   });
+  // Só aparece "Fazer pedido" se o restaurante liberou; a cozinha nem recebe esta resposta.
+  const staffOrder = useQuery({
+    queryKey: ["staff-order", table.id],
+    queryFn: () => fetchStaffOrderSheet(table.id),
+    retry: false,
+  });
   const [rodizio, setRodizio] = useState<RodizioTarget | null>(null);
 
   useEffect(
@@ -222,6 +229,12 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-5 px-5.5 py-4.5">
+        {staffOrder.data?.orderingEnabled && (
+          <Link href={`/painel/mesas/${table.id}/pedido`} className={cn(buttonVariants(), "h-11")}>
+            <Plus aria-hidden />
+            {messages.panel.staffOrder.open}
+          </Link>
+        )}
         <section className="flex flex-col gap-2">
           <h3 className="text-[11px] font-semibold tracking-[.4px] text-muted-foreground uppercase">{t.phonesTitle}</h3>
           <p className="rounded-xl bg-secondary px-3 py-2.5 text-[13px]">
