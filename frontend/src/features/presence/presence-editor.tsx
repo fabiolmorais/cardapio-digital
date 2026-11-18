@@ -83,6 +83,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
   const [pasted, setPasted] = useState("");
   const [ordering, setOrdering] = useState(orders.orderingEnabled);
   const [approval, setApproval] = useState(orders.approvalRequired);
+  const [staffOrdering, setStaffOrdering] = useState(orders.staffOrderingEnabled);
   const [maxAmount, setMaxAmount] = useState(orders.maxAmountCents == null ? "" : centsToInput(orders.maxAmountCents));
   const [maxItems, setMaxItems] = useState(orders.maxItems == null ? "" : String(orders.maxItems));
 
@@ -151,6 +152,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
       const savedOrders = await updateOrderSettings({
         orderingEnabled: ordering,
         approvalRequired: approval,
+        staffOrderingEnabled: staffOrdering,
         maxAmountCents: amount ?? undefined,
         maxItems: items ?? undefined,
       });
@@ -438,6 +440,15 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
               }}
               label={t.orders.approval}
               description={t.orders.approvalHint}
+            />
+            <Toggle
+              checked={staffOrdering}
+              onChange={(value) => {
+                changed();
+                setStaffOrdering(value);
+              }}
+              label={t.orders.staffOrdering}
+              description={t.orders.staffOrderingHint}
             />
             <div className="flex flex-col gap-1 pt-2">
               <h3 className="font-semibold">{t.orders.limits}</h3>

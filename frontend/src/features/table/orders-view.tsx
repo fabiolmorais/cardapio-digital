@@ -61,7 +61,9 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
       .reduce((acc, i) => acc + i.unitPriceCents * i.quantity, 0);
     byPhone.set(order.phone, (byPhone.get(order.phone) ?? 0) + sum);
   }
-  const phones = [...byPhone.entries()].sort(([a], [b]) => a - b);
+  // O que o garçom lançou (0) fica por último, depois dos celulares.
+  const phones = [...byPhone.entries()].sort(([a], [b]) => (a || Infinity) - (b || Infinity));
+  const phoneCount = phones.filter(([phone]) => phone > 0).length;
   const mineCents = byPhone.get(1) ?? 0;
 
   if (closed) return <TabClosed />;
@@ -180,7 +182,7 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
                 <span className="flex flex-col">
                   <span className="font-semibold">{t.partial}</span>
                   <span className="text-sm text-(--mesa-muted)">
-                    {phones.length > 1 ? t.phones(phones.length) : t.historyTotalHint}
+                    {phoneCount > 1 ? t.phones(phoneCount) : t.historyTotalHint}
                   </span>
                 </span>
                 <span className="text-2xl font-bold">{formatCents(data.totalCents)}</span>
@@ -190,7 +192,7 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
                   {phones.map(([phone, cents]) => (
                     <li key={phone} className="flex items-center justify-between gap-3">
                       <span className={phone === 1 ? "font-semibold" : "text-(--mesa-muted)"}>
-                        {phone === 1 ? t.thisPhone : t.phone(phone)}
+                        {phone === 1 ? t.thisPhone : phone === 0 ? t.waiter : t.phone(phone)}
                       </span>
                       <span className={phone === 1 ? "font-semibold" : undefined}>{formatCents(cents)}</span>
                     </li>
@@ -320,7 +322,7 @@ function HistoryOrder({ order }: { order: TableOrder }) {
     >
       <div className="flex justify-between gap-2 text-sm text-(--mesa-muted)">
         <h2>{title}</h2>
-        <span>{order.mine ? t.mine : t.phone(order.phone)}</span>
+        <span>{order.mine ? t.mine : order.byStaff ? t.waiter : t.phone(order.phone)}</span>
       </div>
       <ul className="flex flex-col">
         {order.items.map((item) => {

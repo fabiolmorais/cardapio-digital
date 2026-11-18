@@ -188,6 +188,12 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
               {t.order(order.number, clock(order.createdAt))}
               {order.status === "REJECTED" && ` · ${t.rejected}`}
             </span>
+            {order.byStaff && (
+              <span className="text-xs text-muted-foreground">
+                {order.placedByName ? t.placedBy(order.placedByName) : t.placedByTeam}
+                {order.duplicateConfirmed && ` · ${t.duplicateConfirmed}`}
+              </span>
+            )}
             <ul className="flex flex-col gap-1.5">
               {order.items.map((item) => {
                 const canceled = item.status === "CANCELED";
