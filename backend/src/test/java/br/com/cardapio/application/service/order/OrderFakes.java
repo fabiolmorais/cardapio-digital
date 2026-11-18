@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * O cardápio, as configurações, as comandas e os pedidos na memória, para os testes dos serviços
@@ -58,6 +59,8 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
     final Map<OrderId, Order> orders = new LinkedHashMap<>();
     final Map<OrderItemId, OrderItem> items = new LinkedHashMap<>();
     final List<TabPayment> payments = new ArrayList<>();
+    final Map<UserId, String> staffNames = new HashMap<>();
+    int locks;
     private final Map<EstablishmentId, Integer> counters = new HashMap<>();
 
     Product product(EstablishmentId establishmentId, String name, long priceCents, boolean available) {
@@ -136,7 +139,27 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
         return true;
     }
 
+    @Override
+    public boolean lockOpen(EstablishmentId establishmentId, TabId tabId) {
+        locks++;
+        Tab tab = tabs.get(tabId);
+        return tab != null && tab.establishmentId().equals(establishmentId) && tab.status().isOpen();
+    }
+
     // --- OrderPort
+    @Override
+    public Optional<Order> findByClientRequest(EstablishmentId establishmentId, UUID clientRequestId) {
+        return orders.values().stream().filter(o -> o.establishmentId().equals(establishmentId)
+                && clientRequestId.equals(o.clientRequestId())).findFirst();
+    }
+
+    @Override
+    public Map<UserId, String> findStaffNames(EstablishmentId establishmentId, Set<UserId> ids) {
+        Map<UserId, String> found = new HashMap<>(staffNames);
+        found.keySet().retainAll(ids);
+        return found;
+    }
+
     @Override
     public int nextNumber(EstablishmentId establishmentId, Instant now) {
         return counters.merge(establishmentId, 1, Integer::sum);
@@ -151,7 +174,7 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
     @Override
     public long countPlacedBySessionAfter(EstablishmentId establishmentId, TableSessionId sessionId, Instant instant) {
         return orders.values().stream().filter(o -> o.establishmentId().equals(establishmentId)
-                && o.sessionId().equals(sessionId) && o.createdAt().isAfter(instant)).count();
+                && o.placedBy(sessionId) && o.createdAt().isAfter(instant)).count();
     }
 
     @Override

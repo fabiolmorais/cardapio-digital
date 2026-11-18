@@ -40,6 +40,12 @@ class TabPersistenceAdapter implements TabPort {
     }
 
     @Override
+    public boolean lockOpen(EstablishmentId establishmentId, TabId tabId) {
+        establishmentFilter.enable(establishmentId);
+        return tabs.lockOpen(tabId.value(), establishmentId.value()).isPresent();
+    }
+
+    @Override
     public boolean insertIfNoneOpen(Tab tab) {
         return tabs.insertIfNoneOpen(tab.id().value(), tab.establishmentId().value(), tab.tableId().value(),
                 tab.openedAt()) == 1;

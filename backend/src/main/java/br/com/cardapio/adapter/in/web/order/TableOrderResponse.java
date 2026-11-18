@@ -20,8 +20,10 @@ record TableOrderResponse(
         @Schema(requiredMode = REQUIRED, description = "Foi este celular que mandou (só ele cancela os itens)")
         boolean mine,
         @Schema(requiredMode = REQUIRED,
-                description = "De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido")
+                description = "De qual celular da mesa é (sem dizer quem): 1 é este; os outros, 2, 3… na ordem do primeiro pedido; 0 se foi o garçom")
         int phone,
+        @Schema(requiredMode = REQUIRED, description = "Foi o garçom que lançou (o celular não cancela estes itens)")
+        boolean byStaff,
         @Schema(requiredMode = REQUIRED) List<Item> items
 ) {
 
@@ -48,7 +50,7 @@ record TableOrderResponse(
     }
 
     static TableOrderResponse from(TableOrder o) {
-        return new TableOrderResponse(o.id().value(), o.number(), o.status(), o.createdAt(), o.mine(), o.phone(),
+        return new TableOrderResponse(o.id().value(), o.number(), o.status(), o.createdAt(), o.mine(), o.phone(), o.byStaff(),
                 o.items().stream().map(Item::from).toList());
     }
 }

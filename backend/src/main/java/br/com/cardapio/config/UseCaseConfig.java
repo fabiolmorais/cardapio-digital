@@ -64,7 +64,10 @@ import br.com.cardapio.application.port.out.order.KitchenPrintPort;
 import br.com.cardapio.application.port.in.order.ListOpenTabsUseCase;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
 import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
+import br.com.cardapio.application.port.in.menu.GetStaffMenuUseCase;
+import br.com.cardapio.application.port.in.order.GetStaffOrderSheetUseCase;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
+import br.com.cardapio.application.port.in.order.PlaceStaffOrderUseCase;
 import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
@@ -200,7 +203,10 @@ import br.com.cardapio.application.service.order.ClaimPrintJobService;
 import br.com.cardapio.application.service.order.ListOpenTabsService;
 import br.com.cardapio.application.service.order.ListTableOrdersService;
 import br.com.cardapio.application.service.order.ListWaitingOrdersService;
+import br.com.cardapio.application.service.menu.GetStaffMenuService;
+import br.com.cardapio.application.service.order.GetStaffOrderSheetService;
 import br.com.cardapio.application.service.order.PlaceOrderService;
+import br.com.cardapio.application.service.order.PlaceStaffOrderService;
 import br.com.cardapio.application.service.order.ReviewOrderService;
 import br.com.cardapio.application.service.order.UpdateOrderSettingsService;
 import br.com.cardapio.application.service.plan.GetSubscriptionService;
@@ -784,6 +790,33 @@ class UseCaseConfig {
         return new PlaceOrderService(diningTablePort, tableSessionPort, orderSettingsPort, productPort,
                 productOptionsPort, tabPort, orderPort, tabRodizioPort, rodizioPort, rodizioPhonePort,
                 subscriptionPort, eventPublisherPort, clock);
+    }
+
+    // Pedido lançado pela equipe (ADR 0011)
+
+    @Bean
+    PlaceStaffOrderUseCase placeStaffOrderUseCase(DiningTablePort diningTablePort, OrderSettingsPort orderSettingsPort,
+                                                  ProductPort productPort, ProductOptionsPort productOptionsPort,
+                                                  TabPort tabPort, OrderPort orderPort, TabRodizioPort tabRodizioPort,
+                                                  RodizioPort rodizioPort, SubscriptionPort subscriptionPort,
+                                                  EventPublisherPort eventPublisherPort, Clock clock) {
+        return new PlaceStaffOrderService(diningTablePort, orderSettingsPort, productPort, productOptionsPort, tabPort,
+                orderPort, tabRodizioPort, rodizioPort, subscriptionPort, eventPublisherPort, clock);
+    }
+
+    @Bean
+    GetStaffOrderSheetUseCase getStaffOrderSheetUseCase(DiningTablePort diningTablePort,
+                                                        OrderSettingsPort orderSettingsPort, TabPort tabPort,
+                                                        OrderPort orderPort, TabRodizioPort tabRodizioPort,
+                                                        RodizioPort rodizioPort, Clock clock) {
+        return new GetStaffOrderSheetService(diningTablePort, orderSettingsPort, tabPort, orderPort, tabRodizioPort,
+                rodizioPort, clock);
+    }
+
+    @Bean
+    GetStaffMenuUseCase getStaffMenuUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort,
+                                            ProductOptionsPort productOptionsPort) {
+        return new GetStaffMenuService(menuCategoryPort, productPort, productOptionsPort);
     }
 
     @Bean

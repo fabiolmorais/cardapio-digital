@@ -12,6 +12,8 @@ record OrderSettingsRequest(
         boolean orderingEnabled,
         @Schema(requiredMode = REQUIRED, description = "Todo pedido espera o garçom confirmar")
         boolean approvalRequired,
+        @Schema(description = "A equipe do salão pode lançar pedidos nas mesas; vazio mantém como está")
+        Boolean staffOrderingEnabled,
         @Schema(description = "Acima deste valor (em centavos), o pedido espera o garçom; vazio = sem limite",
                 example = "30000")
         @Min(100) Long maxAmountCents,

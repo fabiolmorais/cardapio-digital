@@ -3,10 +3,12 @@ package br.com.cardapio.application.port.in.order;
 import br.com.cardapio.application.port.in.rodizio.TableRodizio;
 import br.com.cardapio.application.port.out.order.OrderWithItems;
 import br.com.cardapio.application.port.out.order.TabView;
+import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
+import br.com.cardapio.domain.order.model.OrderOrigin;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabBalance;
@@ -18,6 +20,9 @@ import br.com.cardapio.domain.shared.model.Money;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A comanda como a EQUIPE vê: todos os pedidos, de todos os celulares, com o passo de cada item,
@@ -47,7 +52,13 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
     public record Payment(Money amount, PaymentMethod method, Instant receivedAt) {
     }
 
-    public record Order(OrderId id, int number, OrderStatus status, Instant createdAt, List<TableOrder.Item> items) {
+    /**
+     * @param byStaff            foi a equipe que lançou (senão, um celular da mesa)
+     * @param placedByName       o nome de quem lançou; null se veio de um celular
+     * @param duplicateConfirmed quem lançou viu o aviso de item repetido e confirmou
+     */
+    public record Order(OrderId id, int number, OrderStatus status, Instant createdAt, boolean byStaff,
+                        String placedByName, boolean duplicateConfirmed, List<TableOrder.Item> items) {
 
         public Order {
             items = List.copyOf(items);
@@ -57,9 +68,10 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
     /**
      * @param rodizio  o rodízio da comanda; null se não houve
      * @param payments os pagamentos da comanda, do mais antigo ao mais novo
+     * @param staffNames o nome de quem lançou pedidos (ver {@link #staffOf})
      */
     public static StaffTab from(TabView view, List<OrderWithItems> found, PaymentMethod billRequestedWith,
-                                TabRodizio rodizio, List<TabPayment> payments) {
+                                TabRodizio rodizio, List<TabPayment> payments, Map<UserId, String> staffNames) {
         Tab tab = view.tab();
         List<OrderItem> all = found.stream().flatMap(o -> o.items().stream()).toList();
         TabBalance balance = TabBalance.of(all, rodizio == null ? Money.ZERO : rodizio.total(), payments);
@@ -71,6 +83,18 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                 tab.paymentMethod(), billRequestedWith,
                 rodizio == null ? null : TableRodizio.from(rodizio),
                 found.stream().map(o -> new Order(o.order().id(), o.order().number(), o.order().status(),
-                        o.order().createdAt(), o.items().stream().map(TableOrder.Item::from).toList())).toList());
+                        o.order().createdAt(), o.order().byStaff(),
+                        o.order().origin() instanceof OrderOrigin.Staff staff ? staffNames.get(staff.userId()) : null,
+                        o.order().duplicateConfirmed(),
+                        o.items().stream().map(TableOrder.Item::from).toList())).toList());
+    }
+
+    /** Quem da equipe lançou estes pedidos. */
+    public static Set<UserId> staffOf(List<OrderWithItems> found) {
+        return found.stream()
+                .map(o -> o.order().origin())
+                .filter(OrderOrigin.Staff.class::isInstance)
+                .map(origin -> ((OrderOrigin.Staff) origin).userId())
+                .collect(Collectors.toSet());
     }
 }

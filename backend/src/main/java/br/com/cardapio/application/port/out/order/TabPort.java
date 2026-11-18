@@ -16,6 +16,12 @@ public interface TabPort {
     Optional<Tab> findOpen(EstablishmentId establishmentId, DiningTableId tableId);
 
     /**
+     * Trava a comanda aberta até o fim da transação: dois pedidos da mesma mesa passam um de cada
+     * vez, e o segundo enxerga o primeiro. false: ela já foi fechada.
+     */
+    boolean lockOpen(EstablishmentId establishmentId, TabId tabId);
+
+    /**
      * Abre a comanda, a menos que a mesa já tenha uma aberta (dois celulares mandando o primeiro
      * pedido no mesmo instante). false: já havia uma, e nada foi gravado.
      */

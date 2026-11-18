@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +20,18 @@ interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, UUID> {
     List<OrderJpaEntity> findByEstablishmentIdAndTabIdOrderByCreatedAtAscNumberAsc(UUID establishmentId, UUID tabId);
 
     long countByEstablishmentIdAndSessionIdAndCreatedAtAfter(UUID establishmentId, UUID sessionId, Instant instant);
+
+    Optional<OrderJpaEntity> findByEstablishmentIdAndClientRequestId(UUID establishmentId, UUID clientRequestId);
+
+    /** O nome de quem é da equipe deste restaurante (a pessoa desligada continua aqui: a história fica). */
+    @Query("""
+            SELECT u.id AS id, u.name AS name
+              FROM UserJpaEntity u
+              JOIN MembershipJpaEntity m ON m.userId = u.id
+             WHERE m.establishmentId = :establishmentId AND u.id IN :ids
+            """)
+    List<StaffNameRow> findStaffNames(@Param("establishmentId") UUID establishmentId,
+                                      @Param("ids") Collection<UUID> ids);
 
     /**
      * O próximo número do dia, numa instrução só: cria a linha do dia com 1, ou soma 1 à que existe.

@@ -22,8 +22,11 @@ class OrderJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "table_id", nullable = false)
     private UUID tableId;
 
-    @Column(name = "session_id", nullable = false)
+    @Column(name = "session_id")
     private UUID sessionId;
+
+    @Column(name = "placed_by")
+    private UUID placedBy;
 
     @Column(nullable = false)
     private int number;
@@ -40,16 +43,26 @@ class OrderJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "approved_at")
     private Instant approvedAt;
 
+    @Column(name = "client_request_id")
+    private UUID clientRequestId;
+
+    @Column(name = "duplicate_confirmed", nullable = false)
+    private boolean duplicateConfirmed;
+
     protected OrderJpaEntity() {
     }
 
-    OrderJpaEntity(UUID id, UUID establishmentId, UUID tabId, UUID tableId, UUID sessionId, int number,
-                   String status, Instant createdAt, UUID approvedBy, Instant approvedAt) {
+    OrderJpaEntity(UUID id, UUID establishmentId, UUID tabId, UUID tableId, UUID sessionId, UUID placedBy,
+                   int number, String status, Instant createdAt, UUID approvedBy, Instant approvedAt,
+                   UUID clientRequestId, boolean duplicateConfirmed) {
         super(establishmentId);
         this.id = id;
         this.tabId = tabId;
         this.tableId = tableId;
         this.sessionId = sessionId;
+        this.placedBy = placedBy;
+        this.clientRequestId = clientRequestId;
+        this.duplicateConfirmed = duplicateConfirmed;
         this.number = number;
         this.status = status;
         this.createdAt = createdAt;
@@ -61,6 +74,9 @@ class OrderJpaEntity extends EstablishmentScopedEntity {
     UUID getTabId() { return tabId; }
     UUID getTableId() { return tableId; }
     UUID getSessionId() { return sessionId; }
+    UUID getPlacedBy() { return placedBy; }
+    UUID getClientRequestId() { return clientRequestId; }
+    boolean isDuplicateConfirmed() { return duplicateConfirmed; }
     int getNumber() { return number; }
     String getStatus() { return status; }
     Instant getCreatedAt() { return createdAt; }

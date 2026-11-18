@@ -16,6 +16,7 @@ import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.OrderItemStatus;
+import br.com.cardapio.domain.order.model.OrderOrigin;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.rodizio.model.TabRodizioId;
@@ -59,9 +60,12 @@ class OrderPersistenceAdapter implements OrderPort {
     @Override
     public void insert(Order o, List<OrderItem> orderItems) {
         establishmentFilter.enable(o.establishmentId());
+        UUID sessionId = o.origin() instanceof OrderOrigin.Phone phone ? phone.sessionId().value() : null;
+        UUID placedBy = o.origin() instanceof OrderOrigin.Staff staff ? staff.userId().value() : null;
         orders.save(new OrderJpaEntity(o.id().value(), o.establishmentId().value(), o.tabId().value(),
-                o.tableId().value(), o.sessionId().value(), o.number(), o.status().name(), o.createdAt(),
-                o.approvedBy() == null ? null : o.approvedBy().value(), o.approvedAt()));
+                o.tableId().value(), sessionId, placedBy, o.number(), o.status().name(), o.createdAt(),
+                o.approvedBy() == null ? null : o.approvedBy().value(), o.approvedAt(), o.clientRequestId(),
+                o.duplicateConfirmed()));
         // A posição de cada item é a ordem dele na lista (a do carrinho).
         items.saveAll(IntStream.range(0, orderItems.size()).mapToObj(position -> {
             OrderItem i = orderItems.get(position);
@@ -104,6 +108,23 @@ class OrderPersistenceAdapter implements OrderPort {
         establishmentFilter.enable(establishmentId);
         return orders.findByIdAndEstablishmentId(id.value(), establishmentId.value())
                 .map(OrderPersistenceAdapter::toDomain);
+    }
+
+    @Override
+    public Optional<Order> findByClientRequest(EstablishmentId establishmentId, UUID clientRequestId) {
+        establishmentFilter.enable(establishmentId);
+        return orders.findByEstablishmentIdAndClientRequestId(establishmentId.value(), clientRequestId)
+                .map(OrderPersistenceAdapter::toDomain);
+    }
+
+    @Override
+    public Map<UserId, String> findStaffNames(EstablishmentId establishmentId, Set<UserId> ids) {
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        establishmentFilter.enable(establishmentId);
+        return orders.findStaffNames(establishmentId.value(), ids.stream().map(UserId::value).toList()).stream()
+                .collect(Collectors.toMap(r -> new UserId(r.getId()), StaffNameRow::getName, (a, b) -> a));
     }
 
     @Override
@@ -206,8 +227,11 @@ class OrderPersistenceAdapter implements OrderPort {
 
     private static Order toDomain(OrderJpaEntity e) {
         return new Order(new OrderId(e.getId()), new EstablishmentId(e.getEstablishmentId()), new TabId(e.getTabId()),
-                new DiningTableId(e.getTableId()), new TableSessionId(e.getSessionId()), e.getNumber(),
-                OrderStatus.valueOf(e.getStatus()), e.getCreatedAt(),
-                e.getApprovedBy() == null ? null : new UserId(e.getApprovedBy()), e.getApprovedAt());
+                new DiningTableId(e.getTableId()),
+                e.getPlacedBy() != null ? new OrderOrigin.Staff(new UserId(e.getPlacedBy()))
+                        : new OrderOrigin.Phone(new TableSessionId(e.getSessionId())),
+                e.getNumber(), OrderStatus.valueOf(e.getStatus()), e.getCreatedAt(),
+                e.getApprovedBy() == null ? null : new UserId(e.getApprovedBy()), e.getApprovedAt(),
+                e.getClientRequestId(), e.isDuplicateConfirmed());
     }
 }

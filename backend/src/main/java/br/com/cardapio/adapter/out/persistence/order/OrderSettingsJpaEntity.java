@@ -22,6 +22,9 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "approval_required", nullable = false)
     private boolean approvalRequired;
 
+    @Column(name = "staff_ordering_enabled", nullable = false)
+    private boolean staffOrderingEnabled;
+
     @Column(name = "max_amount_cents")
     private Long maxAmountCents;
 
@@ -35,11 +38,12 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     }
 
     OrderSettingsJpaEntity(UUID id, UUID establishmentId, boolean orderingEnabled, boolean approvalRequired,
-                           Long maxAmountCents, Integer maxItems, Instant updatedAt) {
+                           boolean staffOrderingEnabled, Long maxAmountCents, Integer maxItems, Instant updatedAt) {
         super(establishmentId);
         this.id = id;
         this.orderingEnabled = orderingEnabled;
         this.approvalRequired = approvalRequired;
+        this.staffOrderingEnabled = staffOrderingEnabled;
         this.maxAmountCents = maxAmountCents;
         this.maxItems = maxItems;
         this.updatedAt = updatedAt;
@@ -48,6 +52,7 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     UUID getId() { return id; }
     boolean isOrderingEnabled() { return orderingEnabled; }
     boolean isApprovalRequired() { return approvalRequired; }
+    boolean isStaffOrderingEnabled() { return staffOrderingEnabled; }
     Long getMaxAmountCents() { return maxAmountCents; }
     Integer getMaxItems() { return maxItems; }
     Instant getUpdatedAt() { return updatedAt; }

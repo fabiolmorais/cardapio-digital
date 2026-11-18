@@ -100,7 +100,7 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
                 .orElse(visit.session().createdAt());
         List<OrderWithItems> found = open.map(tab -> orders.findByTab(establishmentId, tab.id())).orElse(List.of())
                 .stream()
-                .filter(o -> !o.order().createdAt().isBefore(visitStart))
+                .filter(o -> o.order().belongsToVisit(visitStart))
                 .toList();
         TabRodizio rodizio = open.flatMap(tab -> tabRodizios.findByTab(establishmentId, tab.id())).orElse(null);
         // Os produtos incluídos e as regras vêm do cadastro de agora (a aba Rodízio mostra o que dá

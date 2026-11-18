@@ -95,6 +95,7 @@ public class CloseTabService implements CloseTabUseCase {
             }
         }
         events.publish(new TabClosed(establishmentId, closed.tableId(), closed.id(), now));
-        return StaffTab.from(new TabView(closed, view.tableLabel(), view.sectorName()), found, null, rodizio, all);
+        return StaffTab.from(new TabView(closed, view.tableLabel(), view.sectorName()), found, null, rodizio, all,
+                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)));
     }
 }

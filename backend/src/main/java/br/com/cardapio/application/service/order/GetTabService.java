@@ -14,7 +14,10 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.order.exception.TabNotFoundException;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.application.port.out.order.OrderWithItems;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 public class GetTabService implements GetTabUseCase {
 
@@ -42,7 +45,9 @@ public class GetTabService implements GetTabUseCase {
                 ? calls.findOpen(establishmentId, view.tab().tableId(), CallType.BILL)
                         .map(Call::paymentMethod).orElse(null)
                 : null;
-        return StaffTab.from(view, orders.findByTab(establishmentId, tabId), billRequestedWith,
-                tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId));
+        List<OrderWithItems> found = orders.findByTab(establishmentId, tabId);
+        return StaffTab.from(view, found, billRequestedWith,
+                tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId),
+                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)));
     }
 }

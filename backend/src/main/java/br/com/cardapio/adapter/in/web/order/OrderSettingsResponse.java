@@ -9,11 +9,12 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 record OrderSettingsResponse(
         @Schema(requiredMode = REQUIRED) boolean orderingEnabled,
         @Schema(requiredMode = REQUIRED) boolean approvalRequired,
+        @Schema(requiredMode = REQUIRED) boolean staffOrderingEnabled,
         Long maxAmountCents,
         Integer maxItems
 ) {
     static OrderSettingsResponse from(OrderSettings s) {
-        return new OrderSettingsResponse(s.orderingEnabled(), s.approvalRequired(),
+        return new OrderSettingsResponse(s.orderingEnabled(), s.approvalRequired(), s.staffOrderingEnabled(),
                 s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems());
     }
 }
