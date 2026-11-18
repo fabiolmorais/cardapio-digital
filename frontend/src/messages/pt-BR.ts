@@ -1799,7 +1799,7 @@ export const messages = {
     of: (used: number, max: number | null) => (max === null ? `${used} · ilimitado` : `${used} de ${max}`),
     videos: "Vídeos nos pratos",
     videosIncluded: "Incluídos",
-    videosNotIncluded: "A partir do Pro",
+    videosNotIncluded: "Não incluídos",
     choose: "Assinar ou mudar de plano",
     chooseHint:
       "Escolha o plano e o ciclo. O pagamento é combinado com a gente; o plano passa a valer quando ele for confirmado.",

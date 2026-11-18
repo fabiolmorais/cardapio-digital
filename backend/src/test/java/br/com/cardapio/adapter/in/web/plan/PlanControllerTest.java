@@ -32,10 +32,15 @@ class PlanControllerTest {
     void mapsPricesLimitsAndFeatures() {
         var result = mvc.get().uri("/api/v1/plans");
 
-        assertThat(result).bodyJson().extractingPath("$.content[0].monthlyPriceCents").asNumber().isEqualTo(6990);
+        assertThat(result).bodyJson().extractingPath("$.content[0].monthlyPriceCents").asNumber().isEqualTo(11990);
+        assertThat(result).bodyJson().extractingPath("$.content[0].annualPriceCents").asNumber().isEqualTo(119900);
         assertThat(result).bodyJson().extractingPath("$.content[0].maxTables").asNumber().isEqualTo(20);
         assertThat(result).bodyJson().extractingPath("$.content[0].historyDays").asNumber().isEqualTo(90);
-        assertThat(result).bodyJson().extractingPath("$.content[0].features").asArray().isEmpty();
+        assertThat(result).bodyJson().extractingPath("$.content[0].features").asArray()
+                .containsExactlyInAnyOrder("PRODUCT_VIDEOS", "PREP_STATIONS", "ROLES_AND_PERMISSIONS");
+        assertThat(result).bodyJson().extractingPath("$.content[1].monthlyPriceCents").asNumber().isEqualTo(14990);
+        assertThat(result).bodyJson().extractingPath("$.content[1].annualPriceCents").asNumber().isEqualTo(149900);
+        assertThat(result).bodyJson().extractingPath("$.content[1].maxTables").asNumber().isEqualTo(50);
         assertThat(result).bodyJson().extractingPath("$.content[1].maxUsers").isNull();
         assertThat(result).bodyJson().extractingPath("$.content[1].features").asArray().contains("PRODUCT_VIDEOS");
         assertThat(result).bodyJson().extractingPath("$.content[3].monthlyPriceCents").isNull();

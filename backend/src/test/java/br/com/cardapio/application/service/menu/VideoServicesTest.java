@@ -139,12 +139,21 @@ class VideoServicesTest {
     }
 
     @Test
-    void videosStartAtTheProPlan() {
+    void theEssentialPlanSendsVideos() {
         subscriptions.given(InMemorySubscriptions.ESSENTIAL, new PlanUsage(0, 1, 1));
+
+        VideoUpload upload = start.start(sakura, guioza.id(), mp4);
+
+        assertThat(fakes.videos).containsKey(videoIdOf(upload));
+    }
+
+    @Test
+    void aPlanWithoutVideosStopsTheUpload() {
+        subscriptions.given(InMemorySubscriptions.WITHOUT_VIDEOS, new PlanUsage(0, 1, 1));
 
         assertThatThrownBy(() -> start.start(sakura, guioza.id(), mp4))
                 .isInstanceOf(FeatureNotInPlanException.class)
-                .hasMessageStartingWith("Vídeos nos pratos fazem parte dos planos Pro");
+                .hasMessageStartingWith("Vídeos nos pratos não fazem parte do seu plano");
         assertThat(fakes.videos).isEmpty(); // nada foi criado no Bunny
     }
 }

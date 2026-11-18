@@ -25,7 +25,9 @@ class PlanAllowanceTest {
                 Money.ofCents(69900), tables, users, sectors, 90, features, SupportLevel.EMAIL, 1);
     }
 
-    private final Plan essential = plan("Essencial", Limit.of(20), Limit.of(5), Limit.of(1), Set.of());
+    private final Plan essential = plan("Essencial", Limit.of(20), Limit.of(5), Limit.of(1),
+            Set.of(PlanFeature.PRODUCT_VIDEOS));
+    private final Plan withoutVideos = plan("Sem vídeos", Limit.of(20), Limit.of(5), Limit.of(1), Set.of());
     private final Plan enterprise = plan("Enterprise", Limit.unlimited(), Limit.unlimited(), Limit.unlimited(),
             Set.of(PlanFeature.PRODUCT_VIDEOS));
 
@@ -53,6 +55,8 @@ class PlanAllowanceTest {
                 PlanResource.USERS))
                 .doesNotThrowAnyException();
         assertThatCode(() -> PlanAllowance.checkVideos(enterprise)).doesNotThrowAnyException();
-        assertThatThrownBy(() -> PlanAllowance.checkVideos(essential)).isInstanceOf(FeatureNotInPlanException.class);
+        assertThatCode(() -> PlanAllowance.checkVideos(essential)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> PlanAllowance.checkVideos(withoutVideos))
+                .isInstanceOf(FeatureNotInPlanException.class);
     }
 }
