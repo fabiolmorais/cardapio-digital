@@ -78,7 +78,7 @@ test("o garçom lança o pedido com tamanho e observação, e a mesa vê", async
 
   await page.getByRole("button", { name: "Adicionar Pizza" }).click();
   const pizza = page.getByRole("dialog", { name: "Pizza" });
-  await expect(pizza.getByRole("button", { name: "Escolha: o tamanho" })).toBeDisabled();
+  await expect(pizza.getByRole("button", { name: "Falta: o tamanho" })).toBeDisabled();
   await pizza.getByRole("button", { name: /Grande/ }).click();
   await pizza.getByRole("button", { name: /^Adicionar · R\$ 50,00/ }).click();
 
