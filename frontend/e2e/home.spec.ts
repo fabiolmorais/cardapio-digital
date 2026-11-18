@@ -8,18 +8,24 @@ test("a página inicial apresenta o OhChefe e mostra os planos vindos da API", a
 
   const essential = page.getByTestId("plan-essential");
   await expect(essential).toContainText("Essencial");
-  await expect(essential).toContainText("R$ 69,90");
+  await expect(essential).toContainText("R$ 119,90");
   await expect(essential).toContainText("Até 20 mesas");
+  await expect(essential).toContainText("Vídeos nos pratos");
+  await expect(essential).toContainText("Filas de cozinha e bar");
+  await expect(essential).toContainText("Perfis e permissões");
+  await expect(essential).not.toContainText("Relatórios");
 
   const pro = page.getByTestId("plan-pro");
+  await expect(pro).toContainText("R$ 149,90");
+  await expect(pro).toContainText("Até 50 mesas");
   await expect(pro).toContainText("Vídeos nos pratos");
   await expect(pro).toContainText("Teste grátis");
   await expect(page.getByTestId("plan-enterprise")).toContainText("Sob consulta");
 
   // No anual, o preço é o do ano, com o equivalente por mês.
   await page.getByRole("button", { name: /Anual/ }).click();
-  await expect(essential).toContainText("R$ 699,00/ano");
-  await expect(essential).toContainText("Equivale a R$ 58,25 por mês");
+  await expect(essential).toContainText("R$ 1.199,00/ano");
+  await expect(essential).toContainText("Equivale a R$ 99,92 por mês");
 });
 
 test("a página inicial leva ao teste grátis e ao login", async ({ page }) => {

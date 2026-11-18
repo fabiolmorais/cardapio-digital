@@ -53,7 +53,7 @@ test("o dono escolhe o Essencial anual, e a escolha fica à espera do pagamento"
   const chooser = page.getByRole("region", { name: "Assinar ou mudar de plano" });
   await chooser.getByRole("button", { name: "Anual (2 meses grátis)" }).click();
   const essential = chooser.getByRole("listitem", { name: "Essencial" });
-  await expect(essential).toContainText("R$ 699,00/ano");
+  await expect(essential).toContainText("R$ 1.199,00/ano");
   await expect(chooser.getByRole("listitem", { name: "Pro" })).toContainText("Plano atual");
   await expect(chooser.getByRole("listitem", { name: "Enterprise" })).toContainText("Sob consulta");
 

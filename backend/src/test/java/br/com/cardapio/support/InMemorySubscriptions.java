@@ -27,11 +27,15 @@ import java.util.UUID;
 /**
  * A assinatura dos testes sem banco: um plano só para todo restaurante e o uso que o teste
  * mandar. Começa num plano sem limites (os testes de cadastro não pensam no plano) e grava o que
- * o cadastro salvar. Também serve de catálogo de planos (o Essencial e o Pro, como na V1).
+ * o cadastro salvar. Também serve de catálogo de planos (o Essencial e o Pro, como nas migrações).
  */
 public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
 
-    public static final Plan ESSENTIAL = plan("essential", "Essencial", Limit.of(20), Limit.of(5), Limit.of(1), Set.of());
+    public static final Plan ESSENTIAL = plan("essential", "Essencial", Limit.of(20), Limit.of(5), Limit.of(1),
+            Set.of(PlanFeature.PRODUCT_VIDEOS, PlanFeature.PREP_STATIONS, PlanFeature.ROLES_AND_PERMISSIONS));
+    /** Nenhum plano à venda é assim hoje, mas a regra do recurso continua valendo. */
+    public static final Plan WITHOUT_VIDEOS = plan("no-videos", "Sem vídeos", Limit.of(20), Limit.of(5), Limit.of(1),
+            Set.of());
     public static final Plan PRO = plan("pro", "Pro", Limit.of(50), Limit.unlimited(), Limit.of(3),
             Set.of(PlanFeature.PRODUCT_VIDEOS));
     public static final Plan UNLIMITED = plan("test", "Sem limites", Limit.unlimited(), Limit.unlimited(),

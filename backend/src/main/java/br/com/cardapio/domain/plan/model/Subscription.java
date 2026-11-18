@@ -31,7 +31,7 @@ public record Subscription(
     /** Depois de vencer, 7 dias com tudo funcionando (decisão de 05/11/2026). */
     public static final Duration GRACE = Duration.ofDays(7);
 
-    /** O plano do teste grátis: o Pro, para o dono experimentar os vídeos (decisão de 05/11/2026). */
+    /** O plano do teste grátis: o Pro (decisão de 05/11/2026). */
     public static final String TRIAL_PLAN_CODE = "pro";
 
     public Subscription {

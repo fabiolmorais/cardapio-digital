@@ -28,7 +28,7 @@ public final class PlanAllowance {
     public static void checkVideos(Plan plan) {
         if (!plan.includes(PlanFeature.PRODUCT_VIDEOS)) {
             throw new FeatureNotInPlanException(
-                    "Vídeos nos pratos fazem parte dos planos Pro, Business e Enterprise. Mude de plano para enviar.");
+                    "Vídeos nos pratos não fazem parte do seu plano. Mude de plano para enviar.");
         }
     }
 }

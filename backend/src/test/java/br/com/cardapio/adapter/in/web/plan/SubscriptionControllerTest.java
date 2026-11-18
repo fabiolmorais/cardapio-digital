@@ -112,7 +112,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void theEssentialPlanStopsTheTwentyFirstTableTheSecondSectorAndVideos() throws Exception {
+    void theEssentialPlanStopsTheTwentyFirstTableAndTheSecondSector() throws Exception {
         onPlan(sakura, "essential");
         String salao = create(sakura.token(), "/api/v1/sectors", "{\"name\":\"Salão\"}");
         String last = null;
@@ -128,19 +128,32 @@ class SubscriptionControllerTest {
         assertThat(send("POST", sakura.token(), "/api/v1/sectors", "{\"name\":\"Deck\"}"))
                 .hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
 
-        String category = create(sakura.token(), "/api/v1/menu-categories", "{\"name\":\"Entradas\"}");
-        String guioza = create(sakura.token(), "/api/v1/products", """
-                {"categoryId":"%s","name":"Guioza","priceCents":2990,"featured":false,"available":true}
-                """.formatted(category));
-        MvcTestResult video = send("POST", sakura.token(), "/api/v1/products/" + guioza + "/videos",
-                "{\"contentType\":\"video/mp4\",\"sizeBytes\":1000000}");
-        assertThat(video).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
-        assertThat(json(video, "$.detail")).startsWith("Vídeos nos pratos fazem parte dos planos Pro");
-
         // Desativar libera a vaga: a 21ª entra.
         assertThat(send("PATCH", sakura.token(), "/api/v1/tables/" + last, "{\"active\":false}")).hasStatusOk();
         create(sakura.token(), "/api/v1/tables", "{\"label\":\"21\",\"sectorId\":\"%s\"}".formatted(salao));
         assertThat(json(send("GET", sakura.token(), SUBSCRIPTION, null), "$.usage.tables")).isEqualTo("20");
+    }
+
+    @Test
+    void aPlanWithoutVideosStopsTheUpload() throws Exception {
+        // Fora da vitrine: todos os planos à venda têm vídeos, mas quem assina um antigo continua nele.
+        String code = "no-videos-" + UUID.randomUUID().toString().substring(0, 8);
+        jdbc.update("""
+                INSERT INTO plan (code, name, monthly_price_cents, annual_price_cents, max_tables, max_users,
+                                  max_sectors, history_days, entitlements, support_level, display_order, active)
+                VALUES (?, 'Sem vídeos', 100, 1000, 20, 5, 1, 90, '[]', 'EMAIL', 99, FALSE)
+                """, code);
+        onPlan(sakura, code);
+        String category = create(sakura.token(), "/api/v1/menu-categories", "{\"name\":\"Entradas\"}");
+        String guioza = create(sakura.token(), "/api/v1/products", """
+                {"categoryId":"%s","name":"Guioza","priceCents":2990,"featured":false,"available":true}
+                """.formatted(category));
+
+        MvcTestResult video = send("POST", sakura.token(), "/api/v1/products/" + guioza + "/videos",
+                "{\"contentType\":\"video/mp4\",\"sizeBytes\":1000000}");
+
+        assertThat(video).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(json(video, "$.detail")).startsWith("Vídeos nos pratos não fazem parte do seu plano");
     }
 
     @Test
