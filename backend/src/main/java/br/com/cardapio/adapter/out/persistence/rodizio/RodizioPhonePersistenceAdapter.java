@@ -55,4 +55,9 @@ class RodizioPhonePersistenceAdapter implements RodizioPhonePort {
                 .map(p -> p.getJoinedAt() != null ? RodizioParticipation.JOINED : RodizioParticipation.REQUESTED)
                 .orElse(RodizioParticipation.NONE);
     }
+
+    @Override
+    public void moveTo(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to) {
+        phones.moveTo(establishmentId.value(), from.value(), to.value());
+    }
 }

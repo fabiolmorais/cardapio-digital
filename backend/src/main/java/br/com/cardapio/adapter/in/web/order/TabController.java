@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import br.com.cardapio.application.port.in.order.MoveTabCommand;
+import br.com.cardapio.application.port.in.order.MoveTabUseCase;
 
 /**
  * As comandas: as abertas, o detalhe de uma e o fechamento, para quem atende o salão; o histórico
@@ -46,9 +48,11 @@ class TabController {
     private final GetTabUseCase getTab;
     private final CloseTabUseCase closeTab;
     private final ListClosedTabsUseCase listClosed;
+    private final MoveTabUseCase moveTab;
 
     TabController(ListOpenTabsUseCase listOpen, GetTabUseCase getTab, CloseTabUseCase closeTab,
-                  ListClosedTabsUseCase listClosed) {
+                  ListClosedTabsUseCase listClosed, MoveTabUseCase moveTab) {
+        this.moveTab = moveTab;
         this.listOpen = listOpen;
         this.getTab = getTab;
         this.closeTab = closeTab;
@@ -118,5 +122,24 @@ class TabController {
         var user = AuthenticatedUser.from(jwt);
         return StaffTabResponse.from(closeTab.close(user.establishmentId(), new TabId(id), user.userId(),
                 request.paymentMethod()));
+    }
+
+    @PostMapping("/{id}/move")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+    @Operation(operationId = "moveTab",
+            summary = "Muda a comanda para outra mesa; se a mesa tem comanda aberta, as duas se juntam. Vão junto "
+                    + "os pedidos, os pagamentos, o rodízio, os chamados e os celulares")
+    @ApiResponse(responseCode = "200", description = "A comanda que continua, na mesa nova")
+    @ApiResponse(responseCode = "404", description = "A comanda ou a mesa não é deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Uma das comandas fechou ou mudou agora: atualize e tente de novo",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "A mesma mesa, mesa desativada, ou rodízios que não se juntam",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    MovedTabResponse move(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                          @Valid @RequestBody MoveTabRequest request) {
+        var user = AuthenticatedUser.from(jwt);
+        return MovedTabResponse.from(moveTab.move(new MoveTabCommand(user.establishmentId(), user.userId(),
+                new TabId(id), new DiningTableId(request.tableId()))));
     }
 }

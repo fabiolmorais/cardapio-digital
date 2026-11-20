@@ -1,17 +1,21 @@
 package br.com.cardapio.application.service.order;
 
 import br.com.cardapio.application.port.in.order.ClaimPrintJobUseCase;
+import br.com.cardapio.application.port.in.order.MovePrintJob;
 import br.com.cardapio.application.port.in.order.PrintJob;
 import br.com.cardapio.application.port.out.order.KitchenPrintPort;
+import br.com.cardapio.application.port.out.order.MovePrintView;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.PrintJobView;
 import br.com.cardapio.application.port.out.realtime.EventPublisherPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.exception.OrderNotFoundException;
+import br.com.cardapio.domain.order.exception.TabNotFoundException;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderStatus;
+import br.com.cardapio.domain.order.model.TabMoveId;
 import br.com.cardapio.domain.order.model.TicketKind;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,5 +60,14 @@ public class ClaimPrintJobService implements ClaimPrintJobUseCase {
         printing.markPrinted(establishmentId, job.items().stream().map(OrderItem::id).toList(), kind, now);
         events.publish(new OrderChanged(establishmentId, job.tableId(), orderId, OrderStatus.SENT, now));
         return PrintJob.from(job, kind);
+    }
+
+    /** Trava a via, marca como impressa e devolve os itens (vazia se outra estação já pegou). */
+    @Override
+    @Transactional
+    public MovePrintJob claimMove(EstablishmentId establishmentId, TabMoveId moveId) {
+        MovePrintView view = printing.lockPendingMove(establishmentId, moveId).orElseThrow(TabNotFoundException::new);
+        printing.markMovePrinted(establishmentId, moveId, clock.instant());
+        return MovePrintJob.from(view);
     }
 }

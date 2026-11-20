@@ -46,6 +46,6 @@ class TableSessionController {
         TableSessionStarted session = startSession.start(token, sessionToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.create(session.token(), session.expiresAt()).toString())
-                .body(new TableSessionResponse(session.expiresAt()));
+                .body(new TableSessionResponse(session.expiresAt(), session.movedTo()));
     }
 }

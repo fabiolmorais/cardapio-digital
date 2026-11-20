@@ -28,6 +28,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import br.com.cardapio.domain.order.model.TabMoveId;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.UUID;
 
 /**
  * A comanda impressa, para quem não tem tablet na cozinha: a estação de impressão (um computador
@@ -90,5 +93,32 @@ class PrintJobController {
     PrintJobResponse claim(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ClaimPrintJobRequest request) {
         return PrintJobResponse.from(claim.claim(AuthenticatedUser.from(jwt).establishmentId(),
                 new OrderId(request.orderId()), request.kind()));
+    }
+
+    @GetMapping("/moves")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF', 'KITCHEN')")
+    @Operation(operationId = "listPendingMovePrintJobs",
+            summary = "As vias \"MUDOU DE MESA\" que ainda não saíram na impressora, da mais antiga à mais nova")
+    @ApiResponse(responseCode = "200", description = "Página de vias")
+    PageResponse<MovePrintJobResponse> pendingMoves(
+            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Número da página, começando em 0")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Vias por página (1 a 100)")
+            @RequestParam(defaultValue = "20") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
+        return PageResponse.from(list.listPendingMoves(AuthenticatedUser.from(jwt).establishmentId(),
+                new PageQuery(page, size)), MovePrintJobResponse::from);
+    }
+
+    @PostMapping("/moves/{moveId}/claim")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF', 'KITCHEN')")
+    @Operation(operationId = "claimMovePrintJob",
+            summary = "Pega a via \"MUDOU DE MESA\" para imprimir: ela sai marcada como impressa e só esta estação a recebe")
+    @ApiResponse(responseCode = "200", description = "Os itens para imprimir (vazio: outra estação já imprimiu)")
+    @ApiResponse(responseCode = "404", description = "Não é uma mudança deste restaurante",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    MovePrintJobResponse claimMove(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID moveId) {
+        return MovePrintJobResponse.from(claim.claimMove(AuthenticatedUser.from(jwt).establishmentId(),
+                new TabMoveId(moveId)));
     }
 }

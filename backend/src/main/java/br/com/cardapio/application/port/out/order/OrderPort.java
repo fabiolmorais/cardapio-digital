@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import br.com.cardapio.domain.floor.model.DiningTableId;
 
 public interface OrderPort {
 
@@ -77,4 +78,11 @@ public interface OrderPort {
 
     /** Os pedidos parados na confirmação, com os itens: duas consultas, sem N+1. */
     ResultPage<WaitingOrderView> findWaitingApproval(EstablishmentId establishmentId, PageQuery page);
+
+    /**
+     * Os pedidos da comanda passam para outra (na junção) e para a mesa dela (ADR 0012). Na mudança
+     * simples, fromTab e toTab são a mesma: só a mesa muda. A mesa do pedido acompanha a comanda,
+     * para a cozinha, a impressão e os avisos irem para a mesa certa.
+     */
+    void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab, DiningTableId toTable);
 }

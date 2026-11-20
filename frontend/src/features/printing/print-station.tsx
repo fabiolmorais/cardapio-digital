@@ -11,7 +11,15 @@ import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { claimJob, fetchPendingJobs, fetchPrintedJobs, type PrintJob, type TicketKind } from "./print-api";
+import {
+  claimJob,
+  claimMove,
+  fetchPendingJobs,
+  fetchPendingMoves,
+  fetchPrintedJobs,
+  type PrintJob,
+  type TicketKind,
+} from "./print-api";
 import { PrintTicket, type Ticket } from "./print-ticket";
 
 const t = messages.panel.printing;
@@ -125,6 +133,16 @@ function Station({ restaurant }: { restaurant: string }) {
             setCount((n) => n + 1);
           }
         }
+        // A via "MUDOU DE MESA": só sai com itens que já tinham sido impressos com a mesa antiga.
+        const moves = await fetchPendingMoves();
+        if (moves.length === PAGE) again.current = true;
+        for (const move of moves) {
+          if (pausedRef.current) return;
+          const claimed = await claimMove(move.moveId);
+          if (claimed.items.length === 0) continue;
+          print({ move: claimed, variant: "move", printedAt: new Date() });
+          setCount((n) => n + 1);
+        }
       } while (again.current && !pausedRef.current);
       setFailing(false);
     } catch {
@@ -138,7 +156,7 @@ function Station({ restaurant }: { restaurant: string }) {
   // O tempo real avisa cada pedido novo (e o "ready" de cada conexão faz uma volta completa).
   useEffect(() => {
     return subscribeStaffEvents((event) => {
-      if (event.name === "order" || event.name === "ready") void drain();
+      if (event.name === "order" || event.name === "tab-moved" || event.name === "ready") void drain();
     }, setConnected);
   }, [drain]);
 

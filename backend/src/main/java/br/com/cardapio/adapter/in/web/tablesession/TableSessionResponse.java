@@ -9,6 +9,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 /** O token NÃO vem aqui: ele só existe no cookie HttpOnly, longe do JavaScript da página. */
 @Schema(name = "TableSession")
 record TableSessionResponse(
-        @Schema(requiredMode = REQUIRED, description = "Vence se ficar este tempo sem uso") Instant expiresAt
+        @Schema(requiredMode = REQUIRED, description = "Vence se ficar este tempo sem uso") Instant expiresAt,
+        @Schema(description = "A comanda deste celular mudou de mesa: o QR da mesa nova, para onde a página vai")
+        String movedTo
 ) {
 }

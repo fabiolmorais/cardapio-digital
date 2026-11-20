@@ -140,4 +140,19 @@ public final class InMemoryTableSessions implements TableSessionPort {
         }
         return ended;
     }
+
+    @Override
+    public int moveTable(EstablishmentId establishmentId, DiningTableId from, DiningTableId to, Instant now) {
+        int[] moved = {0};
+        saved.replaceAll((hash, s) -> {
+            if (!s.isActive(now) || !s.tableId().equals(from)) {
+                return s;
+            }
+            moved[0]++;
+            return new TableSession(s.id(), s.establishmentId(), to, s.tokenHash(), s.createdAt(), s.lastSeenAt(),
+                    s.expiresAt(), s.endedAt(), s.presenceMethod(), s.presenceConfirmedAt(), s.unlockedBy(),
+                    s.idleLimit(), s.blockedAt(), s.blockedBy());
+        });
+        return moved[0];
+    }
 }

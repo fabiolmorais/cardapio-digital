@@ -40,7 +40,7 @@ export function PassagemBoard() {
 }
 
 function Board({ canDeliver }: { canDeliver: boolean }) {
-  const { list, connected } = useLiveOrders(KEY, fetchTables, undefined, true, ["rodizio", "tab"]);
+  const { list, connected } = useLiveOrders(KEY, fetchTables, undefined, true, ["rodizio", "tab", "tab-moved"]);
   const now = useNow();
   useWakeLock();
   const tables = list.data ?? [];

@@ -11,7 +11,7 @@ import { fetchOpenTabs } from "./tabs-api";
 
 const t = messages.panel.tabs;
 const OPEN_TABS_KEY = ["open-tabs"] as const;
-const TAB_EVENTS = ["order", "tab"] as const;
+const TAB_EVENTS = ["order", "tab", "tab-moved"] as const;
 
 /** A hora no relógio deste aparelho (que está no restaurante). */
 export function clock(iso: string) {

@@ -12,4 +12,7 @@ public interface ListPrintJobsUseCase {
 
     /** As comandas impressas nas últimas horas, da mais recente para a mais antiga (para reimprimir). */
     ResultPage<PrintJob> listRecentlyPrinted(EstablishmentId establishmentId, PageQuery page);
+
+    /** As vias "MUDOU DE MESA" que faltam imprimir, da mais antiga à mais nova (ADR 0012). */
+    ResultPage<MovePrintJob> listPendingMoves(EstablishmentId establishmentId, PageQuery page);
 }

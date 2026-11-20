@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryTabMoves;
 import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.BillSummary;
 import br.com.cardapio.application.port.in.order.ClosedTab;
@@ -121,13 +122,13 @@ class TabServicesTest {
         calls.insertIfNoneOpen(Call.open(sakura, mesa04.id(), sessions.byToken("ana").id(), CallType.BILL,
                 PaymentMethod.CARD, NOW));
 
-        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab());
+        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(sakura, theTab());
 
         assertThat(tab.orders()).hasSize(2);
         assertThat(tab.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(tab.billRequestedWith()).isEqualTo(PaymentMethod.CARD);
         assertThat(tab.status()).isEqualTo(TabStatus.OPEN);
-        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios, fakes).get(EstablishmentId.newId(), theTab()))
+        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(EstablishmentId.newId(), theTab()))
                 .isInstanceOf(TabNotFoundException.class);
     }
 
@@ -197,7 +198,7 @@ class TabServicesTest {
                 fakes, rodizios, clock).list(QR_04, "ana");
         assertThat(atTheTable.paid()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(atTheTable.due()).isEqualTo(Money.ZERO);
-        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab());
+        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(sakura, theTab());
         assertThat(open.paid()).isEqualTo(open.total());
         assertThat(open.due()).isEqualTo(Money.ZERO);
         assertThat(open.payments()).singleElement().satisfies(p -> {

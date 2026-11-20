@@ -35,3 +35,23 @@ export async function fetchPrintedJobs(): Promise<PrintJob[]> {
   if (!data) throw problem(error, response.status);
   return data.content;
 }
+
+export type MovePrintJob = Schemas["MovePrintJob"];
+
+/** As vias "MUDOU DE MESA" que faltam imprimir (ADR 0012), da mais antiga à mais nova. */
+export async function fetchPendingMoves(): Promise<MovePrintJob[]> {
+  const { data, error, response } = await api.GET("/api/v1/print-jobs/moves", {
+    params: { query: { page: 0, size: 20 } },
+  });
+  if (!data) throw problem(error, response.status);
+  return data.content;
+}
+
+/** Pega a via: devolve os itens que esta estação deve imprimir (vazio: outra já imprimiu, ou tudo chegou). */
+export async function claimMove(moveId: string): Promise<MovePrintJob> {
+  const { data, error, response } = await api.POST("/api/v1/print-jobs/moves/{moveId}/claim", {
+    params: { path: { moveId } },
+  });
+  if (!data) throw problem(error, response.status);
+  return data;
+}

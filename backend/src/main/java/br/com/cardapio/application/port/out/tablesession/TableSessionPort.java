@@ -61,4 +61,10 @@ public interface TableSessionPort {
      * escanear começa uma visita nova (e confirma a presença de novo). Devolve quantas.
      */
     int endTable(EstablishmentId establishmentId, DiningTableId tableId, Instant now);
+
+    /**
+     * A comanda mudou de mesa: as sessões ativas da mesa de origem passam para a de destino, com a
+     * presença e o prazo que já tinham (ADR 0012). Devolve quantas.
+     */
+    int moveTable(EstablishmentId establishmentId, DiningTableId from, DiningTableId to, Instant now);
 }

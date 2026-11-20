@@ -144,4 +144,23 @@ public final class InMemoryRodizios implements RodizioPort, TabRodizioPort, Rodi
     public ResultPage<PassagemTableView> findOpenPassagem(EstablishmentId establishmentId, PageQuery page) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void moveToTab(TabRodizio moved) {
+        byTab.values().removeIf(r -> r.id().equals(moved.id()));
+        byTab.put(moved.tabId(), moved);
+    }
+
+    @Override
+    public void moveRounds(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to) {
+        // Os itens das rodadas ficam nos dublês dos pedidos; aqui não há o que mover.
+    }
+
+    @Override
+    public void moveTo(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to) {
+        Map<TableSessionId, RodizioParticipation> those = phones.remove(from);
+        if (those != null) {
+            phones.computeIfAbsent(to, r -> new HashMap<>()).putAll(those);
+        }
+    }
 }

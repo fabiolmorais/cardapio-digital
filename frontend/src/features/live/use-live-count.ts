@@ -39,7 +39,7 @@ export function useLiveCount(role: Role | undefined) {
   useEffect(() => {
     if (!enabled) return;
     return subscribeStaffEvents((event) => {
-      if (event.name === "ready" || event.name === "call") {
+      if (event.name === "ready" || event.name === "call" || event.name === "tab-moved") {
         void queryClient.invalidateQueries({ queryKey: ["call-queue"] });
       }
       if (event.name === "ready" || event.name === "order") {

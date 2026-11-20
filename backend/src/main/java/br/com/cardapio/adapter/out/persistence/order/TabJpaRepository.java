@@ -125,4 +125,20 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
             """)
     Page<ClosedTabRow> findClosed(@Param("establishmentId") UUID establishmentId, @Param("from") LocalDate from,
                                   @Param("to") LocalDate to, @Param("tableId") UUID tableId, Pageable pageable);
+
+    /** A comanda na mesa nova (e a abertura, na junção). Só se ainda estiver aberta: 1 linha ou 0. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE tab SET table_id = :tableId, opened_at = :openedAt
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
+            """)
+    int saveMoved(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
+                  @Param("tableId") UUID tableId, @Param("openedAt") Instant openedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE tab SET status = 'MERGED', merged_into_tab_id = :into
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
+            """)
+    int markMerged(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId, @Param("into") UUID into);
 }

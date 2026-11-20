@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.support.InMemoryTabMoves;
 import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.StaffTab;
@@ -276,7 +277,7 @@ class RodizioTableServicesTest {
 
         TableRodizio changed = new ChangeRodizioGuestsService(tables, fakes, rodizios, rodizios, calls, published::add, clock)
                 .change(sakura, mesa04.id(), Map.of("Adulto", 2, "Criança", 1), carlos);
-        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes).get(sakura, theTab().id());
+        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(sakura, theTab().id());
         StaffTab closed = new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, clock)
                 .close(sakura, theTab().id(), carlos, PaymentMethod.PIX);
 

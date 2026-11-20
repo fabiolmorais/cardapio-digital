@@ -37,8 +37,22 @@ record StaffTabResponse(
         PaymentMethod billRequestedWith,
         @Schema(description = "O rodízio da comanda (já somado no total); ausente se não houve")
         TableRodizioResponse rodizio,
-        @Schema(requiredMode = REQUIRED) List<Order> orders
+        @Schema(requiredMode = REQUIRED) List<Order> orders,
+        @Schema(requiredMode = REQUIRED, description = "As mudanças de mesa, da mais antiga à mais nova")
+        List<Move> moves,
+        @Schema(description = "Juntada (MERGED): a comanda que continuou, com os pedidos desta")
+        UUID mergedIntoTabId
 ) {
+
+    @Schema(name = "TabMove")
+    record Move(
+            @Schema(requiredMode = REQUIRED) String fromTableLabel,
+            @Schema(requiredMode = REQUIRED) String toTableLabel,
+            @Schema(requiredMode = REQUIRED, description = "Juntou com a comanda da mesa de destino") boolean merged,
+            @Schema(description = "Quem mudou") String movedByName,
+            @Schema(requiredMode = REQUIRED) Instant movedAt
+    ) {
+    }
 
     @Schema(name = "TabPayment")
     record Payment(
@@ -72,6 +86,9 @@ record StaffTabResponse(
                 t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.orders().stream().map(o -> new Order(o.id().value(), o.number(), o.status(), o.createdAt(),
                         o.byStaff(), o.placedByName(), o.duplicateConfirmed(),
-                        o.items().stream().map(TableOrderResponse.Item::from).toList())).toList());
+                        o.items().stream().map(TableOrderResponse.Item::from).toList())).toList(),
+                t.moves().stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
+                        m.movedByName(), m.movedAt())).toList(),
+                t.mergedInto() == null ? null : t.mergedInto().value());
     }
 }

@@ -73,4 +73,13 @@ interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, UUID> {
              WHERE o.establishmentId = :establishmentId AND o.status = 'PENDING_APPROVAL'
             """)
     Page<WaitingOrderRow> findWaitingApproval(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /** A comanda mudou de mesa ou se juntou a outra (ADR 0012): os pedidos vão junto. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE customer_order SET tab_id = :toTab, table_id = :toTable
+             WHERE tab_id = :fromTab AND establishment_id = :establishmentId
+            """)
+    int moveToTab(@Param("establishmentId") UUID establishmentId, @Param("fromTab") UUID fromTab,
+                  @Param("toTab") UUID toTab, @Param("toTable") UUID toTable);
 }

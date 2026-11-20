@@ -63,4 +63,18 @@ interface TabRodizioJpaRepository extends JpaRepository<TabRodizioJpaEntity, UUI
                AND t.status IN ('OPEN', 'CLOSING')
             """)
     Page<PassagemTableRow> findOpenPassagem(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE tab_rodizio SET tab_id = :tabId WHERE id = :id AND establishment_id = :establishmentId
+            """)
+    int moveToTab(@Param("establishmentId") UUID establishmentId, @Param("id") UUID id, @Param("tabId") UUID tabId);
+
+    /** Os itens das rodadas passam para o rodízio que continua (junção de dois rodízios iguais). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE order_item SET tab_rodizio_id = :to
+             WHERE tab_rodizio_id = :from AND establishment_id = :establishmentId
+            """)
+    int moveRounds(@Param("establishmentId") UUID establishmentId, @Param("from") UUID from, @Param("to") UUID to);
 }

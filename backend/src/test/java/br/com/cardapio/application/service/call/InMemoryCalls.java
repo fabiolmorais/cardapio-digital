@@ -99,4 +99,18 @@ public class InMemoryCalls implements CallPort {
         return saved.values().stream().filter(c -> c.establishmentId().equals(establishmentId)
                 && c.sessionId().equals(sessionId) && c.isOpen()).toList();
     }
+
+    @Override
+    public int moveOpen(EstablishmentId establishmentId, DiningTableId from, DiningTableId to) {
+        int[] moved = {0};
+        saved.replaceAll((id, c) -> {
+            if (!c.isOpen() || !c.tableId().equals(from)) {
+                return c;
+            }
+            moved[0]++;
+            return new Call(c.id(), c.establishmentId(), to, c.sessionId(), c.type(), c.paymentMethod(), c.status(),
+                    c.createdAt(), c.acceptedAt(), c.acceptedBy(), c.doneAt(), c.canceledAt(), c.releaseCode());
+        });
+        return moved[0];
+    }
 }

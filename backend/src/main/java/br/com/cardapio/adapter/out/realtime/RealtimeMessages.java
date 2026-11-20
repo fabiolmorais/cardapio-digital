@@ -8,6 +8,7 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
+import br.com.cardapio.domain.order.event.TabMoved;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
@@ -62,6 +63,11 @@ class RealtimeMessages {
         static final String KIND = "PhoneBlockChanged";
     }
 
+    record TabMovedMessage(String kind, UUID establishmentId, UUID tableId, UUID fromTableId, UUID toTableId,
+                           UUID tabId, Instant occurredAt) {
+        static final String KIND = "TabMoved";
+    }
+
     String toJson(DomainEvent event) {
         Object message = switch (event) {
             case OrderChanged o -> new OrderChangedMessage(OrderChangedMessage.KIND, o.establishmentId().value(),
@@ -75,6 +81,9 @@ class RealtimeMessages {
             case PhoneBlockChanged p -> new PhoneBlockChangedMessage(PhoneBlockChangedMessage.KIND,
                     p.establishmentId().value(), p.tableId().value(), p.sessionId().value(), p.blocked(),
                     p.occurredAt());
+            case TabMoved t -> new TabMovedMessage(TabMovedMessage.KIND, t.establishmentId().value(),
+                    t.tableId().value(), t.fromTableId().value(), t.toTableId().value(), t.tabId().value(),
+                    t.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
         };
         return json.writeValueAsString(message);
@@ -104,6 +113,12 @@ class RealtimeMessages {
             RodizioChangedMessage m = json.treeToValue(node, RodizioChangedMessage.class);
             return new RodizioChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new TabId(m.tabId()), m.occurredAt());
+        }
+        if (TabMovedMessage.KIND.equals(kind)) {
+            TabMovedMessage m = json.treeToValue(node, TabMovedMessage.class);
+            return new TabMoved(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new DiningTableId(m.fromTableId()), new DiningTableId(m.toTableId()), new TabId(m.tabId()),
+                    m.occurredAt());
         }
         if (PhoneBlockChangedMessage.KIND.equals(kind)) {
             PhoneBlockChangedMessage m = json.treeToValue(node, PhoneBlockChangedMessage.class);

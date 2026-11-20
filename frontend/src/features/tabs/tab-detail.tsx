@@ -2,8 +2,9 @@
 
 import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronLeft } from "lucide-react";
+import { ArrowRightLeft, Check, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatCents } from "@/lib/format";
@@ -15,6 +16,7 @@ import { cn } from "cn";
 import { clock } from "./open-tabs";
 import { closeTab, fetchTab, type PaymentMethod, type StaffTab } from "./tabs-api";
 import { Notice } from "@/components/notice";
+import { MoveTabDialog, type MoveTarget } from "./move-tab-dialog";
 
 const t = messages.panel.tab;
 const tp = messages.panel.calls.payment;
@@ -41,7 +43,7 @@ function Detail({ id }: { id: string }) {
     () =>
       subscribeStaffEvents(
         (event) => {
-          if (["ready", "order", "call", "tab", "rodizio"].includes(event.name)) {
+          if (["ready", "order", "call", "tab", "tab-moved", "rodizio"].includes(event.name)) {
             void queryClient.invalidateQueries({ queryKey: ["tab", id] });
           }
         },
@@ -63,6 +65,11 @@ function Detail({ id }: { id: string }) {
 
 function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) => void }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
+  /** A mesma tela, com outra comanda (a junta, depois da junção). */
+  const tabPath = (id: string) => pathname.replace(tab.id, id);
   const [method, setMethod] = useState<PaymentMethod>(tab.billRequestedWith ?? "PIX");
   const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
   // A mesa já pagou tudo adiantado: fecha sem cobrar e sem perguntar a forma (já foi informada).
@@ -74,7 +81,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
       void queryClient.invalidateQueries({ queryKey: ["open-tabs"] });
     },
   });
-  const open = tab.status !== "CLOSED";
+  const open = tab.status === "OPEN" || tab.status === "CLOSING";
   const items = tab.orders.flatMap((o) => o.items);
   const onTheWay = items.filter((i) => ["PENDING", "PREPARING", "READY"].includes(i.status));
 
@@ -98,6 +105,24 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
     </header>
   );
 
+  if (tab.status === "MERGED") {
+    return (
+      <>
+        {header}
+        <section role="status" className="flex flex-col items-center gap-4 py-8 text-center">
+          <h2 className="text-2xl font-bold">{t.mergedTitle}</h2>
+          <p className="max-w-sm text-muted-foreground">{t.mergedText}</p>
+          <Moves moves={tab.moves} />
+          {tab.mergedIntoTabId && (
+            <Link href={tabPath(tab.mergedIntoTabId)} className={cn(buttonVariants(), "h-12 w-full max-w-sm")}>
+              {t.mergedOpen}
+            </Link>
+          )}
+        </section>
+      </>
+    );
+  }
+
   if (!open) {
     return (
       <>
@@ -115,6 +140,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
               : t.closedNoCharge(formatCents(tab.totalCents))}
           </p>
           {tab.payments.length > 1 && <Payments payments={tab.payments} />}
+          <Moves moves={tab.moves} />
           <p className="max-w-sm text-muted-foreground">{t.closedText(tab.tableLabel)}</p>
           <Link href="/painel" className={cn(buttonVariants({ variant: "outline" }), "h-12 w-full max-w-sm")}>
             {t.back}
@@ -180,6 +206,25 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
         </Button>
       )}
       <RodizioDialog target={rodizioTarget} onClose={() => setRodizioTarget(null)} />
+      <Button
+        variant="outline"
+        className="h-11 self-start"
+        onClick={() =>
+          setMoveTarget({ tabId: tab.id, tableId: tab.tableId, tableLabel: tab.tableLabel, totalCents: tab.totalCents })
+        }
+      >
+        <ArrowRightLeft aria-hidden />
+        {t.moveTable}
+      </Button>
+      <MoveTabDialog
+        target={moveTarget}
+        onClose={() => setMoveTarget(null)}
+        onMoved={(moved) => {
+          setMoveTarget(null);
+          if (moved.tabId !== tab.id) router.replace(tabPath(moved.tabId));
+        }}
+      />
+      <Moves moves={tab.moves} />
 
       <section aria-label={t.items} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
         {tab.orders.map((order) => (
@@ -302,5 +347,22 @@ function Payments({ payments }: { payments: StaffTab["payments"] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** As mudanças de mesa da comanda, da mais antiga à mais nova (ADR 0012). */
+function Moves({ moves }: { moves: StaffTab["moves"] }) {
+  if (moves.length === 0) return null;
+  return (
+    <section aria-label={t.movesTitle} className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <h2 className="text-xs font-semibold tracking-wide uppercase">{t.movesTitle}</h2>
+      <ul className="flex flex-col gap-0.5">
+        {moves.map((m) => (
+          <li key={m.movedAt}>
+            {t.moveLine(m.fromTableLabel, m.toTableLabel, m.merged, clock(m.movedAt), m.movedByName ?? null)}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

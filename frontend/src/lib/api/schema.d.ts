@@ -322,6 +322,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tabs/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Muda a comanda para outra mesa; se a mesa tem comanda aberta, as duas se juntam. Vão junto os pedidos, os pagamentos, o rodízio, os chamados e os celulares */
+        post: operations["moveTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tabs/{id}/close": {
         parameters: {
             query?: never;
@@ -716,6 +733,23 @@ export interface paths {
         put?: never;
         /** Passo 1: pede a URL assinada para enviar uma foto */
         post: operations["startMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-jobs/moves/{moveId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pega a via "MUDOU DE MESA" para imprimir: ela sai marcada como impressa e só esta estação a recebe */
+        post: operations["claimMovePrintJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1641,6 +1675,23 @@ export interface paths {
         };
         /** As comandas impressas nas últimas 12 horas, da mais recente para a mais antiga (para reimprimir) */
         get: operations["listPrintedJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-jobs/moves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As vias "MUDOU DE MESA" que ainda não saíram na impressora, da mais antiga à mais nova */
+        get: operations["listPendingMovePrintJobs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2824,6 +2875,25 @@ export interface components {
              */
             lastAccessAt?: string;
         };
+        MoveTabRequest: {
+            /**
+             * Format: uuid
+             * @description A mesa de destino; se ela tem comanda aberta, as duas se juntam
+             */
+            tableId: string;
+        };
+        /** @description A comanda que continua, já na mesa de destino */
+        MovedTab: {
+            /**
+             * Format: uuid
+             * @description Na junção, a comanda da mesa de destino
+             */
+            tabId: string;
+            /** Format: uuid */
+            tableId: string;
+            /** @description As duas comandas se juntaram */
+            merged: boolean;
+        };
         CloseTabRequest: {
             /**
              * @description Como a mesa pagou o que faltava; ausente se ela já pagou tudo adiantado
@@ -2864,7 +2934,7 @@ export interface components {
             tableLabel: string;
             sectorName: string;
             /** @enum {string} */
-            status: "OPEN" | "CLOSING" | "CLOSED";
+            status: "OPEN" | "CLOSING" | "CLOSED" | "MERGED";
             /** Format: date-time */
             openedAt: string;
             /** Format: date-time */
@@ -2904,6 +2974,13 @@ export interface components {
             /** @description O rodízio da comanda (já somado no total); ausente se não houve */
             rodizio?: components["schemas"]["TableRodizio"];
             orders: components["schemas"]["StaffTabOrder"][];
+            /** @description As mudanças de mesa, da mais antiga à mais nova */
+            moves: components["schemas"]["TabMove"][];
+            /**
+             * Format: uuid
+             * @description Juntada (MERGED): a comanda que continuou, com os pedidos desta
+             */
+            mergedIntoTabId?: string;
         };
         StaffTabOrder: {
             /** Format: uuid */
@@ -2921,6 +2998,16 @@ export interface components {
             /** @description Quem lançou viu o aviso de item repetido e confirmou */
             duplicateConfirmed: boolean;
             items: components["schemas"]["TableOrderItem"][];
+        };
+        TabMove: {
+            fromTableLabel: string;
+            toTableLabel: string;
+            /** @description Juntou com a comanda da mesa de destino */
+            merged: boolean;
+            /** @description Quem mudou */
+            movedByName?: string;
+            /** Format: date-time */
+            movedAt: string;
         };
         TabPayment: {
             /** Format: int64 */
@@ -3163,6 +3250,8 @@ export interface components {
              * @description Vence se ficar este tempo sem uso
              */
             expiresAt: string;
+            /** @description A comanda deste celular mudou de mesa: o QR da mesa nova, para onde a página vai */
+            movedTo?: string;
         };
         PlaceOrderRequest: {
             items: components["schemas"]["PlaceOrderLine"][];
@@ -3365,6 +3454,35 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
         };
+        /** @description A via "MUDOU DE MESA" (ou "JUNTOU") para a impressora da cozinha */
+        MovePrintJob: {
+            /** Format: uuid */
+            moveId: string;
+            /** @description A comanda se juntou à da mesa nova */
+            merged: boolean;
+            fromTableLabel: string;
+            toTableLabel: string;
+            /** @description O setor da mesa nova */
+            sectorName: string;
+            /** Format: date-time */
+            movedAt: string;
+            /** @description Os itens a caminho que saíram no papel com a mesa antiga; vazio se outra estação já imprimiu ou se tudo já chegou */
+            items: components["schemas"]["PrintJobLine"][];
+        };
+        PrintJobLine: {
+            /** Format: uuid */
+            id: string;
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            note?: string;
+            /** @description Veio numa rodada do rodízio */
+            rodizio: boolean;
+            /** @description O motivo, na via "CANCELADO" */
+            cancelReason?: string;
+            /** @description O tamanho e as escolhas, embaixo do item */
+            choices: components["schemas"]["ItemChoices"];
+        };
         ClaimPrintJobRequest: {
             /**
              * Format: uuid
@@ -3397,20 +3515,6 @@ export interface components {
             orderedAt?: string;
             /** @description Os itens desta via; vazio se outra estação já imprimiu */
             items: components["schemas"]["PrintJobLine"][];
-        };
-        PrintJobLine: {
-            /** Format: uuid */
-            id: string;
-            productName: string;
-            /** Format: int32 */
-            quantity: number;
-            note?: string;
-            /** @description Veio numa rodada do rodízio */
-            rodizio: boolean;
-            /** @description O motivo, na via "CANCELADO" */
-            cancelReason?: string;
-            /** @description O tamanho e as escolhas, embaixo do item */
-            choices: components["schemas"]["ItemChoices"];
         };
         CancelItemRequest: {
             /**
@@ -4059,6 +4163,17 @@ export interface components {
         };
         PageResponsePrintJob: {
             content: components["schemas"]["PrintJob"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseMovePrintJob: {
+            content: components["schemas"]["MovePrintJob"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -5522,6 +5637,59 @@ export interface operations {
             };
         };
     };
+    moveTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveTabRequest"];
+            };
+        };
+        responses: {
+            /** @description A comanda que continua, na mesa nova */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovedTab"];
+                };
+            };
+            /** @description A comanda ou a mesa não é deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Uma das comandas fechou ou mudou agora: atualize e tente de novo */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A mesma mesa, mesa desativada, ou rodízios que não se juntam */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     closeTab: {
         parameters: {
             query?: never;
@@ -6841,6 +7009,37 @@ export interface operations {
             };
             /** @description O produto já tem 8 fotos */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    claimMovePrintJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moveId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os itens para imprimir (vazio: outra estação já imprimiu) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovePrintJob"];
+                };
+            };
+            /** @description Não é uma mudança deste restaurante */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9091,6 +9290,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponsePrintJob"];
+                };
+            };
+        };
+    };
+    listPendingMovePrintJobs: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Vias por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de vias */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseMovePrintJob"];
                 };
             };
         };

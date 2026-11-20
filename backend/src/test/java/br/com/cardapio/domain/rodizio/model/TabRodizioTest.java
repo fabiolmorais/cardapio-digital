@@ -1,5 +1,6 @@
 package br.com.cardapio.domain.rodizio.model;
 
+import br.com.cardapio.domain.order.exception.TabMoveException;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.order.model.TabId;
@@ -108,5 +109,49 @@ class TabRodizioTest {
                 FRIDAY_NIGHT, carlos, NOW);
         assertThatThrownBy(() -> aLaMinute.turnCard(TabRodizioStatus.PAUSED, NOW))
                 .isInstanceOf(RodizioCardException.class);
+    }
+
+    @Test
+    void mergingTheSameRodizioAddsThePeopleWithThePricesTheyHad() {
+        Rodizio rodizio = japones(RodizioType.A_LA_MINUTE);
+        TabRodizio twelve = TabRodizio.activate(rodizio, tab, Map.of("Adulto", 2), FRIDAY_NIGHT, carlos, NOW);
+        TabRodizio four = TabRodizio.activate(rodizio, TabId.newId(), Map.of("Adulto", 1, "Criança", 2),
+                FRIDAY_NIGHT, carlos, NOW);
+
+        TabRodizio together = twelve.absorb(four);
+
+        assertThat(together.id()).isEqualTo(twelve.id());
+        assertThat(together.tabId()).isEqualTo(tab);
+        assertThat(together.guests()).containsExactly(new GuestTier("Adulto", 3, Money.ofCents(149_90)),
+                new GuestTier("Criança", 2, Money.ofCents(64_90)));
+        assertThat(together.total()).isEqualTo(twelve.total().plus(four.total()));
+    }
+
+    @Test
+    void differentRodiziosOrPricesDoNotMerge() {
+        Rodizio rodizio = japones(RodizioType.A_LA_MINUTE);
+        TabRodizio friday = TabRodizio.activate(rodizio, tab, Map.of("Adulto", 2), FRIDAY_NIGHT, carlos, NOW);
+        TabRodizio monday = TabRodizio.activate(rodizio, TabId.newId(), Map.of("Adulto", 1), MONDAY_NIGHT, carlos,
+                NOW);
+        TabRodizio other = TabRodizio.activate(japones(RodizioType.A_LA_MINUTE), TabId.newId(), Map.of("Adulto", 1),
+                FRIDAY_NIGHT, carlos, NOW);
+
+        assertThatThrownBy(() -> friday.absorb(monday)).isInstanceOf(TabMoveException.class)
+                .hasMessageContaining("preços diferentes");
+        assertThatThrownBy(() -> friday.absorb(other)).isInstanceOf(TabMoveException.class)
+                .hasMessageContaining("rodízios diferentes");
+    }
+
+    @Test
+    void movingKeepsEverythingButTheTab() {
+        TabRodizio rodizio = TabRodizio.activate(japones(RodizioType.PASSAGEM), tab, Map.of("Adulto", 2),
+                FRIDAY_NIGHT, carlos, NOW);
+        TabId other = TabId.newId();
+
+        TabRodizio moved = rodizio.movedTo(other);
+
+        assertThat(moved.tabId()).isEqualTo(other);
+        assertThat(moved.guests()).isEqualTo(rodizio.guests());
+        assertThat(moved.id()).isEqualTo(rodizio.id());
     }
 }
