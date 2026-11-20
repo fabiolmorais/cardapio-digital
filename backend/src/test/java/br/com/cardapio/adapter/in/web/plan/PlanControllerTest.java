@@ -49,16 +49,17 @@ class PlanControllerTest {
     }
 
     @Test
-    void reportsAreOnlyInBusinessAndEnterprise() {
+    void basicReportsStartAtProAndFullReportsAtBusiness() {
         var result = mvc.get().uri("/api/v1/plans");
 
-        assertThat(result).bodyJson().extractingPath("$.content[0].features").asArray().doesNotContain("REPORTS");
+        assertThat(result).bodyJson().extractingPath("$.content[0].features").asArray()
+                .doesNotContain("BASIC_REPORTS", "REPORTS");
         assertThat(result).bodyJson().extractingPath("$.content[1].features").asArray()
-                .doesNotContain("REPORTS", "REPORT_EXPORT");
+                .contains("BASIC_REPORTS").doesNotContain("REPORTS", "REPORT_EXPORT");
         assertThat(result).bodyJson().extractingPath("$.content[2].features").asArray()
-                .contains("REPORTS", "REPORT_EXPORT");
+                .contains("BASIC_REPORTS", "REPORTS", "REPORT_EXPORT");
         assertThat(result).bodyJson().extractingPath("$.content[3].features").asArray()
-                .contains("REPORTS", "REPORT_EXPORT");
+                .contains("BASIC_REPORTS", "REPORTS", "REPORT_EXPORT");
     }
 
     @Test
