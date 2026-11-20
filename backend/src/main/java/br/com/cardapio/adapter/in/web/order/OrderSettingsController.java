@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import br.com.cardapio.domain.order.model.ServiceChargeSettings;
 
 /** Como o restaurante recebe pedidos (a tela "Presença e pedidos" da gestão). */
 @RestController
@@ -49,6 +50,8 @@ class OrderSettingsController {
     OrderSettingsResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderSettingsRequest body) {
         return OrderSettingsResponse.from(updateSettings.update(new UpdateOrderSettingsCommand(
                 AuthenticatedUser.from(jwt).establishmentId(), body.orderingEnabled(), body.approvalRequired(),
-                body.staffOrderingEnabled(), body.maxAmountCents() == null ? null : Money.ofCents(body.maxAmountCents()), body.maxItems())));
+                body.staffOrderingEnabled(), body.maxAmountCents() == null ? null : Money.ofCents(body.maxAmountCents()), body.maxItems(),
+                body.serviceCharge() == null ? null : new ServiceChargeSettings(body.serviceCharge().enabled(),
+                        body.serviceCharge().percent(), body.serviceCharge().destination()))));
     }
 }

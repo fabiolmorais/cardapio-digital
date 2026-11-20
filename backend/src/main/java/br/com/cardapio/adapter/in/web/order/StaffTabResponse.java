@@ -41,7 +41,9 @@ record StaffTabResponse(
         @Schema(requiredMode = REQUIRED, description = "As mudanças de mesa, da mais antiga à mais nova")
         List<Move> moves,
         @Schema(description = "Juntada (MERGED): a comanda que continuou, com os pedidos desta")
-        UUID mergedIntoTabId
+        UUID mergedIntoTabId,
+        @Schema(description = "A taxa de serviço: aberta, a que vale agora; fechada, a cobrada. Ausente sem taxa")
+        ServiceOfferResponse service
 ) {
 
     @Schema(name = "TabMove")
@@ -89,6 +91,6 @@ record StaffTabResponse(
                         o.items().stream().map(TableOrderResponse.Item::from).toList())).toList(),
                 t.moves().stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
                         m.movedByName(), m.movedAt())).toList(),
-                t.mergedInto() == null ? null : t.mergedInto().value());
+                t.mergedInto() == null ? null : t.mergedInto().value(), ServiceOfferResponse.from(t.service()));
     }
 }

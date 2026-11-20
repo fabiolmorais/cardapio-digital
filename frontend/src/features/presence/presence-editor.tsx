@@ -86,6 +86,9 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
   const [staffOrdering, setStaffOrdering] = useState(orders.staffOrderingEnabled);
   const [maxAmount, setMaxAmount] = useState(orders.maxAmountCents == null ? "" : centsToInput(orders.maxAmountCents));
   const [maxItems, setMaxItems] = useState(orders.maxItems == null ? "" : String(orders.maxItems));
+  const [service, setService] = useState(orders.serviceCharge.enabled);
+  const [servicePercent, setServicePercent] = useState(String(orders.serviceCharge.percent));
+  const [serviceDestination, setServiceDestination] = useState(orders.serviceCharge.destination);
 
   const changed = () => setNotice(null);
   const full = networks.length >= MAX_NETWORKS;
@@ -143,6 +146,8 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
       const items = maxItems.trim() === "" ? null : Number(maxItems);
       if (items !== null && (!Number.isInteger(items) || items < 1 || items > 100))
         throw new Error(t.orders.invalidItems);
+      const percent = Number(servicePercent);
+      if (!Number.isInteger(percent) || percent < 1 || percent > 20) throw new Error(t.orders.invalidPercent);
       const savedRule = await updatePresenceRule({
         networks,
         wifiName: wifiName.trim() || undefined,
@@ -155,6 +160,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
         staffOrderingEnabled: staffOrdering,
         maxAmountCents: amount ?? undefined,
         maxItems: items ?? undefined,
+        serviceCharge: { enabled: service, percent, destination: serviceDestination },
       });
       return { savedRule, savedOrders };
     },
@@ -496,6 +502,67 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
               </div>
             </div>
             <p className="text-sm text-muted-foreground">{t.orders.emptyHint}</p>
+            <Toggle
+              checked={service}
+              onChange={(value) => {
+                changed();
+                setService(value);
+              }}
+              label={t.orders.service}
+              description={t.orders.serviceHint}
+            />
+            {service && (
+              <div className="flex flex-col gap-4">
+                <div className="flex max-w-40 flex-col gap-2">
+                  <Label htmlFor={`${id}service`} className="text-muted-foreground">
+                    {t.orders.servicePercent}
+                  </Label>
+                  <div className="flex h-11 items-center gap-2 rounded-xl border border-input px-3 dark:bg-input/30 focus-within:ring-3 focus-within:ring-ring/50">
+                    <input
+                      id={`${id}service`}
+                      inputMode="numeric"
+                      value={servicePercent}
+                      autoComplete="off"
+                      onChange={(event) => {
+                        changed();
+                        setServicePercent(event.target.value.replace(/\D/g, "").slice(0, 2));
+                      }}
+                      className="h-full min-w-0 flex-1 bg-transparent text-base outline-none"
+                    />
+                    <span className="text-sm font-semibold text-muted-foreground">%</span>
+                  </div>
+                </div>
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="pb-2 text-sm text-muted-foreground">{t.orders.serviceDestination}</legend>
+                  {(["TEAM", "WAITER"] as const).map((value) => (
+                    <label
+                      key={value}
+                      className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-2.5 has-checked:border-ring has-checked:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
+                    >
+                      <input
+                        type="radio"
+                        name={`${id}destination`}
+                        value={value}
+                        checked={serviceDestination === value}
+                        onChange={() => {
+                          changed();
+                          setServiceDestination(value);
+                        }}
+                        className="accent-primary"
+                      />
+                      <span className="flex flex-col">
+                        <span className="font-semibold">
+                          {value === "TEAM" ? t.orders.serviceTeam : t.orders.serviceWaiter}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {value === "TEAM" ? t.orders.serviceTeamHint : t.orders.serviceWaiterHint}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+              </div>
+            )}
           </section>
           <section
             aria-labelledby={`${id}session`}

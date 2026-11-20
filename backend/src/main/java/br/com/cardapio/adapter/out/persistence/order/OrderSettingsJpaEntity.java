@@ -31,6 +31,15 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "max_items")
     private Integer maxItems;
 
+    @Column(name = "service_charge_enabled", nullable = false)
+    private boolean serviceChargeEnabled;
+
+    @Column(name = "service_charge_percent", nullable = false)
+    private int serviceChargePercent;
+
+    @Column(name = "service_charge_destination", nullable = false)
+    private String serviceChargeDestination;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -38,7 +47,9 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     }
 
     OrderSettingsJpaEntity(UUID id, UUID establishmentId, boolean orderingEnabled, boolean approvalRequired,
-                           boolean staffOrderingEnabled, Long maxAmountCents, Integer maxItems, Instant updatedAt) {
+                           boolean staffOrderingEnabled, Long maxAmountCents, Integer maxItems,
+                           boolean serviceChargeEnabled, int serviceChargePercent, String serviceChargeDestination,
+                           Instant updatedAt) {
         super(establishmentId);
         this.id = id;
         this.orderingEnabled = orderingEnabled;
@@ -46,6 +57,9 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
         this.staffOrderingEnabled = staffOrderingEnabled;
         this.maxAmountCents = maxAmountCents;
         this.maxItems = maxItems;
+        this.serviceChargeEnabled = serviceChargeEnabled;
+        this.serviceChargePercent = serviceChargePercent;
+        this.serviceChargeDestination = serviceChargeDestination;
         this.updatedAt = updatedAt;
     }
 
@@ -55,5 +69,8 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     boolean isStaffOrderingEnabled() { return staffOrderingEnabled; }
     Long getMaxAmountCents() { return maxAmountCents; }
     Integer getMaxItems() { return maxItems; }
+    boolean isServiceChargeEnabled() { return serviceChargeEnabled; }
+    int getServiceChargePercent() { return serviceChargePercent; }
+    String getServiceChargeDestination() { return serviceChargeDestination; }
     Instant getUpdatedAt() { return updatedAt; }
 }

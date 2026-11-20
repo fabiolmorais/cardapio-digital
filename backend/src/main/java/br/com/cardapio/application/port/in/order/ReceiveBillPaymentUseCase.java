@@ -16,6 +16,12 @@ public interface ReceiveBillPaymentUseCase {
     /** O que a mesa deve, para o garçom conferir antes de receber. */
     BillSummary bill(EstablishmentId establishmentId, CallId callId);
 
-    /** Recebe o valor e conclui o pedido de conta. */
-    StaffCall receive(EstablishmentId establishmentId, CallId callId, UserId by, Money amount, PaymentMethod method);
+    /**
+     * Recebe o valor e conclui o pedido de conta.
+     *
+     * @param serviceAccepted o garçom confirmou a taxa de serviço (o cliente pode mudar de ideia na
+     *                        maquininha); null: fica a escolha da mesa
+     */
+    StaffCall receive(EstablishmentId establishmentId, CallId callId, UserId by, Money amount, PaymentMethod method,
+                      Boolean serviceAccepted);
 }

@@ -128,7 +128,7 @@ class StaffCallController {
                                      @Valid @RequestBody ReceivePaymentRequest request) {
         var user = AuthenticatedUser.from(jwt);
         return StaffCallResponse.from(billPayment.receive(user.establishmentId(), new CallId(id), user.userId(),
-                Money.ofCents(request.amountCents()), request.paymentMethod()));
+                Money.ofCents(request.amountCents()), request.paymentMethod(), request.serviceAccepted()));
     }
 
     @PostMapping("/{id}/release")

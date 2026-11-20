@@ -21,6 +21,8 @@ import java.util.Objects;
  * @param total         o que foi cobrado, gravado ao fechar; null enquanto aberta
  * @param paymentMethod como a mesa pagou (a forma do último pagamento); null enquanto aberta, ou se
  *                      fechou sem nada a cobrar
+ * @param service       a taxa de serviço oferecida à mesa (RF39); null se não foi oferecida
+ * @param serviceCharged a taxa cobrada, gravada ao fechar (fora do total); null enquanto aberta
  */
 public record Tab(
         TabId id,
@@ -31,7 +33,9 @@ public record Tab(
         Instant closedAt,
         UserId closedBy,
         Money total,
-        PaymentMethod paymentMethod
+        PaymentMethod paymentMethod,
+        ServiceCharge service,
+        Money serviceCharged
 ) {
 
     public Tab {
@@ -43,7 +47,42 @@ public record Tab(
     }
 
     public static Tab open(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
-        return new Tab(TabId.newId(), establishmentId, tableId, TabStatus.OPEN, now, null, null, null, null);
+        return new Tab(TabId.newId(), establishmentId, tableId, TabStatus.OPEN, now, null, null, null, null, null,
+                null);
+    }
+
+    /**
+     * A taxa de serviço que vale para esta comanda: a escolhida (pela mesa ou pelo garçom), ou, se
+     * ninguém escolheu ainda e o restaurante cobra, a do restaurante, já aceita (ela vem marcada).
+     * Null se não há taxa.
+     */
+    public ServiceCharge effectiveService(ServiceChargeSettings settings) {
+        if (service != null) {
+            return service;
+        }
+        return settings.enabled() ? new ServiceCharge(settings.percent(), true) : null;
+    }
+
+    /**
+     * A mesa (ao pedir a conta) ou o garçom (ao receber) aceitou ou tirou a taxa. O percentual
+     * fica o copiado da primeira vez: mudar a configuração depois não muda esta conta. Sem taxa
+     * (o restaurante não cobra e ninguém escolheu antes), nada muda.
+     */
+    public Tab chooseService(ServiceChargeSettings settings, boolean accepted) {
+        if (!status.isOpen()) {
+            throw new TabStateException("Esta comanda já foi fechada");
+        }
+        ServiceCharge current = effectiveService(settings);
+        if (current == null) {
+            return this;
+        }
+        return withService(current.accept(accepted));
+    }
+
+    /** A mesma comanda com esta taxa (null: sem taxa). */
+    public Tab withService(ServiceCharge newService) {
+        return new Tab(id, establishmentId, tableId, status, openedAt, closedAt, closedBy, total, paymentMethod,
+                newService, serviceCharged);
     }
 
     /**
@@ -101,7 +140,7 @@ public record Tab(
             throw new TabStateException("Ainda há itens a caminho: " + String.join(", ", onTheWay)
                     + ". Entregue ou cancele antes de fechar.");
         }
-        TabBalance balance = TabBalance.of(items, rodizio, payments);
+        TabBalance balance = TabBalance.of(items, rodizio, service, payments);
         TabPayment last = null;
         PaymentMethod main = method;
         if (!balance.settled()) {
@@ -113,6 +152,6 @@ public record Tab(
             main = payments.getLast().method();
         }
         return new Closing(new Tab(id, establishmentId, tableId, TabStatus.CLOSED, openedAt, now, by,
-                balance.total(), main), last);
+                balance.total(), main, service, service == null ? null : balance.service()), last);
     }
 }

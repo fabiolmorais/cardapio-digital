@@ -47,6 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import br.com.cardapio.domain.order.model.TabStatus;
+import br.com.cardapio.domain.order.model.ServiceDestination;
 
 /**
  * O cardápio, as configurações, as comandas e os pedidos na memória, para os testes dos serviços
@@ -294,7 +295,7 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
     }
 
     @Override
-    public boolean close(Tab closed) {
+    public boolean close(Tab closed, ServiceDestination destination, UserId waiter) {
         Tab current = tabs.get(closed.id());
         if (current == null || !current.status().isOpen()) {
             return false;
@@ -357,7 +358,7 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
             return false;
         }
         tabs.put(tabId, new Tab(t.id(), t.establishmentId(), t.tableId(), TabStatus.MERGED, t.openedAt(), null, null,
-                null, null));
+                null, null, t.service(), null));
         return true;
     }
 
@@ -375,5 +376,23 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
                 ? new TabPayment(p.id(), p.establishmentId(), toTab, p.amount(), p.method(), p.receivedAt(),
                         p.receivedBy(), p.callId())
                 : p);
+    }
+
+    /** Quem atendeu a mesa, para a regra "garçom que atendeu"; o teste diz quem é. */
+    UserId topAttendant;
+
+    @Override
+    public boolean saveService(Tab tab) {
+        Tab current = tabs.get(tab.id());
+        if (current == null || !current.status().isOpen()) {
+            return false;
+        }
+        tabs.put(tab.id(), current.withService(tab.service()));
+        return true;
+    }
+
+    @Override
+    public Optional<UserId> findTopAttendant(Tab tab) {
+        return Optional.ofNullable(topAttendant);
     }
 }

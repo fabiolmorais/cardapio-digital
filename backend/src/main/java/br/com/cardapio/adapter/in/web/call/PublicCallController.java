@@ -66,7 +66,8 @@ class PublicCallController {
             @CookieValue(name = TableSessionCookie.NAME, required = false) String session,
             @Valid @RequestBody CallRequest request) {
         RequestedCall result = requestCall.request(
-                new RequestCallCommand(token, session, request.type(), request.paymentMethod()));
+                new RequestCallCommand(token, session, request.type(), request.paymentMethod(),
+                        request.serviceAccepted()));
         return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
                 .body(TableCallResponse.from(result.call()));
     }

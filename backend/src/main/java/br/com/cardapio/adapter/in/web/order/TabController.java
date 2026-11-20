@@ -121,7 +121,7 @@ class TabController {
                            @Valid @RequestBody CloseTabRequest request) {
         var user = AuthenticatedUser.from(jwt);
         return StaffTabResponse.from(closeTab.close(user.establishmentId(), new TabId(id), user.userId(),
-                request.paymentMethod()));
+                request.paymentMethod(), request.serviceAccepted()));
     }
 
     @PostMapping("/{id}/move")

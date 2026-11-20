@@ -82,7 +82,8 @@ public record TabMove(
         Instant openedAt = merged() && other != null && other.openedAt().isBefore(survivor.openedAt())
                 ? other.openedAt() : survivor.openedAt();
         return new Tab(survivor.id(), survivor.establishmentId(), toTableId, survivor.status(), openedAt,
-                survivor.closedAt(), survivor.closedBy(), survivor.total(), survivor.paymentMethod());
+                survivor.closedAt(), survivor.closedBy(), survivor.total(), survivor.paymentMethod(), survivor.service(),
+                survivor.serviceCharged());
     }
 
     private static void requireOpen(Tab tab) {

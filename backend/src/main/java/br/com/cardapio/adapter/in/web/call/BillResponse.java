@@ -5,6 +5,7 @@ import br.com.cardapio.domain.call.model.PaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
+import br.com.cardapio.adapter.in.web.order.ServiceOfferResponse;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
@@ -18,11 +19,12 @@ record BillResponse(
         @Schema(requiredMode = REQUIRED, description = "A forma que a mesa escolheu ao pedir a conta")
         PaymentMethod requestedWith,
         @Schema(requiredMode = REQUIRED, description = "Quantos itens ainda não chegaram à mesa")
-        int itemsOnTheWay
+        int itemsOnTheWay,
+        @Schema(description = "A taxa de serviço; ausente se o restaurante não cobra") ServiceOfferResponse service
 ) {
 
     static BillResponse from(BillSummary b) {
         return new BillResponse(b.tabId() == null ? null : b.tabId().value(), b.total().cents(), b.paid().cents(),
-                b.due().cents(), b.requestedWith(), b.itemsOnTheWay());
+                b.due().cents(), b.requestedWith(), b.itemsOnTheWay(), ServiceOfferResponse.from(b.service()));
     }
 }

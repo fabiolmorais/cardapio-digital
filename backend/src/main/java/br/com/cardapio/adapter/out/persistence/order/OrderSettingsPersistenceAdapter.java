@@ -9,6 +9,8 @@ import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.ServiceDestination;
 
 @Component
 class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
@@ -27,7 +29,8 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
         return settings.findByEstablishmentId(establishmentId.value()).map(e -> new OrderSettings(
                 new OrderSettingsId(e.getId()), new EstablishmentId(e.getEstablishmentId()), e.isOrderingEnabled(),
                 e.isApprovalRequired(), e.isStaffOrderingEnabled(), e.getMaxAmountCents() == null ? null : Money.ofCents(e.getMaxAmountCents()),
-                e.getMaxItems(), e.getUpdatedAt()));
+                e.getMaxItems(), new ServiceChargeSettings(e.isServiceChargeEnabled(), e.getServiceChargePercent(),
+                        ServiceDestination.valueOf(e.getServiceChargeDestination())), e.getUpdatedAt()));
     }
 
     @Override
@@ -35,6 +38,7 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
         establishmentFilter.enable(s.establishmentId());
         settings.save(new OrderSettingsJpaEntity(s.id().value(), s.establishmentId().value(), s.orderingEnabled(),
                 s.approvalRequired(), s.staffOrderingEnabled(), s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
+                s.serviceCharge().enabled(), s.serviceCharge().percent(), s.serviceCharge().destination().name(),
                 s.updatedAt()));
     }
 }

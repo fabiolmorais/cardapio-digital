@@ -115,6 +115,30 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
             """, nativeQuery = true)
     long revenueOn(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now);
 
+    /**
+     * A taxa de serviço das comandas fechadas hoje (RF39), por garçom: a linha sem nome é a da
+     * caixinha da equipe. Fora do faturado.
+     */
+    @Query(value = """
+            SELECT u.name AS waiterName, sum(t.service_cents) AS cents
+              FROM tab t
+              JOIN establishment e ON e.id = t.establishment_id
+              LEFT JOIN app_user u ON u.id = t.service_waiter_id
+             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED' AND t.service_cents > 0
+               AND t.closed_at >= CAST(:now AS TIMESTAMPTZ) - INTERVAL '2 day'
+               AND (t.closed_at AT TIME ZONE e.time_zone)::date = (CAST(:now AS TIMESTAMPTZ) AT TIME ZONE e.time_zone)::date
+             GROUP BY u.name
+             ORDER BY sum(t.service_cents) DESC
+            """, nativeQuery = true)
+    List<ServiceRow> serviceOn(@Param("establishmentId") UUID establishmentId, @Param("now") Instant now);
+
+    /** Uma linha da taxa de serviço do dia. */
+    interface ServiceRow {
+        String getWaiterName();
+
+        long getCents();
+    }
+
     /** A espera média (do chamado ao aceite), em segundos, dos chamados aceitos hoje no dia do restaurante. */
     @Query(value = """
             SELECT CAST(avg(EXTRACT(EPOCH FROM (c.accepted_at - c.created_at))) AS BIGINT)

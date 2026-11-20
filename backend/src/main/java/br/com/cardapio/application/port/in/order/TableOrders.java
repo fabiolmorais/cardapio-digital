@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public record TableOrders(boolean orderingEnabled, Money total, Money paid, Money due, TableRodizio rodizio, Set<ProductId> rodizioProducts,
                           RoundPolicy.Limits rodizioLimits, List<TableOrder> orders,
-                          RodizioParticipation participation) {
+                          RodizioParticipation participation, ServiceOffer service) {
 
     public TableOrders {
         rodizioProducts = Set.copyOf(rodizioProducts);

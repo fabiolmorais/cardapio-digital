@@ -19,8 +19,23 @@ record LiveFloorResponse(
         @Schema(description = "O faturado de hoje (comandas fechadas); ausente para quem não é dono ou gerente")
         Long revenueTodayCents,
         @Schema(description = "A espera média dos chamados de hoje, em segundos; ausente se ninguém chamou")
-        Long averageWaitSeconds
+        Long averageWaitSeconds,
+        @Schema(description = "A taxa de serviço de hoje, fora do faturado; ausente para quem não é dono ou gerente")
+        ServiceToday serviceToday
 ) {
+
+    @Schema(name = "ServiceToday")
+    record ServiceToday(
+            @Schema(requiredMode = REQUIRED, description = "O total de hoje, em centavos") long totalCents,
+            @Schema(requiredMode = REQUIRED, description = "Por garçom, na regra \"garçom que atendeu\"")
+            List<WaiterService> byWaiter
+    ) {
+    }
+
+    @Schema(name = "WaiterService")
+    record WaiterService(@Schema(requiredMode = REQUIRED) String name,
+                         @Schema(requiredMode = REQUIRED) long amountCents) {
+    }
 
     @Schema(name = "LiveTable")
     record Table(
@@ -58,6 +73,9 @@ record LiveFloorResponse(
                         t.call() == null ? null : new Call(t.call().type(), t.call().status(), t.call().paymentMethod(),
                                 t.call().createdAt(), t.call().acceptedByName()),
                         t.waitingOrders())).toList(),
-                f.occupied(), f.revenueToday() == null ? null : f.revenueToday().cents(), f.averageWaitSeconds());
+                f.occupied(), f.revenueToday() == null ? null : f.revenueToday().cents(), f.averageWaitSeconds(),
+                f.serviceToday() == null ? null : new ServiceToday(f.serviceToday().total().cents(),
+                        f.serviceToday().byWaiter().stream()
+                                .map(w -> new WaiterService(w.name(), w.amount().cents())).toList()));
     }
 }

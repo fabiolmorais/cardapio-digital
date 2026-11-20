@@ -54,7 +54,7 @@ public class GetLiveFloorService implements GetLiveFloorUseCase {
         int occupied = (int) tables.stream().filter(t -> t.state() != LiveFloor.State.FREE).count();
         var wait = floor.averageWaitSeconds(establishmentId, now);
         return new LiveFloor(tables, occupied, withRevenue ? floor.revenueOn(establishmentId, now) : null,
-                wait.isPresent() ? wait.getAsLong() : null);
+                wait.isPresent() ? wait.getAsLong() : null, withRevenue ? floor.serviceOn(establishmentId, now) : null);
     }
 
     private static LiveFloor.Table table(LiveTableView t, List<CallView> open, long waitingOrders) {

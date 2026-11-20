@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.application.port.in.order.ServiceOffer;
 import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
 import br.com.cardapio.application.port.in.order.TableOrder;
 import br.com.cardapio.application.port.in.order.TableOrders;
@@ -127,10 +128,17 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
         // Este celular está no rodízio da mesa? Quem chegou depois da ativação pergunta antes.
         RodizioParticipation participation = rodizio == null ? null
                 : phones.find(establishmentId, rodizio.id(), visit.session().id());
-        return new TableOrders(enabled, total, paid, total.minusOrZero(paid),
+        // A taxa de serviço (RF39): vem marcada, a menos que a mesa (ou o garçom) tenha tirado.
+        var serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
+        ServiceOffer service = open.map(tab -> ServiceOffer.of(tab.effectiveService(serviceSettings), total, paid,
+                serviceSettings.destination(), ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab)))
+                .orElse(null);
+        Money due = service == null ? total.minusOrZero(paid) : service.accepted() ? service.dueWith()
+                : service.dueWithout();
+        return new TableOrders(enabled, total, paid, due,
                 rodizio == null ? null : TableRodizio.from(rodizio), included, limits,
                 found.stream().map(o -> TableOrder.from(o, visit.session().id(), thumbs(establishmentId),
-                        phoneNumbers::get)).toList(), participation);
+                        phoneNumbers::get)).toList(), participation, service);
     }
 
     /** A miniatura da primeira foto de cada produto (a capa, como no cardápio). */

@@ -29,6 +29,9 @@ public class UpdateOrderSettingsService implements UpdateOrderSettingsUseCase {
                 ? command.staffOrderingEnabled() : current.staffOrderingEnabled();
         OrderSettings updated = current.update(command.orderingEnabled(), command.approvalRequired(), staffOrdering,
                 command.maxAmount(), command.maxItems(), now);
+        if (command.serviceCharge() != null) {
+            updated = updated.withServiceCharge(command.serviceCharge(), now);
+        }
         settings.save(updated);
         return updated;
     }

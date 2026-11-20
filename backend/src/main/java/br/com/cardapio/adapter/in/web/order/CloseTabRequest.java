@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "CloseTabRequest")
 record CloseTabRequest(
         @Schema(description = "Como a mesa pagou o que faltava; ausente se ela já pagou tudo adiantado")
-        PaymentMethod paymentMethod
+        PaymentMethod paymentMethod,
+        @Schema(description = "A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava")
+        Boolean serviceAccepted
 ) {
 }
