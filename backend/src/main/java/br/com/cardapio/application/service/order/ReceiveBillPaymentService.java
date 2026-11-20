@@ -32,6 +32,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import br.com.cardapio.application.port.out.order.OrderSettingsPort;
+import br.com.cardapio.application.port.in.order.ServiceOffer;
+import br.com.cardapio.domain.order.model.ServiceCharge;
+import br.com.cardapio.domain.order.model.ServiceChargeSettings;
 
 public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
 
@@ -41,10 +45,13 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
     private final TabRodizioPort tabRodizios;
     private final TabPaymentPort payments;
     private final EventPublisherPort events;
+    private final OrderSettingsPort settings;
     private final Clock clock;
 
     public ReceiveBillPaymentService(CallPort calls, TabPort tabs, OrderPort orders, TabRodizioPort tabRodizios,
-                                     TabPaymentPort payments, EventPublisherPort events, Clock clock) {
+                                     TabPaymentPort payments, EventPublisherPort events, OrderSettingsPort settings,
+                                     Clock clock) {
+        this.settings = settings;
         this.calls = calls;
         this.tabs = tabs;
         this.orders = orders;
@@ -62,11 +69,15 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
         if (open.isEmpty()) {
             return new BillSummary(null, Money.ZERO, Money.ZERO, Money.ZERO, call.paymentMethod(), 0);
         }
-        List<OrderItem> items = itemsOf(establishmentId, open.get());
-        TabBalance balance = balanceOf(establishmentId, open.get(), items);
+        Tab tab = open.get();
+        ServiceChargeSettings serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
+        ServiceCharge service = tab.effectiveService(serviceSettings);
+        List<OrderItem> items = itemsOf(establishmentId, tab);
+        TabBalance balance = balanceOf(establishmentId, tab, service, items);
         int onTheWay = items.stream().filter(i -> i.status().isOnTheWay()).mapToInt(OrderItem::quantity).sum();
-        return new BillSummary(open.get().id(), balance.total(), balance.paid(), balance.due(), call.paymentMethod(),
-                onTheWay);
+        return new BillSummary(tab.id(), balance.total(), balance.paid(), balance.due(), call.paymentMethod(),
+                onTheWay, ServiceOffer.of(service, balance.total(), balance.paid(), serviceSettings.destination(),
+                        ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab)));
     }
 
     /**
@@ -76,13 +87,16 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
     @Override
     @Transactional
     public StaffCall receive(EstablishmentId establishmentId, CallId callId, UserId by, Money amount,
-                             PaymentMethod method) {
+                             PaymentMethod method, Boolean serviceAccepted) {
         Call call = billCall(establishmentId, callId);
-        Tab tab = tabs.findOpen(establishmentId, call.tableId())
+        Tab found = tabs.findOpen(establishmentId, call.tableId())
                 .orElseThrow(() -> new TabStateException("A mesa ainda não tem nada na conta"));
         Instant now = clock.instant();
-        TabPayment payment = TabPayment.receive(tab, balanceOf(establishmentId, tab, itemsOf(establishmentId, tab)),
-                amount, method, by, call.id(), now);
+        ServiceChargeSettings serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
+        // O garçom confirma a taxa ao receber: o cliente pode ter mudado de ideia na maquininha.
+        Tab tab = ServiceCharges.choose(tabs, serviceSettings, found, serviceAccepted);
+        TabPayment payment = TabPayment.receive(tab, balanceOf(establishmentId, tab,
+                tab.effectiveService(serviceSettings), itemsOf(establishmentId, tab)), amount, method, by, call.id(), now);
         Call done = call.finish(now);
         // Dois garçons recebendo juntos: o UPDATE condicional deixa valer um só (e o pagamento junto).
         if (!calls.update(done, CallStatus.IN_PROGRESS)) {
@@ -105,8 +119,9 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
         return orders.findByTab(establishmentId, tab.id()).stream().flatMap(o -> o.items().stream()).toList();
     }
 
-    private TabBalance balanceOf(EstablishmentId establishmentId, Tab tab, List<OrderItem> items) {
+    private TabBalance balanceOf(EstablishmentId establishmentId, Tab tab, ServiceCharge service,
+                                 List<OrderItem> items) {
         Money rodizio = tabRodizios.findByTab(establishmentId, tab.id()).map(TabRodizio::total).orElse(Money.ZERO);
-        return TabBalance.of(items, rodizio, payments.findPayments(establishmentId, tab.id()));
+        return TabBalance.of(items, rodizio, service, payments.findPayments(establishmentId, tab.id()));
     }
 }

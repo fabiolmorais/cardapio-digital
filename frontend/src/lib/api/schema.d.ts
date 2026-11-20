@@ -2675,6 +2675,23 @@ export interface components {
              * @example 10
              */
             maxItems?: number;
+            /** @description A taxa de serviço opcional (os 10% do garçom); vazio mantém como está */
+            serviceCharge?: components["schemas"]["ServiceChargeSettings"];
+        };
+        ServiceChargeSettings: {
+            /** @description Cobra a taxa de serviço */
+            enabled: boolean;
+            /**
+             * Format: int32
+             * @description O percentual, de 1 a 20
+             * @example 10
+             */
+            percent: number;
+            /**
+             * @description Para quem fica registrada
+             * @enum {string}
+             */
+            destination: "TEAM" | "WAITER";
         };
         OrderSettings: {
             orderingEnabled: boolean;
@@ -2684,6 +2701,8 @@ export interface components {
             maxAmountCents?: number;
             /** Format: int32 */
             maxItems?: number;
+            /** @description A taxa de serviço opcional */
+            serviceCharge: components["schemas"]["ServiceChargeSettings"];
         };
         OptionGroupRequest: {
             /**
@@ -2900,6 +2919,8 @@ export interface components {
              * @enum {string}
              */
             paymentMethod?: "PIX" | "CARD" | "CASH";
+            /** @description A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava */
+            serviceAccepted?: boolean;
         };
         ItemChoice: {
             /** @example Escolha os sabores */
@@ -2922,6 +2943,39 @@ export interface components {
             variantName?: string;
             /** @description As escolhas, na ordem dos grupos; vazio sem opções */
             options: components["schemas"]["ItemChoice"][];
+        };
+        /** @description A taxa de serviço opcional (os 10% do garçom): já calculada, com e sem */
+        ServiceOffer: {
+            /**
+             * Format: int32
+             * @description O percentual
+             * @example 10
+             */
+            percent: number;
+            /** @description Está aceita (vem aceita; a mesa ou o garçom pode tirar) */
+            accepted: boolean;
+            /**
+             * Format: int64
+             * @description A taxa sobre o consumo, em centavos
+             */
+            amountCents: number;
+            /**
+             * Format: int64
+             * @description O que falta pagar, com a taxa
+             */
+            dueWithCents: number;
+            /**
+             * Format: int64
+             * @description O que falta pagar, sem a taxa
+             */
+            dueWithoutCents: number;
+            /**
+             * @description Para quem fica registrada
+             * @enum {string}
+             */
+            destination: "TEAM" | "WAITER";
+            /** @description O garçom que fica com ela, se a regra for "garçom que atendeu" */
+            waiterName?: string;
         };
         StaffTab: {
             /** Format: uuid */
@@ -2981,6 +3035,8 @@ export interface components {
              * @description Juntada (MERGED): a comanda que continuou, com os pedidos desta
              */
             mergedIntoTabId?: string;
+            /** @description A taxa de serviço: aberta, a que vale agora; fechada, a cobrada. Ausente sem taxa */
+            service?: components["schemas"]["ServiceOffer"];
         };
         StaffTabOrder: {
             /** Format: uuid */
@@ -3327,6 +3383,8 @@ export interface components {
              * @enum {string}
              */
             paymentMethod?: "PIX" | "CARD" | "CASH";
+            /** @description Só no pedido de conta: a mesa aceita a taxa de serviço? Vazio: não mudou */
+            serviceAccepted?: boolean;
         };
         TableCall: {
             /** Format: uuid */
@@ -3690,6 +3748,8 @@ export interface components {
              * @enum {string}
              */
             paymentMethod: "PIX" | "CARD" | "CASH";
+            /** @description A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava */
+            serviceAccepted?: boolean;
         };
         EstablishmentAccess: {
             /** Format: uuid */
@@ -4134,6 +4194,8 @@ export interface components {
              * @enum {string}
              */
             rodizioParticipation?: "NONE" | "REQUESTED" | "JOINED";
+            /** @description A taxa de serviço opcional; ausente se o restaurante não cobra (ou ainda não há conta) */
+            service?: components["schemas"]["ServiceOffer"];
         };
         SseEmitter: {
             /** Format: int64 */
@@ -4393,6 +4455,8 @@ export interface components {
              * @description A espera média dos chamados de hoje, em segundos; ausente se ninguém chamou
              */
             averageWaitSeconds?: number;
+            /** @description A taxa de serviço de hoje, fora do faturado; ausente para quem não é dono ou gerente */
+            serviceToday?: components["schemas"]["ServiceToday"];
         };
         LiveTable: {
             /** Format: uuid */
@@ -4452,6 +4516,20 @@ export interface components {
             createdAt: string;
             acceptedByName?: string;
         };
+        ServiceToday: {
+            /**
+             * Format: int64
+             * @description O total de hoje, em centavos
+             */
+            totalCents: number;
+            /** @description Por garçom, na regra "garçom que atendeu" */
+            byWaiter: components["schemas"]["WaiterService"][];
+        };
+        WaiterService: {
+            name: string;
+            /** Format: int64 */
+            amountCents: number;
+        };
         PageResponseDevice: {
             content: components["schemas"]["Device"][];
             /** Format: int32 */
@@ -4506,6 +4584,8 @@ export interface components {
              * @description Quantos itens ainda não chegaram à mesa
              */
             itemsOnTheWay: number;
+            /** @description A taxa de serviço; ausente se o restaurante não cobra */
+            service?: components["schemas"]["ServiceOffer"];
         };
         /** @description Celular bloqueado pela equipe, com a sessão ainda aberta */
         BlockedPhone: {

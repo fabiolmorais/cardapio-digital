@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
+import br.com.cardapio.domain.order.model.ServiceCharge;
+import br.com.cardapio.domain.order.model.ServiceDestination;
 
 @Component
 class TabPersistenceAdapter implements TabPort {
@@ -60,10 +62,28 @@ class TabPersistenceAdapter implements TabPort {
     }
 
     @Override
-    public boolean close(Tab t) {
+    public boolean close(Tab t, ServiceDestination destination, UserId waiter) {
         establishmentFilter.enable(t.establishmentId());
+        ServiceCharge s = t.service();
         return tabs.close(t.id().value(), t.establishmentId().value(), t.closedAt(), t.closedBy().value(),
-                t.total().cents(), t.paymentMethod() == null ? null : t.paymentMethod().name()) == 1;
+                t.total().cents(), t.paymentMethod() == null ? null : t.paymentMethod().name(),
+                s == null ? null : s.percent(), s == null ? null : s.accepted(),
+                t.serviceCharged() == null ? null : t.serviceCharged().cents(),
+                s == null || destination == null ? null : destination.name(),
+                waiter == null ? null : waiter.value()) == 1;
+    }
+
+    @Override
+    public boolean saveService(Tab t) {
+        ServiceCharge s = t.service();
+        return tabs.saveService(t.id().value(), t.establishmentId().value(), s == null ? null : s.percent(),
+                s == null ? null : s.accepted()) == 1;
+    }
+
+    @Override
+    public Optional<UserId> findTopAttendant(Tab t) {
+        return tabs.findTopAttendant(t.establishmentId().value(), t.id().value(), t.tableId().value(), t.openedAt())
+                .map(UserId::new);
     }
 
     @Override
@@ -92,7 +112,9 @@ class TabPersistenceAdapter implements TabPort {
                 new DiningTableId(e.getTableId()), TabStatus.valueOf(e.getStatus()), e.getOpenedAt(),
                 e.getClosedAt(), e.getClosedBy() == null ? null : new UserId(e.getClosedBy()),
                 e.getTotalCents() == null ? null : Money.ofCents(e.getTotalCents()),
-                e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()));
+                e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()),
+                e.getServicePercent() == null ? null : new ServiceCharge(e.getServicePercent(), e.getServiceAccepted()),
+                e.getServiceCents() == null ? null : Money.ofCents(e.getServiceCents()));
     }
 
     @Override

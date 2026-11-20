@@ -17,11 +17,25 @@ import java.util.List;
  * @param revenueToday       o faturado de hoje (comandas fechadas); null para quem não é dono ou
  *                           gerente
  * @param averageWaitSeconds a espera média dos chamados de hoje; null se ninguém chamou
+ * @param serviceToday       a taxa de serviço de hoje (RF39), fora do faturado; null para quem não é
+ *                           dono ou gerente
  */
-public record LiveFloor(List<Table> tables, int occupied, Money revenueToday, Long averageWaitSeconds) {
+public record LiveFloor(List<Table> tables, int occupied, Money revenueToday, Long averageWaitSeconds,
+                        ServiceToday serviceToday) {
 
     public LiveFloor {
         tables = List.copyOf(tables);
+    }
+
+    /** A taxa de serviço de hoje: o total e, na regra "garçom que atendeu", quanto ficou para cada um. */
+    public record ServiceToday(Money total, List<WaiterService> byWaiter) {
+
+        public ServiceToday {
+            byWaiter = List.copyOf(byWaiter);
+        }
+    }
+
+    public record WaiterService(String name, Money amount) {
     }
 
     /**

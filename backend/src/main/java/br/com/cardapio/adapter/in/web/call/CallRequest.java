@@ -11,6 +11,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(name = "CallRequest")
 record CallRequest(
         @Schema(requiredMode = REQUIRED) @NotNull CallType type,
-        @Schema(description = "Só no pedido de conta (BILL)") PaymentMethod paymentMethod
+        @Schema(description = "Só no pedido de conta (BILL)") PaymentMethod paymentMethod,
+        @Schema(description = "Só no pedido de conta: a mesa aceita a taxa de serviço? Vazio: não mudou")
+        Boolean serviceAccepted
 ) {
 }

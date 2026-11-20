@@ -12,4 +12,12 @@ public interface CloseTabUseCase {
      * sessões dos celulares da mesa e conclui os chamados que ficaram abertos.
      */
     StaffTab close(EstablishmentId establishmentId, TabId tabId, UserId by, PaymentMethod paymentMethod);
+
+    /**
+     * Fecha confirmando a taxa de serviço (RF39): o garçom aceita ou tira na hora de cobrar.
+     *
+     * @param serviceAccepted null: fica a escolha que já estava (a da mesa, ou aceita por padrão)
+     */
+    StaffTab close(EstablishmentId establishmentId, TabId tabId, UserId by, PaymentMethod paymentMethod,
+                   Boolean serviceAccepted);
 }

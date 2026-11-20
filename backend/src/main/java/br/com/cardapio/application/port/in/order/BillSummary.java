@@ -12,6 +12,15 @@ import br.com.cardapio.domain.shared.model.Money;
  * @param requestedWith a forma que a mesa escolheu ao pedir a conta
  * @param itemsOnTheWay quantos itens ainda não chegaram à mesa (a comanda não fecha com eles)
  */
+/**
+ * @param due     o que falta receber, com a taxa de serviço se ela estiver aceita
+ * @param service a taxa de serviço (RF39); null se o restaurante não cobra
+ */
 public record BillSummary(TabId tabId, Money total, Money paid, Money due, PaymentMethod requestedWith,
-                          int itemsOnTheWay) {
+                          int itemsOnTheWay, ServiceOffer service) {
+
+    public BillSummary(TabId tabId, Money total, Money paid, Money due, PaymentMethod requestedWith,
+                       int itemsOnTheWay) {
+        this(tabId, total, paid, due, requestedWith, itemsOnTheWay, null);
+    }
 }

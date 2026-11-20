@@ -25,10 +25,14 @@ export async function fetchTab(id: string): Promise<StaffTab> {
 
 /** Fecha depois do pagamento. 409 traz a mensagem do back (os itens a caminho, por exemplo). */
 /** Fecha a comanda; sem forma de pagamento quando a mesa já pagou tudo adiantado. */
-export async function closeTab(id: string, paymentMethod: PaymentMethod | undefined): Promise<StaffTab> {
+export async function closeTab(
+  id: string,
+  paymentMethod: PaymentMethod | undefined,
+  serviceAccepted?: boolean,
+): Promise<StaffTab> {
   const { data, error, response } = await api.POST("/api/v1/tabs/{id}/close", {
     params: { path: { id } },
-    body: { paymentMethod },
+    body: { paymentMethod, serviceAccepted },
   });
   if (!data) throw problem(error, response.status);
   return data;

@@ -19,6 +19,9 @@ import br.com.cardapio.application.port.out.order.OrderWithItems;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import br.com.cardapio.application.port.out.order.OrderSettingsPort;
+import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.Tab;
 
 public class GetTabService implements GetTabUseCase {
 
@@ -28,9 +31,11 @@ public class GetTabService implements GetTabUseCase {
     private final TabRodizioPort tabRodizios;
     private final TabPaymentPort payments;
     private final TabMovePort moves;
+    private final OrderSettingsPort settings;
 
     public GetTabService(TabPort tabs, OrderPort orders, CallPort calls, TabRodizioPort tabRodizios,
-                         TabPaymentPort payments, TabMovePort moves) {
+                         TabPaymentPort payments, TabMovePort moves, OrderSettingsPort settings) {
+        this.settings = settings;
         this.payments = payments;
         this.moves = moves;
         this.tabs = tabs;
@@ -49,9 +54,15 @@ public class GetTabService implements GetTabUseCase {
                         .map(Call::paymentMethod).orElse(null)
                 : null;
         List<OrderWithItems> found = orders.findByTab(establishmentId, tabId);
+        // Aberta: a taxa que vale agora (vem aceita se ninguém tirou). Fechada: a que foi cobrada.
+        ServiceChargeSettings serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
+        Tab tab = view.tab();
+        boolean open = tab.status().isOpen();
         return StaffTab.from(view, found, billRequestedWith,
                 tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId),
-                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)))
+                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)),
+                open ? tab.effectiveService(serviceSettings) : tab.service(), serviceSettings.destination(),
+                open ? ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab) : null)
                 .withMoves(moves.findByTab(establishmentId, tabId),
                         moves.findMergedInto(establishmentId, tabId).orElse(null));
     }

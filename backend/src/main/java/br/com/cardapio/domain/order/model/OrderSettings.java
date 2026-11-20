@@ -24,6 +24,7 @@ public record OrderSettings(
         boolean staffOrderingEnabled,
         Money maxAmount,
         Integer maxItems,
+        ServiceChargeSettings serviceCharge,
         Instant updatedAt
 ) {
 
@@ -36,6 +37,7 @@ public record OrderSettings(
         Objects.requireNonNull(id);
         Objects.requireNonNull(establishmentId);
         Objects.requireNonNull(updatedAt);
+        serviceCharge = serviceCharge == null ? ServiceChargeSettings.DEFAULT : serviceCharge;
         if (maxAmount != null && maxAmount.cents() < 1_00) {
             throw new InvalidValueException("O valor máximo por pedido deve ser de pelo menos R$ 1,00");
         }
@@ -46,14 +48,20 @@ public record OrderSettings(
 
     public static OrderSettings defaults(EstablishmentId establishmentId, Instant now) {
         return new OrderSettings(OrderSettingsId.newId(), establishmentId, true, false, false, DEFAULT_MAX_AMOUNT,
-                DEFAULT_MAX_ITEMS, now);
+                DEFAULT_MAX_ITEMS, ServiceChargeSettings.DEFAULT, now);
     }
 
     public OrderSettings update(boolean newOrderingEnabled, boolean newApprovalRequired,
                                 boolean newStaffOrderingEnabled, Money newMaxAmount, Integer newMaxItems,
                                 Instant now) {
         return new OrderSettings(id, establishmentId, newOrderingEnabled, newApprovalRequired,
-                newStaffOrderingEnabled, newMaxAmount, newMaxItems, now);
+                newStaffOrderingEnabled, newMaxAmount, newMaxItems, serviceCharge, now);
+    }
+
+    /** Muda a taxa de serviço e mantém o resto. */
+    public OrderSettings withServiceCharge(ServiceChargeSettings newServiceCharge, Instant now) {
+        return new OrderSettings(id, establishmentId, orderingEnabled, approvalRequired, staffOrderingEnabled,
+                maxAmount, maxItems, newServiceCharge, now);
     }
 
     /** Muda o pedido pelo celular e mantém o que vale para a equipe. */

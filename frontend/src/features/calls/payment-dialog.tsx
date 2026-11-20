@@ -18,6 +18,7 @@ import { Notice } from "@/components/notice";
 import { centsToInput, formatCents, parseCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { dueOf, ServiceSwitch } from "@/features/tabs/service-switch";
 import { fetchBill, finishCall, receivePayment, type Bill, type PaymentMethod, type StaffCall } from "./calls-api";
 
 const t = messages.panel.calls;
@@ -80,13 +81,17 @@ function Form({
   onClose: () => void;
   onDone: () => Promise<unknown>;
 }) {
-  const [amount, setAmount] = useState(centsToInput(bill.dueCents));
+  // A taxa de serviço (RF39) começa como a mesa escolheu; o garçom troca se o cliente mudar de ideia.
+  const service = bill.service ?? null;
+  const [serviceOn, setServiceOn] = useState(service?.accepted ?? true);
+  const due = dueOf(service, serviceOn, bill.dueCents);
+  const [amount, setAmount] = useState(centsToInput(due));
   const [method, setMethod] = useState<PaymentMethod>(bill.requestedWith);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cents = parseCents(amount);
-  const valid = cents !== null && !Number.isNaN(cents) && cents >= 1 && cents <= bill.dueCents;
-  const nothingDue = bill.dueCents === 0;
+  const valid = cents !== null && !Number.isNaN(cents) && cents >= 1 && cents <= due;
+  const nothingDue = due === 0;
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -110,10 +115,10 @@ function Form({
       return;
     }
     if (!valid) {
-      setError(r.invalid(formatCents(bill.dueCents)));
+      setError(r.invalid(formatCents(due)));
       return;
     }
-    void run(() => receivePayment(call.id, cents, method));
+    void run(() => receivePayment(call.id, cents, method, service ? serviceOn : undefined));
   }
 
   return (
@@ -129,11 +134,29 @@ function Form({
             <dd className="font-mono text-success tabular-nums">− {formatCents(bill.paidCents)}</dd>
           </div>
         )}
+        {service && serviceOn && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">{messages.panel.service.label(service.percent)}</dt>
+            <dd className="font-mono tabular-nums">+ {formatCents(service.amountCents)}</dd>
+          </div>
+        )}
         <div className="flex justify-between gap-3 border-t border-border pt-1.5 text-base font-semibold">
           <dt>{r.due}</dt>
-          <dd className="font-mono tabular-nums">{formatCents(bill.dueCents)}</dd>
+          <dd className="font-mono tabular-nums">{formatCents(due)}</dd>
         </div>
       </dl>
+
+      {service && (
+        <ServiceSwitch
+          service={service}
+          on={serviceOn}
+          disabled={busy}
+          onChange={(next) => {
+            setServiceOn(next);
+            setAmount(centsToInput(dueOf(service, next, bill.dueCents)));
+          }}
+        />
+      )}
 
       {bill.itemsOnTheWay > 0 && !nothingDue && <Notice tone="warning">{r.onTheWay(bill.itemsOnTheWay)}</Notice>}
 

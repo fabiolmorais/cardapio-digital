@@ -672,9 +672,10 @@ class UseCaseConfig {
     RequestCallUseCase requestCallUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                           CallPort callPort, SubscriptionPort subscriptionPort,
                                           EventPublisherPort eventPublisherPort,
-                                          RandomCodeGenerator randomCodeGenerator, Clock clock) {
+                                          RandomCodeGenerator randomCodeGenerator, TabPort tabPort,
+                                          OrderSettingsPort orderSettingsPort, Clock clock) {
         return new RequestCallService(diningTablePort, tableSessionPort, callPort, subscriptionPort, eventPublisherPort,
-                randomCodeGenerator, clock);
+                randomCodeGenerator, tabPort, orderSettingsPort, clock);
     }
 
     @Bean
@@ -903,8 +904,9 @@ class UseCaseConfig {
     @Bean
     GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
                                 TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort,
-                                TabMovePort tabMovePort) {
-        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort, tabPaymentPort, tabMovePort);
+                                TabMovePort tabMovePort, OrderSettingsPort orderSettingsPort) {
+        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort, tabPaymentPort, tabMovePort,
+                orderSettingsPort);
     }
 
     @Bean
@@ -921,17 +923,18 @@ class UseCaseConfig {
     CloseTabUseCase closeTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
                                     TableSessionPort tableSessionPort, TabRodizioPort tabRodizioPort,
                                     TabPaymentPort tabPaymentPort, EventPublisherPort eventPublisherPort,
-                                    Clock clock) {
+                                    OrderSettingsPort orderSettingsPort, Clock clock) {
         return new CloseTabService(tabPort, orderPort, callPort, tableSessionPort, tabRodizioPort, tabPaymentPort,
-                eventPublisherPort, clock);
+                eventPublisherPort, orderSettingsPort, clock);
     }
 
     @Bean
     ReceiveBillPaymentUseCase receiveBillPaymentUseCase(CallPort callPort, TabPort tabPort, OrderPort orderPort,
                                                         TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort,
-                                                        EventPublisherPort eventPublisherPort, Clock clock) {
+                                                        EventPublisherPort eventPublisherPort,
+                                                        OrderSettingsPort orderSettingsPort, Clock clock) {
         return new ReceiveBillPaymentService(callPort, tabPort, orderPort, tabRodizioPort, tabPaymentPort,
-                eventPublisherPort, clock);
+                eventPublisherPort, orderSettingsPort, clock);
     }
 
     // O salão ao vivo e o quadro do Modo TV (desenhos 7.1, 7.2 e 8.1)

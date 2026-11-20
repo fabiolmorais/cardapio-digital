@@ -83,6 +83,16 @@ function Live({ role }: { role: Role }) {
   const cooking = (kitchen.list.data ?? []).filter((i) => i.status !== "READY" && inSector(i.sectorName));
   const cookingCount = cooking.reduce((sum, i) => sum + i.quantity, 0);
   const revenue = floor.data?.revenueTodayCents;
+  // A taxa de serviço de hoje (RF39) fica fora do faturado: aparece embaixo, separada.
+  const serviceToday = floor.data?.serviceToday;
+  const serviceHint =
+    serviceToday && serviceToday.totalCents > 0
+      ? serviceToday.byWaiter.length > 0
+        ? messages.panel.service.todayWaiters(
+            serviceToday.byWaiter.map((w) => `${w.name} ${formatCents(w.amountCents)}`).join(" · "),
+          )
+        : messages.panel.service.today(formatCents(serviceToday.totalCents))
+      : tl.revenueHint;
 
   const date = now ? dateFormat.format(now) : "";
   const time = now ? timeFormat.format(now) : "";
@@ -151,7 +161,7 @@ function Live({ role }: { role: Role }) {
           </Kpi>
           <Kpi label={tl.kitchenItems}>{kitchen.list.data ? cookingCount : "–"}</Kpi>
           {revenue !== undefined && revenue !== null ? (
-            <Kpi label={tl.revenue} hint={tl.revenueHint} className="font-mono">
+            <Kpi label={tl.revenue} hint={serviceHint} className="font-mono">
               {formatCents(revenue)}
             </Kpi>
           ) : (

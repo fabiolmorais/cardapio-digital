@@ -47,6 +47,7 @@ class TableCallServicesTest {
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
     private final TablesByToken tables = new TablesByToken();
     private final InMemoryCalls calls = new InMemoryCalls();
+    private final br.com.cardapio.support.NoTabs noTabs = new br.com.cardapio.support.NoTabs();
     /** O que os serviços publicaram para o tempo real. */
     private final List<DomainEvent> published = new ArrayList<>();
     private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -66,7 +67,8 @@ class TableCallServicesTest {
     }
 
     private RequestedCall request(String session, CallType type, PaymentMethod method) {
-        return new RequestCallService(tables, sessions, calls, subscriptions, published::add, length -> "4719", clock)
+        return new RequestCallService(tables, sessions, calls, subscriptions, published::add, length -> "4719",
+                        noTabs, noTabs, clock)
                 .request(new RequestCallCommand(QR_04, session, type, method));
     }
 

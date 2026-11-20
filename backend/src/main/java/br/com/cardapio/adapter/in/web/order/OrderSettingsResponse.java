@@ -11,10 +11,14 @@ record OrderSettingsResponse(
         @Schema(requiredMode = REQUIRED) boolean approvalRequired,
         @Schema(requiredMode = REQUIRED) boolean staffOrderingEnabled,
         Long maxAmountCents,
-        Integer maxItems
+        Integer maxItems,
+        @Schema(requiredMode = REQUIRED, description = "A taxa de serviço opcional")
+        OrderSettingsRequest.ServiceChargeRequest serviceCharge
 ) {
     static OrderSettingsResponse from(OrderSettings s) {
         return new OrderSettingsResponse(s.orderingEnabled(), s.approvalRequired(), s.staffOrderingEnabled(),
-                s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems());
+                s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
+                new OrderSettingsRequest.ServiceChargeRequest(s.serviceCharge().enabled(), s.serviceCharge().percent(),
+                        s.serviceCharge().destination()));
     }
 }

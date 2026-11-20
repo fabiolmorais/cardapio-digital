@@ -41,6 +41,15 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "payment_method")
     private String paymentMethod;
 
+    @Column(name = "service_percent")
+    private Integer servicePercent;
+
+    @Column(name = "service_accepted")
+    private Boolean serviceAccepted;
+
+    @Column(name = "service_cents")
+    private Long serviceCents;
+
     protected TabJpaEntity() {
     }
 
@@ -52,4 +61,7 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     UUID getClosedBy() { return closedBy; }
     Long getTotalCents() { return totalCents; }
     String getPaymentMethod() { return paymentMethod; }
+    Integer getServicePercent() { return servicePercent; }
+    Boolean getServiceAccepted() { return serviceAccepted; }
+    Long getServiceCents() { return serviceCents; }
 }

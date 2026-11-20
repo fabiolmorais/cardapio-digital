@@ -11,9 +11,17 @@ import java.util.Objects;
  * @param sessionToken  o cookie da sessão do celular; null se não veio
  * @param paymentMethod só no pedido de conta
  */
-public record RequestCallCommand(String tableToken, String sessionToken, CallType type, PaymentMethod paymentMethod) {
+/**
+ * @param serviceAccepted no pedido de conta: a mesa aceitou a taxa de serviço (RF39)? null: não disse
+ */
+public record RequestCallCommand(String tableToken, String sessionToken, CallType type, PaymentMethod paymentMethod,
+                                 Boolean serviceAccepted) {
 
     public RequestCallCommand {
         Objects.requireNonNull(type);
+    }
+
+    public RequestCallCommand(String tableToken, String sessionToken, CallType type, PaymentMethod paymentMethod) {
+        this(tableToken, sessionToken, type, paymentMethod, null);
     }
 }

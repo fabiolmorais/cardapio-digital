@@ -47,17 +47,56 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
             """)
     Optional<TabRow> findView(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId);
 
-    /** Fecha só se ainda estiver aberta: 1 linha ou 0. */
+    /**
+     * Fecha só se ainda estiver aberta: 1 linha ou 0. Grava também a taxa de serviço (RF39): a
+     * oferecida, a cobrada e para quem ficou.
+     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("""
-            UPDATE TabJpaEntity t
-               SET t.status = 'CLOSED', t.closedAt = :closedAt, t.closedBy = :closedBy,
-                   t.totalCents = :totalCents, t.paymentMethod = :paymentMethod
-             WHERE t.id = :id AND t.establishmentId = :establishmentId AND t.status IN ('OPEN', 'CLOSING')
+    @Query(nativeQuery = true, value = """
+            UPDATE tab
+               SET status = 'CLOSED', closed_at = :closedAt, closed_by = :closedBy,
+                   total_cents = :totalCents, payment_method = :paymentMethod,
+                   service_percent = :servicePercent, service_accepted = :serviceAccepted,
+                   service_cents = :serviceCents, service_destination = :serviceDestination,
+                   service_waiter_id = :serviceWaiter
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
             """)
     int close(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
               @Param("closedAt") Instant closedAt, @Param("closedBy") UUID closedBy,
-              @Param("totalCents") long totalCents, @Param("paymentMethod") String paymentMethod);
+              @Param("totalCents") long totalCents, @Param("paymentMethod") String paymentMethod,
+              @Param("servicePercent") Integer servicePercent, @Param("serviceAccepted") Boolean serviceAccepted,
+              @Param("serviceCents") Long serviceCents, @Param("serviceDestination") String serviceDestination,
+              @Param("serviceWaiter") UUID serviceWaiter);
+
+    /** A taxa de serviço escolhida para a comanda aberta (a mesa ao pedir a conta, ou o garçom). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE tab SET service_percent = :percent, service_accepted = :accepted
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
+            """)
+    int saveService(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
+                    @Param("percent") Integer percent, @Param("accepted") Boolean accepted);
+
+    /**
+     * Quem mais atendeu a mesa nesta comanda: chamados aceitos na mesa desde a abertura e itens
+     * entregues da comanda. Empate: quem fez por último.
+     */
+    @Query(nativeQuery = true, value = """
+            SELECT who FROM (
+                SELECT c.accepted_by AS who, c.accepted_at AS at FROM call c
+                 WHERE c.establishment_id = :establishmentId AND c.table_id = :tableId
+                   AND c.accepted_by IS NOT NULL AND c.created_at >= :since
+                UNION ALL
+                SELECT i.delivered_by AS who, i.delivered_at AS at FROM order_item i
+                  JOIN customer_order o ON o.id = i.order_id
+                 WHERE o.establishment_id = :establishmentId AND o.tab_id = :tabId AND i.delivered_by IS NOT NULL
+            ) served
+             GROUP BY who
+             ORDER BY count(*) DESC, max(at) DESC
+             LIMIT 1
+            """)
+    Optional<UUID> findTopAttendant(@Param("establishmentId") UUID establishmentId, @Param("tabId") UUID tabId,
+                                    @Param("tableId") UUID tableId, @Param("since") Instant since);
 
     /**
      * As comandas abertas com o resumo, numa consulta para a página: os pedidos e os itens entram

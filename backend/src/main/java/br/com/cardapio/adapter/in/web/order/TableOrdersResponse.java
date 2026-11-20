@@ -31,7 +31,9 @@ record TableOrdersResponse(
         List<TableOrderResponse> orders,
         @Schema(description = "Se este celular está no rodízio da mesa (NONE: chegou depois e não disse; "
                 + "REQUESTED: chamou o garçom; JOINED: está dentro); ausente fora do rodízio")
-        RodizioParticipation rodizioParticipation
+        RodizioParticipation rodizioParticipation,
+        @Schema(description = "A taxa de serviço opcional; ausente se o restaurante não cobra (ou ainda não há conta)")
+        ServiceOfferResponse service
 ) {
 
     @Schema(name = "RodizioLimits", description = "Cada campo ausente: a regra está desligada")
@@ -53,6 +55,7 @@ record TableOrdersResponse(
                 t.rodizio() == null ? null : TableRodizioResponse.from(t.rodizio()),
                 t.rodizioProducts().stream().map(p -> p.value()).sorted().toList(),
                 RodizioLimits.from(t.rodizioLimits()),
-                t.orders().stream().map(TableOrderResponse::from).toList(), t.participation());
+                t.orders().stream().map(TableOrderResponse::from).toList(), t.participation(),
+                ServiceOfferResponse.from(t.service()));
     }
 }

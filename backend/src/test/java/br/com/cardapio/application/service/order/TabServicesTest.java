@@ -96,7 +96,7 @@ class TabServicesTest {
     }
 
     private StaffTab close(PaymentMethod method) {
-        return new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, clock)
+        return new CloseTabService(fakes, fakes, calls, sessions, rodizios, fakes, published::add, fakes, clock)
                 .close(sakura, theTab(), carlos, method);
     }
 
@@ -122,13 +122,13 @@ class TabServicesTest {
         calls.insertIfNoneOpen(Call.open(sakura, mesa04.id(), sessions.byToken("ana").id(), CallType.BILL,
                 PaymentMethod.CARD, NOW));
 
-        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(sakura, theTab());
+        StaffTab tab = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves(), fakes).get(sakura, theTab());
 
         assertThat(tab.orders()).hasSize(2);
         assertThat(tab.total()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(tab.billRequestedWith()).isEqualTo(PaymentMethod.CARD);
         assertThat(tab.status()).isEqualTo(TabStatus.OPEN);
-        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(EstablishmentId.newId(), theTab()))
+        assertThatThrownBy(() -> new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves(), fakes).get(EstablishmentId.newId(), theTab()))
                 .isInstanceOf(TabNotFoundException.class);
     }
 
@@ -168,7 +168,7 @@ class TabServicesTest {
     }
 
     private ReceiveBillPaymentService billPayment() {
-        return new ReceiveBillPaymentService(calls, fakes, fakes, rodizios, fakes, published::add, clock);
+        return new ReceiveBillPaymentService(calls, fakes, fakes, rodizios, fakes, published::add, fakes, clock);
     }
 
     private Call billAcceptedBy(String phone, PaymentMethod method) {
@@ -190,7 +190,7 @@ class TabServicesTest {
         assertThat(summary.itemsOnTheWay()).isEqualTo(1);
         assertThat(summary.requestedWith()).isEqualTo(PaymentMethod.PIX);
 
-        billPayment().receive(sakura, bill.id(), carlos, summary.due(), PaymentMethod.PIX);
+        billPayment().receive(sakura, bill.id(), carlos, summary.due(), PaymentMethod.PIX, null);
 
         assertThat(calls.saved.get(bill.id()).status()).isEqualTo(CallStatus.DONE);
         assertThat(fakes.tabs.get(theTab()).status()).isEqualTo(TabStatus.OPEN);
@@ -198,7 +198,7 @@ class TabServicesTest {
                 fakes, rodizios, clock).list(QR_04, "ana");
         assertThat(atTheTable.paid()).isEqualTo(Money.ofCents(2 * 29_90 + 19_90));
         assertThat(atTheTable.due()).isEqualTo(Money.ZERO);
-        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves()).get(sakura, theTab());
+        StaffTab open = new GetTabService(fakes, fakes, calls, rodizios, fakes, new InMemoryTabMoves(), fakes).get(sakura, theTab());
         assertThat(open.paid()).isEqualTo(open.total());
         assertThat(open.due()).isEqualTo(Money.ZERO);
         assertThat(open.payments()).singleElement().satisfies(p -> {
@@ -221,7 +221,7 @@ class TabServicesTest {
         deliverAll(place("ana", guioza, 2));
         Call bill = billAcceptedBy("ana", PaymentMethod.CARD);
 
-        billPayment().receive(sakura, bill.id(), carlos, Money.ofCents(20_00), PaymentMethod.CARD);
+        billPayment().receive(sakura, bill.id(), carlos, Money.ofCents(20_00), PaymentMethod.CARD, null);
         StaffTab closed = close(PaymentMethod.CASH);
 
         assertThat(closed.total()).isEqualTo(Money.ofCents(2 * 29_90));
@@ -236,9 +236,9 @@ class TabServicesTest {
         Call bill = billAcceptedBy("ana", PaymentMethod.PIX);
 
         assertThatThrownBy(() -> billPayment().receive(sakura, bill.id(), carlos, Money.ofCents(29_91),
-                PaymentMethod.PIX)).isInstanceOf(InvalidValueException.class);
+                PaymentMethod.PIX, null)).isInstanceOf(InvalidValueException.class);
         assertThatThrownBy(() -> billPayment().receive(EstablishmentId.newId(), bill.id(), carlos,
-                Money.ofCents(29_90), PaymentMethod.PIX)).isInstanceOf(CallNotFoundException.class);
+                Money.ofCents(29_90), PaymentMethod.PIX, null)).isInstanceOf(CallNotFoundException.class);
         assertThatThrownBy(() -> billPayment().bill(EstablishmentId.newId(), bill.id()))
                 .isInstanceOf(CallNotFoundException.class);
         assertThat(fakes.payments).isEmpty();

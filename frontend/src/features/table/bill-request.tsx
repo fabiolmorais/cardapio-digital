@@ -30,6 +30,10 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
   const [chosen, setChosen] = useState<PaymentMethod>("PIX");
   const [changing, setChanging] = useState(false);
   const [orders, setOrders] = useState<TableOrders | null>(null);
+  // A taxa de serviço (RF39): vem como o back disser (aceita, a menos que alguém tenha tirado).
+  const [serviceOn, setServiceOn] = useState<boolean | null>(null);
+  const service = orders?.service ?? null;
+  const withService = serviceOn ?? service?.accepted ?? true;
   const home = `/m/${token}`;
 
   // O total vem dos pedidos da comanda. Busca de novo quando os chamados mudam (pedir, trocar,
@@ -80,14 +84,73 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       .filter((i) => ["PENDING", "PREPARING", "READY"].includes(i.status))
       .reduce((sum, i) => sum + i.quantity, 0) ?? 0;
   const paid = (orders?.paidCents ?? 0) > 0;
+  /** Aceitar ou tirar a taxa: com a conta já pedida, o garçom fica sabendo na hora. */
+  const toggleService = (next: boolean) => {
+    setServiceOn(next);
+    if (bill && !changing) {
+      void run("service", () =>
+        requestCall(token, { type: "BILL", paymentMethod: bill.paymentMethod ?? "PIX", serviceAccepted: next }),
+      );
+    }
+  };
+  const shown =
+    orders &&
+    (service
+      ? withService
+        ? service.dueWithCents
+        : service.dueWithoutCents
+      : paid
+        ? orders.dueCents
+        : orders.totalCents);
   const total = orders && (
     <section className="flex flex-col gap-2 rounded-3xl border border-(--mesa-stroke) bg-(--mesa-glass) p-4.5">
       <span className="text-sm font-semibold tracking-wide text-(--brand-text) uppercase">
-        {paid ? t.due : t.total}
+        {paid ? t.due : service ? (withService ? t.totalWithService : t.totalWithoutService) : t.total}
       </span>
-      <span className="text-4xl font-bold tracking-tight">
-        {formatCents(paid ? orders.dueCents : orders.totalCents)}
-      </span>
+      <span className="text-4xl font-bold tracking-tight">{formatCents(shown ?? 0)}</span>
+      {service && (
+        <div className="flex flex-col gap-2 border-t border-(--mesa-stroke) pt-3">
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="text-(--mesa-muted)">{t.consumption}</span>
+            <span className="font-semibold tabular-nums">{formatCents(orders.totalCents)}</span>
+          </div>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3">
+            <span className="flex flex-1 flex-col">
+              <span className="font-semibold">{t.service(service.percent)}</span>
+              <span className="text-sm text-(--mesa-muted)">
+                {service.waiterName ? t.serviceWaiter(service.waiterName) : t.serviceTeam}
+              </span>
+            </span>
+            <span className={cn("font-semibold tabular-nums", !withService && "text-(--mesa-muted) line-through")}>
+              {formatCents(service.amountCents)}
+            </span>
+            {/* Interruptor de verdade (checkbox com papel de switch), com alvo de toque grande. */}
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label={t.serviceSwitch(service.percent)}
+              checked={withService}
+              disabled={busy !== null}
+              onChange={(e) => toggleService(e.target.checked)}
+              className="peer sr-only"
+            />
+            <span
+              aria-hidden
+              className={cn(
+                "relative h-7 w-12 shrink-0 rounded-full border border-(--mesa-stroke) transition-colors peer-focus-visible:ring-3 peer-focus-visible:ring-(--brand)",
+                withService ? "bg-(--brand)" : "bg-(--mesa-glass)",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-5.5 rounded-full bg-white transition-[left]",
+                  withService ? "left-[22px]" : "left-0.5",
+                )}
+              />
+            </span>
+          </label>
+        </div>
+      )}
       {paid && (
         <span className="flex flex-wrap gap-2 text-sm">
           <span className="rounded-full border border-(--mesa-stroke) px-2.5 py-0.5 text-(--mesa-muted)">
@@ -278,7 +341,11 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
           disabled={busy !== null}
           onClick={() =>
             run("bill", async () => {
-              await requestCall(token, { type: "BILL", paymentMethod: chosen });
+              await requestCall(token, {
+                type: "BILL",
+                paymentMethod: chosen,
+                ...(service && { serviceAccepted: withService }),
+              });
               setChanging(false);
             })
           }

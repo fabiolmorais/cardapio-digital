@@ -15,10 +15,11 @@ import java.util.Objects;
  * @param due      o que falta pagar (nunca negativo)
  * @param overpaid o que a mesa pagou além do consumo (zero quase sempre)
  */
-public record TabBalance(Money total, Money paid, Money due, Money overpaid) {
+public record TabBalance(Money total, Money service, Money paid, Money due, Money overpaid) {
 
     public TabBalance {
         Objects.requireNonNull(total);
+        Objects.requireNonNull(service);
         Objects.requireNonNull(paid);
         Objects.requireNonNull(due);
         Objects.requireNonNull(overpaid);
@@ -26,9 +27,22 @@ public record TabBalance(Money total, Money paid, Money due, Money overpaid) {
 
     /** @param rodizio o que o rodízio soma (pessoas × preço); zero se a mesa não está no rodízio */
     public static TabBalance of(List<OrderItem> items, Money rodizio, List<TabPayment> payments) {
+        return of(items, rodizio, null, payments);
+    }
+
+    /**
+     * Com a taxa de serviço (RF39): o que falta é o consumo mais a taxa, se a mesa aceitou, menos o
+     * que já foi pago. O total continua sendo só o consumo (a taxa não é receita do restaurante).
+     *
+     * @param service a taxa da comanda; null se o restaurante não cobra
+     */
+    public static TabBalance of(List<OrderItem> items, Money rodizio, ServiceCharge service,
+                                List<TabPayment> payments) {
         Money total = Tab.totalOf(items).plus(rodizio);
+        Money charged = service == null ? Money.ZERO : service.chargedOn(total);
+        Money bill = total.plus(charged);
         Money paid = payments.stream().map(TabPayment::amount).reduce(Money.ZERO, Money::plus);
-        return new TabBalance(total, paid, total.minusOrZero(paid), paid.minusOrZero(total));
+        return new TabBalance(total, charged, paid, bill.minusOrZero(paid), paid.minusOrZero(bill));
     }
 
     /** Nada falta pagar: o garçom fecha sem cobrar mais nada. */

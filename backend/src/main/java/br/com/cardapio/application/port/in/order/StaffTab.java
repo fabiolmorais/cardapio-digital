@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import br.com.cardapio.application.port.out.order.TabMoveView;
+import br.com.cardapio.domain.order.model.ServiceCharge;
+import br.com.cardapio.domain.order.model.ServiceDestination;
 
 /**
  * A comanda como a EQUIPE vê: todos os pedidos, de todos os celulares, com o passo de cada item,
@@ -39,12 +41,13 @@ import br.com.cardapio.application.port.out.order.TabMoveView;
  * @param rodizio           o rodízio da comanda (já somado no total); null se não houve
  * @param moves             as mudanças de mesa, da mais antiga à mais nova (ADR 0012)
  * @param mergedInto        juntada (MERGED): a comanda que continuou; senão null
+ * @param service           a taxa de serviço (RF39): aberta, a oferta; fechada, a que foi cobrada; null sem taxa
  */
 public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, String sectorName, TabStatus status,
                        Instant openedAt,
                        Instant closedAt, Money total, Money paid, Money due, Money overpaid, List<Payment> payments,
                        PaymentMethod paymentMethod, PaymentMethod billRequestedWith, TableRodizio rodizio,
-                       List<Order> orders, List<Move> moves, TabId mergedInto) {
+                       List<Order> orders, List<Move> moves, TabId mergedInto, ServiceOffer service) {
 
     public StaffTab {
         payments = List.copyOf(payments);
@@ -62,7 +65,7 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
         return new StaffTab(id, tableId, tableLabel, sectorName, status, openedAt, closedAt, total, paid, due,
                 overpaid, payments, paymentMethod, billRequestedWith, rodizio, orders,
                 newMoves.stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
-                        m.movedByName(), m.movedAt())).toList(), newMergedInto);
+                        m.movedByName(), m.movedAt())).toList(), newMergedInto, service);
     }
 
     /** Um pagamento recebido: quanto, como e quando. */
@@ -89,9 +92,20 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
      */
     public static StaffTab from(TabView view, List<OrderWithItems> found, PaymentMethod billRequestedWith,
                                 TabRodizio rodizio, List<TabPayment> payments, Map<UserId, String> staffNames) {
+        return from(view, found, billRequestedWith, rodizio, payments, staffNames, null, ServiceDestination.TEAM, null);
+    }
+
+    /**
+     * @param service     a taxa que vale para a comanda (a escolhida, ou a do restaurante, já aceita); null sem taxa
+     * @param destination para quem a taxa fica registrada
+     * @param waiterName  o garçom que fica com ela, na regra "garçom que atendeu"
+     */
+    public static StaffTab from(TabView view, List<OrderWithItems> found, PaymentMethod billRequestedWith,
+                                TabRodizio rodizio, List<TabPayment> payments, Map<UserId, String> staffNames,
+                                ServiceCharge service, ServiceDestination destination, String waiterName) {
         Tab tab = view.tab();
         List<OrderItem> all = found.stream().flatMap(o -> o.items().stream()).toList();
-        TabBalance balance = TabBalance.of(all, rodizio == null ? Money.ZERO : rodizio.total(), payments);
+        TabBalance balance = TabBalance.of(all, rodizio == null ? Money.ZERO : rodizio.total(), service, payments);
         boolean open = tab.status().isOpen();
         return new StaffTab(tab.id(), tab.tableId(), view.tableLabel(), view.sectorName(), tab.status(), tab.openedAt(),
                 tab.closedAt(), tab.total() != null ? tab.total() : balance.total(), balance.paid(),
@@ -103,7 +117,8 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                         o.order().createdAt(), o.order().byStaff(),
                         o.order().origin() instanceof OrderOrigin.Staff staff ? staffNames.get(staff.userId()) : null,
                         o.order().duplicateConfirmed(),
-                        o.items().stream().map(TableOrder.Item::from).toList())).toList(), List.of(), null);
+                        o.items().stream().map(TableOrder.Item::from).toList())).toList(), List.of(), null,
+                ServiceOffer.of(service, balance.total(), open ? balance.paid() : balance.total(), destination, waiterName));
     }
 
     /** Quem da equipe lançou estes pedidos. */

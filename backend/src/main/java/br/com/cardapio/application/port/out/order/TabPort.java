@@ -9,6 +9,8 @@ import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.order.model.TabPeriod;
 
 import java.util.Optional;
+import br.com.cardapio.domain.order.model.ServiceDestination;
+import br.com.cardapio.domain.account.model.UserId;
 
 public interface TabPort {
 
@@ -30,8 +32,17 @@ public interface TabPort {
     /** A comanda com a mesa e o setor, aberta ou fechada. */
     Optional<TabView> findView(EstablishmentId establishmentId, TabId tabId);
 
-    /** Grava o fechamento SÓ SE a comanda ainda estiver aberta (o UPDATE condicional). */
-    boolean close(Tab closed);
+    /**
+     * Grava o fechamento SÓ SE a comanda ainda estiver aberta (o UPDATE condicional), com a taxa de
+     * serviço: para quem ficou e, se for do garçom, qual (null quando não houve taxa).
+     */
+    boolean close(Tab closed, ServiceDestination destination, UserId waiter);
+
+    /** Grava a taxa escolhida para a comanda aberta. false: ela já foi fechada. */
+    boolean saveService(Tab tab);
+
+    /** Quem mais atendeu a mesa nesta comanda (chamados aceitos e itens entregues). */
+    Optional<UserId> findTopAttendant(Tab tab);
 
     /** As comandas abertas com o total e os itens a caminho, numa consulta para a página. */
     ResultPage<OpenTabView> findOpenTabs(EstablishmentId establishmentId, PageQuery page);

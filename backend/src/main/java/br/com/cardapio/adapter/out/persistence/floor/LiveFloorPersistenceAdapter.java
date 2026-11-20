@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalLong;
+import br.com.cardapio.application.port.in.live.LiveFloor;
 
 /**
  * O movimento do salão agora, em consultas nativas. O filtro do Hibernate não vale em SQL nativo:
@@ -39,6 +40,16 @@ class LiveFloorPersistenceAdapter implements LiveFloorPort {
     @Override
     public Money revenueOn(EstablishmentId establishmentId, Instant now) {
         return Money.ofCents(tables.revenueOn(establishmentId.value(), now));
+    }
+
+    @Override
+    public LiveFloor.ServiceToday serviceOn(EstablishmentId establishmentId, Instant now) {
+        var rows = tables.serviceOn(establishmentId.value(), now);
+        return new LiveFloor.ServiceToday(
+                Money.ofCents(rows.stream().mapToLong(DiningTableJpaRepository.ServiceRow::getCents).sum()),
+                rows.stream().filter(r -> r.getWaiterName() != null)
+                        .map(r -> new LiveFloor.WaiterService(r.getWaiterName(), Money.ofCents(r.getCents())))
+                        .toList());
     }
 
     @Override

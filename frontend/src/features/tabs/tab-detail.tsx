@@ -17,6 +17,7 @@ import { clock } from "./open-tabs";
 import { closeTab, fetchTab, type PaymentMethod, type StaffTab } from "./tabs-api";
 import { Notice } from "@/components/notice";
 import { MoveTabDialog, type MoveTarget } from "./move-tab-dialog";
+import { dueOf, ServiceSwitch } from "./service-switch";
 
 const t = messages.panel.tab;
 const tp = messages.panel.calls.payment;
@@ -72,10 +73,14 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
   const tabPath = (id: string) => pathname.replace(tab.id, id);
   const [method, setMethod] = useState<PaymentMethod>(tab.billRequestedWith ?? "PIX");
   const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
+  // A taxa de serviço (RF39): como a mesa escolheu (ou aceita, se ninguém mexeu); o garçom troca na hora.
+  const service = tab.service ?? null;
+  const [serviceOn, setServiceOn] = useState(service?.accepted ?? true);
+  const due = dueOf(service, serviceOn, tab.dueCents);
   // A mesa já pagou tudo adiantado: fecha sem cobrar e sem perguntar a forma (já foi informada).
-  const settled = tab.dueCents === 0;
+  const settled = due === 0;
   const close = useMutation({
-    mutationFn: () => closeTab(tab.id, settled ? undefined : method),
+    mutationFn: () => closeTab(tab.id, settled ? undefined : method, service ? serviceOn : undefined),
     onSuccess: (closed) => {
       onClosed(closed);
       void queryClient.invalidateQueries({ queryKey: ["open-tabs"] });
@@ -136,10 +141,20 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           <h2 className="text-2xl font-bold">{t.closedTitle}</h2>
           <p className="font-semibold">
             {tab.paymentMethod
-              ? t.paidWith(tp[tab.paymentMethod], formatCents(tab.totalCents))
+              ? t.paidWith(
+                  tp[tab.paymentMethod],
+                  formatCents(tab.totalCents + (service?.accepted ? service.amountCents : 0)),
+                )
               : t.closedNoCharge(formatCents(tab.totalCents))}
           </p>
           {tab.payments.length > 1 && <Payments payments={tab.payments} />}
+          {service && (
+            <p className="text-sm text-muted-foreground">
+              {service.accepted
+                ? messages.panel.service.charged(service.percent, formatCents(service.amountCents))
+                : messages.panel.service.removed}
+            </p>
+          )}
           <Moves moves={tab.moves} />
           <p className="max-w-sm text-muted-foreground">{t.closedText(tab.tableLabel)}</p>
           <Link href="/painel" className={cn(buttonVariants({ variant: "outline" }), "h-12 w-full max-w-sm")}>
@@ -262,12 +277,18 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           <span className="font-semibold">{t.total}</span>
           <span className="font-mono text-lg font-bold tabular-nums">{formatCents(tab.totalCents)}</span>
         </div>
+        {service && serviceOn && (
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="text-muted-foreground">{messages.panel.service.label(service.percent)}</span>
+            <span className="font-mono tabular-nums">+ {formatCents(service.amountCents)}</span>
+          </div>
+        )}
         {tab.payments.length > 0 && (
           <>
             <Payments payments={tab.payments} />
             <div className="flex items-baseline justify-between border-t border-border pt-3">
               <span className="font-semibold">{t.due}</span>
-              <span className="font-mono text-lg font-bold tabular-nums">{formatCents(tab.dueCents)}</span>
+              <span className="font-mono text-lg font-bold tabular-nums">{formatCents(due)}</span>
             </div>
           </>
         )}
@@ -275,11 +296,13 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
 
       <section className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-5 text-center">
         <span className="text-sm text-muted-foreground">{settled && tab.paidCents > 0 ? t.settled : t.toReceive}</span>
-        <span className="font-mono text-4xl font-bold tabular-nums">{formatCents(tab.dueCents)}</span>
+        <span className="font-mono text-4xl font-bold tabular-nums">{formatCents(due)}</span>
         {settled && tab.paidCents > 0 && <span className="text-sm text-muted-foreground">{t.settledHint}</span>}
       </section>
 
       {tab.overpaidCents > 0 && <Notice tone="warning">{t.overpaid(formatCents(tab.overpaidCents))}</Notice>}
+
+      {service && <ServiceSwitch service={service} on={serviceOn} disabled={close.isPending} onChange={setServiceOn} />}
 
       {!settled && (
         <fieldset className="flex flex-col gap-2">
