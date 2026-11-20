@@ -68,6 +68,13 @@ export function ProductSheet({
     if (item && element && !element.open) element.showModal();
   }, [item]);
 
+  // Ao trocar de página (tocar na foto leva ao Reels), o Next guarda esta página escondida, sem
+  // desmontar. Um <dialog> modal aberto nela deixaria a página nova inteira sem resposta ao toque.
+  useEffect(() => {
+    const element = dialog.current;
+    return () => element?.close();
+  }, []);
+
   function close() {
     dialog.current?.close();
   }

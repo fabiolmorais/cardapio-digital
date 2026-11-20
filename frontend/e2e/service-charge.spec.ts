@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { devices, expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/account";
 
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
@@ -106,4 +106,56 @@ test("o dono liga a taxa, muda o percentual e escolhe o garçom que atendeu", as
   await expect(page.getByLabel("Cobrar taxa de serviço")).toBeChecked();
   await expect(page.getByLabel("Percentual")).toHaveValue("12");
   await expect(page.getByRole("radio", { name: /Garçom que atendeu/ })).toBeChecked();
+});
+
+test("no celular do dono, um faturado grande cabe no card do dia", async ({ request, browser }) => {
+  const { email } = await createAccount(request);
+  const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  await request.put(`${API_URL}/api/v1/presence-rule`, { headers, data: { networks: ["127.0.0.1", "::1"] } });
+  const sector = await post("/api/v1/sectors", { name: "Salão" });
+  const table = await post("/api/v1/tables", { label: "04", sectorId: sector.id });
+  const carnes = await post("/api/v1/menu-categories", { name: "Carnes" });
+  const wagyu = await post("/api/v1/products", {
+    categoryId: carnes.id,
+    name: "Wagyu",
+    priceCents: 1_200_000,
+    featured: false,
+    available: true,
+  });
+  // Uma comanda de R$ 12.000,00, entregue e fechada hoje.
+  const phone = await browser.newContext();
+  const tableUrl = `${API_URL}/api/v1/public/tables/${table.publicToken}`;
+  await phone.request.post(`${tableUrl}/session`);
+  await phone.request.post(`${tableUrl}/presence`);
+  const order = await (
+    await phone.request.post(`${tableUrl}/orders`, { data: { items: [{ productId: wagyu.id, quantity: 1 }] } })
+  ).json();
+  await phone.close();
+  // Acima de R$ 300, o pedido espera o garçom confirmar.
+  expect((await request.post(`${API_URL}/api/v1/orders/${order.id}/approve`, { headers })).ok()).toBe(true);
+  for (const item of order.items) await request.post(`${API_URL}/api/v1/order-items/${item.id}/deliver`, { headers });
+  const open = await (await request.get(`${API_URL}/api/v1/tabs/open`, { headers })).json();
+  const closed = await request.post(`${API_URL}/api/v1/tabs/${open.content[0].id}/close`, {
+    headers,
+    data: { paymentMethod: "PIX" },
+  });
+  expect(closed.ok(), await closed.text()).toBe(true);
+
+  const context = await browser.newContext({ ...devices["Pixel 7"] });
+  const panel = await context.newPage();
+  try {
+    await loginThroughForm(panel, email);
+    const value = panel.getByText("R$ 12.000,00", { exact: true });
+    await expect(value).toBeVisible();
+    // O valor não vaza do card, e a página não ganha rolagem para o lado.
+    const card = (await value.locator("..").boundingBox())!;
+    const box = (await value.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width);
+    expect(await value.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  } finally {
+    await context.close();
+  }
 });

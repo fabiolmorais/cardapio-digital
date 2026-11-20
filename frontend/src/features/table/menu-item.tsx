@@ -49,7 +49,7 @@ export function MenuItemCard({
           href={reelsHref}
           prefetch={false}
           aria-label={t.openReels(item.name)}
-          className="relative flex shrink-0 rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+          className="relative flex shrink-0 self-start rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
         >
           <span
             className={cn(
@@ -86,7 +86,7 @@ export function MenuItemCard({
           type="button"
           onClick={onOpen}
           aria-label={t.openDetail(item.name)}
-          className="flex shrink-0 rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
+          className="flex shrink-0 self-start rounded-2xl focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
         >
           <span
             className={cn(
