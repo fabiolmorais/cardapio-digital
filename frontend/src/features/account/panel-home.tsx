@@ -9,6 +9,7 @@ import { useLiveCalls } from "@/features/calls/use-live-calls";
 import { useMinuteClock } from "@/features/live/clock";
 import { sectorsOf } from "@/features/live/live-api";
 import { SoundGate } from "@/features/live/sound-gate";
+import { ServiceToday } from "@/features/live/service-today";
 import { SoundTag } from "@/features/live/sound-tag";
 import { useLiveFloor, useStaffConnected } from "@/features/live/use-live-floor";
 import { KITCHEN_KEY, KitchenLink, OrdersColumn, ReadyColumn } from "@/features/orders/staff-orders";
@@ -86,13 +87,7 @@ function Live({ role }: { role: Role }) {
   // A taxa de serviço de hoje (RF39) fica fora do faturado: aparece embaixo, separada.
   const serviceToday = floor.data?.serviceToday;
   const serviceHint =
-    serviceToday && serviceToday.totalCents > 0
-      ? serviceToday.byWaiter.length > 0
-        ? messages.panel.service.todayWaiters(
-            serviceToday.byWaiter.map((w) => `${w.name} ${formatCents(w.amountCents)}`).join(" · "),
-          )
-        : messages.panel.service.today(formatCents(serviceToday.totalCents))
-      : tl.revenueHint;
+    serviceToday && serviceToday.totalCents > 0 ? <ServiceToday service={serviceToday} /> : tl.revenueHint;
 
   const date = now ? dateFormat.format(now) : "";
   const time = now ? timeFormat.format(now) : "";
@@ -161,14 +156,14 @@ function Live({ role }: { role: Role }) {
           </Kpi>
           <Kpi label={tl.kitchenItems}>{kitchen.list.data ? cookingCount : "–"}</Kpi>
           {revenue !== undefined && revenue !== null ? (
-            <Kpi label={tl.revenue} hint={serviceHint} className="font-mono">
+            <Kpi label={tl.revenue} hint={serviceHint} className={money}>
               {formatCents(revenue)}
             </Kpi>
           ) : (
             <Kpi
               label={tl.averageWait}
               hint={floor.data?.averageWaitSeconds == null ? tl.noWait : undefined}
-              className="font-mono"
+              className={money}
             >
               {floor.data?.averageWaitSeconds == null ? "–" : minutes(floor.data.averageWaitSeconds)}
             </Kpi>
@@ -186,6 +181,12 @@ function Live({ role }: { role: Role }) {
   );
 }
 
+/**
+ * O valor em fonte mono diminui com a largura do card (unidade do contêiner), sem quebrar a linha:
+ * no celular, com dois cards por linha, "R$ 12.345,67" em 28px vazaria do card.
+ */
+const money = "font-mono whitespace-nowrap text-[length:clamp(16px,13cqi,28px)]";
+
 /** 130 s → "2:10". */
 function minutes(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -198,15 +199,15 @@ function Kpi({
   children,
 }: {
   label: string;
-  hint?: string;
+  hint?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 rounded-[20px] border border-border bg-card px-[18px] py-4">
+    <div className="@container flex min-w-0 flex-col gap-1.5 rounded-[20px] border border-border bg-card px-[18px] py-4">
       <span className="text-[13px] text-muted-foreground">{label}</span>
       <span className={cn("text-[28px] leading-[34px] font-bold tracking-tight", className)}>{children}</span>
-      {hint && <span className="text-[13px] text-muted-foreground/80">{hint}</span>}
+      {hint && <div className="text-[13px] text-muted-foreground/80">{hint}</div>}
     </div>
   );
 }

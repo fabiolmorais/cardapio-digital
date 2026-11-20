@@ -135,3 +135,51 @@ test("fechar o Reels volta para o mesmo lugar do cardápio, e não para o topo",
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before - 80);
   await expect(page.getByRole("link", { name: "Ver Mochi em fotos e vídeos" })).toBeInViewport();
 });
+
+test("do detalhe do prato para o Reels, a tela responde (o detalhe não fica aberto escondido)", async ({
+  page,
+  request,
+}) => {
+  const video = await recordVideo(page);
+  const { qr } = await restaurant(request, video);
+  await page.goto(`/m/${qr}/cardapio`);
+
+  // O "Adicionar" abre o detalhe; o "Ver vídeo" dele leva ao Reels. O cardápio fica guardado
+  // escondido para voltar rápido, e o detalhe aberto nele deixava o Reels inteiro sem resposta.
+  await page.getByRole("button", { name: "Adicionar Guioza" }).click();
+  const sheet = page.getByRole("dialog", { name: "Guioza" });
+  await sheet.getByRole("link", { name: /Ver vídeo/ }).click();
+  await expect(page).toHaveURL(/\/reels\?produto=/);
+  await expect(page.getByRole("region", { name: "Guioza" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Ativar som" }).click({ timeout: 5000 });
+  await expect(page.getByRole("button", { name: "Tirar o som" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("link", { name: "Fechar os vídeos" }).click({ timeout: 5000 });
+  await expect(page).toHaveURL(new RegExp(`/m/${qr}/cardapio$`));
+});
+
+test("com nome e descrição longos, o selo do vídeo fica dentro da foto", async ({ page, request }) => {
+  const video = await recordVideo(page);
+  const { qr, headers } = await restaurant(request, video);
+  const post = async (path: string, data: object) =>
+    (await request.post(`${API_URL}${path}`, { headers, data })).json();
+  const bebidas = await post("/api/v1/menu-categories", { name: "Bebidas" });
+  const gin = await post("/api/v1/products", {
+    categoryId: bebidas.id,
+    name: "Gin tônica com curaçau blue e especiarias da casa servido na taça grande",
+    description: "Curaçau blue, água tônica, fatia de laranja-baía, alecrim fresco e zimbro, com bastante gelo.",
+    priceCents: 1400,
+    featured: false,
+    available: true,
+  });
+  await addVideo(request, headers, gin.id, video);
+
+  await page.goto(`/m/${qr}/cardapio`);
+  const link = page.getByRole("link", { name: /^Ver Gin tônica/ });
+  await link.scrollIntoViewIfNeeded();
+  const photo = (await link.locator(":scope > span").first().boundingBox())!;
+  const badge = (await link.locator(":scope > span").last().boundingBox())!;
+  // O cartão cresce com o texto; a foto (e o selo ▶ no canto dela) não.
+  expect(photo.height).toBeLessThan(100);
+  expect(badge.y + badge.height).toBeLessThanOrEqual(photo.y + photo.height);
+});
