@@ -1,6 +1,7 @@
 package br.com.cardapio.application.service.order;
 
 import br.com.cardapio.application.port.in.order.ListPrintJobsUseCase;
+import br.com.cardapio.application.port.in.order.MovePrintJob;
 import br.com.cardapio.application.port.in.order.PrintJob;
 import br.com.cardapio.application.port.out.order.KitchenPrintPort;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -36,5 +37,11 @@ public class ListPrintJobsService implements ListPrintJobsUseCase {
     public ResultPage<PrintJob> listRecentlyPrinted(EstablishmentId establishmentId, PageQuery page) {
         return printing.findPrintedSince(establishmentId, clock.instant().minus(REPRINT_WINDOW), page)
                 .map(view -> PrintJob.from(view, TicketKind.ORDER));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPage<MovePrintJob> listPendingMoves(EstablishmentId establishmentId, PageQuery page) {
+        return printing.findPendingMoves(establishmentId, page).map(MovePrintJob::from);
     }
 }

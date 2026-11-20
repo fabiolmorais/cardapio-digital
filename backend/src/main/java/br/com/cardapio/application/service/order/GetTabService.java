@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.order.GetTabUseCase;
 import br.com.cardapio.application.port.in.order.StaffTab;
 import br.com.cardapio.application.port.out.call.CallPort;
 import br.com.cardapio.application.port.out.order.OrderPort;
+import br.com.cardapio.application.port.out.order.TabMovePort;
 import br.com.cardapio.application.port.out.order.TabPaymentPort;
 import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.TabView;
@@ -26,10 +27,12 @@ public class GetTabService implements GetTabUseCase {
     private final CallPort calls;
     private final TabRodizioPort tabRodizios;
     private final TabPaymentPort payments;
+    private final TabMovePort moves;
 
     public GetTabService(TabPort tabs, OrderPort orders, CallPort calls, TabRodizioPort tabRodizios,
-                         TabPaymentPort payments) {
+                         TabPaymentPort payments, TabMovePort moves) {
         this.payments = payments;
+        this.moves = moves;
         this.tabs = tabs;
         this.orders = orders;
         this.calls = calls;
@@ -48,6 +51,8 @@ public class GetTabService implements GetTabUseCase {
         List<OrderWithItems> found = orders.findByTab(establishmentId, tabId);
         return StaffTab.from(view, found, billRequestedWith,
                 tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId),
-                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)));
+                orders.findStaffNames(establishmentId, StaffTab.staffOf(found)))
+                .withMoves(moves.findByTab(establishmentId, tabId),
+                        moves.findMergedInto(establishmentId, tabId).orElse(null));
     }
 }

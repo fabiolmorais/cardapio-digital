@@ -24,4 +24,7 @@ public interface RodizioPhonePort {
     int cancelRequests(EstablishmentId establishmentId, TabRodizioId rodizio);
 
     RodizioParticipation find(EstablishmentId establishmentId, TabRodizioId rodizio, TableSessionId session);
+
+    /** Na junção de dois rodízios iguais, quem participava do de origem passa a participar do outro. */
+    void moveTo(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to);
 }

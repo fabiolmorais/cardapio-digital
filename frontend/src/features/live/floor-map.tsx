@@ -2,7 +2,7 @@
 
 import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { ArrowRightLeft, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-di
 import { clock } from "@/features/tabs/open-tabs";
 import { fetchStaffOrderSheet } from "@/features/staff-order/staff-order-api";
 import { fetchTab } from "@/features/tabs/tabs-api";
+import { MoveTabDialog, type MoveTarget } from "@/features/tabs/move-tab-dialog";
 import { formatCents } from "@/lib/format";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
@@ -120,7 +121,9 @@ function Floor() {
             </section>
           ))}
         </div>
-        {table && <Drawer key={table.id} table={table} onClose={() => setSelected(null)} />}
+        {table && (
+          <Drawer key={table.id} table={table} onClose={() => setSelected(null)} onMoved={(to) => setSelected(to)} />
+        )}
       </div>
     </>
   );
@@ -160,7 +163,15 @@ function line(table: LiveTable, now: number): { text: string; className: string 
 }
 
 /** A gaveta da mesa (desenho 7.2): a comanda aberta, os celulares e as ações. */
-function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
+function Drawer({
+  table,
+  onClose,
+  onMoved,
+}: {
+  table: LiveTable;
+  onClose: () => void;
+  onMoved: (tableId: string) => void;
+}) {
   const queryClient = useQueryClient();
   const tab = useQuery({
     queryKey: ["tab", table.tabId],
@@ -175,12 +186,13 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
     retry: false,
   });
   const [rodizio, setRodizio] = useState<RodizioTarget | null>(null);
+  const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
 
   useEffect(
     () =>
       subscribeStaffEvents(
         (event) => {
-          if (["ready", "order", "tab", "rodizio", "call"].includes(event.name)) {
+          if (["ready", "order", "tab", "tab-moved", "rodizio", "call"].includes(event.name)) {
             void queryClient.invalidateQueries({ queryKey: ["tab", table.tabId] });
           }
         },
@@ -342,9 +354,34 @@ function Drawer({ table, onClose }: { table: LiveTable; onClose: () => void }) {
           >
             {data?.rodizio ? t.adjustRodizio : t.activateRodizio}
           </Button>
+          {table.tabId && (
+            <Button
+              variant="outline"
+              className="h-11"
+              onClick={() =>
+                setMoveTarget({
+                  tabId: table.tabId!,
+                  tableId: table.id,
+                  tableLabel: table.label,
+                  totalCents: data?.totalCents ?? table.tabTotalCents,
+                })
+              }
+            >
+              <ArrowRightLeft aria-hidden />
+              {tm.moveTable}
+            </Button>
+          )}
         </div>
       </div>
       <RodizioDialog target={rodizio} onClose={() => setRodizio(null)} />
+      <MoveTabDialog
+        target={moveTarget}
+        onClose={() => setMoveTarget(null)}
+        onMoved={(_, to) => {
+          setMoveTarget(null);
+          onMoved(to.id);
+        }}
+      />
     </aside>
   );
 }

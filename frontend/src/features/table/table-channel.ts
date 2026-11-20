@@ -10,7 +10,7 @@ const FALLBACK_REFRESH_MS = 15_000;
 const REOPEN_MS = 3000;
 
 /** Todos os avisos que alguma tela da mesa ouve: o canal assina todos, e cada hook filtra os seus. */
-const ALL_EVENTS = ["ready", "call", "order", "rodizio", "tab", "presence"];
+const ALL_EVENTS = ["ready", "call", "order", "rodizio", "tab", "presence", "tab-moved"];
 
 type Subscriber = { names: Set<string>; onEvent: (event: string) => void };
 type Channel = { subscribers: Set<Subscriber>; live: boolean; stop: () => void };
@@ -31,6 +31,14 @@ function openChannel(token: string): Channel {
     source = new EventSource(url, { withCredentials: true });
     const onEvent = (event: Event) => {
       channel.live = true;
+      if (event.type === "tab-moved") {
+        // A comanda saiu desta mesa ou chegou outra nela (ADR 0012). Reabrir a visita leva o
+        // celular para a mesa nova, se for o caso (a página recarrega); senão, tudo busca de novo.
+        void startVisit(token, true).then(() => {
+          for (const subscriber of channel.subscribers) subscriber.onEvent("ready");
+        });
+        return;
+      }
       for (const subscriber of channel.subscribers) {
         if (event.type === "ready" || subscriber.names.has(event.type)) subscriber.onEvent(event.type);
       }

@@ -33,3 +33,15 @@ export async function closeTab(id: string, paymentMethod: PaymentMethod | undefi
   if (!data) throw problem(error, response.status);
   return data;
 }
+
+export type MovedTab = Schemas["MovedTab"];
+
+/** Muda a comanda para outra mesa; se a mesa tem comanda aberta, as duas se juntam (ADR 0012). */
+export async function moveTab(id: string, tableId: string): Promise<MovedTab> {
+  const { data, error, response } = await api.POST("/api/v1/tabs/{id}/move", {
+    params: { path: { id } },
+    body: { tableId },
+  });
+  if (!data) throw problem(error, response.status);
+  return data;
+}

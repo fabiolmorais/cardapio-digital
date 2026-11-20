@@ -108,4 +108,14 @@ interface CallJpaRepository extends JpaRepository<CallJpaEntity, UUID> {
              WHERE c.establishmentId = :establishmentId AND c.status IN ('PENDING', 'IN_PROGRESS')
             """)
     Page<CallRow> findQueue(@Param("establishmentId") UUID establishmentId, Pageable pageable);
+
+    /** A comanda mudou de mesa: os chamados abertos vão junto (ADR 0012). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE call SET table_id = :toTable
+             WHERE establishment_id = :establishmentId AND table_id = :fromTable
+               AND status IN ('PENDING', 'IN_PROGRESS')
+            """)
+    int moveOpen(@Param("establishmentId") UUID establishmentId, @Param("fromTable") UUID fromTable,
+                 @Param("toTable") UUID toTable);
 }

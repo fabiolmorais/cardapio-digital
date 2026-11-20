@@ -8,7 +8,7 @@ import { fetchLiveFloor } from "./live-api";
 
 export const LIVE_FLOOR_KEY = ["live-floor"] as const;
 /** Os avisos que mudam o mapa: chamado, pedido, comanda, rodízio e celular entrando ou saindo. */
-const EVENTS = ["ready", "call", "order", "tab", "rodizio", "presence", "phone"];
+const EVENTS = ["ready", "call", "order", "tab", "tab-moved", "rodizio", "presence", "phone"];
 
 /**
  * O salão ao vivo (mesas e resumo), atualizado a cada aviso do tempo real e conferido a cada

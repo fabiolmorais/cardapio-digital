@@ -104,4 +104,9 @@ class TableSessionPersistenceAdapter implements TableSessionPort {
         establishmentFilter.enable(establishmentId);
         return sessions.endTable(establishmentId.value(), tableId.value(), now);
     }
+
+    @Override
+    public int moveTable(EstablishmentId establishmentId, DiningTableId from, DiningTableId to, Instant now) {
+        return sessions.moveTable(establishmentId.value(), from.value(), to.value(), now);
+    }
 }

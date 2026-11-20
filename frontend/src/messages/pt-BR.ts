@@ -335,6 +335,35 @@ export const messages = {
       activateRodizio: "Ativar rodízio",
       adjustGuests: "Ajustar pessoas",
       rodizioEnds: (time: string) => `Termina às ${time}`,
+      moveTable: "Mudar de mesa",
+      movesTitle: "Mudanças de mesa",
+      moveLine: (from: string, to: string, merged: boolean, time: string, by: string | null) =>
+        `${merged ? `Juntou a Mesa ${from} com a Mesa ${to}` : `Mudou da Mesa ${from} para a Mesa ${to}`} às ${time}` +
+        (by ? `, por ${by}` : ""),
+      mergedTitle: "Comanda juntada",
+      mergedText: "Os pedidos e os pagamentos desta comanda foram para a comanda da outra mesa.",
+      mergedOpen: "Ver a comanda junta",
+    },
+    moveTab: {
+      title: (table: string) => `Mudar a comanda da Mesa ${table}`,
+      hint: "Escolha a mesa para onde o grupo foi. Os celulares, os chamados e o rodízio vão junto.",
+      loading: "Carregando as mesas…",
+      loadError: "Não foi possível carregar as mesas.",
+      free: "Livres",
+      occupied: "Com comanda aberta (as duas se juntam)",
+      none: "Nenhuma outra mesa ativa.",
+      table: (label: string) => `Mesa ${label}`,
+      tableTotal: (label: string, total: string) => `Mesa ${label} · ${total}`,
+      confirmMove: (from: string, to: string) => `Mudar a comanda da Mesa ${from} para a Mesa ${to}?`,
+      confirmMerge: (from: string, fromTotal: string, to: string, toTotal: string, sum: string) =>
+        `Juntar a comanda da Mesa ${from} (${fromTotal}) com a da Mesa ${to} (${toTotal})? ` +
+        `Fica uma comanda só, na Mesa ${to}, com ${sum}. Não dá para desfazer.`,
+      move: (to: string) => `Mudar para a Mesa ${to}`,
+      merge: "Juntar as comandas",
+      back: "Escolher outra",
+      moving: "Mudando…",
+      moved: (to: string) => `A comanda foi para a Mesa ${to}.`,
+      merged: (to: string) => `As comandas se juntaram na Mesa ${to}.`,
     },
     passagem: {
       title: "Passadores",
@@ -457,6 +486,11 @@ export const messages = {
         note: (text: string) => `obs.: ${text}`,
         reason: (text: string) => `motivo: ${text}`,
         printedAt: (time: string) => `impresso às ${time}`,
+        moved: "*** MUDOU DE MESA ***",
+        merged: "*** JUNTOU MESAS ***",
+        fromTo: (from: string, to: string) => `MESA ${from} -> MESA ${to}`,
+        movedHint: "Leve estes itens para a mesa nova:",
+        movedAt: (time: string) => `mudou às ${time}`,
       },
     },
     cancelItem: {

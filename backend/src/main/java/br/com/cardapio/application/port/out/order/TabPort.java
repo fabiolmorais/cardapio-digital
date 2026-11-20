@@ -43,4 +43,14 @@ public interface TabPort {
      */
     ResultPage<ClosedTabView> findClosed(EstablishmentId establishmentId, TabPeriod period, DiningTableId tableId,
                                          PageQuery page);
+
+    /**
+     * Grava a comanda depois da mudança de mesa (ADR 0012): a mesa e a abertura. Só se ela ainda
+     * estiver aberta. false: fechou no meio do caminho, ou a mesa nova acabou de ganhar outra
+     * comanda aberta (o índice "uma aberta por mesa").
+     */
+    boolean saveMoved(Tab tab);
+
+    /** A comanda de origem se juntou a outra: MERGED, apontando para ela. Só se ainda estiver aberta. */
+    boolean markMerged(EstablishmentId establishmentId, TabId tabId, TabId into);
 }

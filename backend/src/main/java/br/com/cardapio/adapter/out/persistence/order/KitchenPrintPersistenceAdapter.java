@@ -23,17 +23,22 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import br.com.cardapio.application.port.out.order.MovePrintView;
+import br.com.cardapio.domain.order.model.TabMoveId;
+import java.util.HashMap;
 
 @Component
 class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
 
     private final KitchenPrintJpaRepository items;
+    private final TabMoveJpaRepository moves;
     private final OrderItemChoices choices;
     private final EstablishmentFilter establishmentFilter;
 
-    KitchenPrintPersistenceAdapter(KitchenPrintJpaRepository items, OrderItemChoices choices,
-                                   EstablishmentFilter establishmentFilter) {
+    KitchenPrintPersistenceAdapter(KitchenPrintJpaRepository items, TabMoveJpaRepository moves,
+                                   OrderItemChoices choices, EstablishmentFilter establishmentFilter) {
         this.items = items;
+        this.moves = moves;
         this.choices = choices;
         this.establishmentFilter = establishmentFilter;
     }
@@ -96,5 +101,54 @@ class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
     private static PrintJobView view(PrintJobRow h, List<OrderItem> lines) {
         return new PrintJobView(new OrderId(h.orderId()), h.orderNumber(), new DiningTableId(h.tableId()),
                 h.tableLabel(), h.sectorName(), lines);
+    }
+
+    @Override
+    public ResultPage<MovePrintView> findPendingMoves(EstablishmentId establishmentId, PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<MovePrintRow> headers = moves.findPendingPrints(establishmentId.value(),
+                PageRequest.of(page.page(), page.size()));
+        Map<UUID, List<OrderItem>> byMove = moveItems(establishmentId.value(),
+                headers.stream().map(MovePrintRow::moveId).toList());
+        return new ResultPage<>(headers.map(h -> moveView(h, byMove.getOrDefault(h.moveId(), List.of())))
+                .getContent(), page.page(), page.size(), headers.getTotalElements());
+    }
+
+    @Override
+    public Optional<MovePrintView> lockPendingMove(EstablishmentId establishmentId, TabMoveId moveId) {
+        establishmentFilter.enable(establishmentId);
+        UUID id = establishmentId.value();
+        if (moves.lock(id, moveId.value()).isEmpty()) {
+            return Optional.empty();
+        }
+        return moves.findPrintHeader(id, moveId.value()).map(h -> {
+            boolean pending = h.needsPrint() && h.printedAt() == null;
+            return moveView(h, pending ? moveItems(id, List.of(h.moveId())).getOrDefault(h.moveId(), List.of())
+                    : List.of());
+        });
+    }
+
+    @Override
+    public void markMovePrinted(EstablishmentId establishmentId, TabMoveId moveId, Instant now) {
+        moves.markPrinted(establishmentId.value(), moveId.value(), now);
+    }
+
+    /** Os itens a caminho de cada via, numa consulta para os ids e outra (IN) para os itens. */
+    private Map<UUID, List<OrderItem>> moveItems(UUID establishmentId, List<UUID> moveIds) {
+        if (moveIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, UUID> moveOf = new HashMap<>();
+        moves.findPrintItems(establishmentId, moveIds).forEach(r -> moveOf.put(r.getItemId(), r.getMoveId()));
+        if (moveOf.isEmpty()) {
+            return Map.of();
+        }
+        return choices.toDomain(establishmentId, items.findItems(establishmentId, moveOf.keySet())).stream()
+                .collect(Collectors.groupingBy(i -> moveOf.get(i.id().value())));
+    }
+
+    private static MovePrintView moveView(MovePrintRow h, List<OrderItem> lines) {
+        return new MovePrintView(new TabMoveId(h.moveId()), h.mergedTabId() != null, h.fromTableLabel(),
+                h.toTableLabel(), h.sectorName(), h.movedAt(), lines);
     }
 }

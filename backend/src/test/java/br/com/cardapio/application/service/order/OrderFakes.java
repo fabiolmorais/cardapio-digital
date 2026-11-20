@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import br.com.cardapio.domain.order.model.TabStatus;
 
 /**
  * O cardápio, as configurações, as comandas e os pedidos na memória, para os testes dos serviços
@@ -332,5 +333,47 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
                         t.paymentMethod(), null))
                 .toList();
         return new ResultPage<>(found, page.page(), page.size(), found.size());
+    }
+
+    @Override
+    public boolean saveMoved(Tab tab) {
+        Tab current = tabs.get(tab.id());
+        if (current == null || !current.status().isOpen()) {
+            return false;
+        }
+        boolean taken = tabs.values().stream().anyMatch(t -> !t.id().equals(tab.id()) && t.status().isOpen()
+                && t.tableId().equals(tab.tableId()));
+        if (taken) {
+            return false;
+        }
+        tabs.put(tab.id(), tab);
+        return true;
+    }
+
+    @Override
+    public boolean markMerged(EstablishmentId establishmentId, TabId tabId, TabId into) {
+        Tab t = tabs.get(tabId);
+        if (t == null || !t.status().isOpen()) {
+            return false;
+        }
+        tabs.put(tabId, new Tab(t.id(), t.establishmentId(), t.tableId(), TabStatus.MERGED, t.openedAt(), null, null,
+                null, null));
+        return true;
+    }
+
+    @Override
+    public void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab, DiningTableId toTable) {
+        orders.replaceAll((id, o) -> o.tabId().equals(fromTab)
+                ? new Order(o.id(), o.establishmentId(), toTab, toTable, o.origin(), o.number(), o.status(),
+                        o.createdAt(), o.approvedBy(), o.approvedAt(), o.clientRequestId(), o.duplicateConfirmed())
+                : o);
+    }
+
+    @Override
+    public void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab) {
+        payments.replaceAll(p -> p.tabId().equals(fromTab)
+                ? new TabPayment(p.id(), p.establishmentId(), toTab, p.amount(), p.method(), p.receivedAt(),
+                        p.receivedBy(), p.callId())
+                : p);
     }
 }

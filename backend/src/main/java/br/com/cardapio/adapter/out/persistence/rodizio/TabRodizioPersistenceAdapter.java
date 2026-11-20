@@ -100,4 +100,14 @@ class TabRodizioPersistenceAdapter implements TabRodizioPort {
                     r.guests().get(position).quantity());
         }
     }
+
+    @Override
+    public void moveToTab(TabRodizio moved) {
+        rodizios.moveToTab(moved.establishmentId().value(), moved.id().value(), moved.tabId().value());
+    }
+
+    @Override
+    public void moveRounds(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to) {
+        rodizios.moveRounds(establishmentId.value(), from.value(), to.value());
+    }
 }

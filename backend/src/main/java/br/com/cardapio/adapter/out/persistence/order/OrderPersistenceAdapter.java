@@ -234,4 +234,9 @@ class OrderPersistenceAdapter implements OrderPort {
                 e.getApprovedBy() == null ? null : new UserId(e.getApprovedBy()), e.getApprovedAt(),
                 e.getClientRequestId(), e.isDuplicateConfirmed());
     }
+
+    @Override
+    public void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab, DiningTableId toTable) {
+        orders.moveToTab(establishmentId.value(), fromTab.value(), toTab.value(), toTable.value());
+    }
 }

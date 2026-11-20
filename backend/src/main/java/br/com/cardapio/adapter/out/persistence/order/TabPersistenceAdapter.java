@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Component
 class TabPersistenceAdapter implements TabPort {
@@ -92,5 +93,20 @@ class TabPersistenceAdapter implements TabPort {
                 e.getClosedAt(), e.getClosedBy() == null ? null : new UserId(e.getClosedBy()),
                 e.getTotalCents() == null ? null : Money.ofCents(e.getTotalCents()),
                 e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()));
+    }
+
+    @Override
+    public boolean saveMoved(Tab t) {
+        try {
+            return tabs.saveMoved(t.id().value(), t.establishmentId().value(), t.tableId().value(), t.openedAt()) == 1;
+        } catch (DataIntegrityViolationException e) {
+            // A mesa nova acabou de ganhar uma comanda aberta: o índice "uma aberta por mesa" recusou.
+            return false;
+        }
+    }
+
+    @Override
+    public boolean markMerged(EstablishmentId establishmentId, TabId tabId, TabId into) {
+        return tabs.markMerged(tabId.value(), establishmentId.value(), into.value()) == 1;
     }
 }

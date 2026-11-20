@@ -10,6 +10,7 @@ import br.com.cardapio.domain.order.model.TicketKind;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
+import br.com.cardapio.domain.order.model.TabMoveId;
 
 /**
  * O que a impressora da cozinha ainda precisa imprimir, e o registro do que já saiu. Vale o mesmo
@@ -35,4 +36,16 @@ public interface KitchenPrintPort {
 
     /** Marca estes itens como impressos nesta via. */
     void markPrinted(EstablishmentId establishmentId, Collection<OrderItemId> itemIds, TicketKind kind, Instant now);
+
+    /** As vias "MUDOU DE MESA" que faltam imprimir, da mais antiga à mais nova (ADR 0012). */
+    ResultPage<MovePrintView> findPendingMoves(EstablishmentId establishmentId, PageQuery page);
+
+    /**
+     * Trava (FOR UPDATE) a via desta mudança: duas estações pedindo a mesma, a segunda espera a
+     * primeira e recebe a via sem itens. Sem itens também se ela já saiu ou se tudo já chegou à
+     * mesa. Vazio (Optional) se a mudança não é deste restaurante.
+     */
+    Optional<MovePrintView> lockPendingMove(EstablishmentId establishmentId, TabMoveId moveId);
+
+    void markMovePrinted(EstablishmentId establishmentId, TabMoveId moveId, Instant now);
 }

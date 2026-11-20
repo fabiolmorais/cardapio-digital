@@ -246,6 +246,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
 import java.time.Duration;
+import br.com.cardapio.application.port.in.order.MoveTabUseCase;
+import br.com.cardapio.application.port.out.order.TabMovePort;
+import br.com.cardapio.application.service.order.MoveTabService;
 
 /**
  * Registra os casos de uso como beans. Os serviços de aplicação não usam @Service.
@@ -657,9 +660,10 @@ class UseCaseConfig {
     StartTableSessionUseCase startTableSessionUseCase(DiningTablePort diningTablePort,
                                                       TableSessionPort tableSessionPort,
                                                       PresenceRulePort presenceRulePort,
-                                                      RandomTokenGenerator randomTokenGenerator, Clock clock) {
+                                                      RandomTokenGenerator randomTokenGenerator,
+                                                      TabMovePort tabMovePort, Clock clock) {
         return new StartTableSessionService(diningTablePort, tableSessionPort, presenceRulePort,
-                randomTokenGenerator, clock);
+                randomTokenGenerator, tabMovePort, clock);
     }
 
     // Chamados (Guia 13), que publicam os avisos de tempo real (Guia 14)
@@ -898,8 +902,19 @@ class UseCaseConfig {
 
     @Bean
     GetTabUseCase getTabUseCase(TabPort tabPort, OrderPort orderPort, CallPort callPort,
-                                TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort) {
-        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort, tabPaymentPort);
+                                TabRodizioPort tabRodizioPort, TabPaymentPort tabPaymentPort,
+                                TabMovePort tabMovePort) {
+        return new GetTabService(tabPort, orderPort, callPort, tabRodizioPort, tabPaymentPort, tabMovePort);
+    }
+
+    @Bean
+    MoveTabUseCase moveTabUseCase(TabPort tabPort, DiningTablePort diningTablePort, OrderPort orderPort,
+                                  TabPaymentPort tabPaymentPort, TabRodizioPort tabRodizioPort,
+                                  RodizioPhonePort rodizioPhonePort, CallPort callPort,
+                                  TableSessionPort tableSessionPort, TabMovePort tabMovePort,
+                                  EventPublisherPort eventPublisherPort, Clock clock) {
+        return new MoveTabService(tabPort, diningTablePort, orderPort, tabPaymentPort, tabRodizioPort,
+                rodizioPhonePort, callPort, tableSessionPort, tabMovePort, eventPublisherPort, clock);
     }
 
     @Bean

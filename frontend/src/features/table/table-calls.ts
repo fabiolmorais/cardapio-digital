@@ -57,7 +57,16 @@ export function startVisit(token: string, fresh = false): Promise<Presence | nul
       method: "POST",
       credentials: "include",
     })
-      .then(() => checkPresence(token))
+      .then(async (response) => {
+        // A comanda deste celular mudou de mesa (ADR 0012): a página vai para a mesa nova, onde
+        // a sessão já está, sem conferir a presença de novo.
+        const body = response.ok ? ((await response.json().catch(() => null)) as { movedTo?: string } | null) : null;
+        if (body?.movedTo) {
+          goToTable(token, body.movedTo);
+          return null;
+        }
+        return checkPresence(token);
+      })
       .catch(() => null);
     // Não deu (sem rede, ou o servidor acordando): a próxima chamada tenta de novo, em vez de
     // reaproveitar a falha.
@@ -68,6 +77,12 @@ export function startVisit(token: string, fresh = false): Promise<Presence | nul
     visit = current;
   }
   return visit;
+}
+
+/** A mesma página (cardápio, pedidos, conta…), na mesa nova. */
+function goToTable(from: string, to: string) {
+  const { pathname, search, hash } = window.location;
+  window.location.replace(pathname.replace(encodeURIComponent(from), encodeURIComponent(to)) + search + hash);
 }
 
 /**

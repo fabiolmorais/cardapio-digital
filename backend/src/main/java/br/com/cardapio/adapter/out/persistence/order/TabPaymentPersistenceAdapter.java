@@ -44,4 +44,9 @@ class TabPaymentPersistenceAdapter implements TabPaymentPort {
                         new UserId(e.getReceivedBy()), e.getCallId() == null ? null : new CallId(e.getCallId())))
                 .toList();
     }
+
+    @Override
+    public void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab) {
+        payments.moveToTab(establishmentId.value(), fromTab.value(), toTab.value());
+    }
 }

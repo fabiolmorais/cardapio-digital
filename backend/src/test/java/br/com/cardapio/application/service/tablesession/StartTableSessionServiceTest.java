@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.tablesession;
 
+import br.com.cardapio.support.InMemoryTabMoves;
 import br.com.cardapio.application.port.in.tablesession.TableSessionStarted;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
@@ -30,7 +31,8 @@ class StartTableSessionServiceTest {
     private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
     private StartTableSessionService service() {
-        return new StartTableSessionService(tables, sessions, rules, () -> "token-" + (++generated), clock);
+        return new StartTableSessionService(tables, sessions, rules, () -> "token-" + (++generated),
+                new InMemoryTabMoves(), clock);
     }
 
     private final EstablishmentId sakura = EstablishmentId.newId();

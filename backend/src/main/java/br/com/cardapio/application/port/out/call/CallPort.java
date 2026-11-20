@@ -47,4 +47,7 @@ public interface CallPort {
 
     /** A fila da equipe: os chamados abertos do restaurante, por ordem de chegada. */
     ResultPage<CallView> findQueue(EstablishmentId establishmentId, PageQuery page);
+
+    /** A comanda mudou de mesa: os chamados abertos da mesa de origem vão para a de destino. */
+    int moveOpen(EstablishmentId establishmentId, DiningTableId from, DiningTableId to);
 }

@@ -155,4 +155,10 @@ interface KitchenPrintJpaRepository extends JpaRepository<OrderItemJpaEntity, UU
             + " WHERE i.id IN :ids AND i.establishmentId = :establishmentId AND i.cancelPrintedAt IS NULL")
     int markCancelPrinted(@Param("establishmentId") UUID establishmentId, @Param("ids") Collection<UUID> ids,
                           @Param("now") Instant now);
+
+    /** Os itens de uma via "MUDOU DE MESA", pelos ids. */
+    @Query("SELECT i FROM OrderItemJpaEntity i WHERE i.establishmentId = :establishmentId AND i.id IN :ids"
+            + " ORDER BY i.createdAt, i.position")
+    List<OrderItemJpaEntity> findItems(@Param("establishmentId") UUID establishmentId,
+                                       @Param("ids") Collection<UUID> ids);
 }

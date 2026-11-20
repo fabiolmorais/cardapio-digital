@@ -119,4 +119,9 @@ class CallPersistenceAdapter implements CallPort {
         return new CallView(call, r.getTableLabel(), r.getSectorName(), r.getAcceptedByName(),
                 r.getPresenceMethod() == null ? null : PresenceMethod.valueOf(r.getPresenceMethod()));
     }
+
+    @Override
+    public int moveOpen(EstablishmentId establishmentId, DiningTableId from, DiningTableId to) {
+        return calls.moveOpen(establishmentId.value(), from.value(), to.value());
+    }
 }

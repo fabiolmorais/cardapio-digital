@@ -3,6 +3,7 @@ package br.com.cardapio.application.service.tablesession;
 import br.com.cardapio.application.port.in.tablesession.StartTableSessionUseCase;
 import br.com.cardapio.application.port.in.tablesession.TableSessionStarted;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
+import br.com.cardapio.application.port.out.order.TabMovePort;
 import br.com.cardapio.application.port.out.presence.PresenceRulePort;
 import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
@@ -24,10 +25,12 @@ public class StartTableSessionService implements StartTableSessionUseCase {
     private final TableSessionPort sessions;
     private final PresenceRulePort rules;
     private final RandomTokenGenerator tokens;
+    private final TabMovePort moves;
     private final Clock clock;
 
     public StartTableSessionService(DiningTablePort tables, TableSessionPort sessions, PresenceRulePort rules,
-                                    RandomTokenGenerator tokens, Clock clock) {
+                                    RandomTokenGenerator tokens, TabMovePort moves, Clock clock) {
+        this.moves = moves;
         this.tables = tables;
         this.sessions = sessions;
         this.rules = rules;
@@ -41,11 +44,24 @@ public class StartTableSessionService implements StartTableSessionUseCase {
         DiningTable table = PublicTableLookup.resolve(tables, tableToken).table();
         Instant now = clock.instant();
 
-        // O celular já tem uma sessão válida NESTA mesa? Continua nela (e o prazo recomeça).
-        Optional<TableSession> current = currentToken == null || currentToken.isBlank()
+        Optional<TableSession> active = currentToken == null || currentToken.isBlank()
                 ? Optional.empty()
-                : sessions.findByTokenHash(TokenHash.of(currentToken))
-                        .filter(s -> s.isActive(now) && s.isFor(table.id()));
+                : sessions.findByTokenHash(TokenHash.of(currentToken)).filter(s -> s.isActive(now));
+
+        // A comanda deste celular mudou de mesa depois que ele chegou (ADR 0012): em vez de começar
+        // uma visita nova na mesa antiga, a página vai para a mesa nova, onde a sessão já está.
+        Optional<String> movedTo = active
+                .filter(s -> !s.isFor(table.id()) && s.establishmentId().equals(table.establishmentId()))
+                .filter(s -> moves.movedBetween(table.establishmentId(), table.id(), s.tableId(), s.createdAt()))
+                .flatMap(s -> tables.find(s.establishmentId(), s.tableId()))
+                .filter(DiningTable::active)
+                .map(t -> t.token().value());
+        if (movedTo.isPresent()) {
+            return new TableSessionStarted(currentToken, active.get().expiresAt(), true, movedTo.get());
+        }
+
+        // O celular já tem uma sessão válida NESTA mesa? Continua nela (e o prazo recomeça).
+        Optional<TableSession> current = active.filter(s -> s.isFor(table.id()));
         if (current.isPresent()) {
             TableSession touched = current.get().touch(now);
             sessions.save(touched);

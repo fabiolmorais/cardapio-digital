@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import br.com.cardapio.application.port.out.order.TabMoveView;
 
 /**
  * A comanda como a EQUIPE vê: todos os pedidos, de todos os celulares, com o passo de cada item,
@@ -36,16 +37,32 @@ import java.util.stream.Collectors;
  * @param paymentMethod     fechada: como pagou (a forma do último pagamento); null enquanto aberta
  * @param billRequestedWith aberta e com a conta pedida: a forma escolhida pela mesa; senão null
  * @param rodizio           o rodízio da comanda (já somado no total); null se não houve
+ * @param moves             as mudanças de mesa, da mais antiga à mais nova (ADR 0012)
+ * @param mergedInto        juntada (MERGED): a comanda que continuou; senão null
  */
 public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, String sectorName, TabStatus status,
                        Instant openedAt,
                        Instant closedAt, Money total, Money paid, Money due, Money overpaid, List<Payment> payments,
                        PaymentMethod paymentMethod, PaymentMethod billRequestedWith, TableRodizio rodizio,
-                       List<Order> orders) {
+                       List<Order> orders, List<Move> moves, TabId mergedInto) {
 
     public StaffTab {
         payments = List.copyOf(payments);
         orders = List.copyOf(orders);
+        moves = List.copyOf(moves);
+    }
+
+    /** Uma mudança de mesa: de qual para qual, se juntou, quem e quando (ADR 0012). */
+    public record Move(String fromTableLabel, String toTableLabel, boolean merged, String movedByName,
+                       Instant movedAt) {
+    }
+
+    /** A comanda com as mudanças de mesa e, se foi juntada, a que continuou. */
+    public StaffTab withMoves(List<TabMoveView> newMoves, TabId newMergedInto) {
+        return new StaffTab(id, tableId, tableLabel, sectorName, status, openedAt, closedAt, total, paid, due,
+                overpaid, payments, paymentMethod, billRequestedWith, rodizio, orders,
+                newMoves.stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
+                        m.movedByName(), m.movedAt())).toList(), newMergedInto);
     }
 
     /** Um pagamento recebido: quanto, como e quando. */
@@ -86,7 +103,7 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                         o.order().createdAt(), o.order().byStaff(),
                         o.order().origin() instanceof OrderOrigin.Staff staff ? staffNames.get(staff.userId()) : null,
                         o.order().duplicateConfirmed(),
-                        o.items().stream().map(TableOrder.Item::from).toList())).toList());
+                        o.items().stream().map(TableOrder.Item::from).toList())).toList(), List.of(), null);
     }
 
     /** Quem da equipe lançou estes pedidos. */
@@ -97,4 +114,5 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                 .map(origin -> ((OrderOrigin.Staff) origin).userId())
                 .collect(Collectors.toSet());
     }
+
 }

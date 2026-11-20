@@ -93,4 +93,14 @@ interface TableSessionJpaRepository extends JpaRepository<TableSessionJpaEntity,
             """)
     int endTable(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId,
                  @Param("now") Instant now);
+
+    /** A comanda mudou de mesa: as sessões ativas da mesa vão junto (ADR 0012). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE table_session SET table_id = :toTable
+             WHERE establishment_id = :establishmentId AND table_id = :fromTable
+               AND ended_at IS NULL AND expires_at > :now
+            """)
+    int moveTable(@Param("establishmentId") UUID establishmentId, @Param("fromTable") UUID fromTable,
+                  @Param("toTable") UUID toTable, @Param("now") Instant now);
 }

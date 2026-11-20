@@ -13,4 +13,7 @@ public interface TabPaymentPort {
 
     /** Os pagamentos da comanda, do mais antigo ao mais novo. */
     List<TabPayment> findPayments(EstablishmentId establishmentId, TabId tabId);
+
+    /** Na junção, os pagamentos adiantados da comanda de origem passam para a de destino. */
+    void moveToTab(EstablishmentId establishmentId, TabId fromTab, TabId toTab);
 }

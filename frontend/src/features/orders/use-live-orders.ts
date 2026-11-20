@@ -18,7 +18,7 @@ export function useLiveOrders<T extends { id: string }>(
   fetch: () => Promise<T[]>,
   onNew?: () => void,
   enabled = true,
-  events: readonly string[] = ["order"],
+  events: readonly string[] = ["order", "tab-moved"],
 ) {
   const queryClient = useQueryClient();
   const [connected, setConnected] = useState(false);

@@ -7,10 +7,12 @@ package br.com.cardapio.domain.order.model;
 public enum TabStatus {
     OPEN,
     CLOSING,
-    CLOSED;
+    CLOSED,
+    /** Juntada a outra comanda (ADR 0012): os pedidos e os pagamentos foram para ela. Não tem total. */
+    MERGED;
 
     /** Aberta ou fechando: ainda é a comanda da mesa, e recebe pedidos. */
     public boolean isOpen() {
-        return this != CLOSED;
+        return this == OPEN || this == CLOSING;
     }
 }

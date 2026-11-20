@@ -7,6 +7,7 @@ import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 
 import java.util.Optional;
+import br.com.cardapio.domain.rodizio.model.TabRodizioId;
 
 public interface TabRodizioPort {
 
@@ -26,4 +27,10 @@ public interface TabRodizioPort {
 
     /** As mesas com a comanda aberta no rodízio de passagem: as pausadas primeiro, depois pela mesa. */
     ResultPage<PassagemTableView> findOpenPassagem(EstablishmentId establishmentId, PageQuery page);
+
+    /** O rodízio passa para outra comanda (a de destino, numa junção em que só a origem tinha rodízio). */
+    void moveToTab(TabRodizio moved);
+
+    /** Na junção de dois rodízios iguais, os itens das rodadas passam para o rodízio que continua. */
+    void moveRounds(EstablishmentId establishmentId, TabRodizioId from, TabRodizioId to);
 }

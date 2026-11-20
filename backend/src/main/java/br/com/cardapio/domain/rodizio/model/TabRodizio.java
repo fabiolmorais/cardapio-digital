@@ -2,6 +2,7 @@ package br.com.cardapio.domain.rodizio.model;
 
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
+import br.com.cardapio.domain.order.exception.TabMoveException;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.rodizio.exception.RodizioCardException;
 import br.com.cardapio.domain.shared.exception.InvalidValueException;
@@ -11,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -111,6 +113,47 @@ public record TabRodizio(
     /** Quantas pessoas estão no rodízio, somando as faixas. */
     public int people() {
         return guests.stream().mapToInt(GuestTier::quantity).sum();
+    }
+
+    /**
+     * A comanda mudou de mesa sozinha, ou se juntou a uma comanda sem rodízio: o rodízio vai junto,
+     * igual (ADR 0012).
+     */
+    public TabRodizio movedTo(TabId newTab) {
+        return new TabRodizio(id, establishmentId, newTab, rodizioId, rodizioName, guests, activatedBy, startedAt,
+                endsAt, type, status, statusChangedAt);
+    }
+
+    /**
+     * Duas comandas no mesmo rodízio se juntaram: as pessoas da outra somam nesta, faixa a faixa. Cada
+     * pessoa continua com o preço copiado na ativação, então as faixas com gente precisam ter o mesmo
+     * preço nas duas (ativadas com o mesmo preço do dia e horário). Rodízios diferentes não se juntam.
+     */
+    public TabRodizio absorb(TabRodizio other) {
+        if (!rodizioId.equals(other.rodizioId)) {
+            throw new TabMoveException("As duas mesas estão em rodízios diferentes (" + rodizioName + " e "
+                    + other.rodizioName + "). Feche uma das comandas antes de juntar.");
+        }
+        Map<String, GuestTier> mine = new LinkedHashMap<>();
+        guests.forEach(g -> mine.put(g.tierName(), g));
+        for (GuestTier theirs : other.guests) {
+            if (theirs.quantity() == 0) {
+                continue;
+            }
+            GuestTier here = mine.get(theirs.tierName());
+            if (here == null || !here.unitPrice().equals(theirs.unitPrice())) {
+                throw new TabMoveException("O rodízio das duas mesas foi ativado com preços diferentes (" +
+                        theirs.tierName() + "). Feche uma das comandas antes de juntar.");
+            }
+            int sum = here.quantity() + theirs.quantity();
+            if (sum > GuestTier.MAX_PER_TIER) {
+                throw new TabMoveException("Juntas, as mesas passariam de " + GuestTier.MAX_PER_TIER + " pessoas na faixa "
+                        + theirs.tierName() + ".");
+            }
+            mine.put(here.tierName(), here.withQuantity(sum));
+        }
+        return new TabRodizio(id, establishmentId, tabId, rodizioId, rodizioName, List.copyOf(mine.values()),
+                activatedBy, startedAt, endsAt, type, status, statusChangedAt);
     }
 
     /** O que o rodízio soma na conta: pessoas × preço, faixa a faixa. */

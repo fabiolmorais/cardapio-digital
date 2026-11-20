@@ -189,6 +189,16 @@ public record Call(
                 createdAt, acceptedAt, acceptedBy, now, canceledAt, releaseCode);
     }
 
+    /**
+     * Duas comandas se juntaram e as duas mesas tinham o mesmo chamado aberto (ADR 0012): fica o mais
+     * antigo, e este termina atendido junto com ele.
+     */
+    public Call closeAsDuplicate(Instant now) {
+        requireOpen();
+        return new Call(id, establishmentId, tableId, sessionId, type, paymentMethod, CallStatus.DONE,
+                createdAt, acceptedAt, acceptedBy, now, canceledAt, releaseCode);
+    }
+
     /** O código da liberação é um segredo de curta duração: nunca vai para o log. */
     @Override
     public String toString() {

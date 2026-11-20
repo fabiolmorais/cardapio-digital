@@ -37,9 +37,11 @@ record PrintJobResponse(
 
     static PrintJobResponse from(PrintJob job) {
         return new PrintJobResponse(job.orderId().value(), job.kind(), job.orderNumber(), job.tableLabel(),
-                job.sectorName(), job.orderedAt(), job.items().stream()
-                .map(l -> new Line(l.id().value(), l.productName(), l.quantity(), l.note(), l.rodizio(),
-                        l.cancelReason(), ChoicesResponse.from(l.choices())))
-                .toList());
+                job.sectorName(), job.orderedAt(), job.items().stream().map(PrintJobResponse::line).toList());
+    }
+
+    static Line line(PrintJob.Line l) {
+        return new Line(l.id().value(), l.productName(), l.quantity(), l.note(), l.rodizio(), l.cancelReason(),
+                ChoicesResponse.from(l.choices()));
     }
 }

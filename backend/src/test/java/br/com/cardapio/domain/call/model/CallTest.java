@@ -127,4 +127,13 @@ class CallTest {
         assertThat(accepted.acceptedBy()).isEqualTo(carlos);
         assertThatThrownBy(() -> pending.closeWithTab(NOW)).isInstanceOf(CallStateException.class);
     }
+
+    @Test
+    void theNewerOfTwoMergedCallsEndsDone() {
+        Call done = open(CallType.BILL, PaymentMethod.PIX).closeAsDuplicate(NOW.plusSeconds(60));
+
+        assertThat(done.status()).isEqualTo(CallStatus.DONE);
+        assertThat(done.isOpen()).isFalse();
+        assertThatThrownBy(() -> done.closeAsDuplicate(NOW.plusSeconds(120))).isInstanceOf(CallStateException.class);
+    }
 }

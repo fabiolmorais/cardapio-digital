@@ -101,7 +101,7 @@ function Screen({ tableId }: { tableId: string }) {
     () =>
       subscribeStaffEvents(
         (event) => {
-          if (["ready", "order", "tab", "rodizio"].includes(event.name)) {
+          if (["ready", "order", "tab", "tab-moved", "rodizio"].includes(event.name)) {
             void queryClient.invalidateQueries({ queryKey: ["staff-order", tableId] });
           }
         },

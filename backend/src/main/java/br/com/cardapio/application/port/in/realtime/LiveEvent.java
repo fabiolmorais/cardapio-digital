@@ -3,6 +3,7 @@ package br.com.cardapio.application.port.in.realtime;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
+import br.com.cardapio.domain.order.event.TabMoved;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
@@ -41,6 +42,11 @@ public record LiveEvent(String name, Map<String, String> data) {
             case PhoneBlockChanged p -> Optional.of(new LiveEvent("phone", Map.of(
                     "tableId", p.tableId().value().toString(),
                     "blocked", String.valueOf(p.blocked()))));
+            // A mudança sai uma vez para cada mesa; para a equipe, basta a da mesa de origem.
+            case TabMoved t when t.leftThisTable() -> Optional.of(new LiveEvent("tab-moved", Map.of(
+                    "tabId", t.tabId().value().toString(),
+                    "fromTableId", t.fromTableId().value().toString(),
+                    "toTableId", t.toTableId().value().toString())));
             default -> Optional.empty();
         };
     }
@@ -59,6 +65,9 @@ public record LiveEvent(String name, Map<String, String> data) {
             case RodizioChanged r -> Optional.of(new LiveEvent("rodizio", Map.of("tabId", r.tabId().value().toString())));
             // Sem dizer qual celular: cada um da mesa confere de novo a própria presença.
             case PhoneBlockChanged p -> Optional.of(new LiveEvent("presence", Map.of()));
+            // left: a comanda foi embora desta mesa (o celular vai atrás); senão, chegou uma comanda nela.
+            case TabMoved t -> Optional.of(new LiveEvent("tab-moved", Map.of(
+                    "left", String.valueOf(t.leftThisTable()))));
             default -> Optional.empty();
         };
     }
