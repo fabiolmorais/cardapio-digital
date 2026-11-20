@@ -2182,7 +2182,7 @@ export interface components {
              * @description Dias de histórico; nulo = ilimitado
              */
             historyDays: number | null;
-            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
+            features: ("PRODUCT_VIDEOS" | "PREP_STATIONS" | "ROLES_AND_PERMISSIONS" | "BASIC_REPORTS" | "REPORTS" | "REPORT_EXPORT" | "MULTI_UNIT")[];
             /** @enum {string} */
             support: "EMAIL" | "WHATSAPP" | "PRIORITY_WHATSAPP" | "DEDICATED_MANAGER";
         };

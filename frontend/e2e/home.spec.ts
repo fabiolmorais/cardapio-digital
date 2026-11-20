@@ -20,6 +20,12 @@ test("a página inicial apresenta o OhChefe e mostra os planos vindos da API", a
   await expect(pro).toContainText("Até 50 mesas");
   await expect(pro).toContainText("Vídeos nos pratos");
   await expect(pro).toContainText("Teste grátis");
+  await expect(pro).toContainText("Relatórios básicos");
+  await expect(pro).not.toContainText("Relatórios completos");
+
+  const business = page.getByTestId("plan-business");
+  await expect(business).toContainText("Relatórios completos");
+  await expect(business).not.toContainText("Relatórios básicos");
   await expect(page.getByTestId("plan-enterprise")).toContainText("Sob consulta");
 
   // No anual, o preço é o do ano, com o equivalente por mês.

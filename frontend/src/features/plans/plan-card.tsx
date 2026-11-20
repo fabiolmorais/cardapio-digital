@@ -12,13 +12,18 @@ const h = messages.home.plans;
 /** O plano do teste grátis (14 dias, decidido no back-end): ganha destaque na vitrine. */
 const TRIAL_PLAN_CODE = "pro";
 
+/** Os relatórios completos já incluem os básicos: o cartão mostra só a linha dos completos. */
+function visibleFeatures(features: Schemas["Plan"]["features"]) {
+  return features.includes("REPORTS") ? features.filter((feature) => feature !== "BASIC_REPORTS") : features;
+}
+
 export function PlanCard({ plan, annual }: { plan: Schemas["Plan"]; annual: boolean }) {
   const items = [
     t.tables(plan.maxTables),
     t.users(plan.maxUsers),
     t.sectors(plan.maxSectors),
     t.included,
-    ...plan.features.map((feature) => t.features[feature]),
+    ...visibleFeatures(plan.features).map((feature) => t.features[feature]),
     t.history(plan.historyDays),
     t.support[plan.support],
   ];
