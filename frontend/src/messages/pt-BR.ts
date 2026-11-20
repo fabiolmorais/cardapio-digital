@@ -352,7 +352,14 @@ export const messages = {
       charged: (percent: number, amount: string) => `Serviço ${percent}%: ${amount}`,
       removed: "Sem serviço (o cliente tirou)",
       today: (amount: string) => `+ ${amount} de serviço (da equipe)`,
-      todayWaiters: (list: string) => `Serviço: ${list}`,
+      todayTotal: (amount: string) => `+ ${amount} de serviço`,
+      seeByWaiter: "Ver por garçom",
+      byWaiterTitle: "Serviço de hoje por garçom",
+      byWaiterHint:
+        "A taxa de serviço das comandas fechadas hoje, para quem atendeu. O sistema registra; o repasse é com a casa.",
+      teamShare: "Caixinha da equipe",
+      total: "Total",
+      close: "Fechar",
     },
     moveTab: {
       title: (table: string) => `Mudar a comanda da Mesa ${table}`,

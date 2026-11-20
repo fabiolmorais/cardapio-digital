@@ -9,6 +9,7 @@ import { useLiveCalls } from "@/features/calls/use-live-calls";
 import { useMinuteClock } from "@/features/live/clock";
 import { sectorsOf } from "@/features/live/live-api";
 import { SoundGate } from "@/features/live/sound-gate";
+import { ServiceToday } from "@/features/live/service-today";
 import { SoundTag } from "@/features/live/sound-tag";
 import { useLiveFloor, useStaffConnected } from "@/features/live/use-live-floor";
 import { KITCHEN_KEY, KitchenLink, OrdersColumn, ReadyColumn } from "@/features/orders/staff-orders";
@@ -86,13 +87,7 @@ function Live({ role }: { role: Role }) {
   // A taxa de serviço de hoje (RF39) fica fora do faturado: aparece embaixo, separada.
   const serviceToday = floor.data?.serviceToday;
   const serviceHint =
-    serviceToday && serviceToday.totalCents > 0
-      ? serviceToday.byWaiter.length > 0
-        ? messages.panel.service.todayWaiters(
-            serviceToday.byWaiter.map((w) => `${w.name} ${formatCents(w.amountCents)}`).join(" · "),
-          )
-        : messages.panel.service.today(formatCents(serviceToday.totalCents))
-      : tl.revenueHint;
+    serviceToday && serviceToday.totalCents > 0 ? <ServiceToday service={serviceToday} /> : tl.revenueHint;
 
   const date = now ? dateFormat.format(now) : "";
   const time = now ? timeFormat.format(now) : "";
@@ -204,7 +199,7 @@ function Kpi({
   children,
 }: {
   label: string;
-  hint?: string;
+  hint?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -212,7 +207,7 @@ function Kpi({
     <div className="@container flex min-w-0 flex-col gap-1.5 rounded-[20px] border border-border bg-card px-[18px] py-4">
       <span className="text-[13px] text-muted-foreground">{label}</span>
       <span className={cn("text-[28px] leading-[34px] font-bold tracking-tight", className)}>{children}</span>
-      {hint && <span className="text-[13px] text-muted-foreground/80">{hint}</span>}
+      {hint && <div className="text-[13px] text-muted-foreground/80">{hint}</div>}
     </div>
   );
 }
