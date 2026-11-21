@@ -931,6 +931,7 @@ export const messages = {
       reportsOverview: "Visão geral",
       reportsSales: "Vendas",
       reportsMenu: "Cardápio",
+      reportsKitchen: "Cozinha e tempos",
       /** O nome do item de um submenu: "Relatórios: Cardápio" (o "Cardápio" da gestão é outro). */
       within: (group: string, item: string) => `${group}: ${item}`,
       subscription: "Assinatura",
@@ -2016,6 +2017,23 @@ export const messages = {
       slowSold: (quantity: number) =>
         quantity === 0 ? "nenhum vendido" : quantity === 1 ? "1 vendido" : `${quantity} vendidos`,
       noSlow: "Nenhum produto com mais de 30 dias no cardápio",
+    },
+    kitchen: {
+      title: "Cozinha e tempos",
+      averagePrep: "Preparo médio",
+      preparations: "Itens preparados",
+      preparationsHint: "ficaram prontos no período",
+      faster: (value: string) => `▼ ${value}, mais rápido`,
+      slower: (value: string) => `▲ ${value}, mais lento`,
+      slowest: "Itens que mais demoram",
+      slowestHint: "preparo, do pedido até pronto",
+      columns: { item: "Item", average: "Média", ninetyPercent: "9 em 10 até", worstHour: "Pior horário" },
+      worstHour: (weekday: string, hour: number) => `${weekday}, ${hour}h`,
+      noWorstHour: "—",
+      noWorstHourLabel: "sem hora com preparos bastantes",
+      note: '"9 em 10 até": 90% dos pedidos do item ficaram prontos até esse tempo. Mostra o pior caso sem ser enganado por um pedido esquecido. Só entram itens preparados 5 vezes ou mais no período.',
+      noSlowest: "Nenhum item ficou pronto 5 vezes ou mais neste período",
+      noPreparations: "Nenhum item ficou pronto neste período",
     },
     byHour: {
       title: "Por hora do dia",

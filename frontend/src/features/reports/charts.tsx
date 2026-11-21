@@ -74,21 +74,28 @@ export function variation(current: number, previous: number) {
     : { text: t.delta.down(value), tone: "down" as const };
 }
 
-/** Um número do período. Com `previous`, a variação embaixo; senão, `hint`. */
+export type Delta = ReturnType<typeof variation>;
+
+/**
+ * Um número do período. Com `previous`, a variação percentual embaixo; com `delta`, uma variação já
+ * pronta (os tempos, em que menos é melhor); senão, `hint`.
+ */
 export function KpiTile({
   label,
   value,
   current,
   previous,
+  delta: given,
   hint,
 }: {
   label: string;
   value: string;
   current?: number;
   previous?: number;
+  delta?: Delta | null;
   hint?: string;
 }) {
-  const delta = current !== undefined && previous !== undefined ? variation(current, previous) : null;
+  const delta = given ?? (current !== undefined && previous !== undefined ? variation(current, previous) : null);
   return (
     <div className="@container flex min-w-0 flex-col gap-1.5 rounded-[20px] border border-border bg-card px-5 py-[18px]">
       <span className="text-sm text-muted-foreground">{label}</span>

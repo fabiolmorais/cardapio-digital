@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -39,6 +40,10 @@ final class ReportTestData {
     }
 
     record Item(UUID product, String name, long priceCents, int quantity, boolean canceled) {
+    }
+
+    /** Um item na cozinha: quanto levou até pronto (null = ainda não ficou pronto) e se foi cancelado. */
+    record Prep(UUID product, String name, Duration time, boolean canceled) {
     }
 
     private final MockMvcTester mvc;
@@ -173,6 +178,48 @@ final class ReportTestData {
                     item.canceled() ? Timestamp.from(created) : null, item.canceled() ? owner.userId() : null,
                     item.canceled() ? "Cliente desistiu" : null,
                     item.canceled() ? null : Timestamp.from(created), item.canceled() ? null : owner.userId());
+        }
+    }
+
+    static Prep prep(UUID product, String name, int minutes) {
+        return new Prep(product, name, Duration.ofMinutes(minutes), false);
+    }
+
+    /**
+     * Um pedido com os itens na cozinha. Com {@code approved}, o garçom confirmou o
+     * pedido nessa hora, e o preparo conta dali.
+     */
+    void kitchenOrder(Owner owner, Place place, Instant created, Instant approved, Prep... preps) {
+        // Numa comanda já fechada: a mesa só pode ter uma aberta, e a cozinha não depende do fechamento.
+        UUID tab = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO tab (id, establishment_id, table_id, status, opened_at, closed_at, closed_by, total_cents,
+                                 payment_method, service_percent, service_accepted, service_cents, service_destination)
+                VALUES (?, ?, ?, 'CLOSED', ?, ?, ?, 0, 'PIX', 10, false, 0, 'TEAM')
+                """, tab, owner.establishmentId(), place.table(), Timestamp.from(created),
+                Timestamp.from(created.plus(Duration.ofHours(3))), owner.userId());
+        UUID order = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO customer_order (id, establishment_id, tab_id, table_id, number, status, created_at, placed_by,
+                                            approved_by, approved_at)
+                VALUES (?, ?, ?, ?, 1, 'SENT', ?, ?, ?, ?)
+                """, order, owner.establishmentId(), tab, place.table(), Timestamp.from(created), owner.userId(),
+                approved == null ? null : owner.userId(), approved == null ? null : Timestamp.from(approved));
+        Instant received = approved == null ? created : approved;
+        int position = 0;
+        for (Prep prep : preps) {
+            Instant ready = prep.time() == null ? null : received.plus(prep.time());
+            String status = prep.canceled() ? "CANCELED" : ready == null ? "PREPARING" : "READY";
+            jdbc.update("""
+                    INSERT INTO order_item (id, establishment_id, order_id, position, product_id, product_name,
+                                            unit_price_cents, quantity, status, created_at, preparing_at, ready_at,
+                                            canceled_at, canceled_by, cancel_reason)
+                    VALUES (?, ?, ?, ?, ?, ?, 1000, 1, ?, ?, ?, ?, ?, ?, ?)
+                    """, UUID.randomUUID(), owner.establishmentId(), order, position++, prep.product(), prep.name(),
+                    status, Timestamp.from(created), Timestamp.from(received),
+                    ready == null ? null : Timestamp.from(ready),
+                    prep.canceled() ? Timestamp.from(received.plus(Duration.ofHours(1))) : null,
+                    prep.canceled() ? owner.userId() : null, prep.canceled() ? "Cliente desistiu" : null);
         }
     }
 
