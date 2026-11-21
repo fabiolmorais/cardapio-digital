@@ -83,8 +83,10 @@ test("para uma mesa com comanda, as duas se juntam na mesa de destino", async ({
 
   // A tela vai para a comanda que continuou, com os dois pedidos e o registro da junção.
   await expect(page).toHaveURL(new RegExp(`/painel/comandas/${into}$`));
-  await expect(page.getByText("1× Chopp", { exact: true })).toBeVisible();
-  await expect(page.getByText("1× Guioza", { exact: true })).toBeVisible();
+  // Na região visível: a comanda que saiu fica um instante escondida na página anterior.
+  const items = page.getByRole("region", { name: "Itens" });
+  await expect(items.getByText("1× Chopp", { exact: true })).toBeVisible();
+  await expect(items.getByText("1× Guioza", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Mudanças de mesa")).toContainText("Juntou a Mesa 04 com a Mesa 05");
 
   // A comanda de origem fica registrada como juntada, com o atalho para a outra.

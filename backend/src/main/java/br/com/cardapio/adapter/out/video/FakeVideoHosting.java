@@ -25,8 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Um serviço de vídeo de mentira, para o desenvolvimento (até a conta do Bunny, na Etapa 15) e
  * para os testes. Fala o mesmo TUS do Bunny (o FakeVideoController), guarda o arquivo numa pasta
- * temporária e, quando ele chega inteiro, diz que está "pronto": 1080 × 1920, 15 segundos. Não
- * converte nada: o vídeo toca como foi enviado. É o padrão (app.video.provider=fake).
+ * e, quando ele chega inteiro, diz que está "pronto": 1080 × 1920, 15 segundos. Não converte
+ * nada: o vídeo toca como foi enviado. Liga com app.video.provider=fake.
+ *
+ * <p>O vídeo inteiro ganha, ao lado, um arquivo com o tipo dele: assim continua tocando depois
+ * que o back reinicia, quando a lista em memória começa vazia.
  */
 @Component
 @ConditionalOnProperty(prefix = "app.video", name = "provider", havingValue = "fake")
@@ -46,7 +49,7 @@ class FakeVideoHosting implements VideoHostingPort {
     }
 
     private final Map<String, Upload> videos = new ConcurrentHashMap<>();
-    /** O segredo das assinaturas: muda a cada vez que o back sobe (o falso não guarda nada). */
+    /** O segredo das assinaturas: muda a cada vez que o back sobe (um envio pela metade não é retomado). */
     private final String secret = HexFormat.of().formatHex(new SecureRandom().generateSeed(16));
     private final VideoProperties.Fake fake;
     private final Clock clock;
@@ -76,7 +79,7 @@ class FakeVideoHosting implements VideoHostingPort {
 
     @Override
     public Optional<HostedVideo> find(String videoId) {
-        return Optional.ofNullable(videos.get(videoId)).map(v -> v.complete()
+        return upload(videoId).map(v -> v.complete()
                 ? new HostedVideo(HostedVideo.Status.READY, WIDTH, HEIGHT, SECONDS)
                 : new HostedVideo(HostedVideo.Status.PROCESSING, 0, 0, 0));
     }
@@ -86,6 +89,7 @@ class FakeVideoHosting implements VideoHostingPort {
         videos.remove(videoId);
         try {
             Files.deleteIfExists(file(videoId));
+            Files.deleteIfExists(typeFile(videoId));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -114,6 +118,7 @@ class FakeVideoHosting implements VideoHostingPort {
         try {
             Files.createDirectories(fake.storageDir());
             Files.deleteIfExists(file(videoId));
+            Files.deleteIfExists(typeFile(videoId));
             Files.createFile(file(videoId));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -121,8 +126,32 @@ class FakeVideoHosting implements VideoHostingPort {
         return true;
     }
 
+    /** O envio deste vídeo: o da memória, ou, depois de um reinício, o vídeo inteiro que ficou na pasta. */
     Optional<Upload> upload(String videoId) {
-        return Optional.ofNullable(videos.get(videoId));
+        Upload known = videos.get(videoId);
+        if (known != null) {
+            return Optional.of(known);
+        }
+        return stored(videoId).map(upload -> {
+            videos.putIfAbsent(videoId, upload);
+            return upload;
+        });
+    }
+
+    private Optional<Upload> stored(String videoId) {
+        try {
+            Path type = typeFile(videoId);
+            Path file = file(videoId);
+            if (!Files.isRegularFile(type) || !Files.isRegularFile(file)) {
+                return Optional.empty();
+            }
+            long size = Files.size(file);
+            return Optional.of(new Upload(size, size, Files.readString(type).strip()));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty(); // não é um UUID: não é um vídeo do falso
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Mais um pedaço (TUS: PATCH), a partir de offset. Devolve o novo offset, ou -1 se fora de ordem. */
@@ -134,7 +163,11 @@ class FakeVideoHosting implements VideoHostingPort {
         try (var out = Files.newOutputStream(file(videoId), StandardOpenOption.APPEND)) {
             long written = body.transferTo(out);
             long received = Math.min(current.length(), offset + written);
-            videos.put(videoId, new Upload(current.length(), received, current.contentType()));
+            Upload upload = new Upload(current.length(), received, current.contentType());
+            if (upload.complete()) {
+                Files.writeString(typeFile(videoId), upload.contentType());
+            }
+            videos.put(videoId, upload);
             return received;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -144,6 +177,11 @@ class FakeVideoHosting implements VideoHostingPort {
     Path file(String videoId) {
         // O id é um UUID que o próprio falso gerou: nada de "../" chega ao caminho.
         return fake.storageDir().resolve(UUID.fromString(videoId) + ".video");
+    }
+
+    /** O tipo do vídeo inteiro: só existe depois que o último pedaço chegou. */
+    private Path typeFile(String videoId) {
+        return fake.storageDir().resolve(UUID.fromString(videoId) + ".type");
     }
 
     private String signature(String videoId, String expire) {
