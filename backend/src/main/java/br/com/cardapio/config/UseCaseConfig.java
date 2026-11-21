@@ -73,6 +73,9 @@ import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
+import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
+import br.com.cardapio.application.port.out.report.MenuReportPort;
+import br.com.cardapio.application.service.report.GetMenuReportService;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.application.service.report.GetOverviewReportService;
@@ -1097,6 +1100,15 @@ class UseCaseConfig {
                                                       Clock clock) {
         return new GetOverviewReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
                 clock);
+    }
+
+    @Bean
+    GetMenuReportUseCase getMenuReportUseCase(SubscriptionPort subscriptionPort,
+                                              EstablishmentTimeZonePort establishmentTimeZonePort, SectorPort sectorPort,
+                                              MenuCategoryPort menuCategoryPort, MenuReportPort menuReportPort,
+                                              Clock clock) {
+        return new GetMenuReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, menuCategoryPort,
+                menuReportPort, clock);
     }
 
     @Bean

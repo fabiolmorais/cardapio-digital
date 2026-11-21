@@ -930,6 +930,9 @@ export const messages = {
       reports: "Relatórios",
       reportsOverview: "Visão geral",
       reportsSales: "Vendas",
+      reportsMenu: "Cardápio",
+      /** O nome do item de um submenu: "Relatórios: Cardápio" (o "Cardápio" da gestão é outro). */
+      within: (group: string, item: string) => `${group}: ${item}`,
       subscription: "Assinatura",
     },
     logout: "Sair",
@@ -1990,6 +1993,29 @@ export const messages = {
       tip: (label: string, amount: string, tabs: number) =>
         `${label}: ${amount} · ${tabs === 1 ? "1 comanda" : `${tabs} comandas`}`,
       chart: (title: string, best: string) => `${title}. Maior valor: ${best}.`,
+    },
+    menu: {
+      title: "Cardápio",
+      category: "Categoria",
+      allCategories: "Todas as categorias",
+      products: "Produtos",
+      sortBy: "Ordenar por",
+      sort: { REVENUE: "Faturamento", QUANTITY: "Quantidade" },
+      columns: { product: "Produto", sold: "Vendidos", revenue: "Faturamento", share: "Participação" },
+      shareOf: "do faturamento dos itens",
+      showing: (from: number, to: number, total: number, active: number) =>
+        `Mostrando ${from} a ${to} de ${total} ${total === 1 ? "produto vendido" : "produtos vendidos"}. ${active} ${active === 1 ? "produto ativo" : "produtos ativos"} no cardápio.`,
+      previous: "Anteriores",
+      next: "Próximos",
+      noProducts: "Nenhum item vendido neste período",
+      byCategory: "Por categoria",
+      categoryDetail: (quantity: number) => (quantity === 1 ? "1 item" : `${quantity} itens`),
+      slow: "Vendem pouco",
+      slowHint: "candidatos a sair",
+      slowNote: "Produtos ativos há mais de 30 dias. Os novos ficam fora até completar um mês.",
+      slowSold: (quantity: number) =>
+        quantity === 0 ? "nenhum vendido" : quantity === 1 ? "1 vendido" : `${quantity} vendidos`,
+      noSlow: "Nenhum produto com mais de 30 dias no cardápio",
     },
     byHour: {
       title: "Por hora do dia",

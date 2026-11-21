@@ -23,9 +23,12 @@ export type ReportFilters = ReturnType<typeof useReportFilters>;
  */
 export function ReportsScreen({
   title,
+  filter,
   children,
 }: {
   title: string;
+  /** Um filtro a mais, só desta tela (a categoria, no Cardápio). */
+  filter?: (filters: ReportFilters) => ReactNode;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
   const { status, session } = useRequiredSession();
@@ -44,7 +47,7 @@ export function ReportsScreen({
   if (!context.data) return <Loading />;
   if (context.data.level === "NONE") return <EssentialReports />;
   return (
-    <Screen title={title} context={context.data}>
+    <Screen title={title} context={context.data} filter={filter}>
       {children}
     </Screen>
   );
@@ -53,10 +56,12 @@ export function ReportsScreen({
 function Screen({
   title,
   context,
+  filter,
   children,
 }: {
   title: string;
   context: ReportContext;
+  filter?: (filters: ReportFilters) => ReactNode;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
   const filters = useReportFilters(context);
@@ -105,6 +110,7 @@ function Screen({
             />
           </div>
           <SectorFilter value={filters.sectorId} onChange={filters.chooseSector} />
+          {filter?.(filters)}
         </div>
       </header>
       <div className="flex flex-col gap-5 px-4 py-5 sm:px-7">

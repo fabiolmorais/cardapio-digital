@@ -1,9 +1,11 @@
 package br.com.cardapio.adapter.in.web.report;
 
+import br.com.cardapio.domain.report.model.CategorySales;
 import br.com.cardapio.domain.report.model.DayComparison;
 import br.com.cardapio.domain.report.model.HourAverage;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
+import br.com.cardapio.domain.report.model.ProductSales;
 import br.com.cardapio.domain.report.model.ReportPeriod;
 import br.com.cardapio.domain.report.model.ReportTotals;
 import br.com.cardapio.domain.report.model.SeriesPoint;
@@ -92,5 +94,24 @@ final class ReportDtos {
 
     @Schema(name = "ReportBestDay")
     record BestDay(@Schema(requiredMode = REQUIRED) LocalDate day, @Schema(requiredMode = REQUIRED) long revenueCents) {
+    }
+
+    @Schema(name = "ReportCategory", description = "Uma categoria do cardápio no período")
+    record Category(@Schema(requiredMode = REQUIRED) UUID categoryId, @Schema(requiredMode = REQUIRED) String name,
+                    @Schema(requiredMode = REQUIRED) int quantity, @Schema(requiredMode = REQUIRED) long revenueCents) {
+        static Category of(CategorySales category) {
+            return new Category(category.categoryId().value(), category.name(), category.quantity(),
+                    category.revenue().cents());
+        }
+    }
+
+    @Schema(name = "ReportProduct", description = "Um produto no período, com a categoria (sem os cancelados)")
+    record Product(@Schema(requiredMode = REQUIRED) UUID productId, @Schema(requiredMode = REQUIRED) String name,
+                   @Schema(requiredMode = REQUIRED) String category, @Schema(requiredMode = REQUIRED) int quantity,
+                   @Schema(requiredMode = REQUIRED) long revenueCents) {
+        static Product of(ProductSales product) {
+            return new Product(product.productId().value(), product.name(), product.category(), product.quantity(),
+                    product.revenue().cents());
+        }
     }
 }

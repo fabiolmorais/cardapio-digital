@@ -177,7 +177,9 @@ test("no celular do dono, um faturado grande cabe no card do dia", async ({ requ
     const box = (await value.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width);
     expect(await value.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-    expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await panel.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      panel.viewportSize()!.width,
+    );
   } finally {
     await context.close();
   }

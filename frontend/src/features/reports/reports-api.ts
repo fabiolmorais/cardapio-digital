@@ -5,6 +5,8 @@ export type ReportContext = Schemas["ReportContext"];
 export type OverviewReport = Schemas["OverviewReport"];
 export type SalesReport = Schemas["SalesReport"];
 export type Grouping = SalesReport["grouping"];
+export type MenuReport = Schemas["MenuReport"];
+export type ProductSort = "REVENUE" | "QUANTITY";
 
 /** O período (dias do restaurante) e, se escolhido, o setor. */
 export type ReportParams = { from: string; to: string; sectorId?: string };
@@ -57,6 +59,51 @@ export function useReportSectors() {
     queryKey: ["reports", "sectors"],
     queryFn: async () => {
       const { data, response } = await api.GET("/api/v1/sectors", { params: { query: { page: 0, size: 100 } } });
+      if (!data) throw new Error(String(response.status));
+      return data.content;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** O Cardápio: por categoria, os que vendem pouco e os totais (a tabela vem paginada à parte). */
+export function useMenuReport(params: ReportParams & { categoryId?: string }) {
+  return useQuery({
+    queryKey: ["reports", "menu", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/menu", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** Uma página da tabela de produtos do período. */
+export function useMenuProducts(
+  params: ReportParams & { categoryId?: string; sort: ProductSort; page: number; size: number },
+) {
+  return useQuery({
+    queryKey: ["reports", "menu", "products", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/menu/products", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** As categorias ativas do cardápio, para o filtro do relatório de cardápio. */
+export function useReportCategories() {
+  return useQuery({
+    queryKey: ["reports", "categories"],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/menu-categories", {
+        params: { query: { page: 0, size: 100 } },
+      });
       if (!data) throw new Error(String(response.status));
       return data.content;
     },

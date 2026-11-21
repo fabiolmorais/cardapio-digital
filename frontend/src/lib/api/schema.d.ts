@@ -1598,6 +1598,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O Cardápio do período (blocos básicos: Pro em diante) */
+        get: operations["getMenuReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/menu/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os produtos vendidos no período, por faturamento ou quantidade (paginado) */
+        get: operations["listMenuReportProducts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/context": {
         parameters: {
             query?: never;
@@ -4269,6 +4303,59 @@ export interface components {
             method: "PIX" | "CARD" | "CASH";
             /** Format: int64 */
             amountCents: number;
+        };
+        /** @description O Cardápio, com os blocos básicos (a tabela de produtos vem paginada à parte) */
+        MenuReport: {
+            /** @enum {string} */
+            level: "NONE" | "BASIC" | "FULL";
+            period: components["schemas"]["ReportRange"];
+            /**
+             * Format: int64
+             * @description Faturamento dos itens: a base da participação
+             */
+            itemsRevenueCents: number;
+            /** Format: int32 */
+            itemsSold: number;
+            /**
+             * Format: int32
+             * @description Produtos ativos do cardápio de sempre
+             */
+            activeProducts: number;
+            byCategory: components["schemas"]["ReportCategory"][];
+            /** @description Ativos há mais de 30 dias, do que menos vendeu */
+            slowSellers: components["schemas"]["ReportProduct"][];
+        };
+        /** @description Uma categoria do cardápio no período */
+        ReportCategory: {
+            /** Format: uuid */
+            categoryId: string;
+            name: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            revenueCents: number;
+        };
+        /** @description Um produto no período, com a categoria (sem os cancelados) */
+        ReportProduct: {
+            /** Format: uuid */
+            productId: string;
+            name: string;
+            category: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            revenueCents: number;
+        };
+        PageResponseReportProduct: {
+            content: components["schemas"]["ReportProduct"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
         /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
         ReportContext: {
@@ -9474,6 +9561,131 @@ export interface operations {
                 };
             };
             /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getMenuReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Por categoria, os que vendem pouco e os totais */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listMenuReportProducts: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                categoryId?: string;
+                sort?: "REVENUE" | "QUANTITY";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página dos produtos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseReportProduct"];
+                };
+            };
+            /** @description Datas ou página inválidas */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
             404: {
                 headers: {
                     [name: string]: unknown;

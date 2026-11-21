@@ -1,11 +1,17 @@
 package br.com.cardapio.adapter.in.web.report;
 
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
+import br.com.cardapio.adapter.in.web.shared.PageResponse;
+import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
+import br.com.cardapio.application.port.in.report.MenuReportQuery;
 import br.com.cardapio.application.port.in.report.ReportQuery;
+import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.menu.model.MenuCategoryId;
+import br.com.cardapio.domain.report.model.ProductSort;
 import br.com.cardapio.domain.report.model.SeriesGrouping;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,11 +19,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +37,7 @@ import java.util.UUID;
 
 /** Os relatórios (RF24, ADR 0013): só o dono e o gerente. */
 @RestController
+@Validated
 @RequestMapping("/api/v1/reports")
 @Tag(name = "Relatórios", description = "Vendas, cardápio, cozinha, equipe e salão, por período")
 @SecurityRequirement(name = "bearer")
@@ -37,11 +47,14 @@ class ReportController {
     private final GetReportContextUseCase context;
     private final GetOverviewReportUseCase overview;
     private final GetSalesReportUseCase sales;
+    private final GetMenuReportUseCase menu;
 
-    ReportController(GetReportContextUseCase context, GetOverviewReportUseCase overview, GetSalesReportUseCase sales) {
+    ReportController(GetReportContextUseCase context, GetOverviewReportUseCase overview, GetSalesReportUseCase sales,
+                     GetMenuReportUseCase menu) {
         this.context = context;
         this.overview = overview;
         this.sales = sales;
+        this.menu = menu;
     }
 
     @GetMapping("/context")
@@ -88,6 +101,58 @@ class ReportController {
                               @RequestParam(defaultValue = "DAY") SalesReportResponse.Grouping groupBy) {
         return SalesReportResponse.from(sales.get(query(jwt, from, to, sectorId),
                 SeriesGrouping.valueOf(groupBy.name())));
+    }
+
+    @GetMapping("/menu")
+    @Operation(operationId = "getMenuReport", summary = "O Cardápio do período (blocos básicos: Pro em diante)")
+    @ApiResponse(responseCode = "200", description = "Por categoria, os que vendem pouco e os totais")
+    @ApiResponse(responseCode = "400", description = "Datas inválidas ou período de mais de 12 meses", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "O plano não tem relatórios", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Setor ou categoria não encontrados", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    MenuReportResponse menu(@AuthenticationPrincipal Jwt jwt,
+                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                            @RequestParam(required = false) UUID sectorId,
+                            @RequestParam(required = false) UUID categoryId) {
+        return MenuReportResponse.from(menu.get(menuQuery(jwt, from, to, sectorId, categoryId)));
+    }
+
+    @GetMapping("/menu/products")
+    @Operation(operationId = "listMenuReportProducts",
+            summary = "Os produtos vendidos no período, por faturamento ou quantidade (paginado)")
+    @ApiResponse(responseCode = "200", description = "Uma página dos produtos")
+    @ApiResponse(responseCode = "400", description = "Datas ou página inválidas", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "O plano não tem relatórios", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Setor ou categoria não encontrados", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    PageResponse<ReportDtos.Product> menuProducts(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) UUID sectorId,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(defaultValue = "REVENUE") ProductOrder sort,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
+        return PageResponse.from(menu.products(menuQuery(jwt, from, to, sectorId, categoryId),
+                ProductSort.valueOf(sort.name()), new PageQuery(page, size)), ReportDtos.Product::of);
+    }
+
+    /** A ordem da tabela de produtos. */
+    enum ProductOrder { REVENUE, QUANTITY }
+
+    private static MenuReportQuery menuQuery(Jwt jwt, LocalDate from, LocalDate to, UUID sectorId, UUID categoryId) {
+        return new MenuReportQuery(query(jwt, from, to, sectorId),
+                categoryId == null ? null : new MenuCategoryId(categoryId));
     }
 
     private static ReportQuery query(Jwt jwt, LocalDate from, LocalDate to, UUID sectorId) {
