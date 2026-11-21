@@ -3,6 +3,7 @@
 import {
   BellRing,
   BookOpen,
+  ChartColumn,
   ChefHat,
   ChevronLeft,
   CreditCard,
@@ -69,6 +70,7 @@ const MANAGEMENT: Item[] = [
   { href: "/admin/marca", label: t.nav.brand, icon: Palette },
   { href: "/admin/presenca", label: t.nav.presence, icon: ShieldCheck },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
+  { href: "/admin/relatorios", label: t.nav.reports, icon: ChartColumn },
   { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
   { href: "/admin/assinatura", label: t.nav.subscription, icon: CreditCard },
 ];

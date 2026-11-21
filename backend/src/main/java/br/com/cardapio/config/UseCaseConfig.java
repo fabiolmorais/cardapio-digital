@@ -71,6 +71,9 @@ import br.com.cardapio.application.port.in.order.PlaceStaffOrderUseCase;
 import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
+import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
+import br.com.cardapio.application.port.out.report.ReportActivityPort;
+import br.com.cardapio.application.service.report.GetReportContextService;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.plan.RequestPlanUseCase;
 import br.com.cardapio.application.port.in.plan.SendTrialNoticesUseCase;
@@ -1071,6 +1074,15 @@ class UseCaseConfig {
     @Bean
     GetSubscriptionUseCase getSubscriptionUseCase(SubscriptionPort subscriptionPort, Clock clock) {
         return new GetSubscriptionService(subscriptionPort, clock);
+    }
+
+    // Os relatórios (ADR 0013)
+
+    @Bean
+    GetReportContextUseCase getReportContextUseCase(SubscriptionPort subscriptionPort,
+                                                    EstablishmentTimeZonePort establishmentTimeZonePort,
+                                                    ReportActivityPort reportActivityPort, Clock clock) {
+        return new GetReportContextService(subscriptionPort, establishmentTimeZonePort, reportActivityPort, clock);
     }
 
     // O fim do teste grátis e a escolha do plano (Guia 31)
