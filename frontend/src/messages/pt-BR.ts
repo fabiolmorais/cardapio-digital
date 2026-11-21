@@ -932,6 +932,7 @@ export const messages = {
       reportsSales: "Vendas",
       reportsMenu: "Cardápio",
       reportsKitchen: "Cozinha e tempos",
+      reportsSummary: "Resumo diário",
       /** O nome do item de um submenu: "Relatórios: Cardápio" (o "Cardápio" da gestão é outro). */
       within: (group: string, item: string) => `${group}: ${item}`,
       subscription: "Assinatura",
@@ -2034,6 +2035,49 @@ export const messages = {
       note: '"9 em 10 até": 90% dos pedidos do item ficaram prontos até esse tempo. Mostra o pior caso sem ser enganado por um pedido esquecido. Só entram itens preparados 5 vezes ou mais no período.',
       noSlowest: "Nenhum item ficou pronto 5 vezes ou mais neste período",
       noPreparations: "Nenhum item ficou pronto neste período",
+    },
+    summary: {
+      title: "Resumo diário",
+      subtitle: "O resumo do dia chega depois do fechamento, por e-mail e no celular de quem você escolher.",
+      save: "Salvar",
+      saving: "Salvando…",
+      saved: "Resumo diário salvo.",
+      saveError: "Não deu para salvar. Tente de novo.",
+      loadError: "Não deu para carregar a configuração do resumo.",
+      day: "Resumo do dia",
+      email: "Enviar por e-mail",
+      emailText: "Faturamento, comandas, tíquete, preparo médio, o prato campeão, o pico e o ponto de atenção do dia.",
+      push: "Avisar no celular",
+      pushText: "Uma notificação curta; tocar abre os relatórios do dia.",
+      hour: "Horário",
+      hourOption: (hour: number) => (hour === 2 ? "2h, depois do fechamento" : `${hour}h`),
+      hourHint:
+        'O "dia" do resumo vai até o horário escolhido: quem fecha às 2h recebe a sexta inteira. Dia sem nenhuma comanda fechada não gera resumo.',
+      recipients: "Quem recebe",
+      role: { OWNER: "Dono", MANAGER: "Gerente" },
+      channels: (hasEmail: boolean) => (hasEmail ? "e-mail e celular" : "só no celular (entra pelo PIN)"),
+      recipientsHint: "Só o dono e os gerentes. Para receber no celular, ative as notificações do aparelho no",
+      live: "Ao vivo",
+      preview: "Prévia do e-mail",
+      previewNote: "O último dia que já terminou, como ele sairia agora.",
+      previewFrom: (name: string) => `OhChefe · ${name}`,
+      previewDay: (day: string) => `Seu dia: ${day}`,
+      revenue: "Faturamento",
+      tabs: "Comandas",
+      champion: "Campeão do dia",
+      championText: (name: string, quantity: number) =>
+        `${name}, ${quantity === 1 ? "1 vendido" : `${quantity} vendidos`}.`,
+      previewEmpty: "Nenhuma comanda fechada neste dia: o resumo não sai.",
+      test: "Enviar um teste para mim",
+      testing: "Enviando…",
+      testError: "Não deu para enviar o teste. Tente de novo.",
+      testResult: (email: boolean, devices: number) => {
+        const where = devices === 1 ? "1 aparelho" : `${devices} aparelhos`;
+        if (email && devices > 0) return `Enviado para o seu e-mail e para ${where}.`;
+        if (email) return "Enviado para o seu e-mail. Nenhum aparelho seu está com as notificações ativas.";
+        if (devices > 0) return `Enviado para ${where}. Você entra pelo PIN, então não tem e-mail.`;
+        return "Você não tem e-mail nem aparelho com as notificações ativas.";
+      },
     },
     byHour: {
       title: "Por hora do dia",

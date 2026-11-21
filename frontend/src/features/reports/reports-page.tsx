@@ -31,6 +31,23 @@ export function ReportsScreen({
   filter?: (filters: ReportFilters) => ReactNode;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
+  return (
+    <ReportsGate>
+      {(context) => (
+        <Screen title={title} context={context} filter={filter}>
+          {children}
+        </Screen>
+      )}
+    </ReportsGate>
+  );
+}
+
+/**
+ * Quem pode ver os relatórios: só o dono e o gerente (os outros veem o aviso), com o plano que os
+ * tem (o Essencial vê o que o Pro e o Business trazem). As telas sem período (o resumo diário) usam
+ * só isto.
+ */
+export function ReportsGate({ children }: { children: (context: ReportContext) => ReactNode }) {
   const { status, session } = useRequiredSession();
   const access = status === "authenticated" ? session.establishment : null;
   const allowed = access !== null && canSeeReports(access.role);
@@ -46,11 +63,7 @@ export function ReportsScreen({
   if (context.isError) return <LoadError onRetry={() => context.refetch()} />;
   if (!context.data) return <Loading />;
   if (context.data.level === "NONE") return <EssentialReports />;
-  return (
-    <Screen title={title} context={context.data} filter={filter}>
-      {children}
-    </Screen>
-  );
+  return children(context.data);
 }
 
 function Screen({

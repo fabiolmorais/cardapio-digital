@@ -9,7 +9,6 @@ import br.com.cardapio.domain.report.model.DailyRevenue;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
-import br.com.cardapio.domain.report.model.ReportPeriod;
 import br.com.cardapio.domain.report.model.ReportTotals;
 import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -97,15 +96,15 @@ class SalesReportPersistenceAdapter implements SalesReportPort {
     }
 
     @Override
-    public List<HourlyRevenue> revenueByWeekdayAndHour(EstablishmentId establishmentId, ReportPeriod period,
-                                                       Optional<SectorId> sector) {
+    public List<HourlyRevenue> revenueByWeekdayAndHour(EstablishmentId establishmentId, Instant start, Instant end,
+                                                       ZoneId zone, Optional<SectorId> sector) {
         return closedTabs("""
                         SELECT extract(isodow FROM t.opened_at AT TIME ZONE :zone)::int AS weekday,
                                extract(hour FROM t.opened_at AT TIME ZONE :zone)::int AS hour,
                                sum(t.total_cents) AS revenue, count(*) AS tabs
                         """ + CLOSED_TABS + " GROUP BY 1, 2",
-                establishmentId, period.start(), period.end(), sector)
-                .param("zone", period.zone().getId())
+                establishmentId, start, end, sector)
+                .param("zone", zone.getId())
                 .query((rs, row) -> new HourlyRevenue(rs.getInt("weekday"), rs.getInt("hour"),
                         Money.ofCents(rs.getLong("revenue")), rs.getInt("tabs")))
                 .list();

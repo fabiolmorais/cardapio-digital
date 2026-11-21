@@ -9,6 +9,7 @@ import br.com.cardapio.domain.push.model.PushSubscriptionId;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 
 @Component
@@ -41,6 +42,20 @@ class PushSubscriptionPersistenceAdapter implements PushSubscriptionPort {
     public List<PushSubscription> findForRoles(EstablishmentId establishmentId, List<String> roles) {
         establishmentFilter.enable(establishmentId);
         return subscriptions.findForRoles(establishmentId.value(), roles).stream()
+                .map(e -> new PushSubscription(new PushSubscriptionId(e.getId()), establishmentId,
+                        new UserId(e.getUserId()), URI.create(e.getEndpoint()), e.getP256dh(), e.getAuth(),
+                        e.getCreatedAt()))
+                .toList();
+    }
+
+    @Override
+    public List<PushSubscription> findForUsers(EstablishmentId establishmentId, Collection<UserId> users) {
+        if (users.isEmpty()) {
+            return List.of();
+        }
+        establishmentFilter.enable(establishmentId);
+        return subscriptions.findForUsers(establishmentId.value(), users.stream().map(UserId::value).toList())
+                .stream()
                 .map(e -> new PushSubscription(new PushSubscriptionId(e.getId()), establishmentId,
                         new UserId(e.getUserId()), URI.create(e.getEndpoint()), e.getP256dh(), e.getAuth(),
                         e.getCreatedAt()))

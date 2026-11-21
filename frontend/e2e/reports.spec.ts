@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
-import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
+import { API_URL, OWNER_NAME, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
 /** Um restaurante com uma mesa (Salão, 04) e um prato, e o pedido do prato pelo celular da mesa. */
 async function tableWithAnOrder(request: APIRequestContext, browser: Browser, email: string, quantity: number) {
@@ -216,6 +216,44 @@ test("Cozinha pelo submenu: o preparo médio e os itens que mais demoram", async
   await expect(slowest.getByRole("row", { name: /Prato da casa/ })).toContainText(
     /(Seg|Ter|Qua|Qui|Sex|Sáb|Dom), \d+h/,
   );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+});
+
+test("Resumo diário pelo submenu: muda o horário e quem recebe, e manda um teste", async ({ page, request }) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios");
+  await openMenu(page);
+  await page.getByRole("group", { name: "Relatórios" }).getByRole("link", { name: "Resumo diário" }).click();
+  await expect(page).toHaveURL(/\/admin\/relatorios\/resumo$/);
+  await expect(page.getByRole("heading", { name: "Resumo diário", level: 1 })).toBeVisible();
+
+  // Começa ligado, às 2h, para o dono.
+  const byEmail = page.getByRole("switch", { name: /Enviar por e-mail/ });
+  const onPhone = page.getByRole("switch", { name: /Avisar no celular/ });
+  await expect(byEmail).toBeChecked();
+  await expect(onPhone).toBeChecked();
+  await expect(page.getByRole("combobox", { name: "Horário" })).toHaveText(/2h, depois do fechamento/);
+  const owner = page.getByRole("checkbox", { name: new RegExp(OWNER_NAME) });
+  await expect(owner).toBeChecked();
+  // Restaurante novo: ontem não teve comanda.
+  await expect(page.getByText("Nenhuma comanda fechada neste dia: o resumo não sai.")).toBeVisible();
+
+  await onPhone.uncheck();
+  await page.getByRole("combobox", { name: "Horário" }).click();
+  await page.getByRole("option", { name: "8h", exact: true }).click();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Resumo diário salvo." })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("switch", { name: /Avisar no celular/ })).not.toBeChecked();
+  await expect(page.getByRole("combobox", { name: "Horário" })).toHaveText(/^8h$/);
+
+  // O teste vai para o e-mail do dono (sem a chave do Resend, só fica no log do back).
+  await page.getByRole("button", { name: "Enviar um teste para mim" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Enviado para o seu e-mail." })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     page.viewportSize()!.width,
   );

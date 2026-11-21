@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Schemas } from "@/lib/api/client";
 
 export type ReportContext = Schemas["ReportContext"];
@@ -7,6 +7,10 @@ export type SalesReport = Schemas["SalesReport"];
 export type Grouping = SalesReport["grouping"];
 export type MenuReport = Schemas["MenuReport"];
 export type KitchenReport = Schemas["KitchenReport"];
+export type SummarySettings = Schemas["DailySummarySettings"];
+export type SummarySettingsRequest = Schemas["DailySummarySettingsRequest"];
+export type DailySummary = Schemas["DailySummary"];
+export type SummaryTestResult = Schemas["DailySummaryTestResult"];
 export type ProductSort = "REVENUE" | "QUANTITY";
 
 /** O período (dias do restaurante) e, se escolhido, o setor. */
@@ -123,5 +127,58 @@ export function useReportCategories() {
       return data.content;
     },
     staleTime: 5 * 60_000,
+  });
+}
+
+/** A configuração do resumo diário e quem pode receber. */
+export function useSummarySettings() {
+  return useQuery({
+    queryKey: ["reports", "daily-summary", "settings"],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/daily-summary/settings");
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    retry: false,
+  });
+}
+
+export function useSaveSummarySettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: SummarySettingsRequest) => {
+      const { data, response } = await api.PUT("/api/v1/reports/daily-summary/settings", { body });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["reports", "daily-summary", "settings"], saved);
+      // O horário muda o "dia" da prévia.
+      void queryClient.invalidateQueries({ queryKey: ["reports", "daily-summary", "preview"] });
+    },
+  });
+}
+
+/** O resumo do último dia que já terminou, como ele sairia agora. */
+export function useSummaryPreview() {
+  return useQuery({
+    queryKey: ["reports", "daily-summary", "preview"],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/daily-summary/preview");
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    retry: false,
+  });
+}
+
+/** "Enviar um teste para mim": o resumo do último dia, só para quem pediu. */
+export function useSendSummaryTest() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data, response } = await api.POST("/api/v1/reports/daily-summary/test");
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
   });
 }

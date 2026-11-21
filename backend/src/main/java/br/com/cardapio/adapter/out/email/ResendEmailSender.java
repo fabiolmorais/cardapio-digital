@@ -13,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,11 +45,15 @@ class ResendEmailSender implements EmailSenderPort {
             log.info("E-mail não enviado (sem a chave do Resend): \"{}\"", message.subject());
             return;
         }
-        String body = json.writeValueAsString(Map.of(
-                "from", properties.from(),
-                "to", List.of(message.to().value()),
-                "subject", message.subject(),
-                "text", message.text()));
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("from", properties.from());
+        fields.put("to", List.of(message.to().value()));
+        fields.put("subject", message.subject());
+        fields.put("text", message.text());
+        if (message.html() != null) {
+            fields.put("html", message.html());
+        }
+        String body = json.writeValueAsString(fields);
         HttpRequest request = HttpRequest.newBuilder(properties.resendUrl().resolve("/emails"))
                 .timeout(Duration.ofSeconds(10))
                 .header("Authorization", "Bearer " + properties.resendApiKey())
