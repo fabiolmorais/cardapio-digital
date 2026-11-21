@@ -114,4 +114,22 @@ final class ReportDtos {
                     product.revenue().cents());
         }
     }
+
+    @Schema(name = "ReportSlowItem", description = "Um dos itens que mais demoram, do pedido até pronto")
+    record SlowItem(@Schema(requiredMode = REQUIRED) UUID productId, @Schema(requiredMode = REQUIRED) String name,
+                    @Schema(requiredMode = REQUIRED) String category,
+                    @Schema(requiredMode = REQUIRED, description = "Quantas vezes ficou pronto") int preparations,
+                    @Schema(requiredMode = REQUIRED) long averageSeconds,
+                    @Schema(requiredMode = REQUIRED, description = "9 em 10 preparos ficaram prontos até esse tempo")
+                    long ninetyPercentSeconds,
+                    @Schema(description = "O pior horário: 1 = segunda … 7 = domingo (sem hora com preparos bastantes, null)")
+                    Integer worstWeekday,
+                    @Schema(description = "O pior horário: 0 a 23") Integer worstHour) {
+        static SlowItem of(br.com.cardapio.domain.report.model.SlowItem item) {
+            return new SlowItem(item.productId().value(), item.name(), item.category(), item.preparations(),
+                    item.average().toSeconds(), item.ninetyPercent().toSeconds(),
+                    item.worstHour().map(h -> h.isoWeekday()).orElse(null),
+                    item.worstHour().map(h -> h.hour()).orElse(null));
+        }
+    }
 }

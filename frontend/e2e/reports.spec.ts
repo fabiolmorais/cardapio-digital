@@ -1,8 +1,8 @@
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
 import { API_URL, apiLogin, createAccount, loginThroughForm, openMenu } from "./support/account";
 
-/** Uma comanda de hoje, pedida pelo celular, entregue e fechada pela API (o dono entrega e fecha). */
-async function closeOneTab(request: APIRequestContext, browser: Browser, email: string) {
+/** Um restaurante com uma mesa (Salão, 04) e um prato, e o pedido do prato pelo celular da mesa. */
+async function tableWithAnOrder(request: APIRequestContext, browser: Browser, email: string, quantity: number) {
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const post = async (path: string, data: object) =>
     (await request.post(`${API_URL}${path}`, { headers, data })).json();
@@ -21,11 +21,16 @@ async function closeOneTab(request: APIRequestContext, browser: Browser, email: 
   const tableUrl = `${API_URL}/api/v1/public/tables/${table.publicToken}`;
   await phone.request.post(`${tableUrl}/session`);
   await phone.request.post(`${tableUrl}/presence`);
-  const order = await (
-    await phone.request.post(`${tableUrl}/orders`, { data: { items: [{ productId: prato.id, quantity: 1 }] } })
-  ).json();
+  const items = Array.from({ length: quantity }, () => ({ productId: prato.id, quantity: 1 }));
+  const order = await (await phone.request.post(`${tableUrl}/orders`, { data: { items } })).json();
   await phone.close();
-  for (const item of order.items) await request.post(`${API_URL}/api/v1/order-items/${item.id}/deliver`, { headers });
+  return { headers, orderId: order.id as string, items: order.items as { id: string }[] };
+}
+
+/** Uma comanda de hoje, pedida pelo celular, entregue e fechada pela API (o dono entrega e fecha). */
+async function closeOneTab(request: APIRequestContext, browser: Browser, email: string) {
+  const { headers, items } = await tableWithAnOrder(request, browser, email, 1);
+  for (const item of items) await request.post(`${API_URL}/api/v1/order-items/${item.id}/deliver`, { headers });
   const open = await (await request.get(`${API_URL}/api/v1/tabs/open`, { headers })).json();
   const closed = await request.post(`${API_URL}/api/v1/tabs/${open.content[0].id}/close`, {
     headers,
@@ -173,6 +178,47 @@ test("Cardápio pelo submenu: a tabela de produtos, a categoria e os que vendem 
   await page.getByRole("combobox", { name: "Categoria" }).selectOption({ label: "Bebidas" });
   await expect(page).toHaveURL(/categoria=/);
   await expect(products).toContainText("Nenhum item vendido neste período");
+});
+
+test("Cozinha pelo submenu: o preparo médio e os itens que mais demoram", async ({ page, request, browser }) => {
+  const { email } = await createAccount(request);
+  // A cozinha prepara 5 pratos: o mínimo para entrar nos que mais demoram.
+  const { headers, orderId, items } = await tableWithAnOrder(request, browser, email, 5);
+  // O pedido do celular vai para a cozinha quando o garçom confirma: o preparo conta dali.
+  const approved = await request.post(`${API_URL}/api/v1/orders/${orderId}/approve`, { headers });
+  expect(approved.ok(), await approved.text()).toBe(true);
+  for (const item of items) {
+    for (const step of ["start", "ready", "deliver"]) {
+      const done = await request.post(`${API_URL}/api/v1/order-items/${item.id}/${step}`, { headers });
+      expect(done.ok(), await done.text()).toBe(true);
+    }
+  }
+  // Os relatórios contam a partir da primeira comanda fechada.
+  const open = await (await request.get(`${API_URL}/api/v1/tabs/open`, { headers })).json();
+  await request.post(`${API_URL}/api/v1/tabs/${open.content[0].id}/close`, { headers, data: { paymentMethod: "PIX" } });
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios");
+  await openMenu(page);
+  await page.getByRole("group", { name: "Relatórios" }).getByRole("link", { name: "Cozinha e tempos" }).click();
+  await expect(page).toHaveURL(/\/admin\/relatorios\/cozinha$/);
+  await expect(page.getByRole("heading", { name: "Cozinha e tempos", level: 1 })).toBeVisible();
+
+  const numbers = page.getByRole("region", { name: "Cozinha e tempos" });
+  await expect(numbers).toContainText("Itens preparados5");
+  await expect(numbers).toContainText(/Preparo médio\d+ s/);
+  // Nada na semana anterior: sem base para comparar.
+  await expect(numbers).toContainText("sem dados para comparar");
+  const slowest = page.getByRole("region", { name: "Itens que mais demoram" });
+  await expect(slowest.getByRole("row", { name: /Prato da casa/ })).toBeVisible();
+  await expect(slowest).toContainText("9 em 10 até");
+  // Os 5 preparos foram na mesma hora de hoje: ela é o pior horário.
+  await expect(slowest.getByRole("row", { name: /Prato da casa/ })).toContainText(
+    /(Seg|Ter|Qua|Qui|Sex|Sáb|Dom), \d+h/,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
 });
 
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {

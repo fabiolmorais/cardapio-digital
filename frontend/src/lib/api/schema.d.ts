@@ -1632,6 +1632,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/kitchen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cozinha e tempos do período (blocos básicos: Pro em diante) */
+        get: operations["getKitchenReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/context": {
         parameters: {
             query?: never;
@@ -4356,6 +4373,60 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        /** @description Cozinha e tempos, com os blocos básicos */
+        KitchenReport: {
+            /** @enum {string} */
+            level: "NONE" | "BASIC" | "FULL";
+            period: components["schemas"]["ReportRange"];
+            /** @description Mesmo tamanho antes; um dia só: o mesmo dia da semana anterior */
+            comparison: components["schemas"]["ReportRange"];
+            /**
+             * Format: int64
+             * @description Preparo médio, da chegada à cozinha até pronto (sem itens prontos, null)
+             */
+            averagePrepSeconds?: number;
+            /**
+             * Format: int64
+             * @description O da comparação; se o período termina hoje, até a mesma hora
+             */
+            comparedAveragePrepSeconds?: number;
+            /**
+             * Format: int32
+             * @description Itens que ficaram prontos no período
+             */
+            preparations: number;
+            /** @description Os que mais demoram (5 preparos ou mais), pelo 9 em 10 */
+            slowest: components["schemas"]["ReportSlowItem"][];
+        };
+        /** @description Um dos itens que mais demoram, do pedido até pronto */
+        ReportSlowItem: {
+            /** Format: uuid */
+            productId: string;
+            name: string;
+            category: string;
+            /**
+             * Format: int32
+             * @description Quantas vezes ficou pronto
+             */
+            preparations: number;
+            /** Format: int64 */
+            averageSeconds: number;
+            /**
+             * Format: int64
+             * @description 9 em 10 preparos ficaram prontos até esse tempo
+             */
+            ninetyPercentSeconds: number;
+            /**
+             * Format: int32
+             * @description O pior horário: 1 = segunda … 7 = domingo (sem hora com preparos bastantes, null)
+             */
+            worstWeekday?: number;
+            /**
+             * Format: int32
+             * @description O pior horário: 0 a 23
+             */
+            worstHour?: number;
         };
         /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
         ReportContext: {
@@ -9668,6 +9739,67 @@ export interface operations {
                 };
             };
             /** @description Datas ou página inválidas */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getKitchenReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O preparo médio e os itens que mais demoram */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
             400: {
                 headers: {
                     [name: string]: unknown;

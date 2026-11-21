@@ -37,7 +37,8 @@ export function MenuScreen() {
   );
 }
 
-function CategoryFilter({ value, onChange }: { value?: string; onChange: (id: string | null) => void }) {
+/** Com duas categorias ou mais: "Todas as categorias", "Pratos", "Bebidas"… */
+export function CategoryFilter({ value, onChange }: { value?: string; onChange: (id: string | null) => void }) {
   const categories = useReportCategories();
   const list = categories.data ?? [];
   if (list.length < 2) return null;

@@ -2,10 +2,12 @@ package br.com.cardapio.adapter.in.web.report;
 
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
+import br.com.cardapio.application.port.in.report.GetKitchenReportUseCase;
 import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
+import br.com.cardapio.application.port.in.report.KitchenReportQuery;
 import br.com.cardapio.application.port.in.report.MenuReportQuery;
 import br.com.cardapio.application.port.in.report.ReportQuery;
 import br.com.cardapio.application.port.shared.PageQuery;
@@ -48,13 +50,15 @@ class ReportController {
     private final GetOverviewReportUseCase overview;
     private final GetSalesReportUseCase sales;
     private final GetMenuReportUseCase menu;
+    private final GetKitchenReportUseCase kitchen;
 
     ReportController(GetReportContextUseCase context, GetOverviewReportUseCase overview, GetSalesReportUseCase sales,
-                     GetMenuReportUseCase menu) {
+                     GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen) {
         this.context = context;
         this.overview = overview;
         this.sales = sales;
         this.menu = menu;
+        this.kitchen = kitchen;
     }
 
     @GetMapping("/context")
@@ -145,6 +149,26 @@ class ReportController {
             @RequestParam(defaultValue = "10") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
         return PageResponse.from(menu.products(menuQuery(jwt, from, to, sectorId, categoryId),
                 ProductSort.valueOf(sort.name()), new PageQuery(page, size)), ReportDtos.Product::of);
+    }
+
+    @GetMapping("/kitchen")
+    @Operation(operationId = "getKitchenReport", summary = "Cozinha e tempos do período (blocos básicos: Pro em diante)")
+    @ApiResponse(responseCode = "200", description = "O preparo médio e os itens que mais demoram")
+    @ApiResponse(responseCode = "400", description = "Datas inválidas ou período de mais de 12 meses", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "O plano não tem relatórios", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Setor ou categoria não encontrados", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    KitchenReportResponse kitchen(@AuthenticationPrincipal Jwt jwt,
+                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                  @RequestParam(required = false) UUID sectorId,
+                                  @RequestParam(required = false) UUID categoryId) {
+        return KitchenReportResponse.from(kitchen.get(new KitchenReportQuery(query(jwt, from, to, sectorId),
+                categoryId == null ? null : new MenuCategoryId(categoryId))));
     }
 
     /** A ordem da tabela de produtos. */

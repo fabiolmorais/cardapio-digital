@@ -6,6 +6,7 @@ export type OverviewReport = Schemas["OverviewReport"];
 export type SalesReport = Schemas["SalesReport"];
 export type Grouping = SalesReport["grouping"];
 export type MenuReport = Schemas["MenuReport"];
+export type KitchenReport = Schemas["KitchenReport"];
 export type ProductSort = "REVENUE" | "QUANTITY";
 
 /** O período (dias do restaurante) e, se escolhido, o setor. */
@@ -96,7 +97,21 @@ export function useMenuProducts(
   });
 }
 
-/** As categorias ativas do cardápio, para o filtro do relatório de cardápio. */
+/** Cozinha e tempos: o preparo médio e os itens que mais demoram. */
+export function useKitchenReport(params: ReportParams & { categoryId?: string }) {
+  return useQuery({
+    queryKey: ["reports", "kitchen", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/kitchen", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** As categorias ativas do cardápio, para o filtro do Cardápio e da Cozinha. */
 export function useReportCategories() {
   return useQuery({
     queryKey: ["reports", "categories"],

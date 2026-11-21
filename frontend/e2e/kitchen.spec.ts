@@ -53,7 +53,7 @@ test("a cozinha começa e marca pronto, o garçom entrega, e a mesa vê cada pas
   try {
     const kitchen = panel.page;
     await openMenu(kitchen);
-    await kitchen.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Cozinha" }).click();
+    await kitchen.getByRole("navigation", { name: "Navegação" }).getByRole("link", { name: "Cozinha", exact: true }).click();
     await expect(kitchen).toHaveURL(/\/painel\/cozinha$/);
     const queue = kitchen.getByRole("region", { name: "Na fila" });
     const ticket = queue.getByRole("article", { name: "Mesa 04 · Pedido nº 1" });
