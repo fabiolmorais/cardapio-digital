@@ -1564,6 +1564,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O plano, o fuso, o histórico liberado e desde quando há dados */
+        get: operations["getReportContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/push/settings": {
         parameters: {
             query?: never;
@@ -4092,6 +4109,41 @@ export interface components {
             name: string;
             /** Format: int64 */
             priceCents: number;
+        };
+        /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
+        ReportContext: {
+            /**
+             * @description Nenhum (Essencial), básicos (Pro) ou completos (Business)
+             * @enum {string}
+             */
+            level: "NONE" | "BASIC" | "FULL";
+            /** @description O plano exporta os relatórios */
+            canExport: boolean;
+            /**
+             * @description O fuso do restaurante: o dia dos relatórios
+             * @example America/Sao_Paulo
+             */
+            timeZone: string;
+            /**
+             * Format: date
+             * @description Hoje, no fuso do restaurante
+             */
+            today: string;
+            /**
+             * Format: date
+             * @description O primeiro dia que o plano deixa consultar; ausente quando não há limite
+             */
+            earliestDay?: string;
+            /**
+             * Format: date
+             * @description O dia da primeira comanda fechada; ausente enquanto não há dados
+             */
+            firstDataDay?: string;
+            /**
+             * Format: int32
+             * @description O maior período de uma vez, em dias
+             */
+            maxPeriodDays: number;
         };
         PushSettings: {
             /** @description false: o servidor está sem as chaves VAPID */
@@ -9156,6 +9208,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
+    getReportContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O contexto dos relatórios (também no Essencial) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportContext"];
                 };
             };
         };
