@@ -72,6 +72,11 @@ import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
+import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
+import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
+import br.com.cardapio.application.port.out.report.SalesReportPort;
+import br.com.cardapio.application.service.report.GetOverviewReportService;
+import br.com.cardapio.application.service.report.GetSalesReportService;
 import br.com.cardapio.application.port.out.report.ReportActivityPort;
 import br.com.cardapio.application.service.report.GetReportContextService;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
@@ -1083,6 +1088,23 @@ class UseCaseConfig {
                                                     EstablishmentTimeZonePort establishmentTimeZonePort,
                                                     ReportActivityPort reportActivityPort, Clock clock) {
         return new GetReportContextService(subscriptionPort, establishmentTimeZonePort, reportActivityPort, clock);
+    }
+
+    @Bean
+    GetOverviewReportUseCase getOverviewReportUseCase(SubscriptionPort subscriptionPort,
+                                                      EstablishmentTimeZonePort establishmentTimeZonePort,
+                                                      SectorPort sectorPort, SalesReportPort salesReportPort,
+                                                      Clock clock) {
+        return new GetOverviewReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
+                clock);
+    }
+
+    @Bean
+    GetSalesReportUseCase getSalesReportUseCase(SubscriptionPort subscriptionPort,
+                                                EstablishmentTimeZonePort establishmentTimeZonePort,
+                                                SectorPort sectorPort, SalesReportPort salesReportPort, Clock clock) {
+        return new GetSalesReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
+                clock);
     }
 
     // O fim do teste grátis e a escolha do plano (Guia 31)

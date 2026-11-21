@@ -2,31 +2,32 @@
 
 import { ChartColumn, Check } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import {
-  formatDay,
-  formatRange,
-  parsePeriodKey,
-  PERIOD_KEYS,
-  previousOf,
-  resolvePeriod,
-  type Period,
-  type PeriodKey,
-} from "./period";
-import { canSeeReports, useReportContext, type ReportContext } from "./reports-api";
+import { DateRangeDialog } from "./date-range-dialog";
+import { formatDay, formatRange, PERIOD_KEYS, previousOf, type Period } from "./period";
+import { canSeeReports, useReportContext, useReportSectors, type ReportContext } from "./reports-api";
+import { useReportFilters } from "./use-report-filters";
 
 const t = messages.reports;
 
+export type ReportFilters = ReturnType<typeof useReportFilters>;
+
 /**
- * Os relatórios na gestão (ADR 0013): a Visão geral (desenho 14.1), com o período no endereço
- * (?periodo=30d) para o dono poder voltar ou mandar o link. O Essencial vê o que o Pro traz (14.10);
- * sem comandas fechadas no período, o aviso de sem dados (14.11).
+ * A moldura de cada tela de relatório na gestão (ADR 0013): confere quem pode ver, busca o contexto
+ * (plano, fuso, "hoje"), mostra o Essencial (14.10), o cabeçalho com o período e o setor, e o aviso de
+ * sem dados (14.11). O corpo de cada tela vem em `children`.
  */
-export function ReportsPage() {
+export function ReportsScreen({
+  title,
+  children,
+}: {
+  title: string;
+  children: (context: ReportContext, filters: ReportFilters) => ReactNode;
+}) {
   const { status, session } = useRequiredSession();
   const access = status === "authenticated" ? session.establishment : null;
   const allowed = access !== null && canSeeReports(access.role);
@@ -39,41 +40,35 @@ export function ReportsPage() {
       </p>
     );
   }
-  if (context.isError) {
-    return (
-      <div className="flex flex-col items-start gap-3 px-4 py-6 sm:px-7">
-        <p role="alert" className="text-destructive">
-          {t.loadError}
-        </p>
-        <Button variant="outline" className="h-11" onClick={() => context.refetch()}>
-          {t.retry}
-        </Button>
-      </div>
-    );
-  }
+  if (context.isError) return <LoadError onRetry={() => context.refetch()} />;
   if (!context.data) return <Loading />;
   if (context.data.level === "NONE") return <EssentialReports />;
-  return <Overview context={context.data} />;
+  return (
+    <Screen title={title} context={context.data}>
+      {children}
+    </Screen>
+  );
 }
 
-function Overview({ context }: { context: ReportContext }) {
-  const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const key = parsePeriodKey(params.get("periodo"));
-  const period = resolvePeriod(key, context.today, context.earliestDay);
+function Screen({
+  title,
+  context,
+  children,
+}: {
+  title: string;
+  context: ReportContext;
+  children: (context: ReportContext, filters: ReportFilters) => ReactNode;
+}) {
+  const filters = useReportFilters(context);
+  const { period } = filters;
   const noData = !context.firstDataDay || period.to < context.firstDataDay;
-
-  function choose(next: PeriodKey) {
-    router.replace(`${pathname}?periodo=${next}`, { scroll: false });
-  }
 
   return (
     <div className="flex flex-col">
       <header className="flex flex-wrap items-end gap-3 px-4 pt-6 sm:px-7">
         <div className="mr-auto flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{t.overview}</h1>
+            <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{title}</h1>
             {context.level === "BASIC" && (
               <span className="rounded-full bg-info/15 px-2.5 py-0.5 text-xs font-semibold text-info">
                 {t.proBadge}
@@ -82,45 +77,100 @@ function Overview({ context }: { context: ReportContext }) {
           </div>
           <p className="text-sm text-muted-foreground first-letter:uppercase">{subtitle(period)}</p>
         </div>
-        <div
-          role="group"
-          aria-label={t.period}
-          className="flex flex-wrap gap-1 rounded-[14px] border border-border bg-card p-1"
-        >
-          {PERIOD_KEYS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={option === key}
-              onClick={() => choose(option)}
-              className={cn(
-                "h-10 rounded-[10px] px-3.5 text-sm font-semibold text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                option === key && "bg-foreground text-background",
-              )}
-            >
-              {t.periods[option]}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div
+            role="group"
+            aria-label={t.period}
+            className="flex flex-wrap gap-1 rounded-[14px] border border-border bg-card p-1"
+          >
+            {PERIOD_KEYS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={option === period.key}
+                onClick={() => filters.choosePreset(option)}
+                className={cn(
+                  "h-10 rounded-[10px] px-3.5 text-sm font-semibold text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                  option === period.key && "bg-foreground text-background",
+                )}
+              >
+                {t.periods[option]}
+              </button>
+            ))}
+            <DateRangeDialog
+              active={period.key === "custom"}
+              current={period}
+              limits={filters.limits}
+              onApply={filters.chooseRange}
+            />
+          </div>
+          <SectorFilter value={filters.sectorId} onChange={filters.chooseSector} />
         </div>
       </header>
       <div className="flex flex-col gap-5 px-4 py-5 sm:px-7">
-        {noData ? (
-          <EmptyPeriod firstDataDay={context.firstDataDay} />
-        ) : (
-          <p className="text-sm text-muted-foreground">{t.soon}</p>
-        )}
+        {noData ? <EmptyPeriod firstDataDay={context.firstDataDay} /> : children(context, filters)}
       </div>
     </div>
+  );
+}
+
+/** Com dois setores ou mais: "Todos os setores", "Salão", "Deck"… */
+function SectorFilter({ value, onChange }: { value?: string; onChange: (id: string | null) => void }) {
+  const sectors = useReportSectors();
+  const list = sectors.data ?? [];
+  if (list.length < 2) return null;
+  return (
+    <select
+      aria-label={t.sector}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value || null)}
+      className="h-12 rounded-xl border border-input bg-card px-3.5 text-sm text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      <option value="">{t.allSectors}</option>
+      {list.map((sector) => (
+        <option key={sector.id} value={sector.id}>
+          {sector.name}
+        </option>
+      ))}
+    </select>
   );
 }
 
 /** "Últimos 7 dias · 13 a 19 de novembro · comparado com 6 a 12 de novembro". */
 function subtitle(period: Period) {
   return [
-    t.periodTitle[period.key],
+    ...(period.key === "custom" ? [] : [t.periodTitle[period.key]]),
     formatRange(period, t.range),
     t.comparedWith(formatRange(previousOf(period), t.range)),
   ].join(" · ");
+}
+
+/** Um bloco que não carregou: os outros continuam na tela. */
+export function BlockError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-wrap items-center gap-3 rounded-[14px] bg-destructive/10 px-4 py-3.5 text-sm"
+    >
+      <span className="flex-1">{t.blockError}</span>
+      <Button variant="outline" className="h-10" onClick={onRetry}>
+        {t.retry}
+      </Button>
+    </div>
+  );
+}
+
+function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-3 px-4 py-6 sm:px-7">
+      <p role="alert" className="text-destructive">
+        {t.loadError}
+      </p>
+      <Button variant="outline" className="h-11" onClick={onRetry}>
+        {t.retry}
+      </Button>
+    </div>
+  );
 }
 
 function EmptyPeriod({ firstDataDay }: { firstDataDay?: string }) {
@@ -151,18 +201,21 @@ function EmptyPeriod({ firstDataDay }: { firstDataDay?: string }) {
   );
 }
 
-function Loading() {
+/** O esqueleto enquanto os números chegam (desenho 14.12): o brilho para se o aparelho pede menos movimento. */
+export function Loading({ inline = false }: { inline?: boolean }) {
   return (
-    <div aria-busy="true" className="flex flex-col gap-5 px-4 py-6 sm:px-7">
+    <div aria-busy="true" className={cn("flex flex-col gap-5", !inline && "px-4 py-6 sm:px-7")}>
       <p role="status" className="sr-only">
         {t.loading}
       </p>
-      <div aria-hidden className="flex flex-col gap-2">
-        <span className="h-8 w-48 rounded-lg bg-secondary motion-safe:animate-pulse" />
-        <span className="h-4 w-80 max-w-full rounded-md bg-secondary motion-safe:animate-pulse" />
-      </div>
-      <div aria-hidden className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
+      {!inline && (
+        <div aria-hidden className="flex flex-col gap-2">
+          <span className="h-8 w-48 rounded-lg bg-secondary motion-safe:animate-pulse" />
+          <span className="h-4 w-80 max-w-full rounded-md bg-secondary motion-safe:animate-pulse" />
+        </div>
+      )}
+      <div aria-hidden className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
+        {Array.from({ length: 3 }, (_, i) => (
           <span key={i} className="h-28 rounded-[20px] bg-secondary motion-safe:animate-pulse" />
         ))}
       </div>

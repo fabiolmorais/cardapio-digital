@@ -39,7 +39,14 @@ import { cn } from "cn";
 const t = messages.admin;
 
 /** O item do menu; `roles`: só para esses papéis (sem a lista, para todos). */
-type Item = { href: string; label: string; icon: LucideIcon; roles?: readonly Role[] };
+/** `children`: as telas de dentro (os relatórios), embaixo do item, sempre à vista. */
+type Item = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  roles?: readonly Role[];
+  children?: { href: string; label: string }[];
+};
 
 const MANAGERS = ["OWNER", "MANAGER"] as const;
 const MANAGERS_AND_STAFF = ["OWNER", "MANAGER", "STAFF"] as const;
@@ -70,7 +77,15 @@ const MANAGEMENT: Item[] = [
   { href: "/admin/marca", label: t.nav.brand, icon: Palette },
   { href: "/admin/presenca", label: t.nav.presence, icon: ShieldCheck },
   { href: "/admin/equipe", label: t.nav.team, icon: Users },
-  { href: "/admin/relatorios", label: t.nav.reports, icon: ChartColumn },
+  {
+    href: "/admin/relatorios",
+    label: t.nav.reports,
+    icon: ChartColumn,
+    children: [
+      { href: "/admin/relatorios", label: t.nav.reportsOverview },
+      { href: "/admin/relatorios/vendas", label: t.nav.reportsSales },
+    ],
+  },
   { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
   { href: "/admin/assinatura", label: t.nav.subscription, icon: CreditCard },
 ];
@@ -202,7 +217,8 @@ function ActiveShellNav({ role, onNavigate }: { role: Role | undefined; onNaviga
 /** "/painel" acende só nele mesmo (as telas de /painel/… têm item próprio). */
 function isActive(pathname: string | null, href: string) {
   if (pathname === null) return false;
-  if (href === "/painel") return pathname === "/painel";
+  // "/painel" e "/admin/relatorios" acendem só neles mesmos: as telas de dentro têm item próprio.
+  if (href === "/painel" || href === "/admin/relatorios") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -231,9 +247,10 @@ function ShellNav({
               {label}
             </span>
           )}
-          {items.map(({ href, label: text, icon: Icon }) => {
-            const active = isActive(pathname, href);
-            return (
+          {items.map(({ href, label: text, icon: Icon, children }) => {
+            const active = !children && isActive(pathname, href);
+            const inside = !!children && pathname !== null && pathname.startsWith(href);
+            const link = (
               <Link
                 key={href}
                 href={href}
@@ -242,6 +259,7 @@ function ShellNav({
                 className={cn(
                   "flex h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                   active && "bg-secondary text-foreground",
+                  inside && "text-foreground",
                 )}
               >
                 <Icon aria-hidden className="size-4" />
@@ -255,6 +273,31 @@ function ShellNav({
                   </span>
                 )}
               </Link>
+            );
+            if (!children) return link;
+            return (
+              <div key={href} className="flex flex-col gap-1">
+                {link}
+                <div role="group" aria-label={text} className="ml-5 flex flex-col gap-0.5 border-l border-input pl-2">
+                  {children.map((child) => {
+                    const on = isActive(pathname, child.href);
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={on ? "page" : undefined}
+                        className={cn(
+                          "flex h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                          on && "bg-secondary text-foreground",
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>

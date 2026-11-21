@@ -61,4 +61,18 @@ class ReportPeriodTest {
                 .isInstanceOf(InvalidValueException.class)
                 .hasMessageContaining("12 meses");
     }
+
+    @Test
+    void oneDayComparesWithTheSameWeekdayOfTheWeekBefore() {
+        ReportPeriod friday = period("2026-11-20", "2026-11-20");
+
+        assertThat(friday.comparison()).isEqualTo(period("2026-11-13", "2026-11-13"));
+        assertThat(period("2026-11-13", "2026-11-19").comparison()).isEqualTo(period("2026-11-06", "2026-11-12"));
+    }
+
+    @Test
+    void theDatesGoFromTheFirstToTheLastDay() {
+        assertThat(period("2026-11-29", "2026-12-01").dates()).containsExactly(LocalDate.parse("2026-11-29"),
+                LocalDate.parse("2026-11-30"), LocalDate.parse("2026-12-01"));
+    }
 }
