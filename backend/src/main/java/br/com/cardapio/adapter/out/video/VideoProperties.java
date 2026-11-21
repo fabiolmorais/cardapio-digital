@@ -36,14 +36,15 @@ public record VideoProperties(Provider provider, String webhookToken, Bunny bunn
      * O falso.
      *
      * @param publicUrl  o endereço do back, como o navegador o vê (o envio e o vídeo vêm daqui)
-     * @param storageDir onde guardar os arquivos recebidos (uma pasta temporária)
+     * @param storageDir onde guardar os arquivos recebidos. Fora do /tmp, que o sistema limpa ao
+     *                   religar a máquina: os vídeos do restaurante de testes continuam tocando.
      */
     public record Fake(URI publicUrl, Path storageDir) {
 
         public Fake {
             publicUrl = publicUrl == null ? URI.create("http://localhost:8080") : publicUrl;
             storageDir = storageDir == null
-                    ? Path.of(System.getProperty("java.io.tmpdir"), "cardapio-fake-video") : storageDir;
+                    ? Path.of(System.getProperty("user.home"), ".cache", "cardapio-fake-video") : storageDir;
         }
     }
 

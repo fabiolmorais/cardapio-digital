@@ -80,7 +80,9 @@ test("a mesa vê os 10% já marcados, tira, e o garçom confirma na maquininha",
     await expect(charge).not.toBeChecked();
     await expect(dialog.getByRole("button", { name: "Recebi R$ 29,90 no Pix" })).toBeVisible();
     // ...mas, na maquininha, o cliente mudou de ideia.
-    await charge.check({ force: true });
+    // Toca na linha, como o garçom: o input escondido (sr-only), no celular, pode ficar fora da tela.
+    await dialog.locator("label", { has: panel.getByRole("switch", { name: "Cobrar os 10% de serviço" }) }).click();
+    await expect(charge).toBeChecked();
     await dialog.getByRole("button", { name: "Recebi R$ 32,89 no Pix" }).click();
     await expect(dialog).toBeHidden();
 
