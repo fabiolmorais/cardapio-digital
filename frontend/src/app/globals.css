@@ -10,6 +10,11 @@
   --color-success: var(--success);
   --color-info: var(--info);
   --color-warning: var(--warning);
+  --color-report-now: var(--report-now);
+  --color-report-prev: var(--report-prev);
+  --color-report-pix: var(--report-pix);
+  --color-report-card: var(--report-card);
+  --color-report-cash: var(--report-cash);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -82,6 +87,12 @@
   /* Avisos (como no desenho): azul = informativo, amarelo = atenção; vermelho = --destructive. */
   --info: #1d4ed8;
   --warning: #a16207;
+  /* Relatórios (telas 14.x): o período atual, a comparação e as formas de pagamento (paleta validada). */
+  --report-now: #c24e1e;
+  --report-prev: #a8998c;
+  --report-pix: #3987e5;
+  --report-card: #d95926;
+  --report-cash: #199e70;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -118,6 +129,11 @@
   --success: #4ade80;
   --info: #7db4ff;
   --warning: #fbbf24;
+  --report-now: #ff8466;
+  --report-prev: #5b534c;
+  --report-pix: #3987e5;
+  --report-card: #d95926;
+  --report-cash: #199e70;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

@@ -1564,6 +1564,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vendas do período (blocos básicos: Pro em diante) */
+        get: operations["getSalesReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Visão geral do período (blocos básicos: Pro em diante) */
+        get: operations["getOverviewReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/context": {
         parameters: {
             query?: never;
@@ -4109,6 +4143,132 @@ export interface components {
             name: string;
             /** Format: int64 */
             priceCents: number;
+        };
+        ReportBestDay: {
+            /** Format: date */
+            day: string;
+            /** Format: int64 */
+            revenueCents: number;
+        };
+        /** @description Uma hora do dia, em média por dia do período */
+        ReportHour: {
+            /** Format: int32 */
+            hour: number;
+            /** Format: int64 */
+            revenuePerDayCents: number;
+            tabsPerDay: number;
+        };
+        /** @description Dias do restaurante, do primeiro ao último (inclusive) */
+        ReportRange: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        /** @description Um dia, uma semana ou um mês do período */
+        ReportSeriesPoint: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int64 */
+            revenueCents: number;
+            /** Format: int32 */
+            tabs: number;
+        };
+        /** @description As comandas fechadas do período */
+        ReportTotals: {
+            /**
+             * Format: int64
+             * @description Faturamento, sem a taxa de serviço
+             */
+            revenueCents: number;
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int64 */
+            averageTicketCents: number;
+        };
+        /** @description Vendas, com os blocos básicos */
+        SalesReport: {
+            /** @enum {string} */
+            level: "NONE" | "BASIC" | "FULL";
+            period: components["schemas"]["ReportRange"];
+            comparison: components["schemas"]["ReportRange"];
+            current: components["schemas"]["ReportTotals"];
+            compared: components["schemas"]["ReportTotals"];
+            /** @enum {string} */
+            grouping: "DAY" | "WEEK" | "MONTH";
+            series: components["schemas"]["ReportSeriesPoint"][];
+            /** @description Só as horas com movimento */
+            byHour: components["schemas"]["ReportHour"][];
+            /** @description O dia que mais faturou; ausente sem vendas */
+            bestDay?: components["schemas"]["ReportBestDay"];
+            tabsPerDay: number;
+            comparedTabsPerDay: number;
+            /**
+             * Format: int32
+             * @description A hora com mais faturamento médio por dia; ausente sem vendas
+             */
+            peakHour?: number;
+        };
+        /** @description A Visão geral, com os blocos básicos */
+        OverviewReport: {
+            /** @enum {string} */
+            level: "NONE" | "BASIC" | "FULL";
+            period: components["schemas"]["ReportRange"];
+            /** @description Mesmo tamanho antes; um dia só: o mesmo dia da semana anterior */
+            comparison: components["schemas"]["ReportRange"];
+            current: components["schemas"]["ReportTotals"];
+            /** @description A comparação; se o período termina hoje, até a mesma hora */
+            compared: components["schemas"]["ReportTotals"];
+            byDay: components["schemas"]["ReportDay"][];
+            payments: components["schemas"]["ReportPayment"][];
+            /** @description Só as células com venda */
+            heatmap: components["schemas"]["ReportHeatCell"][];
+            topItems: components["schemas"]["ReportItem"][];
+        };
+        /** @description Um dia do período ao lado do dia correspondente da comparação */
+        ReportDay: {
+            /** Format: date */
+            day: string;
+            /** Format: int64 */
+            revenueCents: number;
+            /** Format: date */
+            comparedDay?: string;
+            /** Format: int64 */
+            comparedRevenueCents: number;
+        };
+        /** @description Faturamento médio de um dia da semana numa hora */
+        ReportHeatCell: {
+            /**
+             * Format: int32
+             * @description 1 = segunda … 7 = domingo
+             */
+            weekday: number;
+            /**
+             * Format: int32
+             * @description 0 a 23
+             */
+            hour: number;
+            /** Format: int64 */
+            averageCents: number;
+        };
+        /** @description Um produto vendido no período (sem os cancelados) */
+        ReportItem: {
+            /** Format: uuid */
+            productId: string;
+            name: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            revenueCents: number;
+        };
+        /** @description O que entrou por forma de pagamento, com a taxa de serviço */
+        ReportPayment: {
+            /** @enum {string} */
+            method: "PIX" | "CARD" | "CASH";
+            /** Format: int64 */
+            amountCents: number;
         };
         /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
         ReportContext: {
@@ -9208,6 +9368,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
+    getSalesReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                groupBy?: "DAY" | "WEEK" | "MONTH";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O faturamento no tempo e por hora */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getOverviewReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os números do período e da comparação */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

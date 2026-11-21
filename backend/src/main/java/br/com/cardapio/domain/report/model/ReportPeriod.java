@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -52,6 +53,19 @@ public record ReportPeriod(LocalDate from, LocalDate to, ZoneId zone) {
     /** O período de mesmo tamanho logo antes deste: a base das comparações ("▲ 9% vs. anterior"). */
     public ReportPeriod previous() {
         return new ReportPeriod(from.minusDays(days()), from.minusDays(1), zone);
+    }
+
+    /**
+     * A base das comparações (ADR 0013): um dia só compara com o mesmo dia da semana anterior
+     * (sexta com sexta); os outros períodos, com o anterior de mesmo tamanho.
+     */
+    public ReportPeriod comparison() {
+        return days() == 1 ? new ReportPeriod(from.minusDays(7), from.minusDays(7), zone) : previous();
+    }
+
+    /** Os dias do período, em ordem. */
+    public List<LocalDate> dates() {
+        return from.datesUntil(to.plusDays(1)).toList();
     }
 
     /** O instante cai dentro do período? */

@@ -64,15 +64,72 @@ test("o dono abre os relatórios pelo menu da gestão e troca o período", async
   await expect(page.getByText(/^Hoje · .+-feira|^Hoje · (sábado|domingo)/)).toBeVisible();
 });
 
-test("com uma comanda fechada hoje, o período deixa de estar vazio", async ({ page, request, browser }) => {
+test("com uma comanda fechada hoje, a Visão geral mostra os números do período", async ({ page, request, browser }) => {
   const { email } = await createAccount(request);
   await closeOneTab(request, browser, email);
   await loginThroughForm(page, email);
 
   await page.goto("/admin/relatorios?periodo=today");
   await expect(page.getByRole("heading", { name: "Visão geral", level: 1 })).toBeVisible();
-  await expect(page.getByText("Os números deste período aparecem aqui.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Ainda não há comandas fechadas neste período" })).toHaveCount(0);
+  const numbers = page.getByRole("region", { name: "Visão geral" });
+  await expect(numbers).toContainText("FaturamentoR$ 68,90");
+  await expect(numbers).toContainText("Comandas1");
+  await expect(numbers).toContainText("Tíquete médioR$ 68,90");
+  // Nada na sexta (ou no dia) da semana passada: sem base para comparar.
+  await expect(numbers).toContainText("sem dados para comparar");
+
+  // O gráfico diz o valor ao tocar na coluna.
+  const byDay = page.getByRole("region", { name: "Faturamento por dia" });
+  await byDay.getByRole("button", { name: /R\$ 68,90/ }).click();
+  await expect(byDay.getByRole("status")).toContainText("R$ 68,90");
+
+  await expect(page.getByRole("region", { name: "Forma de pagamento" })).toContainText("Pix100%R$ 68,90");
+  await expect(page.getByRole("region", { name: "Itens mais vendidos" })).toContainText("Prato da casa");
+  await expect(page.getByRole("region", { name: "Quando o salão vende" }).getByRole("img")).toHaveAccessibleName(
+    /Os maiores picos: /,
+  );
+});
+
+test("Vendas pelo submenu: agrupa por semana, escolhe datas e filtra o setor", async ({ page, request, browser }) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  // Um segundo setor, sem vendas: aparece o filtro.
+  const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
+  await request.post(`${API_URL}/api/v1/sectors`, { headers, data: { name: "Deck" } });
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios");
+  await openMenu(page);
+  await page.getByRole("group", { name: "Relatórios" }).getByRole("link", { name: "Vendas" }).click();
+  await expect(page).toHaveURL(/\/admin\/relatorios\/vendas/);
+  await expect(page.getByRole("heading", { name: "Vendas", level: 1 })).toBeVisible();
+  const numbers = page.getByRole("region", { name: "Vendas" });
+  await expect(numbers).toContainText("FaturamentoR$ 68,90");
+  await expect(numbers).toContainText("Comandas por dia0,1");
+
+  // Agrupar por semana fica no endereço.
+  const groupBy = page.getByRole("group", { name: "Agrupar por" });
+  await groupBy.getByRole("button", { name: "Semana" }).click();
+  await expect(page).toHaveURL(/agrupar=semana/);
+  await expect(page.getByRole("heading", { name: "Faturamento por semana" })).toBeVisible();
+
+  // O setor sem vendas: os números zeram e os blocos avisam.
+  await page.getByRole("combobox", { name: "Setor" }).selectOption({ label: "Deck" });
+  await expect(page).toHaveURL(/setor=/);
+  await expect(numbers).toContainText("FaturamentoR$ 0,00");
+  await expect(page.getByText("Sem vendas neste período").first()).toBeVisible();
+  await page.getByRole("combobox", { name: "Setor" }).selectOption({ label: "Todos os setores" });
+  await expect(numbers).toContainText("FaturamentoR$ 68,90");
+
+  // Escolher datas: "Ontem" vai para o endereço; antes da primeira comanda, não há dados.
+  await page.getByRole("button", { name: "Escolher datas" }).click();
+  const dialog = page.getByRole("dialog", { name: "Escolher datas" });
+  await dialog.getByRole("button", { name: "Ontem" }).click();
+  await expect(dialog.getByRole("status")).toContainText("1 dia");
+  await dialog.getByRole("button", { name: "Aplicar" }).click();
+  await expect(page).toHaveURL(/de=\d{4}-\d{2}-\d{2}&ate=\d{4}-\d{2}-\d{2}/);
+  await expect(page.getByRole("button", { name: "Escolher datas" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { name: "Ainda não há comandas fechadas neste período" })).toBeVisible();
 });
 
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {
