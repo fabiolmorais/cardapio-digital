@@ -9,7 +9,8 @@ const GROUPING_PARAM: Record<Grouping, string> = { DAY: "dia", WEEK: "semana", M
 
 /**
  * Os filtros dos relatórios ficam no endereço, para o dono voltar ou mandar o link: ?periodo=30d
- * (pronto) ou ?de=2026-11-01&ate=2026-11-15 (escolhido), ?setor=<id> e, em Vendas, ?agrupar=semana.
+ * (pronto) ou ?de=2026-11-01&ate=2026-11-15 (escolhido), ?setor=<id>, em Vendas ?agrupar=semana e, no
+ * Cardápio, ?categoria=<id>.
  */
 export function useReportFilters(context: ReportContext) {
   const params = useSearchParams();
@@ -18,6 +19,7 @@ export function useReportFilters(context: ReportContext) {
   const limits = { today: context.today, earliestDay: context.earliestDay, maxDays: context.maxPeriodDays };
   const period = periodFromParams(new URLSearchParams(params.toString()), limits);
   const sectorId = params.get("setor") ?? undefined;
+  const categoryId = params.get("categoria") ?? undefined;
   const grouping = GROUPINGS[params.get("agrupar") ?? ""] ?? "DAY";
 
   function update(change: (next: URLSearchParams) => void) {
@@ -31,6 +33,7 @@ export function useReportFilters(context: ReportContext) {
     limits,
     period,
     sectorId,
+    categoryId,
     grouping,
     query: { from: period.from, to: period.to, ...(sectorId ? { sectorId } : {}) },
     choosePreset: (key: PresetKey) =>
@@ -46,6 +49,8 @@ export function useReportFilters(context: ReportContext) {
         next.set("ate", to);
       }),
     chooseSector: (id: string | null) => update((next) => (id ? next.set("setor", id) : next.delete("setor"))),
+    chooseCategory: (id: string | null) =>
+      update((next) => (id ? next.set("categoria", id) : next.delete("categoria"))),
     chooseGrouping: (value: Grouping) =>
       update((next) => (value === "DAY" ? next.delete("agrupar") : next.set("agrupar", GROUPING_PARAM[value]))),
   };

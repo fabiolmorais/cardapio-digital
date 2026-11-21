@@ -84,6 +84,7 @@ const MANAGEMENT: Item[] = [
     children: [
       { href: "/admin/relatorios", label: t.nav.reportsOverview },
       { href: "/admin/relatorios/vendas", label: t.nav.reportsSales },
+      { href: "/admin/relatorios/cardapio", label: t.nav.reportsMenu },
     ],
   },
   { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
@@ -287,6 +288,7 @@ function ShellNav({
                         href={child.href}
                         onClick={onNavigate}
                         aria-current={on ? "page" : undefined}
+                        aria-label={t.nav.within(text, child.label)}
                         className={cn(
                           "flex h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                           on && "bg-secondary text-foreground",

@@ -39,7 +39,7 @@ test("o dono abre os relatórios pelo menu da gestão e troca o período", async
   await loginThroughForm(page, email);
 
   await openMenu(page);
-  await page.getByRole("link", { name: "Relatórios" }).click();
+  await page.getByRole("link", { name: "Relatórios", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/relatorios$/);
   await expect(page.getByRole("heading", { name: "Visão geral", level: 1 })).toBeVisible();
   // O teste grátis é do Pro: relatórios básicos.
@@ -130,6 +130,49 @@ test("Vendas pelo submenu: agrupa por semana, escolhe datas e filtra o setor", a
   await expect(page).toHaveURL(/de=\d{4}-\d{2}-\d{2}&ate=\d{4}-\d{2}-\d{2}/);
   await expect(page.getByRole("button", { name: "Escolher datas" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { name: "Ainda não há comandas fechadas neste período" })).toBeVisible();
+});
+
+test("Cardápio pelo submenu: a tabela de produtos, a categoria e os que vendem pouco", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  // Uma segunda categoria, sem vendas: aparece o filtro de categoria.
+  const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
+  await request.post(`${API_URL}/api/v1/menu-categories`, { headers, data: { name: "Bebidas" } });
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios");
+  await openMenu(page);
+  await page.getByRole("group", { name: "Relatórios" }).getByRole("link", { name: "Cardápio" }).click();
+  await expect(page).toHaveURL(/\/admin\/relatorios\/cardapio/);
+  await expect(page.getByRole("heading", { name: "Cardápio", level: 1 })).toBeVisible();
+
+  const products = page.getByRole("region", { name: "Produtos" });
+  const row = products.getByRole("row", { name: /Prato da casa/ });
+  await expect(row).toContainText("1");
+  await expect(row).toContainText("R$ 68,90");
+  await expect(row).toContainText("100%");
+  await expect(products).toContainText("Mostrando 1 a 1 de 1 produto vendido. 1 produto ativo no cardápio.");
+  await products.getByRole("button", { name: "Quantidade" }).click();
+  await expect(products.getByRole("button", { name: "Quantidade" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("region", { name: "Por categoria" })).toContainText("Pratos");
+  // O prato acabou de ser cadastrado: ainda não é candidato a sair.
+  await expect(page.getByRole("region", { name: "Vendem pouco" })).toContainText(
+    "Nenhum produto com mais de 30 dias no cardápio",
+  );
+  // No celular, a tabela rola dentro do bloco: a página não fica mais larga que a tela.
+  // (O celular alarga a própria área de layout quando a página passa da tela: compara com a tela.)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+
+  // A categoria fica no endereço; sem vendas nela, a tabela avisa.
+  await page.getByRole("combobox", { name: "Categoria" }).selectOption({ label: "Bebidas" });
+  await expect(page).toHaveURL(/categoria=/);
+  await expect(products).toContainText("Nenhum item vendido neste período");
 });
 
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {

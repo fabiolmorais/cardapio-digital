@@ -8,13 +8,14 @@
 --
 -- O que faz, num restaurante SEM nenhuma comanda (com comandas, para e não muda nada):
 -- - se faltarem, cria os setores Salão (12 mesas) e Deck (6 mesas), um cardápio genérico e três
---   garçons (sem PIN válido: servem só de nome nos relatórios);
+--   garçons (sem PIN válido: servem só de nome nos relatórios), cadastrados antes do ano de movimento;
 -- - cria, para cada dia dos últimos 365 (até ontem), as visitas do dia: comanda aberta e fechada,
 --   celular da mesa, pedidos (pelo celular ou lançados pelo garçom), itens com os horários de
 --   preparo, pronto e entregue (alguns cancelados, com motivo), chamados de garçom e de conta,
 --   pagamento e a taxa de serviço de 10% (aceita na maioria das mesas);
 -- - o movimento segue o dia da semana, o almoço e o jantar, e cresce ao longo do ano.
--- Determinístico (setseed): rodar em dois restaurantes novos gera os mesmos números.
+-- Determinístico (setseed): rodar em dois restaurantes novos gera os mesmos números. Os tokens das
+-- mesas e dos celulares vêm de gen_random_uuid() (fora do setseed), para não repetirem.
 -- Não cria rodízio nem dados novos da fase 2.
 
 \set ON_ERROR_STOP on
@@ -66,6 +67,7 @@ DECLARE
     v_by_phone   boolean;
     v_reason     text;
     v_prepaid    bigint;
+    v_since      timestamptz := now() - interval '366 days';
     i            int;
     o            int;
     k            int;
@@ -91,13 +93,14 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM dining_table WHERE establishment_id = v_est AND active) THEN
         FOR k IN 1..2 LOOP
             v_sector := gen_random_uuid();
-            INSERT INTO sector (id, establishment_id, name, position)
-            VALUES (v_sector, v_est, CASE k WHEN 1 THEN 'Salão' ELSE 'Deck' END, k - 1);
+            INSERT INTO sector (id, establishment_id, name, position, created_at)
+            VALUES (v_sector, v_est, CASE k WHEN 1 THEN 'Salão' ELSE 'Deck' END, k - 1, v_since);
             FOR i IN 1..(CASE k WHEN 1 THEN 12 ELSE 6 END) LOOP
-                INSERT INTO dining_table (id, establishment_id, sector_id, label, public_token, token_issued_at)
+                INSERT INTO dining_table (id, establishment_id, sector_id, label, public_token, token_issued_at,
+                                          created_at)
                 VALUES (gen_random_uuid(), v_est, v_sector,
                         CASE k WHEN 1 THEN lpad(i::text, 2, '0') ELSE 'D' || i END,
-                        md5(random()::text) || md5(random()::text), now());
+                        replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''), now(), v_since);
             END LOOP;
         END LOOP;
     END IF;
@@ -107,10 +110,11 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM product WHERE establishment_id = v_est AND active AND a_la_carte) THEN
         FOR k IN 1..5 LOOP
             v_category := gen_random_uuid();
-            INSERT INTO menu_category (id, establishment_id, name, position)
-            VALUES (v_category, v_est, (ARRAY['Pratos', 'Petiscos', 'Lanches', 'Bebidas', 'Sobremesas'])[k], k - 1);
-            INSERT INTO product (id, establishment_id, category_id, name, price_cents, position)
-            SELECT gen_random_uuid(), v_est, v_category, p.name, p.price, p.ord
+            INSERT INTO menu_category (id, establishment_id, name, position, created_at)
+            VALUES (v_category, v_est, (ARRAY['Pratos', 'Petiscos', 'Lanches', 'Bebidas', 'Sobremesas'])[k], k - 1,
+                    v_since);
+            INSERT INTO product (id, establishment_id, category_id, name, price_cents, position, created_at)
+            SELECT gen_random_uuid(), v_est, v_category, p.name, p.price, p.ord, v_since
             FROM (VALUES
                       (1, 'Prato da casa', 6890, 0), (1, 'Costela no bafo', 7990, 1), (1, 'Risoto de camarão', 6490, 2),
                       (1, 'Salada de quinoa', 3990, 3),
@@ -135,9 +139,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM membership WHERE establishment_id = v_est AND role = 'STAFF' AND active) THEN
         FOR k IN 1..3 LOOP
             v_waiter := gen_random_uuid();
-            INSERT INTO app_user (id, name) VALUES (v_waiter, (ARRAY['Carlos', 'Ana', 'Rodrigo'])[k]);
-            INSERT INTO membership (id, user_id, establishment_id, role, pin_hash)
-            VALUES (gen_random_uuid(), v_waiter, v_est, 'STAFF', 'seed-sem-pin');
+            INSERT INTO app_user (id, name, created_at) VALUES (v_waiter, (ARRAY['Carlos', 'Ana', 'Rodrigo'])[k], v_since);
+            INSERT INTO membership (id, user_id, establishment_id, role, pin_hash, created_at)
+            VALUES (gen_random_uuid(), v_waiter, v_est, 'STAFF', 'seed-sem-pin', v_since);
         END LOOP;
     END IF;
     SELECT array_agg(user_id ORDER BY created_at, user_id) INTO v_staff
@@ -168,7 +172,7 @@ BEGIN
             IF random() < 0.85 THEN
                 INSERT INTO table_session (id, establishment_id, table_id, token_hash, created_at, last_seen_at,
                                            expires_at, ended_at, presence_method, presence_confirmed_at, unlocked_by)
-                SELECT v_session, v_est, v_table, md5(random()::text) || md5(random()::text), v_opened, v_opened,
+                SELECT v_session, v_est, v_table, replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''), v_opened, v_opened,
                        v_opened + interval '4 hours', v_opened + interval '3 hours', m.method, v_opened,
                        CASE WHEN m.method = 'STAFF' THEN v_waiter END
                 FROM (SELECT CASE WHEN r < 0.81 THEN 'WIFI' WHEN r < 0.93 THEN 'GPS' ELSE 'STAFF' END AS method
