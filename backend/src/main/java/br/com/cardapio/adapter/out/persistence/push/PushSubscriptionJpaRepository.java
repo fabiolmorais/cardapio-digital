@@ -36,4 +36,12 @@ interface PushSubscriptionJpaRepository extends JpaRepository<PushSubscriptionJp
             """)
     List<PushSubscriptionJpaEntity> findForRoles(@Param("establishmentId") UUID establishmentId,
                                                  @Param("roles") List<String> roles);
+
+    /** Os navegadores destas pessoas neste restaurante. */
+    @Query("""
+            SELECT p FROM PushSubscriptionJpaEntity p
+             WHERE p.establishmentId = :establishmentId AND p.userId IN :userIds
+            """)
+    List<PushSubscriptionJpaEntity> findForUsers(@Param("establishmentId") UUID establishmentId,
+                                                 @Param("userIds") List<UUID> userIds);
 }

@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +65,12 @@ class PushServicesTest {
         public List<PushSubscription> findForRoles(EstablishmentId establishmentId, List<String> wanted) {
             return saved.values().stream().filter(s -> s.establishmentId().equals(establishmentId)
                     && wanted.contains(roles.get(s.userId()))).toList();
+        }
+
+        @Override
+        public List<PushSubscription> findForUsers(EstablishmentId establishmentId, Collection<UserId> users) {
+            return saved.values().stream().filter(s -> s.establishmentId().equals(establishmentId)
+                    && users.contains(s.userId())).toList();
         }
 
         @Override

@@ -31,8 +31,14 @@ public interface SalesReportPort {
     List<PaymentTotal> payments(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector);
 
     /** Por dia da semana e hora em que a comanda abriu (no fuso do período); só as horas com comandas. */
-    List<HourlyRevenue> revenueByWeekdayAndHour(EstablishmentId establishmentId, ReportPeriod period,
-                                                Optional<SectorId> sector);
+    default List<HourlyRevenue> revenueByWeekdayAndHour(EstablishmentId establishmentId, ReportPeriod period,
+                                                        Optional<SectorId> sector) {
+        return revenueByWeekdayAndHour(establishmentId, period.start(), period.end(), period.zone(), sector);
+    }
+
+    /** O mesmo, num intervalo [início, fim) qualquer (o "dia" do resumo diário, que não começa à meia-noite). */
+    List<HourlyRevenue> revenueByWeekdayAndHour(EstablishmentId establishmentId, Instant start, Instant end,
+                                                ZoneId zone, Optional<SectorId> sector);
 
     /** Os produtos que mais faturaram (sem os itens cancelados e sem as rodadas do rodízio). */
     List<ItemSales> topItems(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,

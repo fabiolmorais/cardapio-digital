@@ -79,6 +79,11 @@ import br.com.cardapio.application.service.report.GetMenuReportService;
 import br.com.cardapio.application.port.in.report.GetKitchenReportUseCase;
 import br.com.cardapio.application.port.out.report.KitchenReportPort;
 import br.com.cardapio.application.service.report.GetKitchenReportService;
+import br.com.cardapio.application.port.in.report.ManageDailySummaryUseCase;
+import br.com.cardapio.application.port.in.report.SendDailySummariesUseCase;
+import br.com.cardapio.application.port.out.report.DailySummaryPort;
+import br.com.cardapio.application.service.report.ManageDailySummaryService;
+import br.com.cardapio.application.service.report.SendDailySummariesService;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.application.service.report.GetOverviewReportService;
@@ -1121,6 +1126,32 @@ class UseCaseConfig {
                                                     KitchenReportPort kitchenReportPort, Clock clock) {
         return new GetKitchenReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, menuCategoryPort,
                 kitchenReportPort, clock);
+    }
+
+    @Bean
+    ManageDailySummaryUseCase manageDailySummaryUseCase(SubscriptionPort subscriptionPort,
+                                                        DailySummaryPort dailySummaryPort,
+                                                        SalesReportPort salesReportPort,
+                                                        KitchenReportPort kitchenReportPort,
+                                                        EmailSenderPort emailSenderPort,
+                                                        PushSubscriptionPort pushSubscriptionPort,
+                                                        PushSenderPort pushSenderPort, Clock clock,
+                                                        @Value("${app.public-url}") String publicUrl) {
+        return new ManageDailySummaryService(subscriptionPort, dailySummaryPort, salesReportPort, kitchenReportPort,
+                emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
+    }
+
+    @Bean
+    SendDailySummariesUseCase sendDailySummariesUseCase(SubscriptionPort subscriptionPort,
+                                                        DailySummaryPort dailySummaryPort,
+                                                        SalesReportPort salesReportPort,
+                                                        KitchenReportPort kitchenReportPort,
+                                                        EmailSenderPort emailSenderPort,
+                                                        PushSubscriptionPort pushSubscriptionPort,
+                                                        PushSenderPort pushSenderPort, Clock clock,
+                                                        @Value("${app.public-url}") String publicUrl) {
+        return new SendDailySummariesService(subscriptionPort, dailySummaryPort, salesReportPort, kitchenReportPort,
+                emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
     }
 
     @Bean

@@ -57,6 +57,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/daily-summary/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Como o resumo diário está e quem pode receber */
+        get: operations["getDailySummarySettings"];
+        /** Troca o horário, os canais e quem recebe */
+        put: operations["updateDailySummarySettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/rodizio/card": {
         parameters: {
             query?: never;
@@ -541,6 +559,23 @@ export interface paths {
         put?: never;
         /** Passo 1: pede a URL assinada para enviar o banner */
         post: operations["startRodizioBannerUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/daily-summary/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manda o resumo do último dia só para mim */
+        post: operations["sendDailySummaryTest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1649,6 +1684,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/daily-summary/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O resumo do último dia que já terminou */
+        get: operations["previewDailySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/context": {
         parameters: {
             query?: never;
@@ -2437,6 +2489,38 @@ export interface components {
             /** Format: int64 */
             defaultPriceCents: number;
             prices: components["schemas"]["RodizioSpecialPrice"][];
+        };
+        DailySummarySettingsRequest: {
+            emailEnabled: boolean;
+            pushEnabled: boolean;
+            /**
+             * Format: int32
+             * @example 2
+             */
+            sendHour: number;
+            /** @description Quem recebe (donos e gerentes) */
+            receiverIds: string[];
+        };
+        /** @description Um dono ou gerente que pode receber o resumo */
+        DailySummaryRecipient: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            /** @enum {string} */
+            role: "OWNER" | "MANAGER";
+            /** @description Sem e-mail (entra só pelo PIN): só no celular */
+            hasEmail: boolean;
+            receives: boolean;
+        };
+        DailySummarySettings: {
+            emailEnabled: boolean;
+            pushEnabled: boolean;
+            /**
+             * Format: int32
+             * @description A hora do envio, no fuso do restaurante (0 a 23)
+             */
+            sendHour: number;
+            recipients: components["schemas"]["DailySummaryRecipient"][];
         };
         RodizioCardRequest: {
             /**
@@ -3390,6 +3474,15 @@ export interface components {
             };
             /** Format: date-time */
             expiresAt: string;
+        };
+        DailySummaryTestResult: {
+            /** @description O e-mail saiu */
+            email: boolean;
+            /**
+             * Format: int32
+             * @description Em quantos aparelhos o aviso chegou
+             */
+            pushDevices: number;
         };
         PushSubscriptionKeys: {
             /** @description A chave pública do navegador, em base64url */
@@ -4428,6 +4521,50 @@ export interface components {
              */
             worstHour?: number;
         };
+        /** @description O resumo de um dia, como sai no e-mail */
+        DailySummary: {
+            establishmentName: string;
+            /**
+             * Format: date
+             * @description O dia em que a janela começa
+             */
+            day: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            current: components["schemas"]["ReportTotals"];
+            /** @description O mesmo dia da semana anterior */
+            compared: components["schemas"]["ReportTotals"];
+            /** Format: int64 */
+            averagePrepSeconds?: number;
+            /** Format: int64 */
+            comparedAveragePrepSeconds?: number;
+            champion?: components["schemas"]["ReportItem"];
+            peak?: components["schemas"]["DailySummaryPeak"];
+            attention?: components["schemas"]["DailySummaryAttention"];
+            payments: components["schemas"]["ReportPayment"][];
+        };
+        /** @description O item que demorou bem mais que o normal */
+        DailySummaryAttention: {
+            name: string;
+            /** Format: int64 */
+            dayAverageSeconds: number;
+            /**
+             * Format: int64
+             * @description A média dos 28 dias antes
+             */
+            usualAverageSeconds: number;
+        };
+        /** @description A hora em que chegaram as mesas que mais faturaram */
+        DailySummaryPeak: {
+            /** Format: int32 */
+            hour: number;
+            /** Format: int64 */
+            revenueCents: number;
+            /** Format: int32 */
+            tabs: number;
+        };
         /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
         ReportContext: {
             /**
@@ -5233,6 +5370,86 @@ export interface operations {
                 content?: never;
             };
             /** @description Não é um rodízio deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getDailySummarySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A configuração */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySummarySettings"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateDailySummarySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailySummarySettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Salva */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySummarySettings"];
+                };
+            };
+            /** @description Hora fora de 0 a 23 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Quem recebe não é dono nem gerente do restaurante */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6767,6 +6984,35 @@ export interface operations {
             };
             /** @description Não é um rodízio deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    sendDailySummaryTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Para onde o teste saiu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySummaryTestResult"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9828,6 +10074,35 @@ export interface operations {
             };
             /** @description Período fora do histórico do plano ou no futuro */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    previewDailySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O resumo, como sairia agora */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySummary"];
+                };
+            };
+            /** @description O plano não tem relatórios */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
