@@ -706,3 +706,108 @@ test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamad
   );
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
+
+test("Mesas e ocupação: o Pro vê que é do Business e o Business vê o mapa do salão, a ocupação e as esquecidas", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/mesas?periodo=today");
+  await expect(page.getByRole("region", { name: "Mesas e ocupação é um relatório do Business" })).toContainText(
+    "mapa do salão",
+  );
+
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, level: "FULL", firstDataDay: body.today } });
+  });
+  const table = (label: string, sector: string, tabs: number, revenueCents: number) => ({
+    label,
+    sector,
+    tabs,
+    revenueCents,
+    ticketCents: Math.round(revenueCents / tabs),
+  });
+  await page.route("**/api/v1/reports/tables?**", async (route) => {
+    const day = new URL(route.request().url()).searchParams.get("from");
+    await route.fulfill({
+      json: {
+        period: { from: day, to: day },
+        comparison: { from: day, to: day },
+        current: {
+          tabs: 120,
+          staySeconds: 5640,
+          rodizioStaySeconds: 7500,
+          aLaCarteStaySeconds: 4680,
+          turnover: 3.3,
+          perOccupiedHourCents: 7400,
+        },
+        compared: { tabs: 110, staySeconds: 5500, turnover: 3.1, perOccupiedHourCents: 6900 },
+        tables: [
+          table("01", "Salão", 98, 1787500),
+          table("02", "Salão", 76, 894000),
+          table("03", "Salão", 70, 731000),
+          table("D1", "Deck", 61, 931000),
+          table("D5", "Deck", 39, 399000),
+        ],
+        occupancyByHour: [
+          { hour: 0, share: 0.12 },
+          { hour: 20, share: 0.71 },
+          { hour: 21, share: 0.78 },
+          { hour: 23, share: 0.4 },
+        ],
+        peak: { weekday: "SATURDAY", hour: 21, share: 0.89 },
+        forgottenCount: 2,
+        forgotten: [
+          { tabId: "00000000-0000-4000-8000-0000000000d3", label: "D3", openedAt: "2026-11-18T01:10:00Z" },
+          {
+            tabId: "00000000-0000-4000-8000-000000000007",
+            label: "07",
+            openedAt: "2026-11-16T02:40:00Z",
+            closedAt: "2026-11-16T15:05:00Z",
+          },
+        ],
+        moves: { moves: 46, merges: 12, topFrom: "D5", topFromMoves: 14 },
+      },
+    });
+  });
+  await page.reload();
+
+  const numbers = page.getByRole("region", { name: "Mesas e ocupação", exact: true });
+  await expect(numbers).toContainText("Permanência média1 h 34 minrodízio: 2 h 05 min · à la carte: 1 h 18 min");
+  await expect(numbers).toContainText("Giro de mesa3,3▲ 0,2");
+  await expect(numbers).toContainText("Pico de ocupação89%sábado, 21h");
+  await expect(numbers).toContainText("Por hora de mesa ocupadaR$ 74,00▲ R$ 5,00");
+
+  // O mapa do salão troca o que mostra: faturamento, comandas e tíquete.
+  const salao = page.getByRole("region", { name: "Salão", exact: true });
+  await expect(salao.getByRole("listitem").first()).toContainText("01R$ 17.875");
+  await page.getByRole("button", { name: "Comandas", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Comandas", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(salao.getByRole("listitem").first()).toContainText("0198 comandas");
+  await page.getByRole("button", { name: "Tíquete", exact: true }).click();
+  await expect(salao.getByRole("listitem").first()).toContainText("01R$ 182");
+  await expect(page.getByRole("region", { name: "O salão no período" })).toContainText(
+    "Mais: 01, D1 e 02. Menos: D5 e 03.",
+  );
+
+  // As horas na ordem do expediente: das 20h à meia-noite.
+  const hours = page.getByRole("group", { name: /Ocupação média por hora/ }).getByRole("button");
+  await expect(hours.first()).toHaveAccessibleName("20h: 71% das mesas ocupadas");
+  await expect(hours.last()).toHaveAccessibleName("0h: 12% das mesas ocupadas");
+
+  const forgotten = page.getByRole("region", { name: "Comandas esquecidas abertas" });
+  await expect(forgotten).toContainText("Mesa D3 · aberta 17/11, 22h10ainda aberta");
+  await expect(forgotten).toContainText("Mesa 07 · aberta 15/11, 23h40fechou 16/11, 12h05");
+  await expect(forgotten.getByRole("link", { name: "Ver a comanda da mesa D3" })).toHaveAttribute(
+    "href",
+    "/painel/comandas/00000000-0000-4000-8000-0000000000d3",
+  );
+  const moves = page.getByRole("region", { name: "Mudanças de mesa" });
+  await expect(moves).toContainText("Mudanças46 · 46,0 por dia");
+  await expect(moves).toContainText("Mesa de onde mais saemD5 · 14");
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});

@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
+import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
 import br.com.cardapio.application.port.in.report.KitchenReportQuery;
 import br.com.cardapio.application.port.in.report.MenuReportQuery;
@@ -53,15 +54,18 @@ class ReportController {
     private final GetMenuReportUseCase menu;
     private final GetKitchenReportUseCase kitchen;
     private final GetTeamReportUseCase team;
+    private final GetTableReportUseCase tables;
 
     ReportController(GetReportContextUseCase context, GetOverviewReportUseCase overview, GetSalesReportUseCase sales,
-                     GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen, GetTeamReportUseCase team) {
+                     GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen, GetTeamReportUseCase team,
+                     GetTableReportUseCase tables) {
         this.context = context;
         this.overview = overview;
         this.sales = sales;
         this.menu = menu;
         this.kitchen = kitchen;
         this.team = team;
+        this.tables = tables;
     }
 
     @GetMapping("/context")
@@ -190,6 +194,24 @@ class ReportController {
                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                             @RequestParam(required = false) UUID sectorId) {
         return TeamReportResponse.from(team.get(query(jwt, from, to, sectorId)));
+    }
+
+    @GetMapping("/tables")
+    @Operation(operationId = "getTableReport", summary = "Mesas e ocupação do período (Business)")
+    @ApiResponse(responseCode = "200", description = "A permanência, o giro, o mapa do salão e a ocupação")
+    @ApiResponse(responseCode = "400", description = "Datas inválidas ou período de mais de 12 meses", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "O plano não tem este relatório (é do Business)", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Setor não encontrado", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    TableReportResponse tables(@AuthenticationPrincipal Jwt jwt,
+                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                               @RequestParam(required = false) UUID sectorId) {
+        return TableReportResponse.from(tables.get(query(jwt, from, to, sectorId)));
     }
 
     /** A ordem da tabela de produtos (pelo crescimento: Business). */

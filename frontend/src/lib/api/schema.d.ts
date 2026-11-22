@@ -1634,6 +1634,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mesas e ocupação do período (Business) */
+        get: operations["getTableReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/sales": {
         parameters: {
             query?: never;
@@ -4460,6 +4477,112 @@ export interface components {
             warningsConfirmed: number;
             /** @description As horas com mais chamados por pessoa do salão no turno */
             busiestShifts: components["schemas"]["ReportShiftLoad"][];
+        };
+        /** @description Uma comanda aberta tempo demais */
+        ReportForgottenTab: {
+            /** Format: uuid */
+            tabId: string;
+            label: string;
+            /** Format: date-time */
+            openedAt: string;
+            /**
+             * Format: date-time
+             * @description null: ainda aberta
+             */
+            closedAt?: string;
+        };
+        /** @description A fração das mesas ocupadas numa hora (0 a 1) */
+        ReportOccupancyHour: {
+            /** Format: int32 */
+            hour: number;
+            /** Format: double */
+            share: number;
+        };
+        /** @description O dia da semana e a hora mais cheios */
+        ReportOccupancyPeak: {
+            /** @enum {string} */
+            weekday: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+            /** Format: int32 */
+            hour: number;
+            /** Format: double */
+            share: number;
+        };
+        /** @description As comandas fechadas e o tempo de mesa */
+        ReportStays: {
+            /** Format: int32 */
+            tabs: number;
+            /**
+             * Format: int64
+             * @description Da abertura ao fechamento, em média
+             */
+            staySeconds?: number;
+            /**
+             * Format: int64
+             * @description Só as comandas com rodízio
+             */
+            rodizioStaySeconds?: number;
+            /**
+             * Format: int64
+             * @description Só as sem rodízio
+             */
+            aLaCarteStaySeconds?: number;
+            /**
+             * Format: double
+             * @description Comandas por mesa por dia; null sem mesas
+             */
+            turnover?: number;
+            /**
+             * Format: int64
+             * @description Faturamento por hora de mesa ocupada; null sem comandas
+             */
+            perOccupiedHourCents?: number;
+        };
+        /** @description Mudanças de mesa e junções de comandas */
+        ReportTableMoves: {
+            /** Format: int32 */
+            moves: number;
+            /** Format: int32 */
+            merges: number;
+            /** @description A mesa de onde o grupo mais saiu; null sem mudanças */
+            topFrom?: string;
+            /** Format: int32 */
+            topFromMoves: number;
+        };
+        /** @description Uma mesa: comandas fechadas e faturamento */
+        ReportTableUsage: {
+            label: string;
+            sector: string;
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int64 */
+            revenueCents: number;
+            /**
+             * Format: int64
+             * @description Tíquete médio; null sem comandas
+             */
+            ticketCents?: number;
+        };
+        /** @description Mesas e ocupação (Business) */
+        TableReport: {
+            period: components["schemas"]["ReportRange"];
+            comparison: components["schemas"]["ReportRange"];
+            current: components["schemas"]["ReportStays"];
+            /** @description A comparação; se o período termina hoje, até a mesma hora */
+            compared: components["schemas"]["ReportStays"];
+            /** @description As mesas ativas, por setor, para o mapa do salão */
+            tables: components["schemas"]["ReportTableUsage"][];
+            /** @description A ocupação média por hora do dia, nos dias com movimento */
+            occupancyByHour: components["schemas"]["ReportOccupancyHour"][];
+            /** @description A hora da semana mais cheia; null sem comandas */
+            peak?: components["schemas"]["ReportOccupancyPeak"];
+            /**
+             * Format: int32
+             * @description Comandas abertas no período há mais de 6 horas
+             */
+            forgottenCount: number;
+            /** @description As mais recentes */
+            forgotten: components["schemas"]["ReportForgottenTab"][];
+            moves: components["schemas"]["ReportTableMoves"];
         };
         ReportBestDay: {
             /** Format: date */
@@ -10365,6 +10488,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem este relatório (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getTableReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A permanência, o giro, o mapa do salão e a ocupação */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableReport"];
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
