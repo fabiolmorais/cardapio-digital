@@ -3,6 +3,7 @@ package br.com.cardapio.application.port.out.report;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.SectorId;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
+import br.com.cardapio.domain.report.model.PrepAverage;
 import br.com.cardapio.domain.report.model.PrepTime;
 
 import java.time.Instant;
@@ -21,4 +22,8 @@ public interface KitchenReportPort {
      */
     List<PrepTime> prepTimes(EstablishmentId establishmentId, Instant start, Instant end, ZoneId zone,
                              Optional<SectorId> sector, Optional<MenuCategoryId> category);
+
+    /** O mesmo recorte, já somado por produto: quantos preparos e a média (para os períodos longos). */
+    List<PrepAverage> averages(EstablishmentId establishmentId, Instant start, Instant end,
+                               Optional<SectorId> sector);
 }

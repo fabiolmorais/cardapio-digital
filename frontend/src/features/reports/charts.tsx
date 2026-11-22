@@ -74,7 +74,7 @@ export function variation(current: number, previous: number) {
     : { text: t.delta.down(value), tone: "down" as const };
 }
 
-export type Delta = ReturnType<typeof variation>;
+export type Delta = { text: string; tone: "up" | "down" | "flat" };
 
 /**
  * Um número do período. Com `previous`, a variação percentual embaixo; com `delta`, uma variação já

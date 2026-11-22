@@ -26,12 +26,15 @@ record OverviewReportResponse(
         @Schema(requiredMode = REQUIRED) List<Day> byDay,
         @Schema(requiredMode = REQUIRED) List<Payment> payments,
         @Schema(requiredMode = REQUIRED, description = "Só as células com venda") List<HeatCell> heatmap,
-        @Schema(requiredMode = REQUIRED) List<Item> topItems) {
+        @Schema(requiredMode = REQUIRED) List<Item> topItems,
+        @Schema(description = "Os blocos do Business; null no Pro (o dado não sai do servidor)")
+        OverviewFullDtos.Full full) {
 
     static OverviewReportResponse from(OverviewReport r) {
         return new OverviewReportResponse(Level.valueOf(r.level().name()), Range.of(r.period()),
                 Range.of(r.comparison()), Totals.of(r.current()), Totals.of(r.compared()),
                 r.byDay().stream().map(Day::of).toList(), r.payments().stream().map(Payment::of).toList(),
-                r.heatmap().stream().map(HeatCell::of).toList(), r.topItems().stream().map(Item::of).toList());
+                r.heatmap().stream().map(HeatCell::of).toList(), r.topItems().stream().map(Item::of).toList(),
+                r.full() == null ? null : OverviewFullDtos.Full.of(r.full()));
     }
 }

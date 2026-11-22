@@ -1991,6 +1991,75 @@ export const messages = {
       cell: (weekday: string, hour: number, amount: string) => `${weekday}, ${hour}h: ${amount} em média`,
       chart: (peaks: string) => `Mapa de calor das vendas. Os maiores picos: ${peaks}.`,
     },
+    full: {
+      toTable: "Tempo até a mesa",
+      phoneOrders: "Pedidos pelo celular",
+      callResponse: "Resposta ao chamado",
+      stay: "Permanência média",
+      canceled: "Valor cancelado",
+      noValue: "—",
+      noDeliveries: "sem entregas no período",
+      noCalls: "sem chamados atendidos",
+      noOrders: "sem pedidos no período",
+      noClosed: "sem comandas fechadas",
+      points: (value: number) => (value === 1 ? "1 ponto" : `${value} pontos`),
+      pointsUp: (value: string) => `▲ ${value}`,
+      pointsDown: (value: string) => `▼ ${value}`,
+      timeUp: (value: string) => `▲ ${value}`,
+      timeDown: (value: string) => `▼ ${value}`,
+      ofRevenue: (percent: string) => `${percent} do faturamento`,
+      today: {
+        title: "Hoje, até agora",
+        at: (weekday: string, time: string) => `${weekday}, ${time}`,
+        of: (expected: string) => ` de ${expected} previstos`,
+        chart: (soFar: string, expected: string) => `${soFar} de ${expected} previstos para hoje`,
+        /** isoWeekday: 1 = segunda … 7 = domingo (sábado e domingo são masculinos). */
+        note: (weeks: number, isoWeekday: number, usual: string) => {
+          const one = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"][isoWeekday - 1];
+          const many = ["segundas", "terças", "quartas", "quintas", "sextas", "sábados", "domingos"][isoWeekday - 1];
+          const male = isoWeekday >= 6;
+          const which =
+            weeks === 1
+              ? `${male ? "do último" : "da última"} ${one}`
+              : `${male ? "dos últimos" : "das últimas"} ${weeks} ${many}`;
+          const was = weeks === 1 ? (male ? "ele estava" : "ela estava") : male ? "eles estavam" : "elas estavam";
+          return `Previsão pela média ${which} com movimento. Nesse horário, ${was} em ${usual}`;
+        },
+        above: (percent: string) => `: hoje está ${percent} acima.`,
+        below: (percent: string) => `: hoje está ${percent} abaixo.`,
+        same: ": hoje está igual.",
+        nothingYet: ": hoje ainda não fechou nenhuma comanda.",
+        empty: "Ainda não há o mesmo dia da semana com movimento nas últimas 4 semanas para prever.",
+      },
+      waiters: {
+        title: "Garçons do período",
+        hint: "chamados atendidos",
+        columns: { name: "Garçom", calls: "Chamados", response: "Resposta" },
+        empty: "Nenhum chamado atendido no período",
+      },
+      attention: {
+        title: "Pontos de atenção",
+        empty: "Nada fora do normal no período.",
+        slowText: (day: string, usual: string) => ` levou ${day} em média (normal: ${usual}).`,
+        forgotten: (count: number) => (count === 1 ? "1 comanda" : `${count} comandas`),
+        forgottenText: (tables: string) => ` ficaram abertas de um dia para o outro (${tables}).`,
+        tables: (names: string[], more: number) =>
+          `${names.length === 1 && more === 0 ? "Mesa" : "Mesas"} ${names.join(", ")}${more > 0 ? ` e mais ${more}` : ""}`,
+        canceledText: (times: number, reason: string | null, reasonTimes: number) =>
+          ` foi cancelado ${times} vezes${reason ? `, ${reasonTimes} por "${reason}"` : ""}.`,
+      },
+      locked: {
+        badge: "Business",
+        more: "Conhecer o Business",
+        moreNumbers: "Mais 5 números",
+        moreNumbersText: "Tempo até a mesa, pedidos pelo celular, resposta ao chamado, permanência e valor cancelado.",
+        today:
+          "A previsão do dia pelas últimas semanas: quanto a casa costuma fechar num dia como hoje e onde ela está agora.",
+        waiters: "Chamados atendidos e tempo de resposta de cada garçom.",
+        attention: "Pratos que atrasaram, comandas esquecidas abertas e itens muito cancelados, sem precisar procurar.",
+        label: (title: string) => `${title} (disponível no Business)`,
+      },
+    },
     topItems: {
       title: "Itens mais vendidos",
       note: "Por faturamento, sem os itens cancelados.",

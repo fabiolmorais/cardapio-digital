@@ -1,5 +1,6 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.out.report.OperationReportPort;
 import br.com.cardapio.application.port.out.device.StaffShiftPort;
 import br.com.cardapio.application.port.out.menu.ProductStatusHistoryPort;
 import br.com.cardapio.application.port.out.rodizio.RodizioCardHistoryPort;
@@ -1133,9 +1134,10 @@ class UseCaseConfig {
     GetOverviewReportUseCase getOverviewReportUseCase(SubscriptionPort subscriptionPort,
                                                       EstablishmentTimeZonePort establishmentTimeZonePort,
                                                       SectorPort sectorPort, SalesReportPort salesReportPort,
-                                                      Clock clock) {
+                                                      OperationReportPort operationReportPort,
+                                                      KitchenReportPort kitchenReportPort, Clock clock) {
         return new GetOverviewReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
-                clock);
+                operationReportPort, kitchenReportPort, clock);
     }
 
     @Bean

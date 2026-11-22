@@ -259,6 +259,86 @@ test("Resumo diário pelo submenu: muda o horário e quem recebe, e manda um tes
   );
 });
 
+test("no Pro, a Visão geral mostra os blocos do Business bloqueados", async ({ page, request, browser }) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios?periodo=today");
+  await expect(page.getByRole("region", { name: "Visão geral" })).toContainText("FaturamentoR$ 68,90");
+  for (const block of ["Mais 5 números", "Hoje, até agora", "Garçons do período", "Pontos de atenção"]) {
+    const locked = page.getByRole("region", { name: `${block} (disponível no Business)` });
+    await expect(locked).toBeVisible();
+    await expect(locked.getByRole("link", { name: "Conhecer o Business" })).toHaveAttribute(
+      "href",
+      "/admin/assinatura",
+    );
+  }
+});
+
+test("no Business, a Visão geral mostra a operação, hoje até agora, os garçons e os pontos de atenção", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  // O plano vem do back; aqui, o nível do Business e os blocos dele, como o back os manda.
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
+  });
+  const operation = {
+    toTableSeconds: 1080,
+    phoneOrders: 68,
+    staffOrders: 32,
+    phoneSharePercent: 68,
+    callResponseSeconds: 102,
+    staySeconds: 5640,
+    canceledCents: 61200,
+  };
+  await page.route("**/api/v1/reports/overview?**", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      json: {
+        ...(await response.json()),
+        level: "FULL",
+        full: {
+          current: operation,
+          compared: { ...operation, toTableSeconds: 1200, phoneSharePercent: 63, callResponseSeconds: 90 },
+          today: { soFarCents: 612000, expectedCents: 940000, usualCents: 584000, weeks: 4 },
+          waiters: [{ userId: crypto.randomUUID(), name: "Carlos", calls: 168, averageResponseSeconds: 81 }],
+          attention: [
+            { kind: "SLOW_ITEM", name: "Guioza", dayAverageSeconds: 1860, usualAverageSeconds: 840 },
+            { kind: "FORGOTTEN_TABS", tables: ["07", "D3"] },
+            { kind: "CANCELED_PRODUCT", name: "Temaki salmão", times: 9, reason: "Acabou o salmão", reasonTimes: 7 },
+          ],
+        },
+      },
+    });
+  });
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios?periodo=today");
+  const numbers = page.getByRole("region", { name: "Visão geral" });
+  await expect(numbers).toContainText("Tempo até a mesa18 min▼ 2 min, mais rápido");
+  await expect(numbers).toContainText("Pedidos pelo celular68%▲ 5 pontos");
+  await expect(numbers).toContainText("Resposta ao chamado1 min 42 s▲ 12 s, mais lento");
+  await expect(numbers).toContainText("Permanência média1 h 34 min");
+  await expect(numbers).toContainText("Valor cancelado");
+  const today = page.getByRole("region", { name: "Hoje, até agora" });
+  await expect(today).toContainText("R$ 6.120,00 de R$ 9.400,00 previstos");
+  await expect(today).toContainText("Nesse horário,");
+  await expect(today).toContainText("hoje está 4,8% acima.");
+  await expect(page.getByRole("region", { name: "Garçons do período" })).toContainText("Carlos1681 min 21 s");
+  const attention = page.getByRole("region", { name: "Pontos de atenção" });
+  await expect(attention).toContainText("Guioza levou 31 min em média (normal: 14 min).");
+  await expect(attention).toContainText("2 comandas ficaram abertas de um dia para o outro (Mesas 07, D3).");
+  await expect(attention).toContainText('Temaki salmão foi cancelado 9 vezes, 7 por "Acabou o salmão".');
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});
+
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {
   const { email } = await createAccount(request);
   // O plano vem do back; aqui, o mesmo contexto com o nível do Essencial.
