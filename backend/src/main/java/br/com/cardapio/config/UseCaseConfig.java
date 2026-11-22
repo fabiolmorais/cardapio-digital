@@ -1,5 +1,8 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
+import br.com.cardapio.application.port.out.report.TeamReportPort;
+import br.com.cardapio.application.service.report.GetTeamReportService;
 import br.com.cardapio.application.port.out.report.OperationReportPort;
 import br.com.cardapio.application.port.out.device.StaffShiftPort;
 import br.com.cardapio.application.port.out.menu.ProductStatusHistoryPort;
@@ -1156,6 +1159,13 @@ class UseCaseConfig {
                                                     KitchenReportPort kitchenReportPort, Clock clock) {
         return new GetKitchenReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, menuCategoryPort,
                 kitchenReportPort, clock);
+    }
+
+    @Bean
+    GetTeamReportUseCase getTeamReportUseCase(SubscriptionPort subscriptionPort,
+                                              EstablishmentTimeZonePort establishmentTimeZonePort,
+                                              SectorPort sectorPort, TeamReportPort teamReportPort, Clock clock) {
+        return new GetTeamReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, teamReportPort, clock);
     }
 
     @Bean

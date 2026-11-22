@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumn, Check } from "lucide-react";
+import { ChartColumn, Check, Lock } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -24,21 +24,54 @@ export type ReportFilters = ReturnType<typeof useReportFilters>;
 export function ReportsScreen({
   title,
   filter,
+  businessOnly,
   children,
 }: {
   title: string;
   /** Um filtro a mais, só desta tela (a categoria, no Cardápio). */
   filter?: (filters: ReportFilters) => ReactNode;
+  /** A tela é toda do Business: no Pro, só o que ela traz (o texto) e o "Conhecer o Business". */
+  businessOnly?: string;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
   return (
     <ReportsGate>
-      {(context) => (
-        <Screen title={title} context={context} filter={filter}>
-          {children}
-        </Screen>
-      )}
+      {(context) =>
+        businessOnly && context.level !== "FULL" ? (
+          <BusinessOnly title={title} text={businessOnly} />
+        ) : (
+          <Screen title={title} context={context} filter={filter}>
+            {children}
+          </Screen>
+        )
+      }
     </ReportsGate>
+  );
+}
+
+/** Uma tela só do Business, vista no Pro: o que ela traz e o caminho para o plano. */
+function BusinessOnly({ title, text }: { title: string; text: string }) {
+  const b = t.businessOnly;
+  return (
+    <div className="flex flex-col gap-5 px-4 py-6 sm:px-7">
+      <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{title}</h1>
+      <section
+        aria-labelledby="relatorio-business"
+        className="flex flex-col gap-3 rounded-[20px] border border-dashed border-border bg-secondary/40 p-6 sm:p-8"
+      >
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-info/15 px-2.5 py-0.5 text-xs font-semibold text-info">
+          <Lock aria-hidden className="size-3.5" />
+          {b.badge}
+        </span>
+        <h2 id="relatorio-business" className="max-w-2xl text-xl leading-7 font-bold">
+          {b.title(title)}
+        </h2>
+        <p className="max-w-2xl text-muted-foreground">{text}</p>
+        <Link href="/admin/assinatura" className={cn(buttonVariants(), "mt-1 h-11 w-fit")}>
+          {b.more}
+        </Link>
+      </section>
+    </div>
   );
 }
 
