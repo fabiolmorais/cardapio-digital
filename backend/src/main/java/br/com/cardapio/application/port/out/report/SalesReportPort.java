@@ -2,12 +2,17 @@ package br.com.cardapio.application.port.out.report;
 
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.report.model.AdvancePayments;
+import br.com.cardapio.domain.report.model.CancelReasonTotal;
 import br.com.cardapio.domain.report.model.DailyRevenue;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
+import br.com.cardapio.domain.report.model.PerPersonTicket;
 import br.com.cardapio.domain.report.model.ReportPeriod;
 import br.com.cardapio.domain.report.model.ReportTotals;
+import br.com.cardapio.domain.report.model.SectorSales;
+import br.com.cardapio.domain.report.model.TableSales;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -43,4 +48,27 @@ public interface SalesReportPort {
     /** Os produtos que mais faturaram (sem os itens cancelados e sem as rodadas do rodízio). */
     List<ItemSales> topItems(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
                              int limit);
+
+    /** Por setor (o nome de hoje), com as mesas ativas de cada um; setores sem venda entram com zero. */
+    List<SectorSales> bySector(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector);
+
+    /** As mesas que mais faturaram (o nome e o setor de hoje). */
+    List<TableSales> topTables(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
+                               int limit);
+
+    /** As comandas com rodízio: o faturamento e as pessoas do rodízio. */
+    PerPersonTicket rodizioTicket(EstablishmentId establishmentId, Instant start, Instant end,
+                                  Optional<SectorId> sector);
+
+    /** As comandas sem rodízio em que o garçom informou as pessoas: o faturamento e as pessoas. */
+    PerPersonTicket peopleTicket(EstablishmentId establishmentId, Instant start, Instant end,
+                                 Optional<SectorId> sector);
+
+    /** Os pagamentos recebidos antes do fechamento da comanda: quantas comandas e quanto. */
+    AdvancePayments advancePayments(EstablishmentId establishmentId, Instant start, Instant end,
+                                    Optional<SectorId> sector);
+
+    /** Os itens cancelados nas comandas fechadas, somados por motivo (null: sem motivo). */
+    List<CancelReasonTotal> canceledByReason(EstablishmentId establishmentId, Instant start, Instant end,
+                                             Optional<SectorId> sector);
 }

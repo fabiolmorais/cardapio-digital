@@ -4328,6 +4328,13 @@ export interface components {
             /** Format: int64 */
             revenueCents: number;
         };
+        /** @description O valor cancelado por motivo */
+        ReportCancelReason: {
+            /** @description null: os outros motivos e os sem motivo */
+            reason?: string;
+            /** Format: int64 */
+            amountCents: number;
+        };
         /** @description Uma hora do dia, em média por dia do período */
         ReportHour: {
             /** Format: int32 */
@@ -4336,12 +4343,39 @@ export interface components {
             revenuePerDayCents: number;
             tabsPerDay: number;
         };
+        /** @description O tíquete por pessoa */
+        ReportPerPerson: {
+            /** Format: int64 */
+            revenueCents: number;
+            /** Format: int32 */
+            people: number;
+            /**
+             * Format: int64
+             * @description null: ninguém contado
+             */
+            averageCents?: number;
+        };
         /** @description Dias do restaurante, do primeiro ao último (inclusive) */
         ReportRange: {
             /** Format: date */
             from: string;
             /** Format: date */
             to: string;
+        };
+        /** @description Um setor: o faturamento e as mesas ativas */
+        ReportSector: {
+            /** Format: uuid */
+            sectorId: string;
+            name: string;
+            /** Format: int32 */
+            tables: number;
+            /** Format: int64 */
+            revenueCents: number;
+            /**
+             * Format: int64
+             * @description Por mesa, por dia do período
+             */
+            perTablePerDayCents: number;
         };
         /** @description Um dia, uma semana ou um mês do período */
         ReportSeriesPoint: {
@@ -4354,6 +4388,19 @@ export interface components {
             /** Format: int32 */
             tabs: number;
         };
+        /** @description Uma mesa: comandas, tíquete e faturamento */
+        ReportTable: {
+            /** Format: uuid */
+            tableId: string;
+            label: string;
+            sector: string;
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int64 */
+            averageTicketCents: number;
+            /** Format: int64 */
+            revenueCents: number;
+        };
         /** @description As comandas fechadas do período */
         ReportTotals: {
             /**
@@ -4365,6 +4412,33 @@ export interface components {
             tabs: number;
             /** Format: int64 */
             averageTicketCents: number;
+        };
+        /** @description Os blocos do Business */
+        SalesFull: {
+            bySector: components["schemas"]["ReportSector"][];
+            topTables: components["schemas"]["ReportTable"][];
+            /** @description Comandas com rodízio */
+            rodizio: components["schemas"]["ReportPerPerson"];
+            comparedRodizio: components["schemas"]["ReportPerPerson"];
+            /** @description Fora do rodízio, com as pessoas informadas */
+            people: components["schemas"]["ReportPerPerson"];
+            comparedPeople: components["schemas"]["ReportPerPerson"];
+            /**
+             * Format: int32
+             * @description Comandas que pagaram antes de fechar
+             */
+            advanceTabs: number;
+            /** Format: int64 */
+            advanceCents: number;
+            /**
+             * Format: int64
+             * @description Itens cancelados nas comandas fechadas
+             */
+            canceledCents: number;
+            /** Format: int64 */
+            comparedCanceledCents: number;
+            /** @description Os motivos que mais cancelaram e, por último, os outros */
+            reasons: components["schemas"]["ReportCancelReason"][];
         };
         /** @description Vendas, com os blocos básicos */
         SalesReport: {
@@ -4388,6 +4462,8 @@ export interface components {
              * @description A hora com mais faturamento médio por dia; ausente sem vendas
              */
             peakHour?: number;
+            /** @description Os blocos do Business; null no Pro (o dado não sai do servidor) */
+            full?: components["schemas"]["SalesFull"];
         };
         /** @description Os blocos do Business */
         OverviewFull: {

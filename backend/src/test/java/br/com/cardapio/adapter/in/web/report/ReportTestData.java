@@ -265,6 +265,28 @@ final class ReportTestData {
         return user;
     }
 
+    /** O rodízio na comanda, com as faixas de pessoas (cada número, uma faixa). */
+    void rodizio(Owner owner, UUID tab, Instant started, int... guests) {
+        UUID rodizio = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO rodizio (id, establishment_id, name, type, created_at) VALUES (?, ?, 'Rodízio', 'A_LA_MINUTE', ?)
+                """, rodizio, owner.establishmentId(), Timestamp.from(started));
+        UUID tabRodizio = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO tab_rodizio (id, establishment_id, tab_id, rodizio_id, rodizio_name, activated_by, started_at,
+                                         status_changed_at)
+                VALUES (?, ?, ?, ?, 'Rodízio', ?, ?, ?)
+                """, tabRodizio, owner.establishmentId(), tab, rodizio, owner.userId(), Timestamp.from(started),
+                Timestamp.from(started));
+        for (int i = 0; i < guests.length; i++) {
+            jdbc.update("""
+                    INSERT INTO tab_rodizio_guest (tab_rodizio_id, position, establishment_id, tier_name, quantity,
+                                                   unit_price_cents)
+                    VALUES (?, ?, ?, ?, ?, 9990)
+                    """, tabRodizio, i, owner.establishmentId(), "Faixa " + i, guests[i]);
+        }
+    }
+
     MvcTestResult get(Owner owner, String uri) {
         return get(owner.token(), uri);
     }
