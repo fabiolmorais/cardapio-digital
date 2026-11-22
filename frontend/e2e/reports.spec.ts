@@ -610,3 +610,99 @@ test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", asy
   await expect(page.getByRole("region", { name: "Business · relatórios completos" })).toContainText("Exportar em CSV");
   await expect(page.getByRole("link", { name: "Mudar para o Pro" })).toHaveAttribute("href", "/admin/assinatura");
 });
+
+test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamados, garçons, mesas e turnos", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/equipe?periodo=today");
+  await expect(page.getByRole("region", { name: "Atendimento e equipe é um relatório do Business" })).toContainText(
+    "cada garçom",
+  );
+  await expect(page.getByRole("link", { name: "Conhecer o Business" })).toHaveAttribute("href", "/admin/assinatura");
+
+  // No Business, o contexto vem com o nível completo e o relatório como o back o manda.
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, level: "FULL", firstDataDay: body.today } });
+  });
+  await page.route("**/api/v1/reports/team?**", async (route) => {
+    const day = new URL(route.request().url()).searchParams.get("from");
+    await route.fulfill({
+      json: {
+        period: { from: day, to: day },
+        comparison: { from: day, to: day },
+        current: { calls: 84, responseSeconds: 150, doneSeconds: 420, billToCloseSeconds: 600 },
+        compared: { calls: 70, responseSeconds: 210, doneSeconds: 400, billToCloseSeconds: 600 },
+        waiters: [
+          {
+            userId: "00000000-0000-4000-8000-000000000001",
+            name: "Ana Lima",
+            calls: 30,
+            responseSeconds: 120,
+            delivered: 80,
+            closedTabs: 12,
+            revenueCents: 245000,
+            staffOrders: 5,
+            tipsCents: 1500,
+          },
+          {
+            userId: "00000000-0000-4000-8000-000000000002",
+            name: "Bruno Reis",
+            calls: 40,
+            responseSeconds: 200,
+            delivered: 60,
+            closedTabs: 9,
+            revenueCents: 180000,
+            staffOrders: 9,
+            tipsCents: 9000,
+          },
+        ],
+        responseByHour: [
+          { hour: 20, responseSeconds: 120, calls: 30 },
+          { hour: 21, responseSeconds: 240, calls: 40 },
+        ],
+        byType: [
+          { type: "WAITER", calls: 60, canceled: 6 },
+          { type: "BILL", calls: 24, canceled: 0 },
+        ],
+        topTables: [{ label: "04", sector: "Salão", calls: 14, tabs: 4 }],
+        tableAverage: 2.1,
+        warningsShown: 10,
+        warningsConfirmed: 3,
+        busiestShifts: [{ day: "2026-11-15", hour: 21, calls: 18, waiters: 2 }],
+      },
+    });
+  });
+  await page.reload();
+
+  const numbers = page.getByRole("region", { name: "Atendimento e equipe", exact: true });
+  await expect(numbers).toContainText("Chamados84");
+  await expect(numbers).toContainText("Resposta ao chamado2 min 30 s▼ 1 min, mais rápido");
+  await expect(numbers).toContainText("Da conta pedida ao fechamento10 min");
+
+  // A tabela começa pelos chamados e ordena por qualquer coluna.
+  const waiters = page.getByRole("region", { name: "Garçons", exact: true });
+  await expect(waiters.getByRole("row").nth(1)).toContainText("Bruno Reis");
+  await waiters.getByRole("button", { name: "Ordenar por Resposta" }).click();
+  await expect(waiters.getByRole("row").nth(1)).toContainText("Ana Lima");
+  await expect(waiters.getByRole("columnheader", { name: "Ordenar por Resposta" })).toHaveAttribute(
+    "aria-sort",
+    "descending",
+  );
+
+  await expect(page.getByRole("button", { name: "21h: 4 min até o garçom aceitar (40 chamados)" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Chamados por tipo" })).toContainText("6 · 7%");
+  await expect(page.getByRole("region", { name: "Mesas que mais chamam" })).toContainText(
+    "Mesa 04 · Salão3,5 por comanda",
+  );
+  await expect(page.getByRole("region", { name: "Trava de pedido repetido" })).toContainText("Garçom tirou o item7");
+  await expect(page.getByRole("region", { name: "Garçons ativos x chamados" })).toContainText(
+    "Dom 15/11, 21h: 2 garçons9 chamados por garçom",
+  );
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});

@@ -7,6 +7,7 @@ export type SalesReport = Schemas["SalesReport"];
 export type Grouping = SalesReport["grouping"];
 export type MenuReport = Schemas["MenuReport"];
 export type KitchenReport = Schemas["KitchenReport"];
+export type TeamReport = Schemas["TeamReport"];
 export type SummarySettings = Schemas["DailySummarySettings"];
 export type SummarySettingsRequest = Schemas["DailySummarySettingsRequest"];
 export type DailySummary = Schemas["DailySummary"];
@@ -107,6 +108,20 @@ export function useKitchenReport(params: ReportParams & { categoryId?: string })
     queryKey: ["reports", "kitchen", params],
     queryFn: async () => {
       const { data, response } = await api.GET("/api/v1/reports/kitchen", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** Atendimento e equipe (Business). */
+export function useTeamReport(params: ReportParams) {
+  return useQuery({
+    queryKey: ["reports", "team", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/team", { params: { query: params } });
       if (!data) throw new Error(String(response.status));
       return data;
     },

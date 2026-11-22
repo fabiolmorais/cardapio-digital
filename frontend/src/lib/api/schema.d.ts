@@ -1617,6 +1617,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atendimento e equipe do período (Business) */
+        get: operations["getTeamReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/sales": {
         parameters: {
             query?: never;
@@ -4322,6 +4339,128 @@ export interface components {
             /** Format: int64 */
             priceCents: number;
         };
+        /** @description A resposta média ao chamado numa hora do dia */
+        ReportCallHour: {
+            /** Format: int32 */
+            hour: number;
+            /** Format: int64 */
+            responseSeconds: number;
+            /** Format: int32 */
+            calls: number;
+        };
+        /** @description Os chamados de um tipo e os cancelados pelo cliente */
+        ReportCallType: {
+            /** @enum {string} */
+            type: "WAITER" | "BILL" | "UNLOCK" | "RODIZIO";
+            /** Format: int32 */
+            calls: number;
+            /** Format: int32 */
+            canceled: number;
+        };
+        /** @description Os chamados do período */
+        ReportCalls: {
+            /** Format: int32 */
+            calls: number;
+            /**
+             * Format: int64
+             * @description Até o garçom aceitar, em média
+             */
+            responseSeconds?: number;
+            /**
+             * Format: int64
+             * @description Até concluir, em média
+             */
+            doneSeconds?: number;
+            /**
+             * Format: int64
+             * @description De pedir a conta até a comanda fechar, em média
+             */
+            billToCloseSeconds?: number;
+        };
+        /** @description Dias do restaurante, do primeiro ao último (inclusive) */
+        ReportRange: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        /** @description Uma hora de um dia: chamados e pessoas do salão no turno */
+        ReportShiftLoad: {
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            hour: number;
+            /** Format: int32 */
+            calls: number;
+            /** Format: int32 */
+            waiters: number;
+        };
+        /** @description Uma mesa: chamados e comandas fechadas */
+        ReportTableCalls: {
+            label: string;
+            sector: string;
+            /** Format: int32 */
+            calls: number;
+            /** Format: int32 */
+            tabs: number;
+        };
+        /** @description O que uma pessoa da equipe fez no período */
+        ReportTeamMember: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            /** Format: int32 */
+            calls: number;
+            /** Format: int64 */
+            responseSeconds?: number;
+            /** Format: int32 */
+            delivered: number;
+            /** Format: int32 */
+            closedTabs: number;
+            /**
+             * Format: int64
+             * @description O faturamento das comandas que fechou
+             */
+            revenueCents: number;
+            /** Format: int32 */
+            staffOrders: number;
+            /**
+             * Format: int64
+             * @description A taxa de serviço destinada a ela
+             */
+            tipsCents: number;
+        };
+        /** @description Atendimento e equipe (Business) */
+        TeamReport: {
+            period: components["schemas"]["ReportRange"];
+            comparison: components["schemas"]["ReportRange"];
+            current: components["schemas"]["ReportCalls"];
+            /** @description A comparação; se o período termina hoje, até a mesma hora */
+            compared: components["schemas"]["ReportCalls"];
+            /** @description Quem fez algo no período, de quem mais atendeu chamados */
+            waiters: components["schemas"]["ReportTeamMember"][];
+            responseByHour: components["schemas"]["ReportCallHour"][];
+            byType: components["schemas"]["ReportCallType"][];
+            /** @description As que mais chamam por comanda (3 comandas ou mais) */
+            topTables: components["schemas"]["ReportTableCalls"][];
+            /**
+             * Format: double
+             * @description Chamados por comanda do restaurante todo; null sem comandas
+             */
+            tableAverage?: number;
+            /**
+             * Format: int32
+             * @description Avisos de pedido repetido mostrados
+             */
+            warningsShown: number;
+            /**
+             * Format: int32
+             * @description Os que o garçom confirmou
+             */
+            warningsConfirmed: number;
+            /** @description As horas com mais chamados por pessoa do salão no turno */
+            busiestShifts: components["schemas"]["ReportShiftLoad"][];
+        };
         ReportBestDay: {
             /** Format: date */
             day: string;
@@ -4354,13 +4493,6 @@ export interface components {
              * @description null: ninguém contado
              */
             averageCents?: number;
-        };
-        /** @description Dias do restaurante, do primeiro ao último (inclusive) */
-        ReportRange: {
-            /** Format: date */
-            from: string;
-            /** Format: date */
-            to: string;
         };
         /** @description Um setor: o faturamento e as mesas ativas */
         ReportSector: {
@@ -10209,6 +10341,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
+    getTeamReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os chamados, os garçons e a trava de repetidos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem este relatório (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
