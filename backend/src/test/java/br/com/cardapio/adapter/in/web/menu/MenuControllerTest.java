@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -29,6 +30,9 @@ class MenuControllerTest {
 
     @Autowired
     MockMvcTester mvc;
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     @Autowired
     AccessTokenIssuer tokenIssuer;
@@ -178,6 +182,14 @@ class MenuControllerTest {
         assertThat(soldOut).bodyJson().extractingPath("$.available").isEqualTo(false);
         assertThat(send("GET", sakura.token(), PRODUCTS + "?categoryId=" + quentes, null))
                 .bodyJson().extractingPath("$.content[*].name").asArray().containsExactly("Yakisoba", "Guioza grelhado");
+        // O histórico dos relatórios: o começo (com a promoção), a promoção que saiu, o destaque e o esgotado.
+        assertThat(jdbc.queryForList("""
+                SELECT kind || ':' || active || ':' || coalesce(promo_price_cents::text, '-')
+                FROM product_status_change WHERE product_id = ?::uuid ORDER BY changed_at, kind
+                """, String.class, guioza)).containsExactly(
+                "AVAILABLE:true:-", "FEATURED:false:-", "PROMOTION:true:2490",
+                "FEATURED:true:-", "PROMOTION:false:-",
+                "AVAILABLE:false:-");
     }
 
     @Test

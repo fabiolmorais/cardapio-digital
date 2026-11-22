@@ -1,5 +1,14 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.out.device.StaffShiftPort;
+import br.com.cardapio.application.port.out.menu.ProductStatusHistoryPort;
+import br.com.cardapio.application.port.out.rodizio.RodizioCardHistoryPort;
+import br.com.cardapio.application.port.out.order.DuplicateWarningPort;
+import br.com.cardapio.application.port.out.order.TabPeoplePort;
+import br.com.cardapio.application.port.in.order.TabPeopleUseCase;
+import br.com.cardapio.application.service.order.TabPeopleService;
+import br.com.cardapio.application.port.in.device.CloseExpiredShiftsUseCase;
+import br.com.cardapio.application.service.device.CloseExpiredShiftsService;
 import br.com.cardapio.application.port.in.account.*;
 import br.com.cardapio.application.port.in.account.RequestPasswordResetUseCase;
 import br.com.cardapio.application.port.in.account.ResetPasswordUseCase;
@@ -310,8 +319,8 @@ class UseCaseConfig {
     }
 
     @Bean
-    LogoutUseCase logoutUseCase(RefreshTokenPort refreshTokenPort, Clock clock) {
-        return new LogoutService(refreshTokenPort, clock);
+    LogoutUseCase logoutUseCase(RefreshTokenPort refreshTokenPort, StaffShiftPort staffShiftPort, Clock clock) {
+        return new LogoutService(refreshTokenPort, staffShiftPort, clock);
     }
 
     @Bean
@@ -381,8 +390,9 @@ class UseCaseConfig {
     }
 
     @Bean
-    UnlinkDeviceUseCase unlinkDeviceUseCase(DevicePort devicePort, DeviceSessionPort deviceSessionPort, Clock clock) {
-        return new UnlinkDeviceService(devicePort, deviceSessionPort, clock);
+    UnlinkDeviceUseCase unlinkDeviceUseCase(DevicePort devicePort, DeviceSessionPort deviceSessionPort,
+                                            StaffShiftPort staffShiftPort, Clock clock) {
+        return new UnlinkDeviceService(devicePort, deviceSessionPort, staffShiftPort, clock);
     }
 
     /** Não é caso de uso: é a peça que identifica o aparelho pelo token do cookie. */
@@ -405,9 +415,10 @@ class UseCaseConfig {
     PinLoginUseCase pinLoginUseCase(DeviceAuthenticator deviceAuthenticator, TeamMemberPort teamMemberPort,
                                     PinLockoutPort pinLockoutPort, PasswordHasher passwordHasher,
                                     LoadUserPort loadUserPort, LoadMembershipPort loadMembershipPort,
-                                    SessionIssuer sessionIssuer, DeviceSessionPort deviceSessionPort, Clock clock) {
+                                    SessionIssuer sessionIssuer, DeviceSessionPort deviceSessionPort,
+                                    StaffShiftPort staffShiftPort, Clock clock) {
         return new PinLoginService(deviceAuthenticator, teamMemberPort, pinLockoutPort, passwordHasher, loadUserPort,
-                loadMembershipPort, sessionIssuer, deviceSessionPort, clock);
+                loadMembershipPort, sessionIssuer, deviceSessionPort, staffShiftPort, clock);
     }
 
     @Bean
@@ -573,18 +584,22 @@ class UseCaseConfig {
     }
 
     @Bean
-    CreateProductUseCase createProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
-        return new CreateProductService(menuCategoryPort, productPort);
+    CreateProductUseCase createProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort,
+                                              ProductStatusHistoryPort productStatusHistoryPort, Clock clock) {
+        return new CreateProductService(menuCategoryPort, productPort, productStatusHistoryPort, clock);
     }
 
     @Bean
-    UpdateProductUseCase updateProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort) {
-        return new UpdateProductService(menuCategoryPort, productPort);
+    UpdateProductUseCase updateProductUseCase(MenuCategoryPort menuCategoryPort, ProductPort productPort,
+                                              ProductStatusHistoryPort productStatusHistoryPort, Clock clock) {
+        return new UpdateProductService(menuCategoryPort, productPort, productStatusHistoryPort, clock);
     }
 
     @Bean
-    ChangeProductAvailabilityUseCase changeProductAvailabilityUseCase(ProductPort productPort) {
-        return new ChangeProductAvailabilityService(productPort);
+    ChangeProductAvailabilityUseCase changeProductAvailabilityUseCase(ProductPort productPort,
+                                                                      ProductStatusHistoryPort productStatusHistoryPort,
+                                                                      Clock clock) {
+        return new ChangeProductAvailabilityService(productPort, productStatusHistoryPort, clock);
     }
 
     @Bean
@@ -823,9 +838,21 @@ class UseCaseConfig {
                                                   ProductPort productPort, ProductOptionsPort productOptionsPort,
                                                   TabPort tabPort, OrderPort orderPort, TabRodizioPort tabRodizioPort,
                                                   RodizioPort rodizioPort, SubscriptionPort subscriptionPort,
-                                                  EventPublisherPort eventPublisherPort, Clock clock) {
+                                                  EventPublisherPort eventPublisherPort,
+                                                  DuplicateWarningPort duplicateWarningPort, Clock clock) {
         return new PlaceStaffOrderService(diningTablePort, orderSettingsPort, productPort, productOptionsPort, tabPort,
-                orderPort, tabRodizioPort, rodizioPort, subscriptionPort, eventPublisherPort, clock);
+                orderPort, tabRodizioPort, rodizioPort, subscriptionPort, eventPublisherPort, duplicateWarningPort,
+                clock);
+    }
+
+    @Bean
+    TabPeopleUseCase tabPeopleUseCase(TabPort tabPort, TabPeoplePort tabPeoplePort) {
+        return new TabPeopleService(tabPort, tabPeoplePort);
+    }
+
+    @Bean
+    CloseExpiredShiftsUseCase closeExpiredShiftsUseCase(StaffShiftPort staffShiftPort, Clock clock) {
+        return new CloseExpiredShiftsService(staffShiftPort, clock);
     }
 
     @Bean
@@ -1054,9 +1081,10 @@ class UseCaseConfig {
     TurnRodizioCardUseCase turnRodizioCardUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
                                                   TabPort tabPort, TabRodizioPort tabRodizioPort,
                                                   SubscriptionPort subscriptionPort,
-                                                  EventPublisherPort eventPublisherPort, Clock clock) {
+                                                  EventPublisherPort eventPublisherPort,
+                                                  RodizioCardHistoryPort rodizioCardHistoryPort, Clock clock) {
         return new TurnRodizioCardService(diningTablePort, tableSessionPort, tabPort, tabRodizioPort,
-                subscriptionPort, eventPublisherPort, clock);
+                subscriptionPort, eventPublisherPort, rodizioCardHistoryPort, clock);
     }
 
     @Bean

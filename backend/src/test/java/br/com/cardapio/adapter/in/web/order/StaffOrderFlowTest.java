@@ -194,11 +194,22 @@ class StaffOrderFlowTest {
         assertThat(json(warned, "$.duplicates[0].placedByName")).isEqualTo("João");
         assertThat(json(warned, "$.duplicates[0].quantity")).isEqualTo("2");
         assertThat(orders()).isEqualTo(1);
+        // O envio foi recusado, mas o aviso ficou gravado (numa transação própria), sem confirmação.
+        assertThat(jdbc.queryForList("""
+                SELECT confirmed_at IS NOT NULL AS confirmed FROM duplicate_warning WHERE establishment_id = ?
+                """, Boolean.class, sakura.establishmentId())).containsExactly(false);
+        // Avisado de novo antes de decidir: não repete o aviso.
+        assertThat(place(sakura.ana(), sakura.chopp())).hasStatus(HttpStatus.CONFLICT);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM duplicate_warning WHERE establishment_id = ?",
+                Long.class, sakura.establishmentId())).isEqualTo(1);
 
         MvcTestResult confirmed = place(sakura.ana(), sakura.chopp(), sakura.chopp());
         assertThat(confirmed).hasStatus(HttpStatus.CREATED);
         assertThat(jdbc.queryForObject("SELECT duplicate_confirmed FROM customer_order WHERE id = ?::uuid",
                 Boolean.class, json(confirmed, "$.id"))).isTrue();
+        assertThat(jdbc.queryForList("""
+                SELECT confirmed_at IS NOT NULL AS confirmed FROM duplicate_warning WHERE establishment_id = ?
+                """, Boolean.class, sakura.establishmentId())).containsExactly(true);
     }
 
     @Test
@@ -330,5 +341,32 @@ class StaffOrderFlowTest {
         assertThat(json(there, "$.id")).isNotEqualTo(json(here, "$.id"));
         assertThat(list(send("GET", outro.joao(), "/api/v1/staff-menu", null), "$.categories[0].products[*].id"))
                 .doesNotContain(sakura.chopp(), sakura.guioza());
+    }
+
+    @Test
+    void theWaiterTellsHowManyPeopleAreAtTheTable() throws Exception {
+        place(sakura.joao(), sakura.chopp());
+        String tab = json(send("GET", sakura.joao(), "/api/v1/tabs/open", null), "$.content[0].id");
+        String people = "/api/v1/tabs/" + tab + "/people";
+
+        assertThat(json(send("GET", sakura.joao(), people, null), "$.people")).isEqualTo("null");
+        assertThat(send("PUT", sakura.joao(), people, "{\"people\":4}")).hasStatusOk();
+        assertThat(json(send("GET", sakura.owner(), people, null), "$.people")).isEqualTo("4");
+        assertThat(send("PUT", sakura.joao(), people, "{\"people\":51}")).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(send("PUT", sakura.kitchen(), people, "{\"people\":2}")).hasStatus(HttpStatus.FORBIDDEN);
+
+        // De outro restaurante: 404, sem ler nem mudar.
+        Restaurant outro = newRestaurant("Outro Bar");
+        assertThat(send("GET", outro.owner(), people, null)).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(send("PUT", outro.owner(), people, "{\"people\":9}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(json(send("GET", sakura.owner(), people, null), "$.people")).isEqualTo("4");
+
+        // Vazio apaga; fechada a comanda, não muda mais.
+        assertThat(send("PUT", sakura.joao(), people, "{\"people\":null}")).hasStatusOk();
+        assertThat(json(send("GET", sakura.joao(), people, null), "$.people")).isEqualTo("null");
+        jdbc.update("UPDATE order_item SET status = 'DELIVERED' WHERE establishment_id = ?", sakura.establishmentId());
+        assertThat(send("POST", sakura.owner(), "/api/v1/tabs/" + tab + "/close", "{\"paymentMethod\":\"PIX\"}"))
+                .hasStatusOk();
+        assertThat(send("PUT", sakura.joao(), people, "{\"people\":3}")).hasStatus(HttpStatus.CONFLICT);
     }
 }

@@ -1,5 +1,7 @@
 package br.com.cardapio.application.service.menu;
 
+import br.com.cardapio.domain.menu.model.ProductStatusChange;
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.domain.menu.exception.MenuFullException;
 import br.com.cardapio.application.port.in.menu.ProductForm;
 import br.com.cardapio.application.port.in.menu.ProductSummary;
@@ -15,8 +17,12 @@ import br.com.cardapio.domain.shared.exception.OutdatedListException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.ZoneOffset;
+import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -25,9 +31,12 @@ class ProductServicesTest {
     private final MenuFakes fakes = new MenuFakes();
     private final ListProductsService list = new ListProductsService(fakes, new MediaFakes());
     private final GetProductService get = new GetProductService(fakes);
-    private final CreateProductService create = new CreateProductService(fakes, fakes);
-    private final UpdateProductService update = new UpdateProductService(fakes, fakes);
-    private final ChangeProductAvailabilityService availability = new ChangeProductAvailabilityService(fakes);
+    private final HistoryFakes history = new HistoryFakes();
+    private final Clock clock = Clock.fixed(Instant.parse("2026-11-21T18:00:00Z"), ZoneOffset.UTC);
+    private final CreateProductService create = new CreateProductService(fakes, fakes, history, clock);
+    private final UpdateProductService update = new UpdateProductService(fakes, fakes, history, clock);
+    private final ChangeProductAvailabilityService availability =
+            new ChangeProductAvailabilityService(fakes, history, clock);
     private final DeactivateProductService deactivate = new DeactivateProductService(fakes);
     private final ReorderProductsService reorder = new ReorderProductsService(fakes, fakes);
     private final EstablishmentId sakura = EstablishmentId.newId();
@@ -57,6 +66,36 @@ class ProductServicesTest {
         assertThat(sunomono.position()).isEqualTo(1);
         assertThat(sunomono.promoPriceCents()).isEqualTo(1590L);
         assertThat(names(entradas.id(), null)).containsExactly("Guioza", "Sunomono");
+    }
+
+    @Test
+    void theStatusHistoryStartsAtCreationAndRecordsOnlyWhatChanges() {
+        ProductSummary guioza = create.create(sakura, form(entradas.id(), "Guioza", 2990, null));
+
+        // O ponto de partida: os três estados.
+        assertThat(history.productChanges).extracting(ProductStatusChange::kind, ProductStatusChange::active)
+                .containsExactly(tuple(ProductStatusChange.Kind.PROMOTION, false),
+                        tuple(ProductStatusChange.Kind.FEATURED, false),
+                        tuple(ProductStatusChange.Kind.AVAILABLE, true));
+        history.productChanges.clear();
+
+        // Entra a promoção e o destaque; o nome muda, mas não é histórico.
+        update.update(sakura, guioza.id(),
+                new ProductForm(entradas.id(), "Guioza grelhado", "", 2990, 2490L, true, true));
+        assertThat(history.productChanges).extracting(ProductStatusChange::kind, ProductStatusChange::active)
+                .containsExactly(tuple(ProductStatusChange.Kind.PROMOTION, true),
+                        tuple(ProductStatusChange.Kind.FEATURED, true));
+        assertThat(history.productChanges.getFirst().promoPrice().cents()).isEqualTo(2490);
+        assertThat(history.productChanges.getFirst().at()).isEqualTo(clock.instant());
+        history.productChanges.clear();
+
+        // Salvar igual não grava nada; esgotar grava o "disponível".
+        update.update(sakura, guioza.id(),
+                new ProductForm(entradas.id(), "Guioza grelhado", "", 2990, 2490L, true, true));
+        assertThat(history.productChanges).isEmpty();
+        availability.change(sakura, guioza.id(), false);
+        assertThat(history.productChanges).extracting(ProductStatusChange::kind, ProductStatusChange::active)
+                .containsExactly(tuple(ProductStatusChange.Kind.AVAILABLE, false));
     }
 
     @Test

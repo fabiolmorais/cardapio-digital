@@ -49,3 +49,19 @@ export async function moveTab(id: string, tableId: string): Promise<MovedTab> {
   if (!data) throw problem(error, response.status);
   return data;
 }
+
+/** Quantas pessoas estão na mesa (fora do rodízio), informado pelo garçom; null se ninguém informou. */
+export async function fetchTabPeople(id: string): Promise<number | null> {
+  const { data, error, response } = await api.GET("/api/v1/tabs/{id}/people", { params: { path: { id } } });
+  if (!data) throw problem(error, response.status);
+  return data.people ?? null;
+}
+
+export async function saveTabPeople(id: string, people: number | null): Promise<number | null> {
+  const { data, error, response } = await api.PUT("/api/v1/tabs/{id}/people", {
+    params: { path: { id } },
+    body: { people: people ?? undefined },
+  });
+  if (!data) throw problem(error, response.status);
+  return data.people ?? null;
+}

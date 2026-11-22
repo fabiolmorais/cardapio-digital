@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.account;
 
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.application.port.in.account.LoginResult;
 import br.com.cardapio.application.port.in.account.PinLoginCommand;
 import br.com.cardapio.application.port.out.account.ActiveMembership;
@@ -29,8 +30,9 @@ class PinLoginServiceTest {
 
     private final AccountFakes accounts = new AccountFakes();
     private final PinLoginFakes pins = new PinLoginFakes();
+    private final HistoryFakes history = new HistoryFakes();
     private final PinLoginService service = new PinLoginService(new DeviceAuthenticator(pins, accounts.clock()),
-            pins, pins, accounts, accounts, accounts, accounts.sessionIssuer(), pins, accounts.clock());
+            pins, pins, accounts, accounts, accounts, accounts.sessionIssuer(), pins, history, accounts.clock());
 
     private final EstablishmentId sakura = EstablishmentId.newId();
     private Device phone;
@@ -73,6 +75,23 @@ class PinLoginServiceTest {
         assertThat(accounts.lastSubject.establishmentId()).isEqualTo(sakura); // o restaurante veio do aparelho
         assertThat(pins.sessions).containsValue(phone.id());
         assertThat(pins.devices.get(phone.id()).lastSeenAt()).isEqualTo(accounts.clock().instant());
+    }
+
+    @Test
+    void thePinOpensAShiftOnTheDevice() {
+        login(carlos, PIN);
+
+        assertThat(history.shifts).singleElement().satisfies(shift -> {
+            assertThat(shift.deviceId()).isEqualTo(phone.id());
+            assertThat(shift.userId()).isEqualTo(carlos.userId());
+        });
+    }
+
+    @Test
+    void aWrongPinOpensNoShift() {
+        assertThatThrownBy(() -> login(carlos, "999999")).isInstanceOf(InvalidPinException.class);
+
+        assertThat(history.shifts).isEmpty();
     }
 
     @Test

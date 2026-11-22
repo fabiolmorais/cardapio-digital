@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.support.InMemoryProductOptions;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.rodizio.ActivateRodizioCommand;
@@ -52,6 +53,7 @@ class PassagemServicesTest {
     private static final String QR_04 = "qr-da-mesa-04-00000000000";
 
     private final OrderFakes fakes = new OrderFakes();
+    private final HistoryFakes history = new HistoryFakes();
     private final InMemoryRodizios rodizios = new InMemoryRodizios();
     private final InMemoryCalls calls = new InMemoryCalls();
     private final TablesByToken tables = new TablesByToken();
@@ -81,7 +83,8 @@ class PassagemServicesTest {
     }
 
     private TableRodizio turn(String phone, TabRodizioStatus status) {
-        return new TurnRodizioCardService(tables, sessions, fakes, rodizios, subscriptions, published::add, clock)
+        return new TurnRodizioCardService(tables, sessions, fakes, rodizios, subscriptions, published::add, history,
+                clock)
                 .turn(QR_04, phone, status);
     }
 
@@ -98,6 +101,8 @@ class PassagemServicesTest {
         turn("ana", TabRodizioStatus.PAUSED);
         assertThat(published).hasSize(1);
         assertThat(turn("ana", TabRodizioStatus.SERVING).status()).isEqualTo(TabRodizioStatus.SERVING);
+        // Cada virada fica no histórico; a mesma cor de novo, não.
+        assertThat(history.cardChanges).containsExactly(TabRodizioStatus.PAUSED, TabRodizioStatus.SERVING);
     }
 
     @Test

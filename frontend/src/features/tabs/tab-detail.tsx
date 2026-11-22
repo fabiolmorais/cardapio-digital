@@ -18,6 +18,7 @@ import { closeTab, fetchTab, type PaymentMethod, type StaffTab } from "./tabs-ap
 import { Notice } from "@/components/notice";
 import { MoveTabDialog, type MoveTarget } from "./move-tab-dialog";
 import { dueOf, ServiceSwitch } from "./service-switch";
+import { TabPeople } from "./tab-people";
 
 const t = messages.panel.tab;
 const tp = messages.panel.calls.payment;
@@ -212,13 +213,16 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           </Button>
         </section>
       ) : (
-        <Button
-          variant="outline"
-          className="h-11 self-start"
-          onClick={() => setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel })}
-        >
-          {t.activateRodizio}
-        </Button>
+        <>
+          <TabPeople tabId={tab.id} />
+          <Button
+            variant="outline"
+            className="h-11 self-start"
+            onClick={() => setRodizioTarget({ tableId: tab.tableId, tableLabel: tab.tableLabel })}
+          >
+            {t.activateRodizio}
+          </Button>
+        </>
       )}
       <RodizioDialog target={rodizioTarget} onClose={() => setRodizioTarget(null)} />
       <Button

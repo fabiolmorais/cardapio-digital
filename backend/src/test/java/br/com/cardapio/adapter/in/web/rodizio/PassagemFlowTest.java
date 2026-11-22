@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -32,6 +33,9 @@ class PassagemFlowTest {
 
     @Autowired
     AccessTokenIssuer tokenIssuer;
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     /** O dono, a cozinha (pelo token), a mesa 04 e o Churrasco (passagem). */
     record Restaurant(String owner, String kitchen, String tableId, String qr04, String churrasco) {
@@ -124,6 +128,11 @@ class PassagemFlowTest {
         assertThat(paused).bodyJson().extractingPath("$.type").isEqualTo("PASSAGEM");
         assertThat(send("GET", sakura.kitchen(), "/api/v1/passagem-tables", null)).bodyJson()
                 .extractingPath("$.content[0].status").isEqualTo("PAUSED");
+        // A virada fica no histórico dos relatórios.
+        assertThat(jdbc.queryForList("""
+                SELECT c.status FROM rodizio_card_change c JOIN tab_rodizio r ON r.id = c.tab_rodizio_id
+                JOIN tab t ON t.id = r.tab_id WHERE t.table_id = ?::uuid
+                """, String.class, sakura.tableId())).containsExactly("PAUSED");
         // O celular também vê a cor nos pedidos da mesa.
         assertThat(mvc.get().uri("/api/v1/public/tables/" + sakura.qr04() + "/orders").cookie(phone).exchange())
                 .bodyJson().extractingPath("$.rodizio.status").isEqualTo("PAUSED");
