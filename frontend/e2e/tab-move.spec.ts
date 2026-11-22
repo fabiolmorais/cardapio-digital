@@ -95,3 +95,23 @@ test("para uma mesa com comanda, as duas se juntam na mesa de destino", async ({
   await page.getByRole("link", { name: "Ver a comanda junta" }).click();
   await expect(page).toHaveURL(new RegExp(`/painel/comandas/${into}$`));
 });
+
+test("o garçom informa quantas pessoas estão na mesa", async ({ page, request }) => {
+  const { email, t04, chopp, order } = await bar(request);
+  const tabId = await order(t04.id, chopp.id);
+  await loginThroughForm(page, email);
+
+  await page.goto(`/painel/comandas/${tabId}`);
+  const people = page.getByRole("region", { name: "Pessoas na mesa" });
+  await expect(people).toContainText("não informado");
+  await expect(people.getByRole("button", { name: "Uma pessoa a menos" })).toBeDisabled();
+
+  await people.getByRole("button", { name: "Uma pessoa a mais" }).click();
+  await expect(people).toContainText("1 pessoa");
+  await people.getByRole("button", { name: "Uma pessoa a mais" }).click();
+  await people.getByRole("button", { name: "Uma pessoa a mais" }).click();
+  await expect(people).toContainText("3 pessoas");
+  // Fica salvo: outra tela vê o mesmo número.
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Pessoas na mesa" })).toContainText("3 pessoas");
+});

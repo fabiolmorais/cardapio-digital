@@ -3,10 +3,12 @@ package br.com.cardapio.application.service.device;
 import br.com.cardapio.application.port.in.device.UnlinkDeviceUseCase;
 import br.com.cardapio.application.port.out.device.DevicePort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
+import br.com.cardapio.application.port.out.device.StaffShiftPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.device.exception.DeviceNotFoundException;
 import br.com.cardapio.domain.device.model.Device;
 import br.com.cardapio.domain.device.model.DeviceId;
+import br.com.cardapio.domain.device.model.ShiftEnd;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -16,11 +18,14 @@ public class UnlinkDeviceService implements UnlinkDeviceUseCase {
 
     private final DevicePort devices;
     private final DeviceSessionPort deviceSessions;
+    private final StaffShiftPort shifts;
     private final Clock clock;
 
-    public UnlinkDeviceService(DevicePort devices, DeviceSessionPort deviceSessions, Clock clock) {
+    public UnlinkDeviceService(DevicePort devices, DeviceSessionPort deviceSessions, StaffShiftPort shifts,
+                               Clock clock) {
         this.devices = devices;
         this.deviceSessions = deviceSessions;
+        this.shifts = shifts;
         this.clock = clock;
     }
 
@@ -34,6 +39,7 @@ public class UnlinkDeviceService implements UnlinkDeviceUseCase {
             // Quem entrou por PIN neste aparelho sai junto: a renovação da sessão é recusada,
             // e o token de acesso que já está na mão morre em até 15 minutos.
             deviceSessions.revokeAll(device.id(), now);
+            shifts.endDevice(device.id(), ShiftEnd.UNLINKED, now);
         }
     }
 }

@@ -1,5 +1,6 @@
 package br.com.cardapio.application.service.order;
 
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.application.port.in.order.PlaceOrderCommand;
 import br.com.cardapio.application.port.in.order.PlaceStaffOrderCommand;
 import br.com.cardapio.application.port.in.order.StaffOrder;
@@ -49,6 +50,7 @@ class StaffOrderServicesTest {
     private static final String QR = "qr-da-mesa-04-00000000000";
 
     private final OrderFakes fakes = new OrderFakes();
+    private final HistoryFakes history = new HistoryFakes();
     private final InMemoryRodizios rodizios = new InMemoryRodizios();
     private final InMemorySubscriptions subscriptions = new InMemorySubscriptions();
     private final InMemoryTableSessions sessions = new InMemoryTableSessions();
@@ -79,7 +81,7 @@ class StaffOrderServicesTest {
 
     private PlaceStaffOrderService service() {
         return new PlaceStaffOrderService(tables, fakes, fakes, new InMemoryProductOptions(), fakes, fakes, rodizios,
-                rodizios, subscriptions, published::add, clock);
+                rodizios, subscriptions, published::add, history, clock);
     }
 
     private StaffOrder place(UserId by, Set<ProductId> confirmed, Product... products) {
@@ -145,6 +147,12 @@ class StaffOrderServicesTest {
                     });
                 });
         assertThat(fakes.orders).hasSize(1);
+        // O aviso fica gravado para os relatórios, com o garçom avisado e o produto repetido.
+        assertThat(history.warnings).singleElement().satisfies(w -> {
+            assertThat(w.by()).isEqualTo(ana);
+            assertThat(w.products()).containsExactly(chopp.id());
+            assertThat(w.confirmed()).isFalse();
+        });
     }
 
     @Test
@@ -155,6 +163,10 @@ class StaffOrderServicesTest {
 
         assertThat(fakes.orders.get(again.id()).duplicateConfirmed()).isTrue();
         assertThat(fakes.orders).hasSize(2);
+        assertThat(history.warnings).singleElement().satisfies(w -> {
+            assertThat(w.products()).containsExactly(chopp.id());
+            assertThat(w.confirmed()).isTrue();
+        });
     }
 
     @Test

@@ -1,6 +1,8 @@
 package br.com.cardapio.application.service.account;
 
 
+import br.com.cardapio.domain.device.model.ShiftEnd;
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.application.port.in.account.LoginCommand;
 import br.com.cardapio.application.port.in.account.LoginResult;
 import br.com.cardapio.domain.account.exception.InvalidSessionException;
@@ -20,7 +22,8 @@ class RefreshSessionServiceTest {
     private final SessionIssuer sessions = fakes.sessionIssuer();
     private final LoginService login = new LoginService(fakes, fakes, fakes, sessions);
     private final RefreshSessionService refresh = new RefreshSessionService(fakes, fakes, fakes, sessions, fakes.clock());
-    private final LogoutService logout = new LogoutService(fakes, fakes.clock());
+    private final HistoryFakes history = new HistoryFakes();
+    private final LogoutService logout = new LogoutService(fakes, history, fakes.clock());
 
     private User marina;
     private LoginResult loggedIn;
@@ -97,6 +100,9 @@ class RefreshSessionServiceTest {
         logout.logout(renewed.refreshToken());
 
         assertThatThrownBy(() -> refresh.refresh(renewed.refreshToken())).isInstanceOf(InvalidSessionException.class);
+        // Se a sessão veio do PIN, o turno dela acaba (sem turno, não muda nada).
+        assertThat(history.ended).singleElement()
+                .satisfies(e -> assertThat(e.reason()).isEqualTo(ShiftEnd.LOGOUT));
     }
 
     @Test

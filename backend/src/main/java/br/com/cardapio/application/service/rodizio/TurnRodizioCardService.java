@@ -16,6 +16,7 @@ import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.rodizio.exception.NoRodizioOnTableException;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
 import br.com.cardapio.domain.rodizio.model.TabRodizioStatus;
+import br.com.cardapio.application.port.out.rodizio.RodizioCardHistoryPort;
 import br.com.cardapio.domain.tablesession.exception.SessionBlockedException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,17 +31,19 @@ public class TurnRodizioCardService implements TurnRodizioCardUseCase {
     private final TabRodizioPort tabRodizios;
     private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
+    private final RodizioCardHistoryPort cardHistory;
     private final Clock clock;
 
     public TurnRodizioCardService(DiningTablePort tables, TableSessionPort sessions, TabPort tabs,
                                   TabRodizioPort tabRodizios, SubscriptionPort subscriptions,
-                                  EventPublisherPort events, Clock clock) {
+                                  EventPublisherPort events, RodizioCardHistoryPort cardHistory, Clock clock) {
         this.tables = tables;
         this.sessions = sessions;
         this.tabs = tabs;
         this.tabRodizios = tabRodizios;
         this.subscriptions = subscriptions;
         this.events = events;
+        this.cardHistory = cardHistory;
         this.clock = clock;
     }
 
@@ -68,6 +71,8 @@ public class TurnRodizioCardService implements TurnRodizioCardUseCase {
         TabRodizio turned = current.turnCard(status, now);
         if (turned != current) {
             tabRodizios.updateStatus(turned);
+            // O tempo de cada cor, para os relatórios (REL-74).
+            cardHistory.record(establishmentId, turned.id(), turned.status(), now);
             events.publish(new RodizioChanged(establishmentId, visit.table().id(), tab.id(), now));
         }
         return TableRodizio.from(turned);

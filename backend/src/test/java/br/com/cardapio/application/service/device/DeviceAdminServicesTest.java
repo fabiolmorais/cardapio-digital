@@ -1,5 +1,7 @@
 package br.com.cardapio.application.service.device;
 
+import br.com.cardapio.domain.device.model.ShiftEnd;
+import br.com.cardapio.application.service.HistoryFakes;
 import br.com.cardapio.application.port.in.device.DeviceSummary;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -20,7 +22,8 @@ class DeviceAdminServicesTest {
 
     private final DeviceFakes fakes = new DeviceFakes();
     private final ListDevicesService list = new ListDevicesService(fakes);
-    private final UnlinkDeviceService unlink = new UnlinkDeviceService(fakes, fakes, fakes.clock());
+    private final HistoryFakes history = new HistoryFakes();
+    private final UnlinkDeviceService unlink = new UnlinkDeviceService(fakes, fakes, history, fakes.clock());
     private final EstablishmentId sakura = EstablishmentId.newId();
 
     private Device given(EstablishmentId establishmentId, String name) {
@@ -64,6 +67,8 @@ class DeviceAdminServicesTest {
         unlink.unlink(sakura, phone.id());
 
         assertThat(fakes.revokedSessions).containsExactly(onPhone);
+        // O turno de quem estava no aparelho acaba junto.
+        assertThat(history.ended).containsExactly(new HistoryFakes.Ended(phone.id(), ShiftEnd.UNLINKED));
     }
 
     @Test

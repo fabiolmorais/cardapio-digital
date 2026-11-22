@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.account;
 
+import br.com.cardapio.application.port.in.device.CloseExpiredShiftsUseCase;
 import br.com.cardapio.support.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
@@ -15,6 +16,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -35,6 +37,9 @@ class PinLoginControllerTest {
 
     @Autowired
     JdbcTemplate jdbc;
+
+    @Autowired
+    CloseExpiredShiftsUseCase closeExpiredShifts;
 
     record Owner(String token, UUID establishmentId) {
     }
@@ -231,5 +236,85 @@ class PinLoginControllerTest {
         assertThat(mvc.post().uri("/api/v1/auth/refresh").cookie(new Cookie("refresh_token", refreshToken)).exchange())
                 .hasStatus(HttpStatus.UNAUTHORIZED);
         assertThat(onDevice(phoneToken, "/api/v1/auth/device")).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    /** Os turnos do restaurante, do mais antigo ao mais novo: quem, e como acabou (null: aberto). */
+    private List<Map<String, Object>> shifts(Owner owner) {
+        return jdbc.queryForList("""
+                SELECT user_id::text AS member, end_reason, ended_at IS NOT NULL AS ended FROM staff_shift
+                WHERE establishment_id = ? ORDER BY started_at, ended_at NULLS LAST
+                """, owner.establishmentId());
+    }
+
+    private String userOf(String memberId) {
+        return jdbc.queryForObject("SELECT user_id::text FROM membership WHERE id = ?::uuid", String.class, memberId);
+    }
+
+    @Test
+    void thePinOpensAShiftAndTheNextPersonOnThePhoneClosesIt() throws Exception {
+        String bia = addMember(sakura, "Bia", "STAFF");
+
+        assertThat(pin(phoneToken, carlos, PIN)).hasStatusOk();
+        assertThat(shifts(sakura)).singleElement().satisfies(row -> {
+            assertThat(row.get("member")).isEqualTo(userOf(carlos));
+            assertThat(row.get("ended")).isEqualTo(false);
+        });
+
+        assertThat(pin(phoneToken, bia, PIN)).hasStatusOk();
+        List<Map<String, Object>> rows = shifts(sakura);
+        assertThat(rows).hasSize(2);
+        assertThat(rows.get(0).get("end_reason")).isEqualTo("REPLACED");
+        assertThat(rows.get(1).get("member")).isEqualTo(userOf(bia));
+        assertThat(rows.get(1).get("ended")).isEqualTo(false);
+        // Um PIN errado não abre turno.
+        assertThat(pin(phoneToken, carlos, "999999")).hasStatus(HttpStatus.UNAUTHORIZED);
+        assertThat(shifts(sakura)).hasSize(2);
+    }
+
+    @Test
+    void leavingTheAppClosesTheShift() throws Exception {
+        MvcTestResult login = pin(phoneToken, carlos, PIN);
+        String refresh = login.getResponse().getCookie("refresh_token").getValue();
+
+        assertThat(mvc.post().uri("/api/v1/auth/logout").cookie(new Cookie("refresh_token", refresh)).exchange())
+                .hasStatus(HttpStatus.NO_CONTENT);
+
+        assertThat(shifts(sakura)).singleElement()
+                .satisfies(row -> assertThat(row.get("end_reason")).isEqualTo("LOGOUT"));
+    }
+
+    @Test
+    void anExpiredSessionClosesTheShiftAtTheLastUse() throws Exception {
+        assertThat(pin(phoneToken, carlos, PIN)).hasStatusOk();
+        jdbc.update("""
+                UPDATE refresh_token SET created_at = now() - interval '2 days', expires_at = now() - interval '1 day'
+                WHERE user_id = ?::uuid
+                """, userOf(carlos));
+        jdbc.update("UPDATE staff_shift SET started_at = now() - interval '3 days' WHERE user_id = ?::uuid",
+                userOf(carlos));
+
+        assertThat(closeExpiredShifts.closeExpired()).isPositive();
+
+        assertThat(shifts(sakura)).singleElement()
+                .satisfies(row -> assertThat(row.get("end_reason")).isEqualTo("EXPIRED"));
+        Boolean atLastUse = jdbc.queryForObject("""
+                SELECT s.ended_at = r.created_at FROM staff_shift s JOIN refresh_token r ON r.family_id = s.family_id
+                WHERE s.user_id = ?::uuid
+                """, Boolean.class, userOf(carlos));
+        assertThat(atLastUse).isTrue();
+    }
+
+    @Test
+    void unlinkingThePhoneClosesTheShift() throws Exception {
+        assertThat(pin(phoneToken, carlos, PIN)).hasStatusOk();
+        String device = jdbc.queryForObject("SELECT device_id::text FROM staff_shift WHERE user_id = ?::uuid",
+                String.class, userOf(carlos));
+
+        assertThat(mvc.delete().uri("/api/v1/devices/" + device)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + sakura.token()).exchange())
+                .hasStatus(HttpStatus.NO_CONTENT);
+
+        assertThat(shifts(sakura)).singleElement()
+                .satisfies(row -> assertThat(row.get("end_reason")).isEqualTo("UNLINKED"));
     }
 }

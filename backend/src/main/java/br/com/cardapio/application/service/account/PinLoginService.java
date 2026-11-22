@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.account.LoadUserPort;
 import br.com.cardapio.application.port.out.account.PinLockoutPort;
 import br.com.cardapio.application.port.out.device.DeviceSessionPort;
 import br.com.cardapio.application.port.out.device.LinkedDevice;
+import br.com.cardapio.application.port.out.device.StaffShiftPort;
 import br.com.cardapio.application.port.out.security.PasswordHasher;
 import br.com.cardapio.application.port.out.team.TeamMember;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
@@ -38,11 +39,13 @@ public class PinLoginService implements PinLoginUseCase {
     private final LoadMembershipPort memberships;
     private final SessionIssuer sessionIssuer;
     private final DeviceSessionPort deviceSessions;
+    private final StaffShiftPort shifts;
     private final Clock clock;
 
     public PinLoginService(DeviceAuthenticator authenticator, TeamMemberPort team, PinLockoutPort pinLockouts,
                            PasswordHasher hasher, LoadUserPort users, LoadMembershipPort memberships,
-                           SessionIssuer sessionIssuer, DeviceSessionPort deviceSessions, Clock clock) {
+                           SessionIssuer sessionIssuer, DeviceSessionPort deviceSessions, StaffShiftPort shifts,
+                           Clock clock) {
         this.authenticator = authenticator;
         this.team = team;
         this.pinLockouts = pinLockouts;
@@ -51,6 +54,7 @@ public class PinLoginService implements PinLoginUseCase {
         this.memberships = memberships;
         this.sessionIssuer = sessionIssuer;
         this.deviceSessions = deviceSessions;
+        this.shifts = shifts;
         this.clock = clock;
     }
 
@@ -97,6 +101,8 @@ public class PinLoginService implements PinLoginUseCase {
 
         SessionIssuer.IssuedSession session = sessionIssuer.startFamily(user, active);
         deviceSessions.register(session.familyId(), device.id(), establishmentId, now);
+        // O turno (REL-53): abre aqui e fecha o de quem estava antes neste aparelho.
+        shifts.start(establishmentId, user.id(), device.id(), session.familyId(), now);
         return session.result();
     }
 }

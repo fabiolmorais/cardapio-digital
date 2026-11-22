@@ -20,6 +20,7 @@ import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.exception.DuplicateOrderException;
+import br.com.cardapio.application.port.out.order.DuplicateWarningPort;
 import br.com.cardapio.domain.order.exception.StaffOrderingDisabledException;
 import br.com.cardapio.domain.order.model.AlreadyOrdered;
 import br.com.cardapio.domain.order.model.Order;
@@ -51,12 +52,13 @@ public class PlaceStaffOrderService implements PlaceStaffOrderUseCase {
     private final RodizioPort rodizios;
     private final SubscriptionPort subscriptions;
     private final EventPublisherPort events;
+    private final DuplicateWarningPort warnings;
     private final Clock clock;
 
     public PlaceStaffOrderService(DiningTablePort tables, OrderSettingsPort settings, ProductPort products,
                                   ProductOptionsPort productOptions, TabPort tabs, OrderPort orders,
                                   TabRodizioPort tabRodizios, RodizioPort rodizios, SubscriptionPort subscriptions,
-                                  EventPublisherPort events, Clock clock) {
+                                  EventPublisherPort events, DuplicateWarningPort warnings, Clock clock) {
         this.tables = tables;
         this.settings = settings;
         this.products = products;
@@ -67,6 +69,7 @@ public class PlaceStaffOrderService implements PlaceStaffOrderUseCase {
         this.rodizios = rodizios;
         this.subscriptions = subscriptions;
         this.events = events;
+        this.warnings = warnings;
         this.clock = clock;
     }
 
@@ -132,7 +135,14 @@ public class PlaceStaffOrderService implements PlaceStaffOrderUseCase {
                 .filter(item -> !command.confirmedDuplicates().contains(item.productId()))
                 .toList();
         if (!unconfirmed.isEmpty()) {
+            // O aviso fica gravado (numa transação própria), mesmo com este envio recusado (REL-50).
+            warnings.warn(establishmentId, tab.id(), command.placedBy(),
+                    unconfirmed.stream().map(AlreadyOrdered::productId).distinct().toList(), now);
             throw new DuplicateOrderException(unconfirmed);
+        }
+        if (!repeated.isEmpty()) {
+            warnings.confirm(establishmentId, tab.id(), command.placedBy(),
+                    repeated.stream().map(AlreadyOrdered::productId).distinct().toList(), now);
         }
         return !repeated.isEmpty();
     }
