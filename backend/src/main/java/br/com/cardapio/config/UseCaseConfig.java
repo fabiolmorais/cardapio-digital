@@ -1,7 +1,10 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
+import br.com.cardapio.application.port.out.report.TableReportPort;
 import br.com.cardapio.application.port.out.report.TeamReportPort;
+import br.com.cardapio.application.service.report.GetTableReportService;
 import br.com.cardapio.application.service.report.GetTeamReportService;
 import br.com.cardapio.application.port.out.report.OperationReportPort;
 import br.com.cardapio.application.port.out.device.StaffShiftPort;
@@ -1166,6 +1169,14 @@ class UseCaseConfig {
                                               EstablishmentTimeZonePort establishmentTimeZonePort,
                                               SectorPort sectorPort, TeamReportPort teamReportPort, Clock clock) {
         return new GetTeamReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, teamReportPort, clock);
+    }
+
+    @Bean
+    GetTableReportUseCase getTableReportUseCase(SubscriptionPort subscriptionPort,
+                                                EstablishmentTimeZonePort establishmentTimeZonePort,
+                                                SectorPort sectorPort, TableReportPort tableReportPort, Clock clock) {
+        return new GetTableReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, tableReportPort,
+                clock);
     }
 
     @Bean

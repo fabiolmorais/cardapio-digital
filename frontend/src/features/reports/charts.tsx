@@ -87,6 +87,7 @@ export function KpiTile({
   previous,
   delta: given,
   hint,
+  detail,
 }: {
   label: string;
   value: string;
@@ -94,6 +95,8 @@ export function KpiTile({
   previous?: number;
   delta?: Delta | null;
   hint?: string;
+  /** Uma linha a mais embaixo, sempre visível (o que o número quer dizer). */
+  detail?: string;
 }) {
   const delta = given ?? (current !== undefined && previous !== undefined ? variation(current, previous) : null);
   return (
@@ -117,6 +120,7 @@ export function KpiTile({
       ) : (
         hint && <span className="text-[13px] text-muted-foreground">{hint}</span>
       )}
+      {detail && <span className="text-[13px] text-muted-foreground">{detail}</span>}
     </div>
   );
 }
@@ -271,7 +275,14 @@ export function ColumnChart({
         style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`, gap: columns.length > 20 ? 3 : 8 }}
       >
         {columns.map((column, i) => (
-          <span key={column.key} className="flex justify-center overflow-visible whitespace-nowrap">
+          <span
+            key={column.key}
+            className={cn(
+              "flex justify-center overflow-visible whitespace-nowrap",
+              // No celular, com muitas colunas, um rótulo sim e outro não, para não se encostarem.
+              columns.length > 8 && (i / every) % 2 === 1 && "max-sm:invisible",
+            )}
+          >
             {i % every === 0 ? column.label : ""}
           </span>
         ))}
