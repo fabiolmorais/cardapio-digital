@@ -27,7 +27,8 @@ record SalesReportResponse(
         @Schema(description = "O dia que mais faturou; ausente sem vendas") BestDay bestDay,
         @Schema(requiredMode = REQUIRED) BigDecimal tabsPerDay,
         @Schema(requiredMode = REQUIRED) BigDecimal comparedTabsPerDay,
-        @Schema(description = "A hora com mais faturamento médio por dia; ausente sem vendas") Integer peakHour) {
+        @Schema(description = "A hora com mais faturamento médio por dia; ausente sem vendas") Integer peakHour,
+        @Schema(description = "Os blocos do Business; null no Pro (o dado não sai do servidor)") SalesFullDtos.Full full) {
 
     enum Grouping { DAY, WEEK, MONTH }
 
@@ -36,6 +37,7 @@ record SalesReportResponse(
                 Totals.of(r.current()), Totals.of(r.compared()), Grouping.valueOf(r.grouping().name()),
                 r.series().stream().map(Point::of).toList(), r.byHour().stream().map(Hour::of).toList(),
                 r.bestDay() == null ? null : new BestDay(r.bestDay().day(), r.bestDay().revenue().cents()),
-                r.tabsPerDay(), r.comparedTabsPerDay(), r.peakHour());
+                r.tabsPerDay(), r.comparedTabsPerDay(), r.peakHour(),
+                r.full() == null ? null : SalesFullDtos.Full.of(r.full()));
     }
 }

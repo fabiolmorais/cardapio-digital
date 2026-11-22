@@ -339,6 +339,90 @@ test("no Business, a Visão geral mostra a operação, hoje até agora, os garç
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
 
+test("em Vendas, o Pro vê os blocos do Business bloqueados e o Business vê setores, mesas, tíquete e cancelamentos", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/vendas?periodo=today");
+  for (const block of [
+    "Mais 2 números",
+    "Por setor",
+    "Mesas que mais vendem",
+    "Tíquete médio",
+    "Pagamentos e cancelamentos",
+  ]) {
+    await expect(page.getByRole("region", { name: `${block} (disponível no Business)` })).toBeVisible();
+  }
+
+  // O plano vem do back; aqui, o nível do Business e os blocos dele, como o back os manda.
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
+  });
+  await page.route("**/api/v1/reports/sales?**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...body,
+        level: "FULL",
+        full: {
+          bySector: [
+            { sectorId: crypto.randomUUID(), name: "Salão", tables: 12, revenueCents: 6890, perTablePerDayCents: 574 },
+          ],
+          topTables: [
+            {
+              tableId: crypto.randomUUID(),
+              label: "04",
+              sector: "Salão",
+              tabs: 1,
+              averageTicketCents: 6890,
+              revenueCents: 6890,
+            },
+          ],
+          rodizio: { revenueCents: 31660, people: 2, averageCents: 15830 },
+          comparedRodizio: { revenueCents: 31320, people: 2, averageCents: 15660 },
+          people: { revenueCents: 0, people: 0 },
+          comparedPeople: { revenueCents: 0, people: 0 },
+          advanceTabs: 1,
+          advanceCents: 3000,
+          canceledCents: 2500,
+          comparedCanceledCents: 0,
+          reasons: [{ reason: "Acabou o ingrediente", amountCents: 1500 }, { amountCents: 1000 }],
+        },
+      },
+    });
+  });
+  await page.reload();
+
+  const numbers = page.getByRole("region", { name: "Vendas" });
+  await expect(numbers).toContainText("Pago adiantadoR$ 30,001 mesa");
+  await expect(numbers).toContainText("CanceladoR$ 25,00");
+  const sectors = page.getByRole("region", { name: "Por setor" });
+  await expect(sectors).toContainText("Salão (12 mesas)");
+  await expect(sectors).toContainText("Por mesa, por dia · SalãoR$ 5,74");
+  await expect(
+    page.getByRole("region", { name: "Mesas que mais vendem" }).getByRole("row", { name: /Mesa 04/ }),
+  ).toContainText("R$ 68,90");
+  const ticket = page.getByRole("region", { name: "Tíquete médio" });
+  await expect(ticket).toContainText("Por pessoa · rodízio▲ 1,1%R$ 158,30");
+  await expect(ticket).toContainText("Por pessoa · fora do rodíziosem dado");
+  const payments = page.getByRole("region", { name: "Pagamentos e cancelamentos" });
+  await expect(payments).toContainText("Mesas que pagaram adiantado1 · R$ 30,00");
+  await expect(payments).toContainText("Acabou o ingrediente");
+  await expect(payments).toContainText("Outros");
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+});
+
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {
   const { email } = await createAccount(request);
   // O plano vem do back; aqui, o mesmo contexto com o nível do Essencial.

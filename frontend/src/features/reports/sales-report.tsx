@@ -7,12 +7,17 @@ import { ChartCard, ColumnChart, KpiTile, NoData } from "./charts";
 import { formatDayMonth, formatMonth, formatRange, formatWeekday } from "./period";
 import { useSalesReport, type Grouping, type SalesReport } from "./reports-api";
 import { BlockError, Loading, ReportsScreen, type ReportFilters } from "./reports-page";
+import { LockedCard } from "./locked";
+import { PaymentsCard, SalesFullTiles, SectorsCard, TablesCard, TicketCard } from "./sales-full";
 
 const t = messages.reports;
 
 const decimal = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-/** Vendas (desenho 14.2), com os blocos básicos (REL-01, 03, 05, 08). */
+/**
+ * Vendas (desenho 14.2): os blocos básicos (REL-01, 03, 05, 08) e, no Business, os completos. No Pro,
+ * os do Business aparecem bloqueados.
+ */
 export function SalesBody({ filters }: { filters: ReportFilters }) {
   const report = useSalesReport({ ...filters.query, groupBy: filters.grouping });
   if (report.isError) return <BlockError onRetry={() => report.refetch()} />;
@@ -23,9 +28,11 @@ export function SalesBody({ filters }: { filters: ReportFilters }) {
 function Sales({ report, onGrouping }: { report: SalesReport; onGrouping: (g: Grouping) => void }) {
   const { current, compared } = report;
   const peak = report.byHour.find((h) => h.hour === report.peakHour);
+  const full = report.full;
+  const locked = t.salesFull.locked;
   return (
     <>
-      <section aria-label={t.sales} className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
+      <section aria-label={t.sales} className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <KpiTile
           label={t.kpi.revenue}
           value={formatCents(current.revenueCents)}
@@ -55,9 +62,32 @@ function Sales({ report, onGrouping }: { report: SalesReport; onGrouping: (g: Gr
           value={report.peakHour != null ? `${report.peakHour}h` : "—"}
           hint={peak ? t.kpi.peakHint(formatCents(peak.revenuePerDayCents)) : undefined}
         />
+        {full ? (
+          <SalesFullTiles report={report} full={full} />
+        ) : (
+          <LockedCard title={locked.moreNumbers} text={locked.moreNumbersText} small />
+        )}
       </section>
       <Series report={report} onGrouping={onGrouping} />
-      <ByHour report={report} />
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <ByHour report={report} />
+        {full ? <SectorsCard full={full} /> : <LockedCard title={t.salesFull.bySector} text={locked.bySector} />}
+      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        {full ? <TablesCard full={full} /> : <LockedCard title={t.salesFull.tables.title} text={locked.tables} />}
+        <div className="flex min-w-0 flex-col gap-5">
+          {full ? (
+            <TicketCard report={report} full={full} />
+          ) : (
+            <LockedCard title={t.salesFull.ticket.title} text={locked.ticket} />
+          )}
+          {full ? (
+            <PaymentsCard report={report} full={full} />
+          ) : (
+            <LockedCard title={t.salesFull.payments.title} text={locked.payments} />
+          )}
+        </div>
+      </div>
     </>
   );
 }

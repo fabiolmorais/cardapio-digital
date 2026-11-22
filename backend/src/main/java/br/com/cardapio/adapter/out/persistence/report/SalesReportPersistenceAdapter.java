@@ -3,9 +3,15 @@ package br.com.cardapio.adapter.out.persistence.report;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.call.model.PaymentMethod;
+import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.report.model.DailyRevenue;
+import br.com.cardapio.domain.report.model.TableSales;
+import br.com.cardapio.domain.report.model.SectorSales;
+import br.com.cardapio.domain.report.model.PerPersonTicket;
+import br.com.cardapio.domain.report.model.CancelReasonTotal;
+import br.com.cardapio.domain.report.model.AdvancePayments;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
@@ -133,6 +139,120 @@ class SalesReportPersistenceAdapter implements SalesReportPort {
                 .param("limit", limit)
                 .query((rs, row) -> new ItemSales(new ProductId(rs.getObject("product_id", UUID.class)),
                         rs.getString("name"), rs.getInt("quantity"), Money.ofCents(rs.getLong("revenue"))))
+                .list();
+    }
+
+    @Override
+    public List<SectorSales> bySector(EstablishmentId establishmentId, Instant start, Instant end,
+                                      Optional<SectorId> sector) {
+        // Os setores ativos (com as mesas ativas de cada um) e o que as comandas fechadas neles faturaram.
+        return closedTabs("""
+                        WITH sold AS (
+                            SELECT dt.sector_id, sum(t.total_cents) AS revenue
+                        """ + CLOSED_TABS + """
+                            GROUP BY dt.sector_id
+                        )
+                        SELECT s.id, s.name,
+                               (SELECT count(*) FROM dining_table d
+                                WHERE d.sector_id = s.id AND d.establishment_id = :establishmentId AND d.active)
+                                   AS tables,
+                               coalesce(sold.revenue, 0) AS revenue
+                        FROM sector s
+                        LEFT JOIN sold ON sold.sector_id = s.id
+                        WHERE s.establishment_id = :establishmentId
+                          AND (s.active OR sold.revenue IS NOT NULL)
+                          AND (CAST(:sectorId AS uuid) IS NULL OR s.id = CAST(:sectorId AS uuid))
+                        ORDER BY revenue DESC, s.name, s.id
+                        """,
+                establishmentId, start, end, sector)
+                .query((rs, row) -> new SectorSales(new SectorId(rs.getObject("id", UUID.class)), rs.getString("name"),
+                        rs.getInt("tables"), Money.ofCents(rs.getLong("revenue"))))
+                .list();
+    }
+
+    @Override
+    public List<TableSales> topTables(EstablishmentId establishmentId, Instant start, Instant end,
+                                      Optional<SectorId> sector, int limit) {
+        return closedTabs("""
+                        SELECT dt.id, dt.label, s.name AS sector, count(*) AS tabs, sum(t.total_cents) AS revenue
+                        """ + CLOSED_TABS.replace("JOIN dining_table dt ON dt.id = t.table_id",
+                        "JOIN dining_table dt ON dt.id = t.table_id JOIN sector s ON s.id = dt.sector_id") + """
+                        GROUP BY dt.id, dt.label, s.name
+                        ORDER BY revenue DESC, tabs DESC, dt.label, dt.id
+                        LIMIT :limit
+                        """,
+                establishmentId, start, end, sector)
+                .param("limit", limit)
+                .query((rs, row) -> new TableSales(new DiningTableId(rs.getObject("id", UUID.class)),
+                        rs.getString("label"), rs.getString("sector"), rs.getInt("tabs"),
+                        Money.ofCents(rs.getLong("revenue"))))
+                .list();
+    }
+
+    @Override
+    public PerPersonTicket rodizioTicket(EstablishmentId establishmentId, Instant start, Instant end,
+                                         Optional<SectorId> sector) {
+        return closedTabs("""
+                        SELECT coalesce(sum(t.total_cents), 0) AS revenue, coalesce(sum(p.people), 0) AS people
+                        FROM (SELECT t.id, t.total_cents
+                        """ + CLOSED_TABS + """
+                        ) t
+                        JOIN tab_rodizio r ON r.tab_id = t.id AND r.establishment_id = :establishmentId
+                        JOIN LATERAL (SELECT sum(g.quantity) AS people FROM tab_rodizio_guest g
+                                      WHERE g.tab_rodizio_id = r.id) p ON true
+                        """,
+                establishmentId, start, end, sector)
+                .query((rs, row) -> new PerPersonTicket(Money.ofCents(rs.getLong("revenue")), rs.getInt("people")))
+                .single();
+    }
+
+    @Override
+    public PerPersonTicket peopleTicket(EstablishmentId establishmentId, Instant start, Instant end,
+                                        Optional<SectorId> sector) {
+        return closedTabs("""
+                        SELECT coalesce(sum(t.total_cents), 0) AS revenue, coalesce(sum(t.people), 0) AS people
+                        """ + CLOSED_TABS + """
+                          AND t.people IS NOT NULL
+                          AND NOT EXISTS (SELECT 1 FROM tab_rodizio r WHERE r.tab_id = t.id)
+                        """,
+                establishmentId, start, end, sector)
+                .query((rs, row) -> new PerPersonTicket(Money.ofCents(rs.getLong("revenue")), rs.getInt("people")))
+                .single();
+    }
+
+    @Override
+    public AdvancePayments advancePayments(EstablishmentId establishmentId, Instant start, Instant end,
+                                           Optional<SectorId> sector) {
+        // O fechamento grava o último pagamento na hora em que fecha: o que veio antes foi adiantado.
+        return closedTabs("""
+                        SELECT count(DISTINCT p.tab_id) AS tabs, coalesce(sum(p.amount_cents), 0) AS amount
+                        FROM tab_payment p
+                        JOIN (SELECT t.id, t.closed_at
+                        """ + CLOSED_TABS + """
+                        ) t ON t.id = p.tab_id
+                        WHERE p.establishment_id = :establishmentId AND p.received_at < t.closed_at
+                        """,
+                establishmentId, start, end, sector)
+                .query((rs, row) -> new AdvancePayments(rs.getInt("tabs"), Money.ofCents(rs.getLong("amount"))))
+                .single();
+    }
+
+    @Override
+    public List<CancelReasonTotal> canceledByReason(EstablishmentId establishmentId, Instant start, Instant end,
+                                                    Optional<SectorId> sector) {
+        return closedTabs("""
+                        SELECT nullif(btrim(i.cancel_reason), '') AS reason,
+                               sum(i.unit_price_cents * i.quantity) AS amount
+                        FROM order_item i
+                        JOIN customer_order o ON o.id = i.order_id
+                        JOIN (SELECT t.id
+                        """ + CLOSED_TABS + """
+                        ) t ON t.id = o.tab_id
+                        WHERE i.establishment_id = :establishmentId AND i.status = 'CANCELED'
+                        GROUP BY 1
+                        """,
+                establishmentId, start, end, sector)
+                .query((rs, row) -> new CancelReasonTotal(rs.getString("reason"), Money.ofCents(rs.getLong("amount"))))
                 .list();
     }
 }
