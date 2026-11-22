@@ -45,6 +45,13 @@ public record ReportAccess(ReportLevel level, boolean canExport, int historyDays
         }
     }
 
+    /** Sem os relatórios completos (Pro): ReportsNotInPlanException. */
+    public void requireFull() {
+        if (!level.covers(ReportLevel.FULL)) {
+            throw new ReportsNotInPlanException("Este relatório é do plano Business");
+        }
+    }
+
     public void requireExport() {
         if (!canExport) {
             throw new ReportsNotInPlanException("A exportação dos relatórios é do plano Business");

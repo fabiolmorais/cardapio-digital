@@ -1675,7 +1675,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Os produtos vendidos no período, por faturamento ou quantidade (paginado) */
+        /** Os produtos vendidos no período, por faturamento, quantidade ou crescimento (paginado) */
         get: operations["listMenuReportProducts"];
         put?: never;
         post?: never;
@@ -4615,6 +4615,19 @@ export interface components {
             /** Format: int64 */
             averageResponseSeconds: number;
         };
+        /** @description Os blocos do Business */
+        MenuFull: {
+            mostCanceled: components["schemas"]["ReportCanceledProduct"][];
+            sizes: components["schemas"]["ReportProductSizes"][];
+            options: components["schemas"]["ReportOption"][];
+            /**
+             * Format: int64
+             * @description O que os adicionais pagos somaram
+             */
+            paidOptionsCents: number;
+            pairs: components["schemas"]["ReportPair"][];
+            video: components["schemas"]["ReportVideo"];
+        };
         /** @description O Cardápio, com os blocos básicos (a tabela de produtos vem paginada à parte) */
         MenuReport: {
             /** @enum {string} */
@@ -4635,6 +4648,17 @@ export interface components {
             byCategory: components["schemas"]["ReportCategory"][];
             /** @description Ativos há mais de 30 dias, do que menos vendeu */
             slowSellers: components["schemas"]["ReportProduct"][];
+            /** @description Os blocos do Business; null no Pro (o dado não sai do servidor) */
+            full?: components["schemas"]["MenuFull"];
+        };
+        /** @description Um dos mais cancelados, com o motivo que se repetiu */
+        ReportCanceledProduct: {
+            name: string;
+            /** Format: int32 */
+            times: number;
+            reason?: string;
+            /** Format: int32 */
+            reasonTimes?: number;
         };
         /** @description Uma categoria do cardápio no período */
         ReportCategory: {
@@ -4645,6 +4669,26 @@ export interface components {
             quantity: number;
             /** Format: int64 */
             revenueCents: number;
+        };
+        /** @description Uma opção ou adicional: quantas vezes e quanto somou */
+        ReportOption: {
+            group: string;
+            name: string;
+            /** Format: int32 */
+            times: number;
+            /** Format: int64 */
+            chargedCents: number;
+            /** @description Tem preço (mesmo que tenha saído de graça) */
+            priced: boolean;
+        };
+        /** @description Dos que pediram o primeiro, quantos pediram também o segundo */
+        ReportPair: {
+            first: string;
+            second: string;
+            /** Format: int32 */
+            firstTabs: number;
+            /** Format: int32 */
+            together: number;
         };
         /** @description Um produto no período, com a categoria (sem os cancelados) */
         ReportProduct: {
@@ -4657,8 +4701,30 @@ export interface components {
             /** Format: int64 */
             revenueCents: number;
         };
-        PageResponseReportProduct: {
-            content: components["schemas"]["ReportProduct"][];
+        /** @description Um produto com os tamanhos, do mais escolhido */
+        ReportProductSizes: {
+            product: string;
+            sizes: components["schemas"]["ReportSize"][];
+        };
+        /** @description Um tamanho do produto e quantas unidades vendeu */
+        ReportSize: {
+            name: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        /** @description Os produtos ativos com vídeo e sem, e o que cada grupo vendeu */
+        ReportVideo: {
+            /** Format: int32 */
+            withVideo: number;
+            /** Format: int32 */
+            withVideoSold: number;
+            /** Format: int32 */
+            withoutVideo: number;
+            /** Format: int32 */
+            withoutVideoSold: number;
+        };
+        PageResponseReportMenuProduct: {
+            content: components["schemas"]["ReportMenuProduct"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4667,6 +4733,26 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        /**
+         * @description Um produto no período (sem os cancelados). No Business, também a curva ABC, o faturamento do
+         *     período anterior e as unidades canceladas; no Pro, esses três vêm null.
+         */
+        ReportMenuProduct: {
+            /** Format: uuid */
+            productId: string;
+            name: string;
+            category: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            revenueCents: number;
+            /** @enum {string} */
+            abc?: "A" | "B" | "C";
+            /** Format: int64 */
+            comparedRevenueCents?: number;
+            /** Format: int32 */
+            canceled?: number;
         };
         /** @description Cozinha e tempos, com os blocos básicos */
         KitchenReport: {
@@ -10250,7 +10336,7 @@ export interface operations {
                 to: string;
                 sectorId?: string;
                 categoryId?: string;
-                sort?: "REVENUE" | "QUANTITY";
+                sort?: "REVENUE" | "QUANTITY" | "GROWTH";
                 page?: number;
                 size?: number;
             };
@@ -10266,7 +10352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseReportProduct"];
+                    "application/json": components["schemas"]["PageResponseReportMenuProduct"];
                 };
             };
             /** @description Datas ou página inválidas */
@@ -10278,7 +10364,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description O plano não tem relatórios */
+            /** @description O plano não tem relatórios (ou o crescimento, fora do Business) */
             403: {
                 headers: {
                     [name: string]: unknown;

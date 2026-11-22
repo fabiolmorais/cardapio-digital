@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { BarList, ChartCard, NoData } from "./charts";
+import Link from "next/link";
+import { BarList, ChartCard, NoData, variation } from "./charts";
+import { LockedCard } from "./locked";
+import { CanceledCard, OptionsCard, PairsCard, SizesCard, VideoCard } from "./menu-full";
 import {
   useMenuProducts,
   useMenuReport,
@@ -64,11 +67,12 @@ function MenuBody({ filters }: { filters: ReportFilters }) {
   const report = useMenuReport(params);
   if (report.isError) return <BlockError onRetry={() => report.refetch()} />;
   if (!report.data) return <Loading inline />;
+  const full = report.data.full;
   return (
     <>
       {/* Trocar o período ou a categoria volta a tabela para a primeira página. */}
       <ProductTable key={JSON.stringify(params)} params={params} report={report.data} />
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-3">
         <ChartCard title={m.byCategory}>
           {report.data.byCategory.length > 0 ? (
             <BarList
@@ -84,12 +88,26 @@ function MenuBody({ filters }: { filters: ReportFilters }) {
           )}
         </ChartCard>
         <SlowSellers report={report.data} />
+        {full ? <CanceledCard full={full} /> : <LockedCard title={m.canceled.title} text={m.locked.canceled} />}
+      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-3">
+        {full ? <SizesCard full={full} /> : <LockedCard title={m.sizes.title} text={m.locked.sizes} />}
+        {full ? (
+          <OptionsCard full={full} itemsRevenueCents={report.data.itemsRevenueCents} />
+        ) : (
+          <LockedCard title={m.options.title} text={m.locked.options} />
+        )}
+        {full ? <PairsCard full={full} /> : <LockedCard title={m.pairs.title} text={m.locked.pairs} />}
+      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-3">
+        {full ? <VideoCard full={full} /> : <LockedCard title={m.video.title} text={m.locked.video} />}
       </div>
     </>
   );
 }
 
 function ProductTable({ params, report }: { params: ReportParams & { categoryId?: string }; report: MenuReport }) {
+  const business = report.full != null;
   const [sort, setSort] = useState<ProductSort>("REVENUE");
   const [page, setPage] = useState(0);
   const products = useMenuProducts({ ...params, sort, page, size: PAGE_SIZE });
@@ -99,25 +117,28 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
   return (
     <ChartCard
       title={m.products}
+      hint={business ? m.abcHint : undefined}
       action={
         <div role="group" aria-label={m.sortBy} className="flex gap-1 rounded-[14px] border border-border bg-card p-1">
-          {(["REVENUE", "QUANTITY"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={sort === option}
-              onClick={() => {
-                setSort(option);
-                setPage(0);
-              }}
-              className={cn(
-                "h-9 rounded-[10px] px-3 text-sm font-semibold text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                sort === option && "bg-foreground text-background",
-              )}
-            >
-              {m.sort[option]}
-            </button>
-          ))}
+          {(business ? (["REVENUE", "QUANTITY", "GROWTH"] as const) : (["REVENUE", "QUANTITY"] as const)).map(
+            (option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={sort === option}
+                onClick={() => {
+                  setSort(option);
+                  setPage(0);
+                }}
+                className={cn(
+                  "h-9 rounded-[10px] px-3 text-sm font-semibold text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                  sort === option && "bg-foreground text-background",
+                )}
+              >
+                {m.sort[option]}
+              </button>
+            ),
+          )}
         </div>
       }
     >
@@ -130,12 +151,17 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
       ) : (
         <>
           <div className="relative -mx-5 overflow-x-auto px-5">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
+            <table className={cn("w-full border-collapse text-sm", business ? "min-w-[820px]" : "min-w-[560px]")}>
               <thead>
                 <tr className="text-left text-xs font-semibold tracking-[.4px] text-muted-foreground uppercase">
                   <th scope="col" className="border-b border-border py-3 pr-4 font-semibold">
                     {m.columns.product}
                   </th>
+                  {business && (
+                    <th scope="col" className="border-b border-border px-4 py-3 font-semibold">
+                      {m.columnsFull.abc}
+                    </th>
+                  )}
                   <th scope="col" className="border-b border-border px-4 py-3 text-right font-semibold">
                     {m.columns.sold}
                   </th>
@@ -145,6 +171,16 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
                   <th scope="col" className="w-[30%] border-b border-border py-3 pl-4 font-semibold">
                     {m.columns.share}
                   </th>
+                  {business && (
+                    <>
+                      <th scope="col" className="border-b border-border px-4 py-3 text-right font-semibold">
+                        {m.columnsFull.previous}
+                      </th>
+                      <th scope="col" className="border-b border-border py-3 pl-4 text-right font-semibold">
+                        {m.columnsFull.canceled}
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +192,21 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
                         <span className="text-xs text-muted-foreground">{product.category}</span>
                       </span>
                     </td>
+                    {business && (
+                      <td className="px-4 py-3">
+                        {product.abc && (
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                              product.abc === "A" ? "bg-success/15 text-success" : "bg-secondary text-muted-foreground",
+                            )}
+                          >
+                            <span aria-hidden>{product.abc}</span>
+                            <span className="sr-only">{m.abcLabel(product.abc)}</span>
+                          </span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-right font-mono tabular-nums">{product.quantity}</td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">{formatCents(product.revenueCents)}</td>
                     <td className="py-3 pl-4">
@@ -172,11 +223,29 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
                         </span>
                       </span>
                     </td>
+                    {business && (
+                      <>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <Growth now={product.revenueCents} before={product.comparedRevenueCents ?? 0} />
+                        </td>
+                        <td className="py-3 pl-4 text-right font-mono tabular-nums">
+                          {product.canceled ? product.canceled : "—"}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {!business && (
+            <p className="text-xs leading-4 text-muted-foreground">
+              {m.lockedColumns}{" "}
+              <Link href="/admin/assinatura" className="font-semibold text-foreground underline underline-offset-4">
+                {messages.reports.full.locked.more}
+              </Link>
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <p className="mr-auto text-xs leading-4 text-muted-foreground">
               {m.showing(
@@ -207,6 +276,31 @@ function ProductTable({ params, report }: { params: ReportParams & { categoryId?
         </>
       )}
     </ChartCard>
+  );
+}
+
+/** A variação do faturamento contra o período anterior; "novo" para quem não vendeu antes. */
+function Growth({ now, before }: { now: number; before: number }) {
+  if (before === 0) {
+    return (
+      <span className="text-[13px] font-semibold text-info">
+        <span aria-hidden>{m.newItem}</span>
+        <span className="sr-only">{m.newItemLabel}</span>
+      </span>
+    );
+  }
+  const delta = variation(now, before);
+  return (
+    <span
+      className={cn(
+        "text-[13px] font-semibold",
+        delta.tone === "up" && "text-success",
+        delta.tone === "down" && "text-destructive",
+        delta.tone === "flat" && "text-muted-foreground",
+      )}
+    >
+      {delta.text}
+    </span>
   );
 }
 
