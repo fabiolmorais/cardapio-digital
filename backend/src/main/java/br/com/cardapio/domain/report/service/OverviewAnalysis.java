@@ -50,6 +50,14 @@ public final class OverviewAnalysis {
      * motivo mais comum (só se algum motivo apareceu mais de uma vez).
      */
     public static Optional<AttentionPoint.CanceledProduct> mostCanceled(Collection<CanceledProductCount> counts) {
+        return canceledRanking(counts, MIN_CANCELED).stream().findFirst();
+    }
+
+    /**
+     * Os produtos cancelados {@code min} vezes ou mais, do mais cancelado (empate: o nome), cada um com o
+     * motivo que mais se repetiu (só se algum apareceu mais de uma vez).
+     */
+    static List<AttentionPoint.CanceledProduct> canceledRanking(Collection<CanceledProductCount> counts, int min) {
         Map<String, List<CanceledProductCount>> byProduct = counts.stream()
                 .collect(Collectors.groupingBy(CanceledProductCount::name));
         return byProduct.entrySet().stream()
@@ -63,9 +71,10 @@ public final class OverviewAnalysis {
                             reason.map(CanceledProductCount::reason).orElse(null),
                             reason.map(CanceledProductCount::times).orElse(0));
                 })
-                .filter(p -> p.times() >= MIN_CANCELED)
-                .max(Comparator.comparingInt(AttentionPoint.CanceledProduct::times)
-                        .thenComparing(AttentionPoint.CanceledProduct::name, Comparator.reverseOrder()));
+                .filter(p -> p.times() >= min)
+                .sorted(Comparator.comparingInt(AttentionPoint.CanceledProduct::times).reversed()
+                        .thenComparing(AttentionPoint.CanceledProduct::name))
+                .toList();
     }
 
     /**

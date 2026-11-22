@@ -21,11 +21,13 @@ record MenuReportResponse(
         @Schema(requiredMode = REQUIRED, description = "Produtos ativos do cardápio de sempre") int activeProducts,
         @Schema(requiredMode = REQUIRED) List<Category> byCategory,
         @Schema(requiredMode = REQUIRED, description = "Ativos há mais de 30 dias, do que menos vendeu")
-        List<Product> slowSellers) {
+        List<Product> slowSellers,
+        @Schema(description = "Os blocos do Business; null no Pro (o dado não sai do servidor)") MenuFullDtos.Full full) {
 
     static MenuReportResponse from(MenuReport r) {
         return new MenuReportResponse(Level.valueOf(r.level().name()), Range.of(r.period()), r.itemsRevenue().cents(),
                 r.itemsSold(), r.activeProducts(), r.byCategory().stream().map(Category::of).toList(),
-                r.slowSellers().stream().map(Product::of).toList());
+                r.slowSellers().stream().map(Product::of).toList(),
+                r.full() == null ? null : MenuFullDtos.Full.of(r.full()));
     }
 }

@@ -423,6 +423,95 @@ test("em Vendas, o Pro vê os blocos do Business bloqueados e o Business vê set
   );
 });
 
+test("no Cardápio, o Pro vê os blocos do Business bloqueados e o Business vê a curva ABC e os blocos", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { email } = await createAccount(request);
+  await closeOneTab(request, browser, email);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/cardapio?periodo=today");
+  const products = page.getByRole("region", { name: "Produtos" });
+  await expect(products.getByRole("row", { name: /Prato da casa/ })).toBeVisible();
+  await expect(products.getByRole("columnheader", { name: "Curva" })).toHaveCount(0);
+  await expect(products.getByRole("button", { name: "Crescimento" })).toHaveCount(0);
+  for (const block of [
+    "Mais cancelados",
+    "Tamanhos",
+    "Opções e adicionais",
+    "Pedidos juntos",
+    "Com vídeo x sem vídeo",
+  ]) {
+    await expect(page.getByRole("region", { name: `${block} (disponível no Business)` })).toBeVisible();
+  }
+
+  // O plano vem do back; aqui, o nível do Business e os dados dele, como o back os manda.
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
+  });
+  await page.route("**/api/v1/reports/menu/products?**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...body,
+        content: body.content.map((p: object) => ({ ...p, abc: "A", comparedRevenueCents: 6000, canceled: 2 })),
+      },
+    });
+  });
+  await page.route("**/api/v1/reports/menu?**", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      json: {
+        ...(await response.json()),
+        level: "FULL",
+        full: {
+          mostCanceled: [{ name: "Temaki salmão", times: 9, reason: "Acabou o salmão", reasonTimes: 7 }],
+          sizes: [
+            {
+              product: "Chopp",
+              sizes: [
+                { name: "500 ml", quantity: 247 },
+                { name: "300 ml", quantity: 151 },
+              ],
+            },
+          ],
+          options: [
+            { group: "Extras", name: "Cream cheese extra", times: 212, chargedCents: 106000, priced: true },
+            { group: "Extras", name: "Gengibre extra", times: 96, chargedCents: 0, priced: true },
+            { group: "Ponto", name: "Mal passado", times: 41, chargedCents: 0, priced: false },
+          ],
+          paidOptionsCents: 106000,
+          pairs: [{ first: "Guioza", second: "Chopp 500 ml", firstTabs: 100, together: 41 }],
+          video: { withVideo: 12, withVideoSold: 732, withoutVideo: 52, withoutVideoSold: 1976 },
+        },
+      },
+    });
+  });
+  await page.reload();
+
+  const row = products.getByRole("row", { name: /Prato da casa/ });
+  await expect(row).toContainText("curva A");
+  await expect(row).toContainText("▲ 14,8%");
+  await expect(products.getByRole("button", { name: "Crescimento" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Mais cancelados" })).toContainText('7 de 9: "Acabou o salmão"');
+  await expect(page.getByRole("region", { name: "Tamanhos" })).toContainText("500 ml 62% · 300 ml 38%");
+  const options = page.getByRole("region", { name: "Opções e adicionais" });
+  await expect(options).toContainText("Cream cheese extra212×R$ 1.060,00");
+  await expect(options).toContainText("Gengibre extra96×grátis");
+  await expect(options).toContainText("Mal passado41×—");
+  await expect(page.getByRole("region", { name: "Pedidos juntos" })).toContainText(
+    "Guioza + Chopp 500 mlem 41% das mesas",
+  );
+  await expect(page.getByRole("region", { name: "Com vídeo x sem vídeo" })).toContainText("61 por item");
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});
+
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {
   const { email } = await createAccount(request);
   // O plano vem do back; aqui, o mesmo contexto com o nível do Essencial.

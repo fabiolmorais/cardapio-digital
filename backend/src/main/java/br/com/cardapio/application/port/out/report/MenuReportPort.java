@@ -5,7 +5,13 @@ import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.SectorId;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
+import br.com.cardapio.domain.report.model.CanceledProductCount;
 import br.com.cardapio.domain.report.model.CategorySales;
+import br.com.cardapio.domain.report.model.OptionSales;
+import br.com.cardapio.domain.report.model.ProductPair;
+import br.com.cardapio.domain.report.model.ProductRow;
+import br.com.cardapio.domain.report.model.VariantSales;
+import br.com.cardapio.domain.report.model.VideoComparison;
 import br.com.cardapio.domain.report.model.ProductSales;
 import br.com.cardapio.domain.report.model.ProductSort;
 
@@ -23,10 +29,34 @@ public interface MenuReportPort {
     List<CategorySales> byCategory(EstablishmentId establishmentId, Instant start, Instant end,
                                    Optional<SectorId> sector, Optional<MenuCategoryId> category);
 
-    /** Os produtos que venderam, numa página, na ordem pedida (o empate desempata pela outra medida e pelo nome). */
-    ResultPage<ProductSales> products(EstablishmentId establishmentId, Instant start, Instant end,
-                                      Optional<SectorId> sector, Optional<MenuCategoryId> category, ProductSort sort,
-                                      PageQuery page);
+    /**
+     * Os produtos que venderam, numa página, na ordem pedida (o empate desempata pela outra medida e pelo
+     * nome). Cada linha traz também a base da curva ABC (o que os produtos à frente somam e o total), o
+     * faturamento no intervalo da comparação [comparedStart, comparedEnd) e as unidades canceladas.
+     */
+    ResultPage<ProductRow> products(EstablishmentId establishmentId, Instant start, Instant end,
+                                    Instant comparedStart, Instant comparedEnd, Optional<SectorId> sector,
+                                    Optional<MenuCategoryId> category, ProductSort sort, PageQuery page);
+
+    /** Os itens cancelados nas comandas fechadas, por produto e motivo, somando as unidades. */
+    List<CanceledProductCount> canceled(EstablishmentId establishmentId, Instant start, Instant end,
+                                        Optional<SectorId> sector, Optional<MenuCategoryId> category);
+
+    /** As unidades vendidas por tamanho (só os itens com tamanho). */
+    List<VariantSales> sizes(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
+                             Optional<MenuCategoryId> category);
+
+    /** As opções e os adicionais escolhidos (sem os sabores, que dividem o item), com o que somaram. */
+    List<OptionSales> options(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
+                              Optional<MenuCategoryId> category);
+
+    /** Os pares de produtos pedidos na mesma comanda, dos que mais aparecem juntos (até {@code limit}). */
+    List<ProductPair> pairs(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
+                            int minTogether, int limit);
+
+    /** Os produtos ativos do cardápio de sempre com vídeo pronto e sem, e o que cada grupo vendeu. */
+    VideoComparison video(EstablishmentId establishmentId, Instant start, Instant end, Optional<SectorId> sector,
+                          Optional<MenuCategoryId> category);
 
     /**
      * Os produtos ativos do cardápio de sempre cadastrados até {@code createdUntil} que menos venderam no

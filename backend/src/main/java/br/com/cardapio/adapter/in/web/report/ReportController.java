@@ -128,17 +128,17 @@ class ReportController {
 
     @GetMapping("/menu/products")
     @Operation(operationId = "listMenuReportProducts",
-            summary = "Os produtos vendidos no período, por faturamento ou quantidade (paginado)")
+            summary = "Os produtos vendidos no período, por faturamento, quantidade ou crescimento (paginado)")
     @ApiResponse(responseCode = "200", description = "Uma página dos produtos")
     @ApiResponse(responseCode = "400", description = "Datas ou página inválidas", content = @Content(
             mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
-    @ApiResponse(responseCode = "403", description = "O plano não tem relatórios", content = @Content(
+    @ApiResponse(responseCode = "403", description = "O plano não tem relatórios (ou o crescimento, fora do Business)", content = @Content(
             mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Setor ou categoria não encontrados", content = @Content(
             mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
             mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
-    PageResponse<ReportDtos.Product> menuProducts(
+    PageResponse<MenuFullDtos.Row> menuProducts(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -148,7 +148,7 @@ class ReportController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
         return PageResponse.from(menu.products(menuQuery(jwt, from, to, sectorId, categoryId),
-                ProductSort.valueOf(sort.name()), new PageQuery(page, size)), ReportDtos.Product::of);
+                ProductSort.valueOf(sort.name()), new PageQuery(page, size)), MenuFullDtos.Row::of);
     }
 
     @GetMapping("/kitchen")
@@ -171,8 +171,8 @@ class ReportController {
                 categoryId == null ? null : new MenuCategoryId(categoryId))));
     }
 
-    /** A ordem da tabela de produtos. */
-    enum ProductOrder { REVENUE, QUANTITY }
+    /** A ordem da tabela de produtos (pelo crescimento: Business). */
+    enum ProductOrder { REVENUE, QUANTITY, GROWTH }
 
     private static MenuReportQuery menuQuery(Jwt jwt, LocalDate from, LocalDate to, UUID sectorId, UUID categoryId) {
         return new MenuReportQuery(query(jwt, from, to, sectorId),

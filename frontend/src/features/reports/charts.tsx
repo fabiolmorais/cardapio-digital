@@ -385,15 +385,18 @@ function Row({
 
 export type BarRow = { key: string; label: string; value: number; detail?: string };
 
-/** Barras deitadas, do maior para o menor (itens mais vendidos): nome, barra e valor. */
-export function BarList({ rows }: { rows: BarRow[] }) {
+/**
+ * Barras deitadas, do maior para o menor (itens mais vendidos): nome, barra e valor. O valor é em
+ * centavos, a menos que venha `format`.
+ */
+export function BarList({ rows, format = formatCents }: { rows: BarRow[]; format?: (value: number) => string }) {
   const max = Math.max(...rows.map((r) => r.value));
   return (
     <ul className="flex flex-col gap-2.5">
       {rows.map((row) => (
         <li
           key={row.key}
-          title={row.detail ? `${row.label}: ${formatCents(row.value)} · ${row.detail}` : undefined}
+          title={row.detail ? `${row.label}: ${format(row.value)} · ${row.detail}` : undefined}
           className="grid grid-cols-[minmax(110px,1.2fr)_minmax(0,2fr)_auto] items-center gap-3 text-sm max-sm:grid-cols-[minmax(0,1fr)_auto]"
         >
           <span className="truncate">{row.label}</span>
@@ -401,7 +404,7 @@ export function BarList({ rows }: { rows: BarRow[] }) {
             <span className="h-3 rounded-r bg-report-now" style={{ width: `${(row.value / max) * 100}%` }} />
           </span>
           <span className="text-right font-mono text-[13px] tabular-nums">
-            {formatCents(row.value)}
+            {format(row.value)}
             {row.detail && <span className="sr-only"> · {row.detail}</span>}
           </span>
         </li>

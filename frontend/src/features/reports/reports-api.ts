@@ -11,7 +11,7 @@ export type SummarySettings = Schemas["DailySummarySettings"];
 export type SummarySettingsRequest = Schemas["DailySummarySettingsRequest"];
 export type DailySummary = Schemas["DailySummary"];
 export type SummaryTestResult = Schemas["DailySummaryTestResult"];
-export type ProductSort = "REVENUE" | "QUANTITY";
+export type ProductSort = "REVENUE" | "QUANTITY" | "GROWTH";
 
 /** O período (dias do restaurante) e, se escolhido, o setor. */
 export type ReportParams = { from: string; to: string; sectorId?: string };

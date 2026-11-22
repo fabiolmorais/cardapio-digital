@@ -15,7 +15,9 @@ import java.util.List;
  * @param itemsRevenue   o faturamento dos itens do período (a base da participação de cada produto)
  * @param itemsSold      as unidades vendidas no período
  * @param activeProducts os produtos ativos do cardápio de sempre
+ * @param full           os blocos completos; null para quem só tem os básicos (o dado não sai do servidor)
  */
 public record MenuReport(ReportLevel level, ReportPeriod period, Money itemsRevenue, int itemsSold,
-                         int activeProducts, List<CategorySales> byCategory, List<ProductSales> slowSellers) {
+                         int activeProducts, List<CategorySales> byCategory, List<ProductSales> slowSellers,
+                         MenuFull full) {
 }
