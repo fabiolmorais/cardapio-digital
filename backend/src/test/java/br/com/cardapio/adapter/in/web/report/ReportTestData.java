@@ -223,6 +223,48 @@ final class ReportTestData {
         }
     }
 
+    /** Um celular na mesa (a sessão), aberto em {@code at}. */
+    UUID session(Owner owner, Place place, Instant at) {
+        UUID session = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO table_session (id, establishment_id, table_id, token_hash, created_at, last_seen_at,
+                                           expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, session, owner.establishmentId(), place.table(), UUID.randomUUID().toString().replace("-", ""),
+                Timestamp.from(at), Timestamp.from(at), Timestamp.from(at.plus(Duration.ofHours(2))));
+        return session;
+    }
+
+    /** Um pedido feito pelo celular na comanda (sem itens: conta só como pedido). */
+    void phoneOrder(Owner owner, Place place, UUID tab, UUID session, Instant at) {
+        jdbc.update("""
+                INSERT INTO customer_order (id, establishment_id, tab_id, table_id, session_id, number, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 2, 'SENT', ?)
+                """, UUID.randomUUID(), owner.establishmentId(), tab, place.table(), session, Timestamp.from(at));
+    }
+
+    /** Um chamado do garçom, aceito e atendido por {@code by} em {@code accepted} (null: ainda esperando). */
+    void call(Owner owner, Place place, UUID session, Instant created, Instant accepted, UUID by) {
+        jdbc.update("""
+                INSERT INTO call (id, establishment_id, table_id, session_id, type, status, created_at, accepted_at,
+                                  accepted_by, done_at)
+                VALUES (?, ?, ?, ?, 'WAITER', ?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), owner.establishmentId(), place.table(), session,
+                accepted == null ? "PENDING" : "DONE", Timestamp.from(created),
+                accepted == null ? null : Timestamp.from(accepted), by,
+                accepted == null ? null : Timestamp.from(accepted));
+    }
+
+    /** Alguém do salão, que entra pelo PIN. */
+    UUID waiter(Owner owner, String name) {
+        UUID user = UUID.randomUUID();
+        jdbc.update("INSERT INTO app_user (id, name) VALUES (?, ?)", user, name);
+        jdbc.update("""
+                INSERT INTO membership (id, user_id, establishment_id, role, pin_hash) VALUES (?, ?, ?, 'STAFF', 'x')
+                """, UUID.randomUUID(), user, owner.establishmentId());
+        return user;
+    }
+
     MvcTestResult get(Owner owner, String uri) {
         return get(owner.token(), uri);
     }

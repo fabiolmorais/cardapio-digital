@@ -11,14 +11,15 @@ import br.com.cardapio.domain.report.model.WeekdayHourAverage;
 import java.util.List;
 
 /**
- * A Visão geral (desenho 14.1), só com os blocos básicos (REL-01, 02, 03, 05, 08, 13). Os completos
- * entram nas etapas do Business.
+ * A Visão geral (desenho 14.1): os blocos básicos (REL-01, 02, 03, 05, 08, 13) e, no Business, os
+ * completos.
  *
  * @param comparison o período da comparação (mesmo tamanho antes; um dia só: o mesmo dia da semana anterior)
  * @param compared   os números da comparação; em "hoje", até a mesma hora
+ * @param full       os blocos completos; null para quem só tem os básicos (o dado não sai do servidor)
  */
 public record OverviewReport(ReportLevel level, ReportPeriod period, ReportPeriod comparison,
                              ReportTotals current, ReportTotals compared, List<DayComparison> byDay,
                              List<PaymentTotal> payments, List<WeekdayHourAverage> heatmap,
-                             List<ItemSales> topItems) {
+                             List<ItemSales> topItems, OverviewFull full) {
 }

@@ -3,27 +3,33 @@
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { BarList, ChartCard, ColumnChart, Heatmap, KpiTile, NoData, SplitBar } from "./charts";
+import { LockedCard } from "./locked";
+import { AttentionCard, OperationTiles, TodayCard, WaitersCard } from "./overview-full";
 import { formatDayMonth, formatWeekday } from "./period";
-import { useOverviewReport, type OverviewReport } from "./reports-api";
+import { useOverviewReport, type OverviewReport, type ReportContext } from "./reports-api";
 import { BlockError, Loading, ReportsScreen, type ReportFilters } from "./reports-page";
 
 const t = messages.reports;
 
 const METHOD_COLOR = { PIX: "var(--report-pix)", CARD: "var(--report-card)", CASH: "var(--report-cash)" } as const;
 
-/** A Visão geral (desenho 14.1), com os blocos básicos (REL-01, 02, 03, 05, 08, 13). */
-export function OverviewBody({ filters }: { filters: ReportFilters }) {
+/**
+ * A Visão geral (desenho 14.1): os blocos básicos (REL-01, 02, 03, 05, 08, 13) e, no Business, os
+ * completos. No Pro, os do Business aparecem bloqueados (desenho 14.9).
+ */
+export function OverviewBody({ context, filters }: { context: ReportContext; filters: ReportFilters }) {
   const report = useOverviewReport(filters.query);
   if (report.isError) return <BlockError onRetry={() => report.refetch()} />;
   if (!report.data) return <Loading inline />;
-  return <Overview report={report.data} />;
+  return <Overview report={report.data} timeZone={context.timeZone} />;
 }
 
-function Overview({ report }: { report: OverviewReport }) {
-  const { current, compared } = report;
+function Overview({ report, timeZone }: { report: OverviewReport; timeZone: string }) {
+  const { current, compared, full } = report;
+  const locked = t.full.locked;
   return (
     <>
-      <section aria-label={t.overview} className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
+      <section aria-label={t.overview} className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <KpiTile
           label={t.kpi.revenue}
           value={formatCents(current.revenueCents)}
@@ -37,15 +43,27 @@ function Overview({ report }: { report: OverviewReport }) {
           current={current.averageTicketCents}
           previous={compared.averageTicketCents}
         />
+        {full ? (
+          <OperationTiles full={full} revenueCents={current.revenueCents} />
+        ) : (
+          <LockedCard title={locked.moreNumbers} text={locked.moreNumbersText} small />
+        )}
       </section>
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <RevenueByDay report={report} />
-        <Payments report={report} />
+        <div className="flex min-w-0 flex-col gap-5">
+          <Payments report={report} />
+          {full ? (
+            <TodayCard full={full} timeZone={timeZone} />
+          ) : (
+            <LockedCard title={t.full.today.title} text={locked.today} />
+          )}
+        </div>
       </div>
-      <div className="grid items-start gap-5 lg:grid-cols-[3fr_2fr]">
-        <ChartCard title={t.heatmap.title} hint={t.heatmap.hint}>
-          {report.heatmap.length > 0 ? <Heatmap cells={report.heatmap} /> : <NoData />}
-        </ChartCard>
+      <ChartCard title={t.heatmap.title} hint={t.heatmap.hint}>
+        {report.heatmap.length > 0 ? <Heatmap cells={report.heatmap} /> : <NoData />}
+      </ChartCard>
+      <div className="grid items-start gap-5 lg:grid-cols-3">
         <ChartCard title={t.topItems.title} note={report.topItems.length > 0 ? t.topItems.note : undefined}>
           {report.topItems.length > 0 ? (
             <BarList
@@ -60,6 +78,8 @@ function Overview({ report }: { report: OverviewReport }) {
             <NoData />
           )}
         </ChartCard>
+        {full ? <WaitersCard full={full} /> : <LockedCard title={t.full.waiters.title} text={locked.waiters} />}
+        {full ? <AttentionCard full={full} /> : <LockedCard title={t.full.attention.title} text={locked.attention} />}
       </div>
     </>
   );
@@ -116,5 +136,9 @@ function Payments({ report }: { report: OverviewReport }) {
 
 /** A tela da Visão geral, dentro da moldura dos relatórios. */
 export function OverviewScreen() {
-  return <ReportsScreen title={t.overview}>{(_, filters) => <OverviewBody filters={filters} />}</ReportsScreen>;
+  return (
+    <ReportsScreen title={t.overview}>
+      {(context, filters) => <OverviewBody context={context} filters={filters} />}
+    </ReportsScreen>
+  );
 }

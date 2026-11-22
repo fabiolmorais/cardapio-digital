@@ -4389,6 +4389,16 @@ export interface components {
              */
             peakHour?: number;
         };
+        /** @description Os blocos do Business */
+        OverviewFull: {
+            current: components["schemas"]["ReportOperation"];
+            /** @description A comparação; se o período termina hoje, até a mesma hora */
+            compared: components["schemas"]["ReportOperation"];
+            /** @description Sem histórico do mesmo dia da semana, null */
+            today?: components["schemas"]["ReportToday"];
+            waiters: components["schemas"]["ReportWaiter"][];
+            attention: components["schemas"]["ReportAttention"][];
+        };
         /** @description A Visão geral, com os blocos básicos */
         OverviewReport: {
             /** @enum {string} */
@@ -4404,6 +4414,28 @@ export interface components {
             /** @description Só as células com venda */
             heatmap: components["schemas"]["ReportHeatCell"][];
             topItems: components["schemas"]["ReportItem"][];
+            /** @description Os blocos do Business; null no Pro (o dado não sai do servidor) */
+            full?: components["schemas"]["OverviewFull"];
+        };
+        /**
+         * @description Um ponto de atenção. SLOW_ITEM: name, dayAverageSeconds e usualAverageSeconds. FORGOTTEN_TABS:
+         *     tables (as mesas das comandas abertas de um dia para o outro). CANCELED_PRODUCT: name, times e,
+         *     se algum motivo se repetiu, reason e reasonTimes.
+         */
+        ReportAttention: {
+            /** @enum {string} */
+            kind: "SLOW_ITEM" | "FORGOTTEN_TABS" | "CANCELED_PRODUCT";
+            name?: string;
+            /** Format: int64 */
+            dayAverageSeconds?: number;
+            /** Format: int64 */
+            usualAverageSeconds?: number;
+            tables?: string[];
+            /** Format: int32 */
+            times?: number;
+            reason?: string;
+            /** Format: int32 */
+            reasonTimes?: number;
         };
         /** @description Um dia do período ao lado do dia correspondente da comparação */
         ReportDay: {
@@ -4441,12 +4473,71 @@ export interface components {
             /** Format: int64 */
             revenueCents: number;
         };
+        /** @description Os números de operação de um período */
+        ReportOperation: {
+            /**
+             * Format: int64
+             * @description Do pedido chegar à cozinha até a mesa, em média
+             */
+            toTableSeconds?: number;
+            /** Format: int32 */
+            phoneOrders: number;
+            /** Format: int32 */
+            staffOrders: number;
+            /** @description A parte dos pedidos feita pelo celular, de 0 a 100 */
+            phoneSharePercent?: number;
+            /**
+             * Format: int64
+             * @description Do chamado até o garçom aceitar, em média
+             */
+            callResponseSeconds?: number;
+            /**
+             * Format: int64
+             * @description Da comanda abrir até fechar, em média
+             */
+            staySeconds?: number;
+            /**
+             * Format: int64
+             * @description Itens cancelados nas comandas fechadas
+             */
+            canceledCents: number;
+        };
         /** @description O que entrou por forma de pagamento, com a taxa de serviço */
         ReportPayment: {
             /** @enum {string} */
             method: "PIX" | "CARD" | "CASH";
             /** Format: int64 */
             amountCents: number;
+        };
+        /** @description Hoje, até agora, contra os mesmos dias da semana anteriores */
+        ReportToday: {
+            /** Format: int64 */
+            soFarCents: number;
+            /**
+             * Format: int64
+             * @description A média do dia inteiro
+             */
+            expectedCents: number;
+            /**
+             * Format: int64
+             * @description A média até esta mesma hora
+             */
+            usualCents: number;
+            /**
+             * Format: int32
+             * @description Quantas semanas entraram na média (1 a 4)
+             */
+            weeks: number;
+        };
+        /** @description Um garçom: chamados aceitos e a resposta média */
+        ReportWaiter: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            /** Format: int32 */
+            calls: number;
+            /** Format: int64 */
+            averageResponseSeconds: number;
         };
         /** @description O Cardápio, com os blocos básicos (a tabela de produtos vem paginada à parte) */
         MenuReport: {

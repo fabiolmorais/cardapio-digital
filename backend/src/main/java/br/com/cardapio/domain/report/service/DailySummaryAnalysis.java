@@ -2,6 +2,7 @@ package br.com.cardapio.domain.report.service;
 
 import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
+import br.com.cardapio.domain.report.model.PrepAverage;
 import br.com.cardapio.domain.report.model.PrepTime;
 import br.com.cardapio.domain.report.model.SlowAttention;
 
@@ -44,19 +45,30 @@ public final class DailySummaryAnalysis {
      * {@link #MIN_USUAL} ou mais), por pelo menos 25% e 3 min. Empate: o que passou mais minutos.
      */
     public static Optional<SlowAttention> attention(Collection<PrepTime> day, Collection<PrepTime> usual) {
-        Map<ProductId, List<PrepTime>> usualByProduct = usual.stream()
-                .collect(Collectors.groupingBy(PrepTime::productId));
+        return attentionOf(averages(day), averages(usual));
+    }
+
+    /** O mesmo, a partir das médias por produto (as consultas longas já chegam somadas). */
+    public static Optional<SlowAttention> attentionOf(Collection<PrepAverage> day, Collection<PrepAverage> usual) {
+        Map<ProductId, PrepAverage> usualByProduct = usual.stream()
+                .collect(Collectors.toMap(PrepAverage::productId, a -> a, (a, b) -> a));
         return day.stream()
-                .collect(Collectors.groupingBy(PrepTime::productId))
-                .entrySet().stream()
-                .filter(e -> e.getValue().size() >= MIN_DAY)
-                .filter(e -> usualByProduct.getOrDefault(e.getKey(), List.of()).size() >= MIN_USUAL)
-                .map(e -> new SlowAttention(e.getValue().getFirst().name(),
-                        KitchenAnalysis.average(e.getValue()).orElseThrow(),
-                        KitchenAnalysis.average(usualByProduct.get(e.getKey())).orElseThrow()))
+                .filter(d -> d.preparations() >= MIN_DAY)
+                .filter(d -> usualByProduct.containsKey(d.productId())
+                        && usualByProduct.get(d.productId()).preparations() >= MIN_USUAL)
+                .map(d -> new SlowAttention(d.name(), d.average(), usualByProduct.get(d.productId()).average()))
                 .filter(a -> a.dayAverage().toMillis() >= a.usualAverage().toMillis() * MIN_RATIO)
                 .filter(a -> a.dayAverage().minus(a.usualAverage()).compareTo(MIN_EXTRA) >= 0)
                 .max(Comparator.comparing((SlowAttention a) -> a.dayAverage().minus(a.usualAverage()))
                         .thenComparing(SlowAttention::name, Comparator.reverseOrder()));
+    }
+
+    private static List<PrepAverage> averages(Collection<PrepTime> times) {
+        return times.stream()
+                .collect(Collectors.groupingBy(PrepTime::productId))
+                .values().stream()
+                .map(list -> new PrepAverage(list.getFirst().productId(), list.getFirst().name(), list.size(),
+                        KitchenAnalysis.average(list).orElseThrow()))
+                .toList();
     }
 }
