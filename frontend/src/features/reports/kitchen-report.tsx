@@ -3,6 +3,8 @@
 import { messages } from "@/messages/pt-BR";
 import { ChartCard, KpiTile, NoData } from "./charts";
 import { formatDuration, timeVariation } from "./durations";
+import { ByHourCard, CategoryPrepCard, DelayedCard, KitchenFullTiles, PeaksCard } from "./kitchen-full";
+import { LockedCard } from "./locked";
 import { CategoryFilter } from "./menu-report";
 import { useKitchenReport, type KitchenReport } from "./reports-api";
 import { BlockError, Loading, ReportsScreen, type ReportFilters } from "./reports-page";
@@ -28,6 +30,8 @@ function KitchenBody({ filters }: { filters: ReportFilters }) {
   if (report.isError) return <BlockError onRetry={() => report.refetch()} />;
   if (!report.data) return <Loading inline />;
   const data = report.data;
+  const full = data.full;
+  const locked = k.full.locked;
   return (
     <>
       <section aria-label={k.title} className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
@@ -41,9 +45,26 @@ function KitchenBody({ filters }: { filters: ReportFilters }) {
           }
           hint={data.averagePrepSeconds == null ? k.noPreparations : t.delta.none}
         />
-        <KpiTile label={k.preparations} value={String(data.preparations)} hint={k.preparationsHint} />
+        {full ? (
+          <KitchenFullTiles full={full} />
+        ) : (
+          <>
+            <KpiTile label={k.preparations} value={String(data.preparations)} hint={k.preparationsHint} />
+            <div className="col-span-2">
+              <LockedCard title={locked.moreNumbers} text={locked.moreNumbersText} small />
+            </div>
+          </>
+        )}
       </section>
-      <Slowest report={data} />
+      {full ? <ByHourCard full={full} /> : <LockedCard title={k.full.byHour} text={locked.byHour} />}
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <Slowest report={data} />
+        {full ? <PeaksCard full={full} /> : <LockedCard title={k.full.peaks} text={locked.peaks} />}
+      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        {full ? <CategoryPrepCard full={full} /> : <LockedCard title={k.full.byCategory} text={locked.byCategory} />}
+        {full ? <DelayedCard full={full} /> : <LockedCard title={k.full.delayed} text={locked.delayed} />}
+      </div>
     </>
   );
 }

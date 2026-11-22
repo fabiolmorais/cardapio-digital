@@ -4754,6 +4754,16 @@ export interface components {
             /** Format: int32 */
             canceled?: number;
         };
+        /** @description Os blocos do Business */
+        KitchenFull: {
+            current: components["schemas"]["ReportServiceTimes"];
+            /** @description A comparação; se o período termina hoje, até a mesma hora */
+            compared: components["schemas"]["ReportServiceTimes"];
+            byHour: components["schemas"]["ReportHourTimes"][];
+            peaks: components["schemas"]["ReportPeak"][];
+            byCategory: components["schemas"]["ReportCategoryPrep"][];
+            delayed: components["schemas"]["ReportDelayedSlot"][];
+        };
         /** @description Cozinha e tempos, com os blocos básicos */
         KitchenReport: {
             /** @enum {string} */
@@ -4778,6 +4788,62 @@ export interface components {
             preparations: number;
             /** @description Os que mais demoram (5 preparos ou mais), pelo 9 em 10 */
             slowest: components["schemas"]["ReportSlowItem"][];
+            /** @description Os blocos do Business; null no Pro (o dado não sai do servidor) */
+            full?: components["schemas"]["KitchenFull"];
+        };
+        /** @description O preparo médio de uma categoria */
+        ReportCategoryPrep: {
+            name: string;
+            /** Format: int32 */
+            preparations: number;
+            /** Format: int64 */
+            averageSeconds: number;
+        };
+        /** @description Uma hora de um dia com prontos que esperaram mais de 5 min no passe */
+        ReportDelayedSlot: {
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            hour: number;
+            /** Format: int32 */
+            items: number;
+            /** Format: int64 */
+            averageWaitSeconds: number;
+        };
+        /** @description Os itens entregues que chegaram à cozinha numa hora do dia */
+        ReportHourTimes: {
+            /** Format: int32 */
+            hour: number;
+            /** Format: int64 */
+            prepSeconds: number;
+            /** Format: int64 */
+            passeSeconds: number;
+            /** Format: int32 */
+            items: number;
+        };
+        /** @description A média do pico de itens em preparo ao mesmo tempo numa hora */
+        ReportPeak: {
+            /** Format: int32 */
+            hour: number;
+            average: number;
+        };
+        /** @description O passe, o tempo até a mesa e as confirmações demoradas */
+        ReportServiceTimes: {
+            /**
+             * Format: int64
+             * @description De pronto até entregue, em média
+             */
+            passeSeconds?: number;
+            /**
+             * Format: int64
+             * @description Da chegada à cozinha até entregue, em média
+             */
+            toTableSeconds?: number;
+            /**
+             * Format: int32
+             * @description Pedidos que esperaram o garçom confirmar mais de 5 min
+             */
+            lateConfirmations: number;
         };
         /** @description Um dos itens que mais demoram, do pedido até pronto */
         ReportSlowItem: {

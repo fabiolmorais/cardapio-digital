@@ -23,12 +23,14 @@ record KitchenReportResponse(
         Long comparedAveragePrepSeconds,
         @Schema(requiredMode = REQUIRED, description = "Itens que ficaram prontos no período") int preparations,
         @Schema(requiredMode = REQUIRED, description = "Os que mais demoram (5 preparos ou mais), pelo 9 em 10")
-        List<SlowItem> slowest) {
+        List<SlowItem> slowest,
+        @Schema(description = "Os blocos do Business; null no Pro (o dado não sai do servidor)") KitchenFullDtos.Full full) {
 
     static KitchenReportResponse from(KitchenReport r) {
         return new KitchenReportResponse(Level.valueOf(r.level().name()), Range.of(r.period()),
                 Range.of(r.comparison()), r.averagePrep().map(Duration::toSeconds).orElse(null),
                 r.comparedAveragePrep().map(Duration::toSeconds).orElse(null), r.preparations(),
-                r.slowest().stream().map(SlowItem::of).toList());
+                r.slowest().stream().map(SlowItem::of).toList(),
+                r.full() == null ? null : KitchenFullDtos.Full.of(r.full()));
     }
 }

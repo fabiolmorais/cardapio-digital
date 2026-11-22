@@ -1,6 +1,8 @@
 package br.com.cardapio.domain.report.service;
 
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.report.model.HourPeak;
+import br.com.cardapio.domain.report.model.PeakAverage;
 import br.com.cardapio.domain.report.model.PrepTime;
 import br.com.cardapio.domain.report.model.SlowItem;
 import br.com.cardapio.domain.report.model.WeekdayHour;
@@ -130,5 +132,16 @@ class KitchenAnalysisTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new PrepTime(CHA, "Chá", "Bebidas", 1, 24, min(1)))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void theAveragePeakOfEachHourIsOverTheDaysTheKitchenWorkedIt() {
+        var monday = java.time.LocalDate.of(2026, 11, 16);
+        var peaks = KitchenAnalysis.peakAverages(List.of(new HourPeak(monday, 21, 23), new HourPeak(monday.plusDays(1), 21, 20),
+                new HourPeak(monday, 12, 4), new HourPeak(monday.plusDays(2), 21, 18)));
+
+        assertThat(peaks).containsExactly(new PeakAverage(12, new java.math.BigDecimal("4.0")),
+                new PeakAverage(21, new java.math.BigDecimal("20.3")));
+        assertThat(KitchenAnalysis.peakAverages(List.of())).isEmpty();
     }
 }

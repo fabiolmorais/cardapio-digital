@@ -512,6 +512,86 @@ test("no Cardápio, o Pro vê os blocos do Business bloqueados e o Business vê 
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
 
+test("na Cozinha, o Pro vê os blocos do Business bloqueados e o Business vê o passe, as horas e o gargalo", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+  // A cozinha com dados: o contexto diz que há movimento, e o relatório vem como o back o manda.
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, firstDataDay: body.today } });
+  });
+  const basic = {
+    averagePrepSeconds: 720,
+    comparedAveragePrepSeconds: 780,
+    preparations: 40,
+    slowest: [],
+  };
+  let full: object | null = null;
+  await page.route("**/api/v1/reports/kitchen?**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...body, ...basic, level: full ? "FULL" : "BASIC", full },
+    });
+  });
+
+  await page.goto("/admin/relatorios/cozinha?periodo=today");
+  for (const block of [
+    "Mais 3 números",
+    "Do pedido à mesa, por hora",
+    "Itens em preparo ao mesmo tempo",
+    "Preparo por categoria",
+    "Prontos que demoraram a chegar à mesa",
+  ]) {
+    await expect(page.getByRole("region", { name: `${block} (disponível no Business)` })).toBeVisible();
+  }
+
+  full = {
+    current: { passeSeconds: 220, toTableSeconds: 1080, lateConfirmations: 7 },
+    compared: { passeSeconds: 170, toTableSeconds: 1200, lateConfirmations: 4 },
+    byHour: [
+      { hour: 20, prepSeconds: 840, passeSeconds: 420, items: 30 },
+      { hour: 21, prepSeconds: 900, passeSeconds: 480, items: 41 },
+    ],
+    peaks: [
+      { hour: 20, average: 21 },
+      { hour: 21, average: 23 },
+    ],
+    byCategory: [
+      { name: "Pratos quentes", preparations: 60, averageSeconds: 1020 },
+      { name: "Bebidas", preparations: 80, averageSeconds: 180 },
+    ],
+    delayed: [{ day: "2026-11-15", hour: 21, items: 14, averageWaitSeconds: 540 }],
+  };
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, level: "FULL", firstDataDay: body.today } });
+  });
+  await page.reload();
+
+  const numbers = page.getByRole("region", { name: "Cozinha e tempos" });
+  await expect(numbers).toContainText("Esperando no passe3 min 40 s▲ 50 s, mais lento");
+  await expect(numbers).toContainText("Do pedido à mesa18 min▼ 2 min, mais rápido");
+  await expect(numbers).toContainText("Esperando confirmação7 pedidos");
+  await expect(
+    page.getByRole("button", { name: "21h: 23 min até a mesa (15 min de preparo, 8 min no passe)" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "21h: até 23 itens em preparo ao mesmo tempo, em média" }),
+  ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Preparo por categoria" })).toContainText("Pratos quentes17 min");
+  await expect(page.getByRole("region", { name: "Prontos que demoraram a chegar à mesa" })).toContainText(
+    "Dom 15/11, 21h14 itensmédia 9 min",
+  );
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});
+
 test("no Essencial, os relatórios mostram o que o Pro e o Business trazem", async ({ page, request }) => {
   const { email } = await createAccount(request);
   // O plano vem do back; aqui, o mesmo contexto com o nível do Essencial.
