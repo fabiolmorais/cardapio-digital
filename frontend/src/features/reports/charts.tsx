@@ -140,9 +140,9 @@ export type Column = {
   key: string;
   /** O rótulo embaixo da coluna (vazio para não amontoar). */
   label: string;
-  /** Em centavos. */
+  /** Em centavos (ou na unidade do gráfico, com `unit`). */
   value: number;
-  /** A comparação, em centavos (a segunda coluna, cinza). */
+  /** A comparação (a segunda coluna, cinza) ou, empilhado, a segunda parte da coluna. */
   previous?: number;
   /** O valor exato, dito ao tocar, passar o mouse ou pelo leitor de tela. */
   tip: string;
@@ -151,25 +151,36 @@ export type Column = {
 /**
  * Colunas no tempo (dias, semanas, horas), com a comparação ao lado quando vier. Cada coluna é um
  * botão: tocar, passar o mouse ou chegar pelo teclado mostra o valor na linha embaixo.
+ *
+ * Com `stacked`, a segunda parte vai em cima da primeira (o preparo e o passe). `unit` divide os
+ * valores para o eixo (100: centavos em reais) e `tickFormat` escreve os números do eixo.
  */
 export function ColumnChart({
   columns,
   label,
   legend,
   height = 220,
+  stacked = false,
+  unit = 100,
+  tickFormat = (value: number) => compact.format(value),
 }: {
   columns: Column[];
   label: string;
   legend?: { now: string; before: string };
   height?: number;
+  stacked?: boolean;
+  unit?: number;
+  tickFormat?: (value: number) => string;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  // Em reais (os valores vêm em centavos).
-  const { top: topReais, steps } = axis(Math.max(...columns.map((c) => Math.max(c.value, c.previous ?? 0))) / 100);
-  const top = topReais * 100;
-  const ticks = steps.map((v) => compact.format(v));
+  const highest = Math.max(
+    ...columns.map((c) => (stacked ? c.value + (c.previous ?? 0) : Math.max(c.value, c.previous ?? 0))),
+  );
+  const { top: topInUnits, steps } = axis(highest / unit);
+  const top = topInUnits * unit;
+  const ticks = steps.map(tickFormat);
   const every = columns.length > 16 ? Math.ceil(columns.length / 10) : 1;
-  const paired = legend !== undefined;
+  const paired = legend !== undefined && !stacked;
   const pick = (i: number) => setSelected(i);
 
   return (
@@ -223,13 +234,26 @@ export function ColumnChart({
                   selected === i && "bg-foreground/5",
                 )}
               >
-                <span
-                  className={cn(
-                    "w-full rounded-t bg-report-now group-hover:brightness-110",
-                    paired ? "max-w-[22px]" : "max-w-[26px]",
-                  )}
-                  style={{ height: `${(column.value / top) * 100}%`, minHeight: column.value > 0 ? 2 : 0 }}
-                />
+                {stacked ? (
+                  <span className="flex h-full w-full max-w-[26px] flex-col-reverse gap-0.5 group-hover:brightness-110">
+                    <span
+                      className="w-full bg-report-now"
+                      style={{ height: `${(column.value / top) * 100}%`, minHeight: column.value > 0 ? 2 : 0 }}
+                    />
+                    <span
+                      className="w-full rounded-t bg-report-prev"
+                      style={{ height: `${((column.previous ?? 0) / top) * 100}%`, minHeight: column.previous ? 2 : 0 }}
+                    />
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      "w-full rounded-t bg-report-now group-hover:brightness-110",
+                      paired ? "max-w-[22px]" : "max-w-[26px]",
+                    )}
+                    style={{ height: `${(column.value / top) * 100}%`, minHeight: column.value > 0 ? 2 : 0 }}
+                  />
+                )}
                 {paired && (
                   <span
                     className="w-full max-w-[22px] rounded-t bg-report-prev"

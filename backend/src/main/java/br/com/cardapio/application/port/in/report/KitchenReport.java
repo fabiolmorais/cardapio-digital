@@ -14,8 +14,9 @@ import java.util.Optional;
  * @param averagePrep         o preparo médio do período; vazio sem nenhum item pronto
  * @param comparedAveragePrep o da comparação (até a mesma hora, se o período termina hoje)
  * @param preparations        quantos itens ficaram prontos no período
+ * @param full                os blocos completos; null para quem só tem os básicos (o dado não sai do servidor)
  */
 public record KitchenReport(ReportLevel level, ReportPeriod period, ReportPeriod comparison,
                             Optional<Duration> averagePrep, Optional<Duration> comparedAveragePrep, int preparations,
-                            List<SlowItem> slowest) {
+                            List<SlowItem> slowest, KitchenFull full) {
 }
