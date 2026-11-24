@@ -1921,7 +1921,12 @@ export const messages = {
     export: "Exportar",
     exporting: "Exportando…",
     exportError: "Não deu para exportar. Tente de novo.",
-    exportLocked: "A exportação em CSV é do plano Business.",
+    exportLocked: "A exportação (CSV, Excel e PDF) é do plano Business.",
+    exportFormats: {
+      XLSX: { label: "Excel", hint: "com uma aba por tabela" },
+      PDF: { label: "PDF", hint: "para imprimir ou mandar" },
+      CSV: { label: "CSV", hint: "para outros sistemas" },
+    },
     period: "Período",
     periods: { today: "Hoje", "7d": "7 dias", "30d": "30 dias", month: "Este mês" },
     periodTitle: { today: "Hoje", "7d": "Últimos 7 dias", "30d": "Últimos 30 dias", month: "Este mês" },
