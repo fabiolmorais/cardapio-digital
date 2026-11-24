@@ -10,6 +10,7 @@ import { addToCart, MAX_NOTE, MAX_QUANTITY } from "./cart";
 import { ChoicePicker } from "./choice-picker";
 import { choicesText, evaluate, hasChoices, rulesOf, toChoices, type GroupsById, type Picked } from "./choices";
 import { discountPercent } from "./discount";
+import { trackMenuEvent } from "./menu-events";
 import type { MenuItem } from "./table-data";
 
 const t = tablePage.product;
@@ -67,6 +68,11 @@ export function ProductSheet({
     const element = dialog.current;
     if (item && element && !element.open) element.showModal();
   }, [item]);
+
+  // O prato aberto conta para o "visto x pedido" dos relatórios (anônimo).
+  useEffect(() => {
+    if (item) trackMenuEvent(token, "PRODUCT_VIEW", item.id);
+  }, [item, token]);
 
   // Ao trocar de página (tocar na foto leva ao Reels), o Next guarda esta página escondida, sem
   // desmontar. Um <dialog> modal aberto nela deixaria a página nova inteira sem resposta ao toque.

@@ -1,5 +1,10 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.in.menu.PurgeMenuEventsUseCase;
+import br.com.cardapio.application.port.in.menu.RecordMenuEventsUseCase;
+import br.com.cardapio.application.port.out.menu.MenuEventPort;
+import br.com.cardapio.application.service.menu.PurgeMenuEventsService;
+import br.com.cardapio.application.service.menu.RecordMenuEventsService;
 import br.com.cardapio.application.port.in.report.AuthorizeReportExportUseCase;
 import br.com.cardapio.application.port.in.report.ManageReportAlertsUseCase;
 import br.com.cardapio.application.port.in.report.ManageRevenueGoalsUseCase;
@@ -1219,6 +1224,18 @@ class UseCaseConfig {
                                                         EstablishmentTimeZonePort establishmentTimeZonePort,
                                                         RevenueGoalPort revenueGoalPort, Clock clock) {
         return new ManageRevenueGoalsService(subscriptionPort, establishmentTimeZonePort, revenueGoalPort, clock);
+    }
+
+    @Bean
+    RecordMenuEventsUseCase recordMenuEventsUseCase(DiningTablePort diningTablePort,
+                                                    TableSessionPort tableSessionPort, MenuEventPort menuEventPort,
+                                                    Clock clock) {
+        return new RecordMenuEventsService(diningTablePort, tableSessionPort, menuEventPort, clock);
+    }
+
+    @Bean
+    PurgeMenuEventsUseCase purgeMenuEventsUseCase(MenuEventPort menuEventPort, Clock clock) {
+        return new PurgeMenuEventsService(menuEventPort, clock);
     }
 
     @Bean

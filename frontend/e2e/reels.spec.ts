@@ -183,3 +183,32 @@ test("com nome e descrição longos, o selo do vídeo fica dentro da foto", asyn
   expect(photo.height).toBeLessThan(100);
   expect(badge.y + badge.height).toBeLessThanOrEqual(photo.y + photo.height);
 });
+
+test("o reel 2 segundos na tela conta como visto, uma vez só", async ({ page, request }) => {
+  const video = await recordVideo(page);
+  const { qr } = await restaurant(request, video);
+  // O Playwright não mostra o corpo do sendBeacon: a página guarda o que mandou, e o envio segue normal.
+  await page.addInitScript(() => {
+    const original = navigator.sendBeacon.bind(navigator);
+    const sent: Promise<string>[] = [];
+    Object.assign(window, { beacons: sent });
+    navigator.sendBeacon = (url, data) => {
+      if (data instanceof Blob) sent.push(data.text());
+      return original(url, data);
+    };
+  });
+  await page.goto(`/m/${qr}/cardapio`);
+  await page.getByRole("link", { name: "Ver Guioza em fotos e vídeos" }).click();
+  await expect(page.getByRole("region", { name: "Guioza" }).getByRole("heading", { name: "Guioza" })).toBeVisible();
+  await page.waitForTimeout(4500);
+
+  const answered = page.waitForResponse((r) => r.url().endsWith(`/api/v1/public/tables/${qr}/events`));
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect((await answered).status()).toBe(202);
+  const bodies = await page.evaluate(() => Promise.all((window as unknown as { beacons: Promise<string>[] }).beacons));
+  const kinds = bodies.flatMap((body) => JSON.parse(body).events).map((e: { kind: string }) => e.kind);
+  expect(kinds).toEqual(["REEL_VIEW"]);
+});
