@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { trackMenuEvent } from "./menu-events";
 
 /** Os limites do back: até 20 de cada item, 30 linhas e 140 letras de observação. */
 export const MAX_QUANTITY = 20;
@@ -111,10 +112,12 @@ export function addToCart(token: string, line: Omit<CartLine, "key">): boolean {
       token,
       lines.map((l) => (l.key === key ? { ...l, quantity: Math.min(MAX_QUANTITY, l.quantity + line.quantity) } : l)),
     );
+    trackMenuEvent(token, "CART_ADD", line.productId, Math.min(MAX_QUANTITY, line.quantity));
     return true;
   }
   if (lines.length >= MAX_LINES) return false;
   write(token, [...lines, { ...line, note, key, quantity: Math.min(MAX_QUANTITY, line.quantity) }]);
+  trackMenuEvent(token, "CART_ADD", line.productId, Math.min(MAX_QUANTITY, line.quantity));
   return true;
 }
 

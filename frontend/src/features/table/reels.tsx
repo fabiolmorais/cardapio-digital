@@ -4,13 +4,14 @@ import { Plus, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatCents } from "@/lib/format";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { useCart } from "./cart";
 import { aLaCarte } from "./carte";
 import { groupsById } from "./choices";
+import { trackMenuEvent } from "./menu-events";
 import { currentPriceCents, ProductSheet } from "./product-sheet";
 import { ReelFeed, type ReelEntry } from "./reel-feed";
 import type { MenuItem, PublicMenu } from "./table-data";
@@ -83,6 +84,8 @@ export function Reels({
   const entries = useMemo(() => items.map(itemEntry), [items]);
   const byId = new Map(items.map((item) => [item.id, item]));
   const { count, totalCents } = useCart(token);
+  // O reel 2 s à vista conta para os relatórios de reels (anônimo). Estável: o Reels não recomeça a conta.
+  const onSeen = useCallback((entry: ReelEntry) => trackMenuEvent(token, "REEL_VIEW", entry.id), [token]);
   const router = useRouter();
 
   /**
@@ -122,6 +125,7 @@ export function Reels({
         startIndex={startIndex}
         muted={muted}
         swipeHint={t.swipeHint}
+        onSeen={onSeen}
         action={(entry) => {
           const item = byId.get(entry.id)!;
           return (

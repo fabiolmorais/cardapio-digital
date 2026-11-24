@@ -23,7 +23,12 @@ enum RateLimitRule {
     TABLE_SESSION(Set.of("POST"), "/api/v1/public/tables/[^/]+/session"),
     /** O que a mesa faz: chamar, pedir, provar a presença, virar o cartão, cancelar. */
     TABLE_ACTIONS(Set.of("POST", "PUT", "DELETE"),
-            "/api/v1/public/tables/[^/]+/(calls|orders|rounds|presence|rodizio/card|order-items)(/[^/]+)?");
+            "/api/v1/public/tables/[^/]+/(calls|orders|rounds|presence|rodizio/card|order-items)(/[^/]+)?"),
+    /**
+     * Os eventos do cardápio (prato aberto, reel visto, carrinho): à parte das ações, com um limite
+     * folgado, porque todos os celulares do salão saem pelo mesmo IP do Wi-Fi e mandam em lote.
+     */
+    TABLE_EVENTS(Set.of("POST"), "/api/v1/public/tables/[^/]+/events");
 
     private final Set<String> methods;
     private final Pattern path;

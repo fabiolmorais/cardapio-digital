@@ -95,6 +95,9 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/public/tables/*/rodizio/card").permitAll()
                         // "Vou participar" do rodízio (quem chegou depois da ativação): o mesmo caso da rodada.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/rodizio/join").permitAll()
+                        // Os eventos do cardápio (etapa C2): o prato aberto, o reel visto, o item no carrinho. Sem
+                        // login, como os botões da mesa; o caso de uso exige a sessão válida desta mesa.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/events").permitAll()
                         // O vídeo do prato (Guia 22): o aviso do serviço de vídeo (vale só com o token
                         // secreto, conferido no controller) e o serviço de vídeo falso do desenvolvimento
                         // (as rotas só existem com app.video.provider=fake; o envio vale com a assinatura).

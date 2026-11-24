@@ -740,6 +740,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/tables/{token}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Avisos da mesa em tempo real: "ready" ao conectar, "call" quando um chamado dela muda */
+        get: operations["streamTableEvents"];
+        put?: never;
+        /** Conta o que o celular fez no cardápio (anônimo) */
+        post: operations["recordMenuEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/calls": {
         parameters: {
             query?: never;
@@ -2002,23 +2020,6 @@ export interface paths {
         };
         /** O cardápio do restaurante da mesa: categorias com produtos, preços e a foto de capa */
         get: operations["getPublicMenu"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/public/tables/{token}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Avisos da mesa em tempo real: "ready" ao conectar, "call" quando um chamado dela muda */
-        get: operations["streamTableEvents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3849,6 +3850,22 @@ export interface components {
             wifiName?: string;
             /** @description A equipe bloqueou os chamados deste celular */
             blocked: boolean;
+        };
+        /** @description Um evento: o prato e o que aconteceu com ele */
+        MenuEventItem: {
+            /** @enum {string} */
+            kind: "PRODUCT_VIEW" | "REEL_VIEW" | "CART_ADD";
+            /** Format: uuid */
+            productId: string;
+            /**
+             * Format: int32
+             * @description Quantos foram para o carrinho (só em CART_ADD)
+             */
+            quantity?: number;
+        };
+        /** @description Os eventos do cardápio desde o último envio */
+        MenuEventsRequest: {
+            events: components["schemas"]["MenuEventItem"][];
         };
         CallRequest: {
             /** @enum {string} */
@@ -8563,6 +8580,101 @@ export interface operations {
             };
         };
     };
+    streamTableEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo SSE; cada aviso traz só ids e status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+        };
+    };
+    recordMenuEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuEventsRequest"];
+            };
+        };
+        responses: {
+            /** @description Recebido */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Corpo inválido ou eventos demais */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Sem sessão válida nesta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     listTableCalls: {
         parameters: {
             query?: never;
@@ -12070,48 +12182,6 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    streamTableEvents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: {
-                table_session?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Fluxo SSE; cada aviso traz só ids e status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-            /** @description Sem sessão válida nesta mesa */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
-                };
-            };
-            /** @description QR inválido, trocado ou mesa desativada */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": components["schemas"]["SseEmitter"];
                 };
             };
         };

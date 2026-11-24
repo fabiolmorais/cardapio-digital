@@ -17,6 +17,8 @@ const WINDOW_BEFORE = 1;
 const WINDOW_AFTER = 2;
 /** Quanto tempo uma foto fica na tela antes de passar para a próxima mídia. */
 const PHOTO_SECONDS = 5;
+/** Quanto tempo uma tela fica à vista para contar como vista (os relatórios de reels). */
+const SEEN_MS = 2_000;
 
 export type ReelMedia = Schemas["PublicMenuMedia"];
 
@@ -42,6 +44,7 @@ export type ReelEntry = {
  *
  * @param action o botão embaixo do preço de cada tela ("Adicionar", "Escolher")
  * @param swipeHint o "deslize para cima" das telas (some na última, quando não há volta)
+ * @param onSeen    a tela ficou 2 s à vista (uma vez por tela): o "reel visto" dos relatórios
  */
 export function ReelFeed({
   entries,
@@ -49,14 +52,29 @@ export function ReelFeed({
   muted,
   action,
   swipeHint,
+  onSeen,
 }: {
   entries: ReelEntry[];
   startIndex: number;
   muted: boolean;
   action: (entry: ReelEntry) => ReactNode;
   swipeHint: string;
+  onSeen?: (entry: ReelEntry) => void;
 }) {
   const [active, setActive] = useState(startIndex);
+  // Cada tela conta como vista uma vez só, mesmo voltando a ela.
+  const seen = useRef(new Set<string>());
+
+  // A tela atual, 2 s à vista: conta como vista.
+  useEffect(() => {
+    const entry = entries[active];
+    if (!onSeen || !entry || seen.current.has(entry.id)) return;
+    const timer = setTimeout(() => {
+      seen.current.add(entry.id);
+      onSeen(entry);
+    }, SEEN_MS);
+    return () => clearTimeout(timer);
+  }, [active, entries, onSeen]);
   const sections = useRef<(HTMLElement | null)[]>([]);
   const scroller = useRef<HTMLDivElement>(null);
   // Rolagem infinita: depois da última tela vem uma cópia da primeira. Ao chegar nela, a tela

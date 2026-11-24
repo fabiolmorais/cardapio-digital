@@ -222,3 +222,34 @@ test("a mesa vê o total e quanto cada celular pediu", async ({ page, request, b
     await other.close();
   }
 });
+
+test("o celular conta o prato aberto e o item no carrinho, e manda tudo ao sair da página", async ({
+  page,
+  request,
+}) => {
+  const { qr } = await restaurant(request);
+  // O Playwright não mostra o corpo do sendBeacon: a página guarda o que mandou, e o envio segue normal.
+  await page.addInitScript(() => {
+    const original = navigator.sendBeacon.bind(navigator);
+    const sent: Promise<string>[] = [];
+    Object.assign(window, { beacons: sent });
+    navigator.sendBeacon = (url, data) => {
+      if (data instanceof Blob) sent.push(data.text());
+      return original(url, data);
+    };
+  });
+  await page.goto(`/m/${qr}/cardapio`);
+  await add(page, "Guioza", 2);
+
+  // Os eventos esperam na fila; a página sumir (trocar de app, fechar) manda o lote na hora.
+  const answered = page.waitForResponse((r) => r.url().endsWith(`/api/v1/public/tables/${qr}/events`));
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect((await answered).status()).toBe(202);
+  const bodies = await page.evaluate(() => Promise.all((window as unknown as { beacons: Promise<string>[] }).beacons));
+  const events = bodies.flatMap((body) => JSON.parse(body).events);
+  expect(events.map((e: { kind: string }) => e.kind)).toEqual(["PRODUCT_VIEW", "CART_ADD"]);
+  expect(events[1].quantity).toBe(2);
+});
