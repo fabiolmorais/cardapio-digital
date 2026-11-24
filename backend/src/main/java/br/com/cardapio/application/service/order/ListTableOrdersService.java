@@ -131,7 +131,7 @@ public class ListTableOrdersService implements ListTableOrdersUseCase {
         // A taxa de serviço (RF39): vem marcada, a menos que a mesa (ou o garçom) tenha tirado.
         var serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
         ServiceOffer service = open.map(tab -> ServiceOffer.of(tab.effectiveService(serviceSettings), total, paid,
-                serviceSettings.destination(), ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab)))
+                serviceSettings, ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab)))
                 .orElse(null);
         Money due = service == null ? total.minusOrZero(paid) : service.accepted() ? service.dueWith()
                 : service.dueWithout();

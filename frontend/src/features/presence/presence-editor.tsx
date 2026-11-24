@@ -89,6 +89,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
   const [service, setService] = useState(orders.serviceCharge.enabled);
   const [servicePercent, setServicePercent] = useState(String(orders.serviceCharge.percent));
   const [serviceDestination, setServiceDestination] = useState(orders.serviceCharge.destination);
+  const [serviceCustom, setServiceCustom] = useState(orders.serviceCharge.customAllowed ?? false);
 
   const changed = () => setNotice(null);
   const full = networks.length >= MAX_NETWORKS;
@@ -160,7 +161,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
         staffOrderingEnabled: staffOrdering,
         maxAmountCents: amount ?? undefined,
         maxItems: items ?? undefined,
-        serviceCharge: { enabled: service, percent, destination: serviceDestination },
+        serviceCharge: { enabled: service, percent, destination: serviceDestination, customAllowed: serviceCustom },
       });
       return { savedRule, savedOrders };
     },
@@ -561,6 +562,15 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
                     </label>
                   ))}
                 </fieldset>
+                <Toggle
+                  checked={serviceCustom}
+                  onChange={(value) => {
+                    changed();
+                    setServiceCustom(value);
+                  }}
+                  label={t.orders.serviceCustom}
+                  description={t.orders.serviceCustomHint}
+                />
               </div>
             )}
           </section>

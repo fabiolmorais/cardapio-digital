@@ -7,6 +7,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 import br.com.cardapio.domain.order.model.ServiceDestination;
 import br.com.cardapio.domain.order.model.Tab;
 
@@ -37,14 +38,15 @@ public final class ServiceCharges {
     }
 
     /**
-     * Aplica a escolha do garçom (aceitar ou tirar a taxa) na comanda e grava. Null: fica como está.
+     * Aplica a escolha do garçom (o percentual, sem taxa ou outro valor) na comanda e grava. Null: fica
+     * como está.
      * Devolve a comanda como ficou.
      */
-    public static Tab choose(TabPort tabs, ServiceChargeSettings settings, Tab tab, Boolean accepted) {
-        if (accepted == null) {
+    public static Tab choose(TabPort tabs, ServiceChargeSettings settings, Tab tab, ServiceChoice choice) {
+        if (choice == null) {
             return tab;
         }
-        Tab chosen = tab.chooseService(settings, accepted);
+        Tab chosen = tab.chooseService(settings, choice);
         if (!chosen.equals(tab)) {
             tabs.saveService(chosen);
         }

@@ -15,6 +15,9 @@ record ReceivePaymentRequest(
         @NotNull @Min(1) @Max(100_000_000) Long amountCents,
         @Schema(requiredMode = REQUIRED, description = "Como a mesa pagou") @NotNull PaymentMethod paymentMethod,
         @Schema(description = "A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava")
-        Boolean serviceAccepted
+        Boolean serviceAccepted,
+        @Schema(description = "Outro valor de serviço, em centavos, no lugar do percentual (se o restaurante permitir)",
+                example = "1000")
+        @Min(1) @Max(100_000) Long serviceCustomCents
 ) {
 }

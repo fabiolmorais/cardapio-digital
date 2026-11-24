@@ -36,6 +36,7 @@ import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.in.order.ServiceOffer;
 import br.com.cardapio.domain.order.model.ServiceCharge;
 import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 
 public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
 
@@ -76,7 +77,7 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
         TabBalance balance = balanceOf(establishmentId, tab, service, items);
         int onTheWay = items.stream().filter(i -> i.status().isOnTheWay()).mapToInt(OrderItem::quantity).sum();
         return new BillSummary(tab.id(), balance.total(), balance.paid(), balance.due(), call.paymentMethod(),
-                onTheWay, ServiceOffer.of(service, balance.total(), balance.paid(), serviceSettings.destination(),
+                onTheWay, ServiceOffer.of(service, balance.total(), balance.paid(), serviceSettings,
                         ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab)));
     }
 
@@ -87,14 +88,14 @@ public class ReceiveBillPaymentService implements ReceiveBillPaymentUseCase {
     @Override
     @Transactional
     public StaffCall receive(EstablishmentId establishmentId, CallId callId, UserId by, Money amount,
-                             PaymentMethod method, Boolean serviceAccepted) {
+                             PaymentMethod method, ServiceChoice service) {
         Call call = billCall(establishmentId, callId);
         Tab found = tabs.findOpen(establishmentId, call.tableId())
                 .orElseThrow(() -> new TabStateException("A mesa ainda não tem nada na conta"));
         Instant now = clock.instant();
         ServiceChargeSettings serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
         // O garçom confirma a taxa ao receber: o cliente pode ter mudado de ideia na maquininha.
-        Tab tab = ServiceCharges.choose(tabs, serviceSettings, found, serviceAccepted);
+        Tab tab = ServiceCharges.choose(tabs, serviceSettings, found, service);
         TabPayment payment = TabPayment.receive(tab, balanceOf(establishmentId, tab,
                 tab.effectiveService(serviceSettings), itemsOf(establishmentId, tab)), amount, method, by, call.id(), now);
         Call done = call.finish(now);

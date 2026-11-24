@@ -67,7 +67,7 @@ class TabPersistenceAdapter implements TabPort {
         ServiceCharge s = t.service();
         return tabs.close(t.id().value(), t.establishmentId().value(), t.closedAt(), t.closedBy().value(),
                 t.total().cents(), t.paymentMethod() == null ? null : t.paymentMethod().name(),
-                s == null ? null : s.percent(), s == null ? null : s.accepted(),
+                s == null ? null : s.percent(), s == null ? null : s.accepted(), customOf(s),
                 t.serviceCharged() == null ? null : t.serviceCharged().cents(),
                 s == null || destination == null ? null : destination.name(),
                 waiter == null ? null : waiter.value()) == 1;
@@ -77,7 +77,11 @@ class TabPersistenceAdapter implements TabPort {
     public boolean saveService(Tab t) {
         ServiceCharge s = t.service();
         return tabs.saveService(t.id().value(), t.establishmentId().value(), s == null ? null : s.percent(),
-                s == null ? null : s.accepted()) == 1;
+                s == null ? null : s.accepted(), customOf(s)) == 1;
+    }
+
+    private static Long customOf(ServiceCharge s) {
+        return s == null || s.custom() == null ? null : s.custom().cents();
     }
 
     @Override
@@ -113,7 +117,8 @@ class TabPersistenceAdapter implements TabPort {
                 e.getClosedAt(), e.getClosedBy() == null ? null : new UserId(e.getClosedBy()),
                 e.getTotalCents() == null ? null : Money.ofCents(e.getTotalCents()),
                 e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()),
-                e.getServicePercent() == null ? null : new ServiceCharge(e.getServicePercent(), e.getServiceAccepted()),
+                e.getServicePercent() == null ? null : new ServiceCharge(e.getServicePercent(), e.getServiceAccepted(),
+                        e.getServiceCustomCents() == null ? null : Money.ofCents(e.getServiceCustomCents())),
                 e.getServiceCents() == null ? null : Money.ofCents(e.getServiceCents()));
     }
 

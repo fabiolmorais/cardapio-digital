@@ -18,7 +18,8 @@ import { Notice } from "@/components/notice";
 import { centsToInput, formatCents, parseCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
-import { dueOf, ServiceSwitch } from "@/features/tabs/service-switch";
+import { dueOf, serviceLabel, ServiceSwitch } from "@/features/tabs/service-switch";
+import { pickBody, pickCents, pickOf, pickReady, type ServicePick } from "@/lib/service-pick";
 import { fetchBill, finishCall, receivePayment, type Bill, type PaymentMethod, type StaffCall } from "./calls-api";
 
 const t = messages.panel.calls;
@@ -83,8 +84,8 @@ function Form({
 }) {
   // A taxa de serviço (RF39) começa como a mesa escolheu; o garçom troca se o cliente mudar de ideia.
   const service = bill.service ?? null;
-  const [serviceOn, setServiceOn] = useState(service?.accepted ?? true);
-  const due = dueOf(service, serviceOn, bill.dueCents);
+  const [pick, setPick] = useState<ServicePick>(service ? pickOf(service) : { kind: "PERCENT" });
+  const due = dueOf(service, pick, bill);
   const [amount, setAmount] = useState(centsToInput(due));
   const [method, setMethod] = useState<PaymentMethod>(bill.requestedWith);
   const [busy, setBusy] = useState(false);
@@ -114,11 +115,15 @@ function Form({
       void run(() => finishCall(call.id));
       return;
     }
+    if (service && !pickReady(pick)) {
+      setError(messages.panel.service.otherInvalid);
+      return;
+    }
     if (!valid) {
       setError(r.invalid(formatCents(due)));
       return;
     }
-    void run(() => receivePayment(call.id, cents, method, service ? serviceOn : undefined));
+    void run(() => receivePayment(call.id, cents, method, service ? pickBody(pick) : undefined));
   }
 
   return (
@@ -134,10 +139,10 @@ function Form({
             <dd className="font-mono text-success tabular-nums">− {formatCents(bill.paidCents)}</dd>
           </div>
         )}
-        {service && serviceOn && (
+        {service && pick.kind !== "NONE" && (
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">{messages.panel.service.label(service.percent)}</dt>
-            <dd className="font-mono tabular-nums">+ {formatCents(service.amountCents)}</dd>
+            <dt className="text-muted-foreground">{serviceLabel(service, pick)}</dt>
+            <dd className="font-mono tabular-nums">+ {formatCents(pickCents(service, pick))}</dd>
           </div>
         )}
         <div className="flex justify-between gap-3 border-t border-border pt-1.5 text-base font-semibold">
@@ -149,11 +154,11 @@ function Form({
       {service && (
         <ServiceSwitch
           service={service}
-          on={serviceOn}
+          pick={pick}
           disabled={busy}
           onChange={(next) => {
-            setServiceOn(next);
-            setAmount(centsToInput(dueOf(service, next, bill.dueCents)));
+            setPick(next);
+            setAmount(centsToInput(dueOf(service, next, bill)));
           }}
         />
       )}

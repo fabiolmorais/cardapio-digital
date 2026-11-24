@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import br.com.cardapio.application.port.out.order.TabMoveView;
 import br.com.cardapio.domain.order.model.ServiceCharge;
-import br.com.cardapio.domain.order.model.ServiceDestination;
+import br.com.cardapio.domain.order.model.ServiceChargeSettings;
 
 /**
  * A comanda como a EQUIPE vê: todos os pedidos, de todos os celulares, com o passo de cada item,
@@ -92,17 +92,17 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
      */
     public static StaffTab from(TabView view, List<OrderWithItems> found, PaymentMethod billRequestedWith,
                                 TabRodizio rodizio, List<TabPayment> payments, Map<UserId, String> staffNames) {
-        return from(view, found, billRequestedWith, rodizio, payments, staffNames, null, ServiceDestination.TEAM, null);
+        return from(view, found, billRequestedWith, rodizio, payments, staffNames, null, ServiceChargeSettings.DEFAULT, null);
     }
 
     /**
      * @param service     a taxa que vale para a comanda (a escolhida, ou a do restaurante, já aceita); null sem taxa
-     * @param destination para quem a taxa fica registrada
+     * @param settings    a taxa do restaurante: para quem fica registrada e se aceita outro valor
      * @param waiterName  o garçom que fica com ela, na regra "garçom que atendeu"
      */
     public static StaffTab from(TabView view, List<OrderWithItems> found, PaymentMethod billRequestedWith,
                                 TabRodizio rodizio, List<TabPayment> payments, Map<UserId, String> staffNames,
-                                ServiceCharge service, ServiceDestination destination, String waiterName) {
+                                ServiceCharge service, ServiceChargeSettings settings, String waiterName) {
         Tab tab = view.tab();
         List<OrderItem> all = found.stream().flatMap(o -> o.items().stream()).toList();
         TabBalance balance = TabBalance.of(all, rodizio == null ? Money.ZERO : rodizio.total(), service, payments);
@@ -118,7 +118,7 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                         o.order().origin() instanceof OrderOrigin.Staff staff ? staffNames.get(staff.userId()) : null,
                         o.order().duplicateConfirmed(),
                         o.items().stream().map(TableOrder.Item::from).toList())).toList(), List.of(), null,
-                ServiceOffer.of(service, balance.total(), open ? balance.paid() : balance.total(), destination, waiterName));
+                ServiceOffer.of(service, balance.total(), open ? balance.paid() : balance.total(), settings, waiterName));
     }
 
     /** Quem da equipe lançou estes pedidos. */

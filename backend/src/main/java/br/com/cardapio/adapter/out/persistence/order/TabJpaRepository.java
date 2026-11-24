@@ -57,7 +57,7 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
                SET status = 'CLOSED', closed_at = :closedAt, closed_by = :closedBy,
                    total_cents = :totalCents, payment_method = :paymentMethod,
                    service_percent = :servicePercent, service_accepted = :serviceAccepted,
-                   service_cents = :serviceCents, service_destination = :serviceDestination,
+                   service_custom_cents = :serviceCustom, service_cents = :serviceCents, service_destination = :serviceDestination,
                    service_waiter_id = :serviceWaiter
              WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
             """)
@@ -65,17 +65,18 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
               @Param("closedAt") Instant closedAt, @Param("closedBy") UUID closedBy,
               @Param("totalCents") long totalCents, @Param("paymentMethod") String paymentMethod,
               @Param("servicePercent") Integer servicePercent, @Param("serviceAccepted") Boolean serviceAccepted,
-              @Param("serviceCents") Long serviceCents, @Param("serviceDestination") String serviceDestination,
+              @Param("serviceCustom") Long serviceCustom, @Param("serviceCents") Long serviceCents, @Param("serviceDestination") String serviceDestination,
               @Param("serviceWaiter") UUID serviceWaiter);
 
     /** A taxa de serviço escolhida para a comanda aberta (a mesa ao pedir a conta, ou o garçom). */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = """
-            UPDATE tab SET service_percent = :percent, service_accepted = :accepted
+            UPDATE tab SET service_percent = :percent, service_accepted = :accepted, service_custom_cents = :custom
              WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
             """)
     int saveService(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
-                    @Param("percent") Integer percent, @Param("accepted") Boolean accepted);
+                    @Param("percent") Integer percent, @Param("accepted") Boolean accepted,
+                    @Param("custom") Long custom);
 
     /**
      * Quem mais atendeu a mesa nesta comanda: chamados aceitos na mesa desde a abertura e itens

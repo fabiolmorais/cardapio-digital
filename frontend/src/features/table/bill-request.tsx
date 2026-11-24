@@ -4,9 +4,11 @@ import { Banknote, Check, ChevronLeft, CreditCard, QrCode, Receipt, Star } from 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { formatCents } from "@/lib/format";
+import { dueWith, pickBody, pickOf, pickReady, samePick, type ServicePick } from "@/lib/service-pick";
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { PresencePanel } from "./presence-panel";
+import { ServiceChoice } from "./service-choice";
 import { TabClosed } from "./tab-closed";
 import { cancelCall, requestCall, useTableCalls, type PaymentMethod } from "./table-calls";
 import { listOrders, type TableOrders } from "./table-orders";
@@ -30,10 +32,12 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
   const [chosen, setChosen] = useState<PaymentMethod>("PIX");
   const [changing, setChanging] = useState(false);
   const [orders, setOrders] = useState<TableOrders | null>(null);
-  // A taxa de serviço (RF39): vem como o back disser (aceita, a menos que alguém tenha tirado).
-  const [serviceOn, setServiceOn] = useState<boolean | null>(null);
+  // A taxa de serviço (RF39): vem como o back disser (aceita, a menos que alguém tenha tirado ou
+  // escolhido outro valor); a escolha desta tela vale por cima.
+  const [chosenPick, setPick] = useState<ServicePick | null>(null);
   const service = orders?.service ?? null;
-  const withService = serviceOn ?? service?.accepted ?? true;
+  const pick: ServicePick = chosenPick ?? (service ? pickOf(service) : { kind: "PERCENT" });
+  const withService = pick.kind !== "NONE";
   const home = `/m/${token}`;
 
   // O total vem dos pedidos da comanda. Busca de novo quando os chamados mudam (pedir, trocar,
@@ -84,21 +88,19 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       .filter((i) => ["PENDING", "PREPARING", "READY"].includes(i.status))
       .reduce((sum, i) => sum + i.quantity, 0) ?? 0;
   const paid = (orders?.paidCents ?? 0) > 0;
-  /** Aceitar ou tirar a taxa: com a conta já pedida, o garçom fica sabendo na hora. */
-  const toggleService = (next: boolean) => {
-    setServiceOn(next);
-    if (bill && !changing) {
+  /** A escolha da taxa feita: com a conta já pedida, o garçom fica sabendo na hora. */
+  const commitService = (next: ServicePick) => {
+    setPick(next);
+    if (bill && !changing && service && pickReady(next) && !samePick(next, pickOf(service))) {
       void run("service", () =>
-        requestCall(token, { type: "BILL", paymentMethod: bill.paymentMethod ?? "PIX", serviceAccepted: next }),
+        requestCall(token, { type: "BILL", paymentMethod: bill.paymentMethod ?? "PIX", ...pickBody(next) }),
       );
     }
   };
   const shown =
     orders &&
     (service
-      ? withService
-        ? service.dueWithCents
-        : service.dueWithoutCents
+      ? dueWith(service, pick, orders.totalCents, orders.paidCents)
       : paid
         ? orders.dueCents
         : orders.totalCents);
@@ -114,41 +116,13 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
             <span className="text-(--mesa-muted)">{t.consumption}</span>
             <span className="font-semibold tabular-nums">{formatCents(orders.totalCents)}</span>
           </div>
-          <label className="flex min-h-11 cursor-pointer items-center gap-3">
-            <span className="flex flex-1 flex-col">
-              <span className="font-semibold">{t.service(service.percent)}</span>
-              <span className="text-sm text-(--mesa-muted)">
-                {service.waiterName ? t.serviceWaiter(service.waiterName) : t.serviceTeam}
-              </span>
-            </span>
-            <span className={cn("font-semibold tabular-nums", !withService && "text-(--mesa-muted) line-through")}>
-              {formatCents(service.amountCents)}
-            </span>
-            {/* Interruptor de verdade (checkbox com papel de switch), com alvo de toque grande. */}
-            <input
-              type="checkbox"
-              role="switch"
-              aria-label={t.serviceSwitch(service.percent)}
-              checked={withService}
-              disabled={busy !== null}
-              onChange={(e) => toggleService(e.target.checked)}
-              className="peer sr-only"
-            />
-            <span
-              aria-hidden
-              className={cn(
-                "relative h-7 w-12 shrink-0 rounded-full border border-(--mesa-stroke) transition-colors peer-focus-visible:ring-3 peer-focus-visible:ring-(--brand)",
-                withService ? "bg-(--brand)" : "bg-(--mesa-glass)",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 size-5.5 rounded-full bg-white transition-[left]",
-                  withService ? "left-[22px]" : "left-0.5",
-                )}
-              />
-            </span>
-          </label>
+          <ServiceChoice
+            service={service}
+            pick={pick}
+            disabled={busy !== null}
+            onChange={setPick}
+            onCommit={commitService}
+          />
         </div>
       )}
       {paid && (
@@ -338,13 +312,13 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
       <div className="flex flex-col gap-2.5">
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || (service !== null && !pickReady(pick))}
           onClick={() =>
             run("bill", async () => {
               await requestCall(token, {
                 type: "BILL",
                 paymentMethod: chosen,
-                ...(service && { serviceAccepted: withService }),
+                ...(service && pickBody(pick)),
               });
               setChanging(false);
             })

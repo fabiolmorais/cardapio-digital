@@ -4,8 +4,11 @@ import { API_URL, apiLogin, createAccount, loginThroughForm } from "./support/ac
 // O celular da mesa e o painel do dono, em dois navegadores, com login: mais tempo.
 test.describe.configure({ timeout: 90_000 });
 
-/** Um restaurante com a mesa 04, o Guioza e a taxa de serviço de 10% ligada (RF39). */
-async function restaurant(request: APIRequestContext) {
+/**
+ * Um restaurante com a mesa 04, o Guioza e a taxa de serviço de 10% ligada (RF39); `customAllowed`
+ * deixa a mesa escolher outro valor.
+ */
+async function restaurant(request: APIRequestContext, { customAllowed = false } = {}) {
   const { email } = await createAccount(request);
   const headers = { Authorization: `Bearer ${await apiLogin(request, email)}` };
   const post = async (path: string, data: object) =>
@@ -16,7 +19,7 @@ async function restaurant(request: APIRequestContext) {
     data: {
       orderingEnabled: true,
       approvalRequired: false,
-      serviceCharge: { enabled: true, percent: 10, destination: "TEAM" },
+      serviceCharge: { enabled: true, percent: 10, destination: "TEAM", customAllowed },
     },
   });
   expect(saved.status()).toBe(200);
@@ -93,6 +96,54 @@ test("a mesa vê os 10% já marcados, tira, e o garçom confirma na maquininha",
   }
 });
 
+test("a mesa deixa R$ 10 de serviço, troca por outro valor e o garçom troca na maquininha", async ({
+  page,
+  request,
+  browser,
+}) => {
+  const { qr, email } = await restaurant(request, { customAllowed: true });
+  await orderGuioza(page, qr);
+
+  // Com "outro valor", o serviço vira opções: os 10% vêm marcados.
+  await page.goto(`/m/${qr}/conta`);
+  await expect(page.getByRole("radio", { name: "10%, R$ 2,99" })).toBeChecked();
+  await expect(page.getByText("R$ 32,89")).toBeVisible();
+  await page.getByRole("radio", { name: "R$ 10" }).check();
+  await expect(page.getByText("R$ 39,90")).toBeVisible();
+
+  // Outro valor: vazio, não dá para pedir a conta; com R$ 7,50, o total acompanha.
+  await page.getByRole("radio", { name: "Outro valor de serviço" }).check();
+  await expect(page.getByRole("button", { name: "Pedir a conta" })).toBeDisabled();
+  await page.getByRole("textbox", { name: "Outro valor de serviço" }).fill("7,50");
+  await expect(page.getByText("R$ 37,40")).toBeVisible();
+  await page.getByRole("radio", { name: /Pix/ }).check();
+  await page.getByRole("button", { name: "Pedir a conta" }).click();
+  await expect(page.getByRole("status")).toContainText("Conta solicitada");
+
+  const context = await browser.newContext();
+  const panel = await context.newPage();
+  try {
+    await loginThroughForm(panel, email);
+    const call = panel.getByRole("listitem", { name: "Pedir a conta · Mesa 04" });
+    await call.getByRole("button", { name: "Aceitar" }).click();
+    await call.getByRole("button", { name: "Receber pagamento" }).click();
+    const dialog = panel.getByRole("dialog", { name: "Conta da mesa 04" });
+    // O garçom vê o outro valor que o cliente escolheu...
+    await expect(dialog.getByRole("radio", { name: "Outro valor" })).toBeChecked();
+    await expect(dialog.getByRole("textbox", { name: "Outro valor de serviço" })).toHaveValue("7,50");
+    await expect(dialog.getByText("Serviço (outro valor)")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Recebi R$ 37,40 no Pix" })).toBeVisible();
+    // ...e, na maquininha, o cliente pede R$ 5.
+    await dialog.getByRole("textbox", { name: "Outro valor de serviço" }).fill("5");
+    await dialog.getByRole("button", { name: "Recebi R$ 34,90 no Pix" }).click();
+    await expect(dialog).toBeHidden();
+
+    await expect(page.getByText("Já pago R$ 34,90")).toBeVisible({ timeout: 5000 });
+  } finally {
+    await context.close();
+  }
+});
+
 test("o dono liga a taxa, muda o percentual e escolhe o garçom que atendeu", async ({ page, request }) => {
   const { email } = await createAccount(request);
   await loginThroughForm(page, email);
@@ -101,6 +152,8 @@ test("o dono liga a taxa, muda o percentual e escolhe o garçom que atendeu", as
   await page.getByLabel("Cobrar taxa de serviço").check();
   await page.getByLabel("Percentual").fill("12");
   await page.getByRole("radio", { name: /Garçom que atendeu/ }).check();
+  await expect(page.getByLabel("Permitir outro valor")).not.toBeChecked();
+  await page.getByLabel("Permitir outro valor").check();
   await page.getByRole("button", { name: /^Salvar/ }).click();
   await expect(page.getByRole("status").filter({ hasText: /salv/i })).toBeVisible();
 
@@ -108,6 +161,7 @@ test("o dono liga a taxa, muda o percentual e escolhe o garçom que atendeu", as
   await expect(page.getByLabel("Cobrar taxa de serviço")).toBeChecked();
   await expect(page.getByLabel("Percentual")).toHaveValue("12");
   await expect(page.getByRole("radio", { name: /Garçom que atendeu/ })).toBeChecked();
+  await expect(page.getByLabel("Permitir outro valor")).toBeChecked();
 });
 
 /**

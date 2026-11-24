@@ -30,7 +30,8 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
                 new OrderSettingsId(e.getId()), new EstablishmentId(e.getEstablishmentId()), e.isOrderingEnabled(),
                 e.isApprovalRequired(), e.isStaffOrderingEnabled(), e.getMaxAmountCents() == null ? null : Money.ofCents(e.getMaxAmountCents()),
                 e.getMaxItems(), new ServiceChargeSettings(e.isServiceChargeEnabled(), e.getServiceChargePercent(),
-                        ServiceDestination.valueOf(e.getServiceChargeDestination())), e.getUpdatedAt()));
+                        ServiceDestination.valueOf(e.getServiceChargeDestination()), e.isServiceChargeCustomAllowed()),
+                e.getUpdatedAt()));
     }
 
     @Override
@@ -39,6 +40,6 @@ class OrderSettingsPersistenceAdapter implements OrderSettingsPort {
         settings.save(new OrderSettingsJpaEntity(s.id().value(), s.establishmentId().value(), s.orderingEnabled(),
                 s.approvalRequired(), s.staffOrderingEnabled(), s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
                 s.serviceCharge().enabled(), s.serviceCharge().percent(), s.serviceCharge().destination().name(),
-                s.updatedAt()));
+                s.serviceCharge().customAllowed(), s.updatedAt()));
     }
 }

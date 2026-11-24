@@ -82,11 +82,11 @@ export async function receivePayment(
   id: string,
   amountCents: number,
   paymentMethod: PaymentMethod,
-  serviceAccepted?: boolean,
+  service?: { serviceAccepted: boolean; serviceCustomCents?: number },
 ): Promise<StaffCall> {
   const { data, error, response } = await api.POST("/api/v1/calls/{id}/payment", {
     params: { path: { id } },
-    body: { amountCents, paymentMethod, serviceAccepted },
+    body: { amountCents, paymentMethod, ...service },
   });
   if (!data) throw problem(error, response.status);
   return data;
