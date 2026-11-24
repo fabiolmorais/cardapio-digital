@@ -1634,6 +1634,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/team/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O Atendimento e equipe em CSV (Business) */
+        get: operations["exportTeamReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/tables": {
         parameters: {
             query?: never;
@@ -1643,6 +1660,23 @@ export interface paths {
         };
         /** Mesas e ocupação do período (Business) */
         get: operations["getTableReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/tables/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As Mesas e ocupação em CSV (Business) */
+        get: operations["exportTableReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1668,6 +1702,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/sales/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As Vendas em CSV (Business) */
+        get: operations["exportSalesReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/phone-and-rodizio": {
         parameters: {
             query?: never;
@@ -1685,6 +1736,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/phone-and-rodizio/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O Celular e rodízio em CSV (Business) */
+        get: operations["exportPhoneRodizioReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/overview": {
         parameters: {
             query?: never;
@@ -1694,6 +1762,23 @@ export interface paths {
         };
         /** A Visão geral do período (blocos básicos: Pro em diante) */
         get: operations["getOverviewReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/overview/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Visão geral em CSV (Business) */
+        get: operations["exportOverviewReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1736,6 +1821,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/menu/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O Cardápio em CSV, com todos os produtos (Business) */
+        get: operations["exportMenuReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/kitchen": {
         parameters: {
             query?: never;
@@ -1745,6 +1847,23 @@ export interface paths {
         };
         /** Cozinha e tempos do período (blocos básicos: Pro em diante) */
         get: operations["getKitchenReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/kitchen/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Cozinha e tempos em CSV (Business) */
+        get: operations["exportKitchenReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -10668,6 +10787,66 @@ export interface operations {
             };
         };
     };
+    exportTeamReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getTableReport: {
         parameters: {
             query: {
@@ -10709,6 +10888,66 @@ export interface operations {
                 };
             };
             /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    exportTableReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10789,6 +11028,67 @@ export interface operations {
             };
         };
     };
+    exportSalesReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                groupBy?: "DAY" | "WEEK" | "MONTH";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getPhoneRodizioReport: {
         parameters: {
             query: {
@@ -10849,6 +11149,66 @@ export interface operations {
             };
         };
     };
+    exportPhoneRodizioReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getOverviewReport: {
         parameters: {
             query: {
@@ -10890,6 +11250,66 @@ export interface operations {
                 };
             };
             /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    exportOverviewReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -11034,6 +11454,67 @@ export interface operations {
             };
         };
     };
+    exportMenuReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     getKitchenReport: {
         parameters: {
             query: {
@@ -11067,6 +11548,67 @@ export interface operations {
                 };
             };
             /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    exportKitchenReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
             403: {
                 headers: {
                     [name: string]: unknown;

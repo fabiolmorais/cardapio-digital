@@ -23,7 +23,7 @@ const round = (cents: number) => reais.format(Math.round(cents / 100));
 /** Mesas e ocupação (desenho 14.6): a tela inteira é do Business. */
 export function TablesScreen() {
   return (
-    <ReportsScreen title={m.title} businessOnly={m.businessText}>
+    <ReportsScreen exportAs="tables" title={m.title} businessOnly={m.businessText}>
       {(context, filters) => <TablesBody filters={filters} timeZone={context.timeZone} />}
     </ReportsScreen>
   );

@@ -32,6 +32,7 @@ const percent = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFracti
 export function MenuScreen() {
   return (
     <ReportsScreen
+      exportAs="menu"
       title={m.title}
       filter={(filters) => <CategoryFilter value={filters.categoryId} onChange={filters.chooseCategory} />}
     >

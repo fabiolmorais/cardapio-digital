@@ -180,5 +180,9 @@ function ByHour({ report }: { report: SalesReport }) {
 
 /** A tela de Vendas, dentro da moldura dos relatórios. */
 export function SalesScreen() {
-  return <ReportsScreen title={t.sales}>{(_, filters) => <SalesBody filters={filters} />}</ReportsScreen>;
+  return (
+    <ReportsScreen exportAs="sales" title={t.sales}>
+      {(_, filters) => <SalesBody filters={filters} />}
+    </ReportsScreen>
+  );
 }

@@ -21,7 +21,7 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 /** Atendimento e equipe (desenho 14.5): a tela inteira é do Business. */
 export function TeamScreen() {
   return (
-    <ReportsScreen title={m.title} businessOnly={m.businessText}>
+    <ReportsScreen exportAs="team" title={m.title} businessOnly={m.businessText}>
       {(_, filters) => <TeamBody filters={filters} />}
     </ReportsScreen>
   );
