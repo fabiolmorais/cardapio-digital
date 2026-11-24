@@ -129,6 +129,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ratings/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O que o garçom vê das avaliações */
+        get: operations["getRatingSettings"];
+        /** Liga ou desliga a média do garçom no app */
+        put: operations["updateRatingSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/rodizio/card": {
         parameters: {
             query?: never;
@@ -636,6 +654,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ratings/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Já resolvi": o alerta de nota baixa sai do painel */
+        post: operations["resolveRating"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/push/subscriptions": {
         parameters: {
             query?: never;
@@ -699,6 +734,41 @@ export interface paths {
         put?: never;
         /** "Vou participar": este celular pede para entrar no rodízio da mesa e chama o garçom */
         post: operations["joinTableRodizio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Se este celular pode avaliar o atendimento */
+        get: operations["getTableRating"];
+        put?: never;
+        /** Avalia o atendimento: de 1 a 5, os atalhos e um comentário */
+        post: operations["rateService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tables/{token}/rating/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** O cliente tocou em "Avaliar no Google" */
+        post: operations["clickRatingGoogle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1960,6 +2030,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As avaliações de hoje, da mais nova para a mais velha */
+        get: operations["listTodayRatings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ratings/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O resumo das avaliações de hoje */
+        get: operations["getTodayRatings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ratings/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A própria média, se o restaurante mostra ao garçom */
+        get: operations["getMyRating"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ratings/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As notas baixas de hoje que ninguém resolveu (no máximo 20, lista curta) */
+        get: operations["listRatingAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/push/settings": {
         parameters: {
             query?: never;
@@ -2802,6 +2940,10 @@ export interface components {
              * @description Comanda aberta há mais de (h)
              */
             tabHours: number;
+        };
+        RatingSettings: {
+            /** @description O garçom vê a própria média no app */
+            waiterSeesAverage: boolean;
         };
         RodizioCardRequest: {
             /**
@@ -3837,6 +3979,32 @@ export interface components {
              * @enum {string}
              */
             participation: "NONE" | "REQUESTED" | "JOINED";
+        };
+        RateServiceRequest: {
+            /**
+             * Format: int32
+             * @description De 1 a 5 estrelas
+             * @example 5
+             */
+            stars: number;
+            /** @description Os atalhos marcados */
+            tags?: ("SPEED" | "FRIENDLINESS" | "FOOD" | "AMBIENCE")[];
+            /** @description Comentário curto, opcional */
+            comment?: string;
+        };
+        /** @description Se este celular pode avaliar o atendimento agora */
+        TableRatingOffer: {
+            /** @description Pode avaliar agora (e ainda não avaliou) */
+            available: boolean;
+            /**
+             * Format: int32
+             * @description A nota que este celular deu; ausente se ainda não avaliou
+             */
+            stars?: number;
+            /** @description Avaliou com 4 ou 5: mostra o convite ao Google */
+            googleInvite: boolean;
+            /** @description O primeiro nome de quem mais atendeu a mesa */
+            waiterName?: string;
         };
         PresenceCheckRequest: {
             /**
@@ -5670,6 +5838,70 @@ export interface components {
              */
             maxPeriodDays: number;
         };
+        PageResponseRating: {
+            content: components["schemas"]["Rating"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Uma avaliação, com a mesa e quem atendeu */
+        Rating: {
+            /** Format: uuid */
+            id: string;
+            tableLabel: string;
+            /** @description Quem mais atendeu a mesa; ausente se ninguém da equipe atendeu */
+            waiterName?: string;
+            /** Format: int32 */
+            stars: number;
+            tags: ("SPEED" | "FRIENDLINESS" | "FOOD" | "AMBIENCE")[];
+            comment?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Tocou em "Avaliar no Google" */
+            google: boolean;
+            /**
+             * Format: date-time
+             * @description Nota baixa: quando o alerta foi resolvido
+             */
+            resolvedAt?: string;
+        };
+        /** @description O resumo das avaliações */
+        RatingSummary: {
+            /** Format: int32 */
+            count: number;
+            /**
+             * Format: double
+             * @description A nota média, com uma casa; ausente sem avaliações
+             */
+            average?: number;
+            /**
+             * Format: int32
+             * @description Notas 1 e 2
+             */
+            low: number;
+            /**
+             * Format: int32
+             * @description Notas 4 e 5 (as que viram o convite ao Google)
+             */
+            high: number;
+            /**
+             * Format: int32
+             * @description Quantos tocaram em "Avaliar no Google"
+             */
+            googleClicks: number;
+        };
+        /** @description A média de quem está logado nos últimos 30 dias */
+        MyRating: {
+            /** @description O restaurante mostra a média ao garçom */
+            visible: boolean;
+            /** @description Ausente se o restaurante não mostra */
+            summary?: components["schemas"]["RatingSummary"];
+        };
         PushSettings: {
             /** @description false: o servidor está sem as chaves VAPID */
             enabled: boolean;
@@ -6752,6 +6984,50 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getRatingSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingSettings"];
+                };
+            };
+        };
+    };
+    updateRatingSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingSettings"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingSettings"];
                 };
             };
         };
@@ -8318,6 +8594,44 @@ export interface operations {
             };
         };
     };
+    resolveRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resolvido */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Não é uma avaliação deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não é nota baixa */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     subscribePush: {
         parameters: {
             query?: never;
@@ -8517,6 +8831,143 @@ export interface operations {
                 };
             };
             /** @description A mesa não está no rodízio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getTableRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disponível, já avaliado, ou ainda não */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableRatingOffer"];
+                };
+            };
+            /** @description Sem sessão desta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description QR inválido, trocado ou mesa desativada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    rateService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateServiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Avaliado; com 4 ou 5, a resposta traz o convite ao Google */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableRatingOffer"];
+                };
+            };
+            /** @description Nota fora de 1 a 5 ou comentário longo demais */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Sem sessão desta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Ainda não pode avaliar (sem pedir a conta), ou já avaliou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    clickRatingGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: {
+                table_session?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contado (uma vez por celular) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sem sessão desta mesa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Não avaliou, ou a nota não teve o convite */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12143,6 +12594,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportContext"];
+                };
+            };
+        };
+    };
+    listTodayRatings: {
+        parameters: {
+            query?: {
+                /** @description Só as notas 1 e 2 */
+                onlyLow?: boolean;
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseRating"];
+                };
+            };
+        };
+    };
+    getTodayRatings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingSummary"];
+                };
+            };
+        };
+    };
+    getMyRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRating"];
+                };
+            };
+        };
+    };
+    listRatingAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rating"][];
                 };
             };
         };

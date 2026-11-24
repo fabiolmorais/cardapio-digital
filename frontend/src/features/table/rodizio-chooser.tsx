@@ -60,7 +60,7 @@ export function RodizioChooser({ token, tableLabel, photo }: { token: string; ta
     return (
       <>
         {header}
-        <TabClosed />
+        <TabClosed token={token} />
       </>
     );
   }

@@ -13,6 +13,7 @@ import { centsToInput, parseCents } from "@/lib/format";
 import { useSession } from "@/lib/auth/use-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { fetchRatingSettings, updateRatingSettings, type RatingSettings } from "@/features/ratings/ratings-api";
 import { parseCoordinates } from "./parse-coordinates";
 import {
   fetchOrderSettings,
@@ -47,8 +48,9 @@ export function PresenceEditor() {
   const allowed = status === "authenticated" && canManageTeam(session.establishment.role);
   const rule = useQuery({ queryKey: ["presence-rule"], queryFn: fetchPresenceRule, enabled: allowed });
   const orders = useQuery({ queryKey: ["order-settings"], queryFn: fetchOrderSettings, enabled: allowed });
+  const ratings = useQuery({ queryKey: ["rating-settings"], queryFn: fetchRatingSettings, enabled: allowed });
 
-  if (status !== "authenticated" || (allowed && (rule.isPending || orders.isPending))) {
+  if (status !== "authenticated" || (allowed && (rule.isPending || orders.isPending || ratings.isPending))) {
     return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
   }
   if (!allowed) {
@@ -58,18 +60,26 @@ export function PresenceEditor() {
       </p>
     );
   }
-  if (rule.isError || !rule.data || orders.isError || !orders.data) {
+  if (rule.isError || !rule.data || orders.isError || !orders.data || ratings.isError || !ratings.data) {
     return (
       <p role="alert" className="px-4 py-6 text-destructive sm:px-7">
         {t.loadError}
       </p>
     );
   }
-  return <PresenceForm rule={rule.data} orders={orders.data} />;
+  return <PresenceForm rule={rule.data} orders={orders.data} ratings={ratings.data} />;
 }
 
 /** O formulário nasce do que o back tem; a resposta do back, ao salvar, vira o cache. */
-function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSettings }) {
+function PresenceForm({
+  rule,
+  orders,
+  ratings,
+}: {
+  rule: PresenceRule;
+  orders: OrderSettings;
+  ratings: RatingSettings;
+}) {
   const queryClient = useQueryClient();
   const id = useId();
   const [networks, setNetworks] = useState<string[]>(rule.networks);
@@ -90,6 +100,7 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
   const [servicePercent, setServicePercent] = useState(String(orders.serviceCharge.percent));
   const [serviceDestination, setServiceDestination] = useState(orders.serviceCharge.destination);
   const [serviceCustom, setServiceCustom] = useState(orders.serviceCharge.customAllowed ?? false);
+  const [waiterAverage, setWaiterAverage] = useState(ratings.waiterSeesAverage);
 
   const changed = () => setNotice(null);
   const full = networks.length >= MAX_NETWORKS;
@@ -163,11 +174,13 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
         maxItems: items ?? undefined,
         serviceCharge: { enabled: service, percent, destination: serviceDestination, customAllowed: serviceCustom },
       });
-      return { savedRule, savedOrders };
+      const savedRatings = await updateRatingSettings({ waiterSeesAverage: waiterAverage });
+      return { savedRule, savedOrders, savedRatings };
     },
-    onSuccess: ({ savedRule, savedOrders }) => {
+    onSuccess: ({ savedRule, savedOrders, savedRatings }) => {
       queryClient.setQueryData(["presence-rule"], savedRule);
       queryClient.setQueryData(["order-settings"], savedOrders);
+      queryClient.setQueryData(["rating-settings"], savedRatings);
       setNetworks(savedRule.networks);
       setNotice(t.saved);
     },
@@ -573,6 +586,15 @@ function PresenceForm({ rule, orders }: { rule: PresenceRule; orders: OrderSetti
                 />
               </div>
             )}
+            <Toggle
+              checked={waiterAverage}
+              onChange={(value) => {
+                changed();
+                setWaiterAverage(value);
+              }}
+              label={t.orders.ratingAverage}
+              description={t.orders.ratingAverageHint}
+            />
           </section>
           <section
             aria-labelledby={`${id}session`}

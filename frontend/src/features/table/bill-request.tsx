@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Check, ChevronLeft, CreditCard, QrCode, Receipt, Star } from "lucide-react";
+import { Banknote, Check, ChevronLeft, CreditCard, QrCode, Receipt } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { formatCents } from "@/lib/format";
@@ -8,6 +8,7 @@ import { dueWith, pickBody, pickOf, pickReady, samePick, type ServicePick } from
 import { tablePage } from "@/messages/table.pt-BR";
 import { cn } from "cn";
 import { PresencePanel } from "./presence-panel";
+import { RatingCard } from "./rating-card";
 import { ServiceChoice } from "./service-choice";
 import { TabClosed } from "./tab-closed";
 import { cancelCall, requestCall, useTableCalls, type PaymentMethod } from "./table-calls";
@@ -26,7 +27,15 @@ const METHODS: { id: PaymentMethod; icon: ReactNode }[] = [
  * cancelar. Se a mesa já pagou (com itens ainda a caminho), o que foi pago sai do total e, sem
  * nada a pagar, a tela diz que a conta está paga. Quando o garçom fecha a comanda, agradece.
  */
-export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: string | null }) {
+export function BillRequest({
+  token,
+  reviewUrl,
+  place,
+}: {
+  token: string;
+  reviewUrl: string | null;
+  place: string | null;
+}) {
   const state = useTableCalls(token);
   const { calls, bill, busy, error, run } = state;
   const [chosen, setChosen] = useState<PaymentMethod>("PIX");
@@ -76,7 +85,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
     return (
       <>
         {header}
-        <TabClosed />
+        <TabClosed token={token} reviewUrl={reviewUrl} place={place} />
       </>
     );
   }
@@ -205,6 +214,7 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
             {coming ? t.coming(bill.waiterFirstName) : t.waiting}
           </span>
         </section>
+        <RatingCard token={token} reviewUrl={reviewUrl} place={place} />
         {alert}
         <div className="flex flex-col gap-2.5">
           <button
@@ -226,18 +236,6 @@ export function BillRequest({ token, reviewUrl }: { token: string; reviewUrl: st
           >
             {t.cancel}
           </button>
-          {reviewUrl && (
-            <a
-              href={reviewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-12 items-center justify-center gap-2 text-sm font-semibold text-(--mesa-muted) focus-visible:ring-3 focus-visible:ring-(--brand) focus-visible:outline-none"
-            >
-              <Star aria-hidden className="size-4" />
-              {tablePage.review}
-              <span className="sr-only">{tablePage.newTab}</span>
-            </a>
-          )}
         </div>
       </>
     );

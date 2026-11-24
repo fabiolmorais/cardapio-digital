@@ -17,6 +17,7 @@ import {
   Receipt,
   ShieldCheck,
   Smartphone,
+  Star,
   Tv,
   Users,
   UtensilsCrossed,
@@ -55,6 +56,7 @@ const LIVE: Item[] = [
   { href: "/painel", label: t.nav.panel, icon: BellRing },
   { href: "/painel/mesas", label: t.nav.floorLive, icon: LayoutGrid, roles: [...MANAGERS_AND_STAFF] },
   { href: "/painel/comandas", label: t.nav.openTabs, icon: Receipt, roles: [...MANAGERS_AND_STAFF] },
+  { href: "/painel/avaliacoes", label: t.nav.ratings, icon: Star, roles: MANAGERS },
 ];
 
 /**

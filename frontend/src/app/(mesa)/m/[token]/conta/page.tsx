@@ -35,7 +35,7 @@ async function Bill({ params }: Pick<PageProps<"/m/[token]/conta">, "params">) {
   }
   return (
     <TableShell token={token} table={table} current="home">
-      <BillRequest token={token} reviewUrl={table.brand.googleReviewUrl ?? null} />
+      <BillRequest token={token} reviewUrl={table.brand.googleReviewUrl ?? null} place={table.establishmentName} />
     </TableShell>
   );
 }

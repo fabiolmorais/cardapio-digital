@@ -66,7 +66,7 @@ export function OrdersView({ token, tableLabel }: { token: string; tableLabel: s
   const phoneCount = phones.filter(([phone]) => phone > 0).length;
   const mineCents = byPhone.get(1) ?? 0;
 
-  if (closed) return <TabClosed />;
+  if (closed) return <TabClosed token={token} />;
 
   return (
     <>
