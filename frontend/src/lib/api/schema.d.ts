@@ -5295,6 +5295,7 @@ export interface components {
             paidOptionsCents: number;
             pairs: components["schemas"]["ReportPair"][];
             video: components["schemas"]["ReportVideo"];
+            interest: components["schemas"]["ReportMenuInterest"];
         };
         /** @description O Cardápio, com os blocos básicos (a tabela de produtos vem paginada à parte) */
         MenuReport: {
@@ -5338,6 +5339,46 @@ export interface components {
             /** Format: int64 */
             revenueCents: number;
         };
+        /** @description Um produto que ficou no carrinho: em quantos celulares e unidades */
+        ReportLeftInCart: {
+            name: string;
+            /** Format: int32 */
+            sessions: number;
+            /** Format: int32 */
+            units: number;
+        };
+        /**
+         * @description Os eventos do celular (REL-27, 28, 29). "Visto": abriu o prato ou viu o reel 2 s; "pediu": o mesmo
+         *     celular pediu o produto.
+         */
+        ReportMenuInterest: {
+            /**
+             * Format: date
+             * @description O dia do primeiro evento gravado, no fuso do restaurante; ausente sem nenhum
+             */
+            recordingSince?: string;
+            /** @description Visto x pedido, dos mais vistos */
+            viewed: components["schemas"]["ReportProductInterest"][];
+            /** @description Os reels mais vistos */
+            reels: components["schemas"]["ReportProductInterest"][];
+            /**
+             * Format: int32
+             * @description Celulares que puseram algo no carrinho
+             */
+            cartSessions: number;
+            /**
+             * Format: int32
+             * @description Desses, os que não enviaram pedido nenhum
+             */
+            cartsNotSent: number;
+            /**
+             * Format: int64
+             * @description O que ficou no carrinho sem ser pedido, pelo preço de hoje
+             */
+            leftCents: number;
+            /** @description Os produtos que mais ficam no carrinho */
+            mostLeft: components["schemas"]["ReportLeftInCart"][];
+        };
         /** @description Uma opção ou adicional: quantas vezes e quanto somou */
         ReportOption: {
             group: string;
@@ -5368,6 +5409,14 @@ export interface components {
             quantity: number;
             /** Format: int64 */
             revenueCents: number;
+        };
+        /** @description Quantos celulares viram o produto e quantos desses pediram */
+        ReportProductInterest: {
+            name: string;
+            /** Format: int32 */
+            viewers: number;
+            /** Format: int32 */
+            ordered: number;
         };
         /** @description Um produto com os tamanhos, do mais escolhido */
         ReportProductSizes: {

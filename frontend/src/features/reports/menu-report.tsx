@@ -9,7 +9,16 @@ import { cn } from "cn";
 import Link from "next/link";
 import { BarList, ChartCard, NoData, variation } from "./charts";
 import { LockedCard } from "./locked";
-import { CanceledCard, OptionsCard, PairsCard, SizesCard, VideoCard } from "./menu-full";
+import {
+  CanceledCard,
+  CartsCard,
+  OptionsCard,
+  PairsCard,
+  ReelsCard,
+  SizesCard,
+  VideoCard,
+  ViewedCard,
+} from "./menu-full";
 import {
   useMenuProducts,
   useMenuReport,
@@ -101,6 +110,15 @@ function MenuBody({ filters }: { filters: ReportFilters }) {
         {full ? <PairsCard full={full} /> : <LockedCard title={m.pairs.title} text={m.locked.pairs} />}
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-3">
+        {full ? (
+          <ViewedCard full={full} periodFrom={report.data.period.from} className="lg:col-span-2" />
+        ) : (
+          <LockedCard title={m.viewed.title} text={m.locked.viewed} className="lg:col-span-2" />
+        )}
+        {full ? <CartsCard full={full} /> : <LockedCard title={m.carts.title} text={m.locked.carts} />}
+      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-3">
+        {full ? <ReelsCard full={full} /> : <LockedCard title={m.reels.title} text={m.locked.reels} />}
         {full ? <VideoCard full={full} /> : <LockedCard title={m.video.title} text={m.locked.video} />}
       </div>
     </>

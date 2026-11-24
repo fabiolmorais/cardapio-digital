@@ -9,24 +9,29 @@ import br.com.cardapio.application.port.out.account.EstablishmentTimeZonePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.menu.MenuCategoryPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
+import br.com.cardapio.application.port.out.report.MenuInterestReportPort;
 import br.com.cardapio.application.port.out.report.MenuReportPort;
 import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.menu.exception.MenuCategoryNotFoundException;
+import br.com.cardapio.domain.menu.model.MenuCategoryId;
 import br.com.cardapio.domain.report.model.CategorySales;
+import br.com.cardapio.domain.report.model.MenuInterest;
 import br.com.cardapio.domain.report.model.OptionSales;
 import br.com.cardapio.domain.report.model.ProductRow;
 import br.com.cardapio.domain.report.model.ProductSales;
 import br.com.cardapio.domain.report.model.ReportLevel;
 import br.com.cardapio.domain.report.model.ProductSort;
 import br.com.cardapio.domain.report.service.MenuAnalysis;
+import br.com.cardapio.domain.report.service.MenuInterestAnalysis;
 import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /** O Cardápio (14.3), com os blocos básicos: o Pro em diante. */
 public class GetMenuReportService implements GetMenuReportUseCase {
@@ -39,15 +44,18 @@ public class GetMenuReportService implements GetMenuReportUseCase {
     private final SectorPort sectors;
     private final MenuCategoryPort categories;
     private final MenuReportPort menu;
+    private final MenuInterestReportPort interest;
     private final Clock clock;
 
     public GetMenuReportService(SubscriptionPort subscriptions, EstablishmentTimeZonePort timeZones,
-                                SectorPort sectors, MenuCategoryPort categories, MenuReportPort menu, Clock clock) {
+                                SectorPort sectors, MenuCategoryPort categories, MenuReportPort menu,
+                                MenuInterestReportPort interest, Clock clock) {
         this.subscriptions = subscriptions;
         this.timeZones = timeZones;
         this.sectors = sectors;
         this.categories = categories;
         this.menu = menu;
+        this.interest = interest;
         this.clock = clock;
     }
 
@@ -92,7 +100,14 @@ public class GetMenuReportService implements GetMenuReportUseCase {
                 // Os pares olham o cardápio todo: o par bom costuma juntar categorias (o prato e a bebida).
                 MenuAnalysis.pairs(menu.pairs(id, period.start(), period.end(), scope.sector(),
                         MenuAnalysis.MIN_TOGETHER, PAIR_CANDIDATES), MenuAnalysis.TOP_PAIRS),
-                menu.video(id, period.start(), period.end(), scope.sector(), category));
+                menu.video(id, period.start(), period.end(), scope.sector(), category),
+                interest(id, scope, category));
+    }
+
+    private MenuInterest interest(EstablishmentId id, ReportScope scope, Optional<MenuCategoryId> category) {
+        var period = scope.period();
+        var found = interest.find(id, period.start(), period.end(), scope.sector(), category);
+        return MenuInterestAnalysis.of(interest.recordingSince(id).orElse(null), found.products(), found.carts());
     }
 
     @Override

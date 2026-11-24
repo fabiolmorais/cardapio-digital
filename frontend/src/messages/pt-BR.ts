@@ -2229,7 +2229,44 @@ export const messages = {
         note: "Média de vendidos por produto ativo no período. Os itens com vídeo também costumam ser os mais conhecidos: compare o mesmo item antes e depois do vídeo.",
         empty: "Nenhum produto ativo no cardápio",
       },
+      interest: {
+        notYet:
+          "Os celulares ainda não registraram nada. Os dados começam quando os clientes abrem o cardápio pela mesa.",
+        since: (date: string) => `Gravado desde ${date}. Antes disso, o período fica sem estes dados.`,
+        how: "Visto: abriu o prato ou viu o reel por 2 s. Pediu: o mesmo celular pediu o prato.",
+        ordered: "Pediram",
+        onlyViewed: "Só viram",
+        row: (viewers: number, ordered: number, conversion: string) =>
+          `${viewers} ${viewers === 1 ? "viu" : "viram"} · ${ordered} ${ordered === 1 ? "pediu" : "pediram"} · ${conversion}`,
+        chart: (name: string, viewers: number, ordered: number, conversion: string) =>
+          `${name}: ${viewers} ${viewers === 1 ? "celular viu" : "celulares viram"}, ${ordered} ${ordered === 1 ? "pediu" : "pediram"} (${conversion})`,
+      },
+      viewed: {
+        title: "Visto x pedido",
+        hint: "De quem viu, quantos pediram",
+        empty: "Nenhum prato visto no período",
+      },
+      reels: {
+        title: "Reels mais vistos",
+        hint: "E quantos viraram pedido",
+        empty: "Nenhum reel visto no período",
+      },
+      carts: {
+        title: "Carrinhos não enviados",
+        notSent: (n: number) => (n === 1 ? "carrinho não enviado" : "carrinhos não enviados"),
+        of: (total: number) =>
+          `de ${total} ${total === 1 ? "celular que pôs" : "celulares que puseram"} algo no carrinho`,
+        left: (value: string) => `${value} ficou no carrinho sem ser pedido`,
+        leftHint: "Pelo preço de hoje, somando o que cada celular pôs e não pediu.",
+        mostLeft: "Ficam no carrinho",
+        item: (sessions: number, units: number) =>
+          `${sessions} ${sessions === 1 ? "celular" : "celulares"} · ${units} un.`,
+        empty: "Ninguém pôs nada no carrinho no período",
+      },
       locked: {
+        viewed: "De quem abriu cada prato pelo celular, quantos pediram.",
+        reels: "Os reels mais vistos e quantos viraram pedido.",
+        carts: "Os carrinhos não enviados, o valor e os itens que mais ficam.",
         canceled: "Os produtos mais cancelados e o motivo que mais se repete.",
         sizes: "Os tamanhos mais escolhidos de cada produto (300 ml x 500 ml, broto x grande).",
         options: "As opções e os adicionais mais escolhidos, e quanto os adicionais somam.",

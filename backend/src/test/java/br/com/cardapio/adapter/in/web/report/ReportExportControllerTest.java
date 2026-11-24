@@ -145,6 +145,9 @@ class ReportExportControllerTest {
 
         assertThat(csv).contains("Produto;Categoria;Quantidade;Faturamento (R$);Curva ABC");
         assertThat(csv).contains("Temaki;", "\"'=Refri; lata\";").doesNotContain(";=Refri");
+        // Os blocos do celular (C3) entram, mesmo sem eventos.
+        assertThat(csv).contains("Visto x pedido", "Produto;Celulares que viram;Pediram;Conversão (%)",
+                "Carrinhos não enviados;0", "Ficam no carrinho");
     }
 
     @Test

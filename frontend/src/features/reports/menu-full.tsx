@@ -1,6 +1,7 @@
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { BarList, ChartCard, NoData, SplitBar } from "./charts";
+import { formatDay } from "./period";
 import type { MenuReport } from "./reports-api";
 
 const m = messages.reports.menu;
@@ -143,6 +144,144 @@ export function VideoCard({ full }: { full: Full }) {
         <NoData text={m.video.empty} height={120} />
       ) : (
         <BarList format={(value) => m.video.perItem(onePlace.format(value))} rows={rows} />
+      )}
+    </ChartCard>
+  );
+}
+
+type Interest = Full["interest"];
+type Seen = Interest["viewed"][number];
+
+/** A nota dos blocos do celular: desde quando grava e, depois, o que é "visto" e "pediu". */
+function interestNote(interest: Interest, periodFrom: string): string {
+  if (interest.recordingSince && interest.recordingSince > periodFrom) {
+    return `${m.interest.since(formatDay(interest.recordingSince))} ${m.interest.how}`;
+  }
+  return m.interest.how;
+}
+
+/** Cada produto: a barra de quem viu, com a parte de quem pediu, e os números. */
+function SeenList({ rows }: { rows: Seen[] }) {
+  const max = Math.max(...rows.map((r) => r.viewers));
+  return (
+    <div className="flex flex-col gap-3">
+      <div aria-hidden className="flex gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-report-now" />
+          {m.interest.ordered}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-report-prev" />
+          {m.interest.onlyViewed}
+        </span>
+      </div>
+      <ul className="flex flex-col gap-2.5">
+        {rows.map((row) => {
+          const conversion = percent.format(row.viewers === 0 ? 0 : row.ordered / row.viewers);
+          return (
+            <li
+              key={row.name}
+              title={m.interest.chart(row.name, row.viewers, row.ordered, conversion)}
+              className="flex flex-col gap-1.5 text-sm"
+            >
+              <span className="flex items-baseline gap-3">
+                <span className="min-w-0 flex-1 truncate">{row.name}</span>
+                <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                  <span aria-hidden>{m.interest.row(row.viewers, row.ordered, conversion)}</span>
+                  <span className="sr-only">{m.interest.chart(row.name, row.viewers, row.ordered, conversion)}</span>
+                </span>
+              </span>
+              <span aria-hidden className="flex h-2.5 gap-0.5">
+                {row.ordered > 0 && (
+                  <span className="h-2.5 rounded-l bg-report-now" style={{ width: `${(row.ordered / max) * 100}%` }} />
+                )}
+                {row.viewers > row.ordered && (
+                  <span
+                    className="h-2.5 rounded-r bg-report-prev"
+                    style={{ width: `${((row.viewers - row.ordered) / max) * 100}%` }}
+                  />
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Visto x pedido (REL-27): de quem abriu o prato pelo celular, quantos pediram. */
+export function ViewedCard({ full, periodFrom, className }: { full: Full; periodFrom: string; className?: string }) {
+  const interest = full.interest;
+  return (
+    <ChartCard
+      title={m.viewed.title}
+      hint={m.viewed.hint}
+      className={className}
+      note={interest.recordingSince ? interestNote(interest, periodFrom) : undefined}
+    >
+      {!interest.recordingSince ? (
+        <NoData text={m.interest.notYet} height={120} />
+      ) : interest.viewed.length === 0 ? (
+        <NoData text={m.viewed.empty} height={120} />
+      ) : (
+        <SeenList rows={interest.viewed} />
+      )}
+    </ChartCard>
+  );
+}
+
+/** Os reels mais vistos (REL-28) e quantos viraram pedido. */
+export function ReelsCard({ full }: { full: Full }) {
+  const interest = full.interest;
+  return (
+    <ChartCard title={m.reels.title} hint={m.reels.hint}>
+      {!interest.recordingSince ? (
+        <NoData text={m.interest.notYet} height={120} />
+      ) : interest.reels.length === 0 ? (
+        <NoData text={m.reels.empty} height={120} />
+      ) : (
+        <SeenList rows={interest.reels} />
+      )}
+    </ChartCard>
+  );
+}
+
+/** Os carrinhos não enviados (REL-29): quantos, o valor e os itens que mais ficam. */
+export function CartsCard({ full }: { full: Full }) {
+  const interest = full.interest;
+  return (
+    <ChartCard title={m.carts.title} note={interest.cartSessions > 0 ? m.carts.leftHint : undefined}>
+      {!interest.recordingSince ? (
+        <NoData text={m.interest.notYet} height={120} />
+      ) : interest.cartSessions === 0 ? (
+        <NoData text={m.carts.empty} height={120} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="flex items-baseline gap-2">
+              <span className="font-mono text-3xl font-bold tabular-nums">{interest.cartsNotSent}</span>
+              <span className="text-sm">{m.carts.notSent(interest.cartsNotSent)}</span>
+            </span>
+            <span className="text-xs text-muted-foreground">{m.carts.of(interest.cartSessions)}</span>
+          </div>
+          <p className="text-sm font-semibold">{m.carts.left(formatCents(interest.leftCents))}</p>
+          {interest.mostLeft.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xs font-semibold text-muted-foreground">{m.carts.mostLeft}</h3>
+              <ul className="flex flex-col gap-2">
+                {interest.mostLeft.map((item) => (
+                  <li key={item.name} className="flex items-baseline gap-3 text-sm">
+                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                      {m.carts.item(item.sessions, item.units)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </ChartCard>
   );

@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react";
+import { cn } from "cn";
 import Link from "next/link";
 import { messages } from "@/messages/pt-BR";
 
@@ -8,11 +9,24 @@ const t = messages.reports.full.locked;
  * Um bloco do Business no Pro (desenho 14.9): tracejado, com o cadeado e o "Conhecer o Business". Só
  * descreve o bloco: o dado não sai do servidor.
  */
-export function LockedCard({ title, text, small = false }: { title: string; text: string; small?: boolean }) {
+export function LockedCard({
+  title,
+  text,
+  small = false,
+  className,
+}: {
+  title: string;
+  text: string;
+  small?: boolean;
+  className?: string;
+}) {
   return (
     <section
       aria-label={t.label(title)}
-      className="flex min-w-0 flex-col gap-3 rounded-[20px] border border-dashed border-border bg-secondary/40 px-5 py-[18px]"
+      className={cn(
+        "flex min-w-0 flex-col gap-3 rounded-[20px] border border-dashed border-border bg-secondary/40 px-5 py-[18px]",
+        className,
+      )}
     >
       <div className="flex items-center gap-2">
         <h2 className={small ? "mr-auto text-sm text-muted-foreground" : "mr-auto font-semibold"}>{title}</h2>

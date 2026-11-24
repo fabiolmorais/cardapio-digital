@@ -243,6 +243,32 @@ final class ReportTestData {
                 """, UUID.randomUUID(), owner.establishmentId(), tab, place.table(), session, Timestamp.from(at));
     }
 
+    /** Um pedido feito pelo celular, com itens já entregues. */
+    void phoneOrder(Owner owner, Place place, UUID tab, UUID session, Instant at, Item... items) {
+        UUID order = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO customer_order (id, establishment_id, tab_id, table_id, session_id, number, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 3, 'SENT', ?)
+                """, order, owner.establishmentId(), tab, place.table(), session, Timestamp.from(at));
+        int position = 0;
+        for (Item item : items) {
+            jdbc.update("""
+                    INSERT INTO order_item (id, establishment_id, order_id, position, product_id, product_name,
+                                            unit_price_cents, quantity, status, created_at, delivered_at, delivered_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'DELIVERED', ?, ?, ?)
+                    """, UUID.randomUUID(), owner.establishmentId(), order, position++, item.product(), item.name(),
+                    item.priceCents(), item.quantity(), Timestamp.from(at), Timestamp.from(at), owner.userId());
+        }
+    }
+
+    /** Um evento do celular no cardápio (C2): PRODUCT_VIEW, REEL_VIEW ou CART_ADD. */
+    void menuEvent(Owner owner, UUID session, UUID product, String kind, int quantity, Instant at) {
+        jdbc.update("""
+                INSERT INTO menu_event (id, establishment_id, session_id, product_id, kind, quantity, occurred_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), owner.establishmentId(), session, product, kind, quantity, Timestamp.from(at));
+    }
+
     /** Um chamado do garçom, aceito e atendido por {@code by} em {@code accepted} (null: ainda esperando). */
     void call(Owner owner, Place place, UUID session, Instant created, Instant accepted, UUID by) {
         jdbc.update("""

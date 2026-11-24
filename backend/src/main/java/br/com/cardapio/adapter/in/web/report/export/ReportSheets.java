@@ -133,6 +133,21 @@ public final class ReportSheets {
         sheet.section("Vendem pouco", "Produto", "Categoria", "Quantidade", "Faturamento (R$)");
         r.slowSellers().forEach(s -> sheet.row(text(s.name()), text(s.category()), number(s.quantity()),
                 money(s.revenue())));
+        if (full) {
+            var interest = r.full().interest();
+            sheet.section("Visto x pedido", "Produto", "Celulares que viram", "Pediram", "Conversão (%)");
+            interest.viewed().forEach(i -> sheet.row(text(i.name()), number(i.viewers()), number(i.ordered()),
+                    percent(i.conversion())));
+            sheet.section("Reels mais vistos", "Produto", "Celulares que viram", "Pediram", "Conversão (%)");
+            interest.reels().forEach(i -> sheet.row(text(i.name()), number(i.viewers()), number(i.ordered()),
+                    percent(i.conversion())));
+            sheet.section("Carrinhos", "Indicador", "Valor")
+                    .row(text("Celulares que puseram algo no carrinho"), number(interest.carts().withCart()))
+                    .row(text("Carrinhos não enviados"), number(interest.carts().notSent()))
+                    .row(text("Ficou no carrinho (R$, preço de hoje)"), money(interest.leftValue()));
+            sheet.section("Ficam no carrinho", "Produto", "Celulares", "Unidades");
+            interest.mostLeft().forEach(l -> sheet.row(text(l.name()), number(l.sessions()), number(l.units())));
+        }
         return sheet;
     }
 
