@@ -1,6 +1,8 @@
 package br.com.cardapio.application.service.report;
 
 import br.com.cardapio.application.port.in.report.DailySummary;
+import br.com.cardapio.domain.report.model.ReportLevel;
+import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.in.report.DailySummarySettingsView;
 import br.com.cardapio.application.port.in.report.ManageDailySummaryUseCase;
 import br.com.cardapio.application.port.in.report.SummaryTestResult;
@@ -41,12 +43,12 @@ public class ManageDailySummaryService implements ManageDailySummaryUseCase {
     private final String publicUrl;
 
     public ManageDailySummaryService(SubscriptionPort subscriptions, DailySummaryPort summaries, SalesReportPort sales,
-                                     KitchenReportPort kitchen, EmailSenderPort email,
+                                     KitchenReportPort kitchen, RevenueGoalPort goals, EmailSenderPort email,
                                      PushSubscriptionPort pushSubscriptions, PushSenderPort push, Clock clock,
                                      String publicUrl) {
         this.subscriptions = subscriptions;
         this.summaries = summaries;
-        this.builder = new DailySummaryBuilder(sales, kitchen);
+        this.builder = new DailySummaryBuilder(sales, kitchen, goals);
         this.email = email;
         this.pushSubscriptions = pushSubscriptions;
         this.push = push;
@@ -88,7 +90,8 @@ public class ManageDailySummaryService implements ManageDailySummaryUseCase {
     public DailySummary preview(EstablishmentId establishmentId) {
         SummaryTarget target = target(establishmentId);
         SummaryWindow window = SummaryWindow.lastEnded(clock.instant(), target.settings().sendHour(), target.zone());
-        return builder.build(establishmentId, target.name(), window);
+        boolean full = ReportAccesses.of(subscriptions, establishmentId).level().covers(ReportLevel.FULL);
+        return builder.build(establishmentId, target.name(), window, full);
     }
 
     @Override

@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.in.report.OverviewFull;
 import br.com.cardapio.application.port.out.report.KitchenReportPort;
 import br.com.cardapio.application.port.out.report.OperationReportPort;
+import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.SectorId;
@@ -19,12 +20,15 @@ import br.com.cardapio.domain.report.service.DailySummaryAnalysis;
 import br.com.cardapio.domain.report.service.OverviewAnalysis;
 import br.com.cardapio.domain.report.service.SalesAnalysis;
 import br.com.cardapio.domain.shared.model.Money;
+import br.com.cardapio.domain.report.model.GoalProgress;
+import br.com.cardapio.domain.report.service.GoalAnalysis;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,17 +52,19 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
     private final SalesReportPort sales;
     private final OperationReportPort operations;
     private final KitchenReportPort kitchen;
+    private final RevenueGoalPort goals;
     private final Clock clock;
 
     public GetOverviewReportService(SubscriptionPort subscriptions, EstablishmentTimeZonePort timeZones,
                                     SectorPort sectors, SalesReportPort sales, OperationReportPort operations,
-                                    KitchenReportPort kitchen, Clock clock) {
+                                    KitchenReportPort kitchen, RevenueGoalPort goals, Clock clock) {
         this.subscriptions = subscriptions;
         this.timeZones = timeZones;
         this.sectors = sectors;
         this.sales = sales;
         this.operations = operations;
         this.kitchen = kitchen;
+        this.goals = goals;
         this.clock = clock;
     }
 
@@ -103,7 +109,26 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
                         kitchen.averages(id, recentStart, period.end(), sector),
                         kitchen.averages(id, usualStart, recentStart, sector),
                         operations.forgottenTabs(id, startOfToday, sector),
-                        operations.canceled(id, period.start(), period.end(), sector)));
+                        operations.canceled(id, period.start(), period.end(), sector)),
+                goal(id, zone, scope.now()));
+    }
+
+    /**
+     * A meta do mês de hoje (REL-79), seja qual for o período escolhido: o restaurante inteiro (sem o
+     * setor), com hoje entre os dias que faltam e a média dos dias já terminados.
+     */
+    private Optional<GoalProgress> goal(EstablishmentId id, ZoneId zone, Instant now) {
+        LocalDate today = LocalDate.ofInstant(now, zone);
+        YearMonth month = YearMonth.from(today);
+        return goals.find(id, month).map(goal -> {
+            Instant monthStart = month.atDay(1).atStartOfDay(zone).toInstant();
+            Instant todayStart = today.atStartOfDay(zone).toInstant();
+            return GoalAnalysis.progress(goal,
+                    sales.totals(id, monthStart, now, Optional.empty()).revenue(),
+                    month.lengthOfMonth() - today.getDayOfMonth() + 1,
+                    sales.totals(id, monthStart, todayStart, Optional.empty()).revenue(),
+                    today.getDayOfMonth() - 1);
+        });
     }
 
     /**

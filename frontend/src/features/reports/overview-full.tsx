@@ -1,4 +1,5 @@
 import { CircleAlert, Clock3, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { ChartCard, KpiTile, NoData, variation, type Delta } from "./charts";
@@ -223,6 +224,60 @@ export function AttentionCard({ full }: { full: Full }) {
           })}
         </ul>
       )}
+    </ChartCard>
+  );
+}
+
+/** "2026-11" → "novembro". */
+function monthName(month: string) {
+  return f.goal.months[Number(month.slice(5, 7)) - 1];
+}
+
+/**
+ * A meta do mês (REL-79, Business): quanto já foi, a barra até a meta e quanto por dia falta. É sempre o
+ * mês de hoje, seja qual for o período escolhido.
+ */
+export function GoalCard({ full, today }: { full: Full; today: string }) {
+  const goal = full.goal;
+  if (!goal) {
+    const month = monthName(today);
+    return (
+      <ChartCard title={f.goal.title(month)}>
+        <div className="flex flex-col items-start gap-2 text-sm">
+          <p className="text-muted-foreground">{f.goal.none(month)}</p>
+          <Link
+            href="/admin/relatorios/resumo"
+            className="font-semibold underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            {f.goal.set}
+          </Link>
+        </div>
+      </ChartCard>
+    );
+  }
+  const ratio = goal.achievedCents / goal.goalCents;
+  const percent = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 0 }).format(ratio);
+  return (
+    <ChartCard title={f.goal.title(monthName(goal.month))} hint={percent}>
+      <div className="flex flex-col gap-3">
+        <p>
+          <span className="text-[28px] leading-9 font-bold tabular-nums">{formatCents(goal.achievedCents)}</span>
+          <span className="text-sm text-muted-foreground">{f.goal.of(formatCents(goal.goalCents))}</span>
+        </p>
+        <span
+          role="img"
+          aria-label={f.goal.chart(formatCents(goal.achievedCents), formatCents(goal.goalCents), percent)}
+          className="flex h-3 overflow-hidden rounded-full bg-secondary"
+        >
+          <span className="h-full rounded-full bg-report-now" style={{ width: `${Math.min(100, ratio * 100)}%` }} />
+        </span>
+        <p className="text-[13px] leading-[18px] text-muted-foreground">
+          {goal.perDayNeededCents == null
+            ? f.goal.reached
+            : f.goal.perDay(goal.daysLeft, formatCents(goal.perDayNeededCents))}
+          {goal.dailyAverageCents != null && f.goal.average(formatCents(goal.dailyAverageCents))}
+        </p>
+      </div>
     </ChartCard>
   );
 }

@@ -5,24 +5,32 @@ import { useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { formatCents } from "@/lib/format";
+import { centsToInput, formatCents, parseCents } from "@/lib/format";
 import { LockedCard } from "./locked";
 import { messages } from "@/messages/pt-BR";
 import { formatRange } from "./period";
 import {
   useReportAlerts,
+  useRevenueGoals,
   useSaveReportAlerts,
+  useSaveRevenueGoals,
   useSaveSummarySettings,
   useSendSummaryTest,
   useSummaryPreview,
   useSummarySettings,
   type ReportAlerts,
+  type RevenueGoals,
   type SummarySettings,
 } from "./reports-api";
 import { Loading, ReportsGate } from "./reports-page";
 
 const t = messages.reports.summary;
 const a = t.alerts;
+const g = t.goals;
+const MONTHS = messages.reports.full.goal.months;
+
+/** "2026-11" → "novembro". */
+const monthName = (month: string) => MONTHS[Number(month.slice(5, 7)) - 1];
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => ({ value: String(hour), label: t.hourOption(hour) }));
 
@@ -37,27 +45,42 @@ export function SummaryScreen() {
 function SummaryLoader({ full }: { full: boolean }) {
   const settings = useSummarySettings();
   const alerts = useReportAlerts(full);
-  if (settings.isError || alerts.isError) {
+  const goals = useRevenueGoals(full);
+  if (settings.isError || alerts.isError || goals.isError) {
     return (
       <div className="flex flex-col items-start gap-3 px-4 py-6 sm:px-7">
         <p role="alert" className="text-destructive">
-          {settings.isError ? t.loadError : a.loadError}
+          {settings.isError ? t.loadError : alerts.isError ? a.loadError : g.loadError}
         </p>
         <Button
           variant="outline"
           className="h-11"
-          onClick={() => (settings.isError ? settings.refetch() : alerts.refetch())}
+          onClick={() => (settings.isError ? settings.refetch() : alerts.isError ? alerts.refetch() : goals.refetch())}
         >
           {messages.reports.retry}
         </Button>
       </div>
     );
   }
-  if (!settings.data || (full && !alerts.data)) return <Loading />;
-  return <SummaryForm initial={settings.data} initialAlerts={full ? (alerts.data ?? null) : null} />;
+  if (!settings.data || (full && (!alerts.data || !goals.data))) return <Loading />;
+  return (
+    <SummaryForm
+      initial={settings.data}
+      initialAlerts={full ? (alerts.data ?? null) : null}
+      initialGoals={full ? (goals.data ?? null) : null}
+    />
+  );
 }
 
-function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; initialAlerts: ReportAlerts | null }) {
+function SummaryForm({
+  initial,
+  initialAlerts,
+  initialGoals,
+}: {
+  initial: SummarySettings;
+  initialAlerts: ReportAlerts | null;
+  initialGoals: RevenueGoals | null;
+}) {
   const id = useId();
   const [email, setEmail] = useState(initial.emailEnabled);
   const [push, setPush] = useState(initial.pushEnabled);
@@ -66,10 +89,18 @@ function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; ini
     () => new Set(initial.recipients.filter((r) => r.receives).map((r) => r.userId)),
   );
   const [alerts, setAlerts] = useState<ReportAlerts | null>(initialAlerts);
+  const amount = (cents: number | null | undefined) => (cents == null ? "" : centsToInput(cents));
+  const [goals, setGoals] = useState(() =>
+    initialGoals
+      ? { current: amount(initialGoals.current.amountCents), next: amount(initialGoals.next.amountCents) }
+      : null,
+  );
+  const [goalError, setGoalError] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const save = useSaveSummarySettings();
   const saveAlerts = useSaveReportAlerts();
-  const saving = save.isPending || saveAlerts.isPending;
+  const saveGoals = useSaveRevenueGoals();
+  const saving = save.isPending || saveAlerts.isPending || saveGoals.isPending;
 
   function changed() {
     setNotice(null);
@@ -77,9 +108,21 @@ function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; ini
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const typed = goals && initialGoals ? [parseCents(goals.current), parseCents(goals.next)] : [];
+    if (typed.some((cents) => cents !== null && (Number.isNaN(cents) || cents <= 0))) {
+      setGoalError(true);
+      return;
+    }
+    setGoalError(false);
     try {
       await save.mutateAsync({ emailEnabled: email, pushEnabled: push, sendHour: hour, receiverIds: [...receivers] });
       if (alerts) await saveAlerts.mutateAsync(alerts);
+      if (goals && initialGoals) {
+        await saveGoals.mutateAsync([
+          { month: initialGoals.current.month, amountCents: typed[0] ?? undefined },
+          { month: initialGoals.next.month, amountCents: typed[1] ?? undefined },
+        ]);
+      }
       setNotice(alerts ? t.savedWithAlerts : t.saved);
     } catch {
       // O erro aparece embaixo do título (save.isError ou saveAlerts.isError).
@@ -103,7 +146,7 @@ function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; ini
           {notice}
         </p>
       )}
-      {(save.isError || saveAlerts.isError) && (
+      {(save.isError || saveAlerts.isError || saveGoals.isError) && (
         <p role="alert" className="text-sm text-destructive">
           {t.saveError}
         </p>
@@ -197,6 +240,22 @@ function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; ini
         ) : (
           <div className="xl:col-start-1">
             <LockedCard title={a.title} text={a.locked} />
+          </div>
+        )}
+        {goals && initialGoals ? (
+          <Goals
+            months={[initialGoals.current.month, initialGoals.next.month]}
+            value={[goals.current, goals.next]}
+            invalid={goalError}
+            onChange={([current, next]) => {
+              changed();
+              setGoalError(false);
+              setGoals({ current, next });
+            }}
+          />
+        ) : (
+          <div className="xl:col-start-1">
+            <LockedCard title={g.title} text={g.locked} />
           </div>
         )}
       </div>
@@ -390,6 +449,63 @@ function LimitField({
       />
       {unit}
     </label>
+  );
+}
+
+/** A meta de faturamento (REL-79): a deste mês e a do próximo, em reais; em branco, sem meta. */
+function Goals({
+  months,
+  value,
+  invalid,
+  onChange,
+}: {
+  months: [string, string];
+  value: [string, string];
+  invalid: boolean;
+  onChange: (next: [string, string]) => void;
+}) {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={`${id}goals`}
+      className="flex min-w-0 flex-col gap-4 rounded-[20px] border border-border bg-card p-5 sm:p-6 xl:col-start-1"
+    >
+      <h2 id={`${id}goals`} className="text-lg font-semibold">
+        {g.title}
+      </h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {months.map((month, i) => (
+          <div key={month} className="flex flex-col gap-2">
+            <Label htmlFor={`${id}goal${i}`}>{g.month(monthName(month))}</Label>
+            <div className="flex h-11 items-center gap-2 rounded-xl border border-input px-3 focus-within:ring-3 focus-within:ring-ring/50">
+              <span aria-hidden className="text-sm text-muted-foreground">
+                R$
+              </span>
+              <input
+                id={`${id}goal${i}`}
+                inputMode="decimal"
+                placeholder={g.none}
+                value={value[i]}
+                aria-invalid={invalid}
+                aria-describedby={`${id}goalhint`}
+                onChange={(event) =>
+                  onChange(i === 0 ? [event.target.value, value[1]] : [value[0], event.target.value])
+                }
+                className="min-w-0 flex-1 bg-transparent text-base tabular-nums outline-none"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {invalid && (
+        <p role="alert" className="text-sm text-destructive">
+          {g.invalid}
+        </p>
+      )}
+      <p id={`${id}goalhint`} className="text-sm text-muted-foreground">
+        {g.hint}
+      </p>
+    </section>
   );
 }
 

@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.report.DailySummary;
 import br.com.cardapio.application.port.out.email.EmailMessage;
 import br.com.cardapio.domain.account.model.Role;
 import br.com.cardapio.domain.push.model.PushMessage;
+import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.PaymentTotal;
 import br.com.cardapio.domain.report.model.ReportTotals;
 import br.com.cardapio.domain.shared.model.Email;
@@ -65,6 +66,7 @@ final class DailySummaryMessages {
             text.append('\n');
         }
         text.append('\n');
+        s.goal().ifPresent(g -> text.append(goalTitle(g)).append(": ").append(goalText(g)).append("\n\n"));
         for (String[] line : lines) {
             text.append(line[0]).append(": ").append(line[1]).append('\n');
         }
@@ -106,7 +108,9 @@ final class DailySummaryMessages {
             }
             html.append("</tr>");
         }
-        html.append("</table><div style=\"font-size:14px;line-height:20px;margin:16px 6px\">");
+        html.append("</table>");
+        s.goal().ifPresent(g -> html.append(goalHtml(g)));
+        html.append("<div style=\"font-size:14px;line-height:20px;margin:16px 6px\">");
         for (String[] line : lines) {
             html.append("<p style=\"margin:0 0 8px\"><b>").append(escape(line[0])).append(":</b> ")
                     .append(escape(line[1])).append("</p>");
@@ -119,6 +123,41 @@ final class DailySummaryMessages {
                 .append("\">Mudar o resumo</a></p></td></tr></table></body></html>");
 
         return new EmailMessage(to, subject, text.toString(), html.toString());
+    }
+
+    /** "Meta de novembro". */
+    static String goalTitle(GoalProgress g) {
+        return "Meta de " + MONTHS[g.month().getMonthValue() - 1];
+    }
+
+    /**
+     * "R$ 124.300,00 de R$ 180.000,00 (69%). Faltam 11 dias: R$ 5.060,00 por dia batem a meta (a média
+     * está em R$ 6.890,00)."; batida ou com o mês no fim, só o resultado.
+     */
+    static String goalText(GoalProgress g) {
+        String sofar = money(g.achieved().cents()) + " de " + money(g.goal().cents()) + " ("
+                + Math.round(g.share() * 100) + "%)";
+        if (g.reached()) {
+            return "batida! " + sofar + ".";
+        }
+        if (g.perDayNeeded().isEmpty()) {
+            return sofar + ". O mês terminou sem bater a meta.";
+        }
+        String days = g.daysLeft() == 1 ? "Falta 1 dia: " : "Faltam " + g.daysLeft() + " dias: ";
+        return sofar + ". " + days + money(g.perDayNeeded().get().cents()) + " por dia batem a meta"
+                + g.dailyAverage().map(a -> " (a média está em " + money(a.cents()) + ")").orElse("") + ".";
+    }
+
+    private static String goalHtml(GoalProgress g) {
+        long width = Math.min(100, Math.round(g.share() * 100));
+        return "<div style=\"border:1px solid #E7E2DC;border-radius:12px;padding:14px 16px;margin:10px 6px 0\">"
+                + "<div style=\"font-size:13px;color:" + MUTED + "\">" + escape(goalTitle(g)) + "</div>"
+                + "<div style=\"font-size:14px;font-weight:600;margin:4px 0 8px\">" + escape(money(g.achieved().cents()))
+                + " de " + escape(money(g.goal().cents())) + " · " + Math.round(g.share() * 100) + "%</div>"
+                + "<div style=\"height:8px;border-radius:999px;background:#EFEAE4;overflow:hidden\">"
+                + "<div style=\"height:8px;width:" + width + "%;background:" + ACCENT + ";border-radius:999px\"></div>"
+                + "</div><div style=\"font-size:13px;color:" + MUTED + ";margin-top:8px\">"
+                + escape(goalText(g)) + "</div></div>";
     }
 
     /** "Resumo de sexta" · "R$ 9.870,00 em 84 comandas, 9% acima da sexta passada." */

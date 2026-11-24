@@ -1,6 +1,7 @@
 package br.com.cardapio.application.service.report;
 
 import br.com.cardapio.application.port.in.report.DailySummary;
+import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.in.report.SendDailySummariesUseCase;
 import br.com.cardapio.application.port.out.email.EmailSenderPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
@@ -44,12 +45,13 @@ public class SendDailySummariesService implements SendDailySummariesUseCase {
     private final String publicUrl;
 
     public SendDailySummariesService(SubscriptionPort subscriptions, DailySummaryPort summaries,
-                                     SalesReportPort sales, KitchenReportPort kitchen, EmailSenderPort email,
+                                     SalesReportPort sales, KitchenReportPort kitchen, RevenueGoalPort goals,
+                                     EmailSenderPort email,
                                      PushSubscriptionPort pushSubscriptions, PushSenderPort push, Clock clock,
                                      String publicUrl) {
         this.subscriptions = subscriptions;
         this.summaries = summaries;
-        this.builder = new DailySummaryBuilder(sales, kitchen);
+        this.builder = new DailySummaryBuilder(sales, kitchen, goals);
         this.email = email;
         this.pushSubscriptions = pushSubscriptions;
         this.push = push;
@@ -75,14 +77,16 @@ public class SendDailySummariesService implements SendDailySummariesUseCase {
             return false; // desligou ou outra instância já mandou
         }
         SummaryTarget target = found.get();
-        if (ReportAccesses.of(subscriptions, establishmentId).level() == ReportLevel.NONE) {
+        ReportLevel level = ReportAccesses.of(subscriptions, establishmentId).level();
+        if (level == ReportLevel.NONE) {
             return false; // o Essencial não tem relatórios
         }
         SummaryWindow window = window(target, clock.instant());
         if (!summaries.claim(establishmentId, window.day())) {
             return false; // outra instância pegou
         }
-        DailySummary summary = builder.build(establishmentId, target.name(), window);
+        DailySummary summary = builder.build(establishmentId, target.name(), window,
+                level.covers(ReportLevel.FULL));
         if (!summary.hasActivity()) {
             return false;
         }
