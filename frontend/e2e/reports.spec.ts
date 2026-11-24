@@ -266,7 +266,7 @@ test("no Pro, a Visão geral mostra os blocos do Business bloqueados", async ({ 
 
   await page.goto("/admin/relatorios?periodo=today");
   await expect(page.getByRole("region", { name: "Visão geral" })).toContainText("FaturamentoR$ 68,90");
-  for (const block of ["Mais 5 números", "Hoje, até agora", "Garçons do período", "Pontos de atenção"]) {
+  for (const block of ["Mais 5 números", "Hoje, até agora", "Meta do mês", "Garçons do período", "Pontos de atenção"]) {
     const locked = page.getByRole("region", { name: `${block} (disponível no Business)` });
     await expect(locked).toBeVisible();
     await expect(locked.getByRole("link", { name: "Conhecer o Business" })).toHaveAttribute(
@@ -314,6 +314,14 @@ test("no Business, a Visão geral mostra a operação, hoje até agora, os garç
             { kind: "FORGOTTEN_TABS", tables: ["07", "D3"] },
             { kind: "CANCELED_PRODUCT", name: "Temaki salmão", times: 9, reason: "Acabou o salmão", reasonTimes: 7 },
           ],
+          goal: {
+            month: "2026-11",
+            goalCents: 18000000,
+            achievedCents: 12430000,
+            daysLeft: 7,
+            perDayNeededCents: 795715,
+            dailyAverageCents: 690556,
+          },
         },
       },
     });
@@ -336,6 +344,12 @@ test("no Business, a Visão geral mostra a operação, hoje até agora, os garç
   await expect(attention).toContainText("Guioza levou 31 min em média (normal: 14 min).");
   await expect(attention).toContainText("2 comandas ficaram abertas de um dia para o outro (Mesas 07, D3).");
   await expect(attention).toContainText('Temaki salmão foi cancelado 9 vezes, 7 por "Acabou o salmão".');
+  const goal = page.getByRole("region", { name: "Meta de novembro" });
+  await expect(goal).toContainText("R$ 124.300,00 de R$ 180.000,00");
+  await expect(goal.getByRole("img", { name: "R$ 124.300,00 de R$ 180.000,00, 69% da meta" })).toBeVisible();
+  await expect(goal).toContainText(
+    "Faltam 7 dias, com hoje: R$ 7.957,15 por dia batem a meta. A média está em R$ 6.905,56 por dia.",
+  );
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
 
@@ -963,6 +977,10 @@ test("Alertas em tempo real: bloqueados no Pro; no Business, liga a comanda, mud
     const response = await route.fetch();
     await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
   });
+  // A meta também é do Business: aqui, sem meta.
+  await page.route("**/api/v1/reports/goals", async (route) => {
+    await route.fulfill({ json: { current: { month: "2026-11" }, next: { month: "2026-12" } } });
+  });
   let saved: Record<string, unknown> | null = null;
   await page.route("**/api/v1/reports/alerts", async (route) => {
     if (route.request().method() === "PUT") {
@@ -1003,4 +1021,55 @@ test("Alertas em tempo real: bloqueados no Pro; no Business, liga a comanda, mud
     tabEnabled: true,
     tabHours: 4,
   });
+});
+
+test("Meta de faturamento: bloqueada no Pro; no Business, define a deste mês, tira a do próximo e salva", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/resumo");
+  await expect(page.getByRole("region", { name: "Meta de faturamento (disponível no Business)" })).toBeVisible();
+
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
+  });
+  await page.route("**/api/v1/reports/alerts", async (route) => {
+    const alerts = { kitchenEnabled: true, kitchenMinutes: 25, callEnabled: true, callMinutes: 3 };
+    await route.fulfill({ json: { ...alerts, tabEnabled: false, tabHours: 6 } });
+  });
+  let saved: unknown = null;
+  await page.route("**/api/v1/reports/goals", async (route) => {
+    if (route.request().method() === "PUT") {
+      saved = route.request().postDataJSON();
+      await route.fulfill({
+        json: { current: { month: "2026-11", amountCents: 18000050 }, next: { month: "2026-12" } },
+      });
+      return;
+    }
+    await route.fulfill({
+      json: { current: { month: "2026-11" }, next: { month: "2026-12", amountCents: 20000000 } },
+    });
+  });
+  await page.reload();
+
+  const goals = page.getByRole("region", { name: "Meta de faturamento" });
+  const november = goals.getByLabel("Meta de novembro");
+  const december = goals.getByLabel("Meta de dezembro");
+  await expect(november).toHaveValue("");
+  await expect(december).toHaveValue("200.000,00");
+
+  await november.fill("cento e oitenta");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(goals.getByRole("alert")).toHaveText("Digite um valor em reais, como 180.000 ou 180.000,00.");
+  expect(saved).toBeNull();
+
+  await november.fill("180.000,50");
+  await december.fill("");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Resumo diário e alertas salvos." })).toBeVisible();
+  expect(saved).toEqual({ goals: [{ month: "2026-11", amountCents: 18000050 }, { month: "2026-12" }] });
 });

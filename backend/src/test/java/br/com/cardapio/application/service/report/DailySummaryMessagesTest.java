@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.report.DailySummary;
 import br.com.cardapio.domain.account.model.Role;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +40,36 @@ class DailySummaryMessagesTest {
                 Optional.of(new HourlyRevenue(5, 21, Money.ofCents(234000), 18)),
                 Optional.of(new SlowAttention("Guioza", Duration.ofMinutes(26), Duration.ofMinutes(14))),
                 List.of(new PaymentTotal(PaymentMethod.PIX, Money.ofCents(464000)),
-                        new PaymentTotal(PaymentMethod.CARD, Money.ofCents(425000))));
+                        new PaymentTotal(PaymentMethod.CARD, Money.ofCents(425000))), Optional.empty());
+    }
+
+    private static DailySummary withGoal(GoalProgress goal) {
+        DailySummary f = friday();
+        return new DailySummary(f.establishmentName(), f.window(), f.current(), f.compared(), f.averagePrep(),
+                f.comparedAveragePrep(), f.champion(), f.peak(), f.attention(), f.payments(), Optional.of(goal));
+    }
+
+    @Test
+    void theGoalOfTheMonthShowsWhatIsMissingPerDay() {
+        GoalProgress goal = new GoalProgress(YearMonth.of(2026, 11), Money.ofCents(18000000), Money.ofCents(12430000),
+                17, Optional.of(Money.ofCents(326000)), Optional.of(Money.ofCents(956200)));
+
+        var email = DailySummaryMessages.email(withGoal(goal), MARINA, Role.OWNER, "https://ohchefe.test");
+
+        assertThat(email.text()).contains("Meta de novembro: R$ 124.300,00 de R$ 180.000,00 (69%). Faltam 17 dias: "
+                + "R$ 3.260,00 por dia batem a meta (a média está em R$ 9.562,00).");
+        assertThat(email.html()).contains("Meta de novembro").contains("width:69%");
+    }
+
+    @Test
+    void aReachedGoalSaysSo() {
+        GoalProgress goal = new GoalProgress(YearMonth.of(2026, 11), Money.ofCents(10000000), Money.ofCents(10500000),
+                17, Optional.empty(), Optional.empty());
+
+        var email = DailySummaryMessages.email(withGoal(goal), MARINA, Role.OWNER, "https://ohchefe.test");
+
+        assertThat(email.text()).contains("Meta de novembro: batida! R$ 105.000,00 de R$ 100.000,00 (105%).");
+        assertThat(email.html()).contains("width:100%");
     }
 
     @Test
@@ -76,14 +107,14 @@ class DailySummaryMessagesTest {
         DailySummary f = friday();
         var saturday = new DailySummary(f.establishmentName(), new SummaryWindow(LocalDate.of(2026, 11, 14), 2,
                 SAO_PAULO), new ReportTotals(Money.ofCents(10000), 1), ReportTotals.EMPTY, Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), List.of(), Optional.empty());
 
         var email = DailySummaryMessages.email(saturday, MARINA, Role.OWNER, "https://ohchefe.test");
         var push = DailySummaryMessages.push(saturday);
 
         assertThat(email.text()).contains("Faturamento: R$ 100,00 (sem movimento no sábado passado)")
                 .contains("Comandas: 1 (sem movimento no sábado passado)")
-                .doesNotContain("Preparo médio").doesNotContain("Campeão");
+                .doesNotContain("Preparo médio").doesNotContain("Campeão").doesNotContain("Meta de");
         assertThat(push.title()).isEqualTo("Resumo de sábado");
         assertThat(push.body()).isEqualTo("R$ 100,00 em 1 comanda. Toque para ver.");
     }

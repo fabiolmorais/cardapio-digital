@@ -4,7 +4,7 @@ import { formatCents } from "@/lib/format";
 import { messages } from "@/messages/pt-BR";
 import { BarList, ChartCard, ColumnChart, Heatmap, KpiTile, NoData, SplitBar } from "./charts";
 import { LockedCard } from "./locked";
-import { AttentionCard, OperationTiles, TodayCard, WaitersCard } from "./overview-full";
+import { AttentionCard, GoalCard, OperationTiles, TodayCard, WaitersCard } from "./overview-full";
 import { formatDayMonth, formatWeekday } from "./period";
 import { useOverviewReport, type OverviewReport, type ReportContext } from "./reports-api";
 import { BlockError, Loading, ReportsScreen, type ReportFilters } from "./reports-page";
@@ -21,10 +21,10 @@ export function OverviewBody({ context, filters }: { context: ReportContext; fil
   const report = useOverviewReport(filters.query);
   if (report.isError) return <BlockError onRetry={() => report.refetch()} />;
   if (!report.data) return <Loading inline />;
-  return <Overview report={report.data} timeZone={context.timeZone} />;
+  return <Overview report={report.data} timeZone={context.timeZone} today={context.today} />;
 }
 
-function Overview({ report, timeZone }: { report: OverviewReport; timeZone: string }) {
+function Overview({ report, timeZone, today }: { report: OverviewReport; timeZone: string; today: string }) {
   const { current, compared, full } = report;
   const locked = t.full.locked;
   return (
@@ -57,6 +57,11 @@ function Overview({ report, timeZone }: { report: OverviewReport; timeZone: stri
             <TodayCard full={full} timeZone={timeZone} />
           ) : (
             <LockedCard title={t.full.today.title} text={locked.today} />
+          )}
+          {full ? (
+            <GoalCard full={full} today={today} />
+          ) : (
+            <LockedCard title={t.full.goal.lockedTitle} text={locked.goal} />
           )}
         </div>
       </div>

@@ -2,16 +2,19 @@ package br.com.cardapio.config;
 
 import br.com.cardapio.application.port.in.report.AuthorizeReportExportUseCase;
 import br.com.cardapio.application.port.in.report.ManageReportAlertsUseCase;
+import br.com.cardapio.application.port.in.report.ManageRevenueGoalsUseCase;
 import br.com.cardapio.application.port.in.report.SendReportAlertsUseCase;
 import br.com.cardapio.application.port.in.report.GetPhoneRodizioReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
 import br.com.cardapio.application.port.out.report.PhoneRodizioReportPort;
 import br.com.cardapio.application.port.out.report.ReportAlertPort;
+import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.out.report.TableReportPort;
 import br.com.cardapio.application.port.out.report.TeamReportPort;
 import br.com.cardapio.application.service.report.AuthorizeReportExportService;
 import br.com.cardapio.application.service.report.ManageReportAlertsService;
+import br.com.cardapio.application.service.report.ManageRevenueGoalsService;
 import br.com.cardapio.application.service.report.SendReportAlertsService;
 import br.com.cardapio.application.service.report.GetPhoneRodizioReportService;
 import br.com.cardapio.application.service.report.GetTableReportService;
@@ -1151,9 +1154,10 @@ class UseCaseConfig {
                                                       EstablishmentTimeZonePort establishmentTimeZonePort,
                                                       SectorPort sectorPort, SalesReportPort salesReportPort,
                                                       OperationReportPort operationReportPort,
-                                                      KitchenReportPort kitchenReportPort, Clock clock) {
+                                                      KitchenReportPort kitchenReportPort,
+                                                      RevenueGoalPort revenueGoalPort, Clock clock) {
         return new GetOverviewReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
-                operationReportPort, kitchenReportPort, clock);
+                operationReportPort, kitchenReportPort, revenueGoalPort, clock);
     }
 
     @Bean
@@ -1211,6 +1215,13 @@ class UseCaseConfig {
     }
 
     @Bean
+    ManageRevenueGoalsUseCase manageRevenueGoalsUseCase(SubscriptionPort subscriptionPort,
+                                                        EstablishmentTimeZonePort establishmentTimeZonePort,
+                                                        RevenueGoalPort revenueGoalPort, Clock clock) {
+        return new ManageRevenueGoalsService(subscriptionPort, establishmentTimeZonePort, revenueGoalPort, clock);
+    }
+
+    @Bean
     SendReportAlertsUseCase sendReportAlertsUseCase(SubscriptionPort subscriptionPort, ReportAlertPort reportAlertPort,
                                                     DailySummaryPort dailySummaryPort,
                                                     PushSubscriptionPort pushSubscriptionPort,
@@ -1224,12 +1235,13 @@ class UseCaseConfig {
                                                         DailySummaryPort dailySummaryPort,
                                                         SalesReportPort salesReportPort,
                                                         KitchenReportPort kitchenReportPort,
+                                                        RevenueGoalPort revenueGoalPort,
                                                         EmailSenderPort emailSenderPort,
                                                         PushSubscriptionPort pushSubscriptionPort,
                                                         PushSenderPort pushSenderPort, Clock clock,
                                                         @Value("${app.public-url}") String publicUrl) {
         return new ManageDailySummaryService(subscriptionPort, dailySummaryPort, salesReportPort, kitchenReportPort,
-                emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
+                revenueGoalPort, emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
     }
 
     @Bean
@@ -1237,12 +1249,13 @@ class UseCaseConfig {
                                                         DailySummaryPort dailySummaryPort,
                                                         SalesReportPort salesReportPort,
                                                         KitchenReportPort kitchenReportPort,
+                                                        RevenueGoalPort revenueGoalPort,
                                                         EmailSenderPort emailSenderPort,
                                                         PushSubscriptionPort pushSubscriptionPort,
                                                         PushSenderPort pushSenderPort, Clock clock,
                                                         @Value("${app.public-url}") String publicUrl) {
         return new SendDailySummariesService(subscriptionPort, dailySummaryPort, salesReportPort, kitchenReportPort,
-                emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
+                revenueGoalPort, emailSenderPort, pushSubscriptionPort, pushSenderPort, clock, publicUrl);
     }
 
     @Bean

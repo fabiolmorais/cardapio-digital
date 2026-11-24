@@ -1,6 +1,7 @@
 package br.com.cardapio.application.port.in.report;
 
 import br.com.cardapio.domain.report.model.AttentionPoint;
+import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.OperationTotals;
 import br.com.cardapio.domain.report.model.TodayForecast;
 import br.com.cardapio.domain.report.model.WaiterCalls;
@@ -15,5 +16,6 @@ import java.util.Optional;
  * @param today vazio sem histórico do mesmo dia da semana
  */
 public record OverviewFull(OperationTotals current, OperationTotals compared, Optional<TodayForecast> today,
-                           List<WaiterCalls> waiters, List<AttentionPoint> attention) {
+                           List<WaiterCalls> waiters, List<AttentionPoint> attention,
+                           Optional<GoalProgress> goal) {
 }

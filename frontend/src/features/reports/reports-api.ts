@@ -203,6 +203,38 @@ export function useSaveSummarySettings() {
 }
 
 export type ReportAlerts = Schemas["ReportAlerts"];
+export type RevenueGoals = Schemas["RevenueGoals"];
+export type RevenueGoal = Schemas["RevenueGoal"];
+
+/** A meta deste mês e a do próximo (Business): só busca quando o plano tem. */
+export function useRevenueGoals(enabled: boolean) {
+  return useQuery({
+    queryKey: ["reports", "goals"],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/goals");
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    enabled,
+    retry: false,
+  });
+}
+
+export function useSaveRevenueGoals() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (goals: RevenueGoal[]) => {
+      const { data, response } = await api.PUT("/api/v1/reports/goals", { body: { goals } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["reports", "goals"], saved);
+      // A Visão geral mostra a meta: ela muda junto.
+      void queryClient.invalidateQueries({ queryKey: ["reports", "overview"] });
+    },
+  });
+}
 
 /** Os alertas em tempo real (Business): só busca quando o plano tem. */
 export function useReportAlerts(enabled: boolean) {

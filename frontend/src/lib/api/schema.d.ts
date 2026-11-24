@@ -75,6 +75,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A meta deste mês e a do próximo (Business) */
+        get: operations["getRevenueGoals"];
+        /** Muda a meta deste mês e/ou a do próximo (Business) */
+        put: operations["updateRevenueGoals"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/daily-summary/settings": {
         parameters: {
             query?: never;
@@ -2712,6 +2730,25 @@ export interface components {
             defaultPriceCents: number;
             prices: components["schemas"]["RodizioSpecialPrice"][];
         };
+        /** @description A meta de um mês; sem valor, o mês não tem meta */
+        RevenueGoal: {
+            /** @example 2026-11 */
+            month: string;
+            /**
+             * Format: int64
+             * @description Em centavos; null tira a meta
+             */
+            amountCents?: number;
+        };
+        /** @description As metas a mudar (deste mês e/ou do próximo) */
+        RevenueGoalsRequest: {
+            goals: components["schemas"]["RevenueGoal"][];
+        };
+        /** @description A meta deste mês e a do próximo, no fuso do restaurante */
+        RevenueGoals: {
+            current: components["schemas"]["RevenueGoal"];
+            next: components["schemas"]["RevenueGoal"];
+        };
         DailySummarySettingsRequest: {
             emailEnabled: boolean;
             pushEnabled: boolean;
@@ -5027,6 +5064,35 @@ export interface components {
             today?: components["schemas"]["ReportToday"];
             waiters: components["schemas"]["ReportWaiter"][];
             attention: components["schemas"]["ReportAttention"][];
+            /** @description A meta do mês de hoje; null sem meta */
+            goal?: components["schemas"]["OverviewGoal"];
+        };
+        /** @description O mês contra a meta de faturamento */
+        OverviewGoal: {
+            /** @example 2026-11 */
+            month: string;
+            /** Format: int64 */
+            goalCents: number;
+            /**
+             * Format: int64
+             * @description O faturamento do mês até agora
+             */
+            achievedCents: number;
+            /**
+             * Format: int32
+             * @description Os dias que faltam, com hoje
+             */
+            daysLeft: number;
+            /**
+             * Format: int64
+             * @description Quanto por dia bate a meta; null se já bateu
+             */
+            perDayNeededCents?: number;
+            /**
+             * Format: int64
+             * @description A média por dia dos dias já terminados; null no dia 1
+             */
+            dailyAverageCents?: number;
         };
         /** @description A Visão geral, com os blocos básicos */
         OverviewReport: {
@@ -6361,6 +6427,77 @@ export interface operations {
             };
             /** @description Não é um rodízio deste restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getRevenueGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As metas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevenueGoals"];
+                };
+            };
+            /** @description O plano não tem a meta (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateRevenueGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevenueGoalsRequest"];
+            };
+        };
+        responses: {
+            /** @description Salva */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevenueGoals"];
+                };
+            };
+            /** @description Valor fora da faixa ou mês que não é este nem o próximo */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem a meta (é do Business) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
