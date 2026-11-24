@@ -9,6 +9,7 @@ export type MenuReport = Schemas["MenuReport"];
 export type KitchenReport = Schemas["KitchenReport"];
 export type TeamReport = Schemas["TeamReport"];
 export type TableReport = Schemas["TableReport"];
+export type PhoneRodizioReport = Schemas["PhoneRodizioReport"];
 export type SummarySettings = Schemas["DailySummarySettings"];
 export type SummarySettingsRequest = Schemas["DailySummarySettingsRequest"];
 export type DailySummary = Schemas["DailySummary"];
@@ -136,6 +137,19 @@ export function useTableReport(params: ReportParams) {
     queryKey: ["reports", "tables", params],
     queryFn: async () => {
       const { data, response } = await api.GET("/api/v1/reports/tables", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+export function usePhoneRodizioReport(params: ReportParams) {
+  return useQuery({
+    queryKey: ["reports", "phone-and-rodizio", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/phone-and-rodizio", { params: { query: params } });
       if (!data) throw new Error(String(response.status));
       return data;
     },

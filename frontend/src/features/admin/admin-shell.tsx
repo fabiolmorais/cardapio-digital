@@ -88,6 +88,7 @@ const MANAGEMENT: Item[] = [
       { href: "/admin/relatorios/cozinha", label: t.nav.reportsKitchen },
       { href: "/admin/relatorios/equipe", label: t.nav.reportsTeam },
       { href: "/admin/relatorios/mesas", label: t.nav.reportsTables },
+      { href: "/admin/relatorios/celular-e-rodizio", label: t.nav.reportsPhone },
       { href: "/admin/relatorios/resumo", label: t.nav.reportsSummary },
     ],
   },

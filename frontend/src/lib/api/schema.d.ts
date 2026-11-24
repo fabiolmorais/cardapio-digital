@@ -1668,6 +1668,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/phone-and-rodizio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Celular e rodízio do período (Business) */
+        get: operations["getPhoneRodizioReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/overview": {
         parameters: {
             query?: never;
@@ -4719,6 +4736,129 @@ export interface components {
             peakHour?: number;
             /** @description Os blocos do Business; null no Pro (o dado não sai do servidor) */
             full?: components["schemas"]["SalesFull"];
+        };
+        /** @description Pedido pelo celular e rodízio (Business) */
+        PhoneRodizioReport: {
+            period: components["schemas"]["ReportRange"];
+            /**
+             * @description Como a série foi agrupada
+             * @enum {string}
+             */
+            grouping: "DAY" | "WEEK" | "MONTH";
+            /** @description Quem lança os pedidos, em cada dia, semana ou mês */
+            origin: components["schemas"]["ReportOrderOrigin"][];
+            funnel: components["schemas"]["ReportPhoneFunnel"];
+            phones: components["schemas"]["ReportPhoneStats"];
+            /** @description Como os celulares confirmaram a presença */
+            presence: components["schemas"]["ReportPresence"][];
+            rodizio: components["schemas"]["ReportRodizio"];
+            /** @description As pessoas de cada faixa, da maior para a menor */
+            tiers: components["schemas"]["ReportRodizioTier"][];
+            /** @description Os produtos mais pedidos no rodízio */
+            topItems: components["schemas"]["ReportRodizioItem"][];
+            card: components["schemas"]["ReportPassagemCard"];
+            /** @description Os cortes mais pedidos na passagem */
+            topCuts: components["schemas"]["ReportRodizioItem"][];
+        };
+        /** @description Os pedidos enviados: pelo celular e pela equipe */
+        ReportOrderOrigin: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            phone: number;
+            /** Format: int32 */
+            staff: number;
+        };
+        /** @description O tempo dos cartões da passagem em cada cor */
+        ReportPassagemCard: {
+            /** Format: int64 */
+            servingSeconds: number;
+            /** Format: int64 */
+            pausedSeconds: number;
+        };
+        /** @description Das comandas fechadas, quantas tiveram celular e pedido */
+        ReportPhoneFunnel: {
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int32 */
+            scanned: number;
+            /** Format: int32 */
+            phoneOrdered: number;
+        };
+        /** @description O uso do celular nas mesas */
+        ReportPhoneStats: {
+            /**
+             * Format: double
+             * @description Celulares por comanda com celular
+             */
+            phonesPerTab?: number;
+            /**
+             * Format: double
+             * @description Desses, os que pediram
+             */
+            orderingPerTab?: number;
+            /**
+             * Format: int64
+             * @description Do QR ao primeiro pedido, em média
+             */
+            scanToOrderSeconds?: number;
+            /**
+             * Format: int32
+             * @description Mesas (mesa e dia) que escanearam e não pediram
+             */
+            scannedNoOrder: number;
+            /** Format: int32 */
+            rejected: number;
+            /** Format: int32 */
+            blocked: number;
+        };
+        /** @description Os celulares que confirmaram a presença de um jeito */
+        ReportPresence: {
+            /** @enum {string} */
+            method: "WIFI" | "GPS" | "STAFF";
+            /** Format: int32 */
+            sessions: number;
+        };
+        /** @description O rodízio das comandas fechadas no período */
+        ReportRodizio: {
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int32 */
+            people: number;
+            /** Format: int64 */
+            revenueCents: number;
+            /**
+             * Format: int64
+             * @description O resto dessas comandas
+             */
+            extraCents: number;
+            /** Format: int32 */
+            rounds: number;
+            /** Format: int32 */
+            items: number;
+            /**
+             * Format: int64
+             * @description Do início ao fechamento, em média
+             */
+            timeSeconds?: number;
+            /** Format: int32 */
+            withLimit: number;
+            /** Format: int32 */
+            reachedLimit: number;
+        };
+        /** @description Um produto do rodízio e as unidades pedidas */
+        ReportRodizioItem: {
+            name: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        /** @description As pessoas de uma faixa */
+        ReportRodizioTier: {
+            tier: string;
+            /** Format: int32 */
+            people: number;
         };
         /** @description Os blocos do Business */
         OverviewFull: {
@@ -10621,6 +10761,66 @@ export interface operations {
                 };
             };
             /** @description O plano não tem relatórios */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPhoneRodizioReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Celular x garçom, do QR ao pedido, presença e rodízio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneRodizioReport"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem este relatório (é do Business) */
             403: {
                 headers: {
                     [name: string]: unknown;

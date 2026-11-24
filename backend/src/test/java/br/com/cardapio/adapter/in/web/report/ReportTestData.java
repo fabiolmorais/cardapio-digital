@@ -265,12 +265,16 @@ final class ReportTestData {
         return user;
     }
 
-    /** O rodízio na comanda, com as faixas de pessoas (cada número, uma faixa). */
+    /**
+     * O rodízio na comanda, com as faixas de pessoas (cada número, uma faixa). Cada chamada cadastra um
+     * rodízio próprio (o nome do cadastro é único), mas a comanda guarda o nome "Rodízio".
+     */
     void rodizio(Owner owner, UUID tab, Instant started, int... guests) {
         UUID rodizio = UUID.randomUUID();
         jdbc.update("""
-                INSERT INTO rodizio (id, establishment_id, name, type, created_at) VALUES (?, ?, 'Rodízio', 'A_LA_MINUTE', ?)
-                """, rodizio, owner.establishmentId(), Timestamp.from(started));
+                INSERT INTO rodizio (id, establishment_id, name, type, created_at) VALUES (?, ?, ?, 'A_LA_MINUTE', ?)
+                """, rodizio, owner.establishmentId(), "Rodízio " + rodizio.toString().substring(0, 8),
+                Timestamp.from(started));
         UUID tabRodizio = UUID.randomUUID();
         jdbc.update("""
                 INSERT INTO tab_rodizio (id, establishment_id, tab_id, rodizio_id, rodizio_name, activated_by, started_at,
