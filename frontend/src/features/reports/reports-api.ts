@@ -225,3 +225,52 @@ export function useSendSummaryTest() {
     },
   });
 }
+
+/** As telas que exportam em CSV (R12), pelo nome do endereço da API. */
+export type ExportScreen = "overview" | "sales" | "menu" | "kitchen" | "team" | "tables" | "phone-and-rodizio";
+export type ExportParams = ReportParams & { categoryId?: string; groupBy?: Grouping };
+
+const EXPORT_NAMES: Record<ExportScreen, string> = {
+  overview: "visao-geral",
+  sales: "vendas",
+  menu: "cardapio",
+  kitchen: "cozinha",
+  team: "equipe",
+  tables: "mesas",
+  "phone-and-rodizio": "celular-e-rodizio",
+};
+
+/** Baixa a planilha da tela ("ohchefe-vendas-2026-11-01-a-2026-11-30.csv"). */
+export async function exportReport(screen: ExportScreen, params: ExportParams) {
+  const { from, to, sectorId, categoryId, groupBy } = params;
+  const base = { from, to, sectorId };
+  const options = { parseAs: "blob" as const };
+  const result = await (() => {
+    switch (screen) {
+      case "overview":
+        return api.GET("/api/v1/reports/overview/export", { params: { query: base }, ...options });
+      case "sales":
+        return api.GET("/api/v1/reports/sales/export", { params: { query: { ...base, groupBy } }, ...options });
+      case "menu":
+        return api.GET("/api/v1/reports/menu/export", { params: { query: { ...base, categoryId } }, ...options });
+      case "kitchen":
+        return api.GET("/api/v1/reports/kitchen/export", { params: { query: { ...base, categoryId } }, ...options });
+      case "team":
+        return api.GET("/api/v1/reports/team/export", { params: { query: base }, ...options });
+      case "tables":
+        return api.GET("/api/v1/reports/tables/export", { params: { query: base }, ...options });
+      case "phone-and-rodizio":
+        return api.GET("/api/v1/reports/phone-and-rodizio/export", { params: { query: base }, ...options });
+    }
+  })();
+  if (!result.data) throw new Error(String(result.response.status));
+  // O nome é o mesmo que o servidor põe no Content-Disposition: o cabeçalho não chega ao front, que
+  // fica em outro endereço (o CORS não o expõe).
+  const name = `ohchefe-${EXPORT_NAMES[screen]}-${from}-a-${to}.csv`;
+  const url = URL.createObjectURL(result.data as Blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}

@@ -137,7 +137,7 @@ function Payments({ report }: { report: OverviewReport }) {
 /** A tela da Visão geral, dentro da moldura dos relatórios. */
 export function OverviewScreen() {
   return (
-    <ReportsScreen title={t.overview}>
+    <ReportsScreen exportAs="overview" title={t.overview}>
       {(context, filters) => <OverviewBody context={context} filters={filters} />}
     </ReportsScreen>
   );

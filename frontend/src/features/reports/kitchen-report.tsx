@@ -16,6 +16,7 @@ const k = t.kitchen;
 export function KitchenScreen() {
   return (
     <ReportsScreen
+      exportAs="kitchen"
       title={k.title}
       filter={(filters) => <CategoryFilter value={filters.categoryId} onChange={filters.chooseCategory} />}
     >

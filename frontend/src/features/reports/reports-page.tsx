@@ -1,15 +1,22 @@
 "use client";
 
-import { ChartColumn, Check, Lock } from "lucide-react";
+import { ChartColumn, Check, Download, Lock } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { DateRangeDialog } from "./date-range-dialog";
 import { formatDay, formatRange, PERIOD_KEYS, previousOf, type Period } from "./period";
-import { canSeeReports, useReportContext, useReportSectors, type ReportContext } from "./reports-api";
+import {
+  canSeeReports,
+  exportReport,
+  useReportContext,
+  useReportSectors,
+  type ExportScreen,
+  type ReportContext,
+} from "./reports-api";
 import { useReportFilters } from "./use-report-filters";
 
 const t = messages.reports;
@@ -25,9 +32,12 @@ export function ReportsScreen({
   title,
   filter,
   businessOnly,
+  exportAs,
   children,
 }: {
   title: string;
+  /** A planilha desta tela (o botão "Exportar", ligado só nos planos com exportação). */
+  exportAs?: ExportScreen;
   /** Um filtro a mais, só desta tela (a categoria, no Cardápio). */
   filter?: (filters: ReportFilters) => ReactNode;
   /** A tela é toda do Business: no Pro, só o que ela traz (o texto) e o "Conhecer o Business". */
@@ -40,7 +50,7 @@ export function ReportsScreen({
         businessOnly && context.level !== "FULL" ? (
           <BusinessOnly title={title} text={businessOnly} />
         ) : (
-          <Screen title={title} context={context} filter={filter}>
+          <Screen title={title} context={context} filter={filter} exportAs={exportAs}>
             {children}
           </Screen>
         )
@@ -103,10 +113,12 @@ function Screen({
   title,
   context,
   filter,
+  exportAs,
   children,
 }: {
   title: string;
   context: ReportContext;
+  exportAs?: ExportScreen;
   filter?: (filters: ReportFilters) => ReactNode;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
@@ -157,11 +169,76 @@ function Screen({
           </div>
           <SectorFilter value={filters.sectorId} onChange={filters.chooseSector} />
           {filter?.(filters)}
+          {exportAs && (
+            <ExportButton screen={exportAs} filters={filters} allowed={context.canExport} disabled={noData} />
+          )}
         </div>
       </header>
       <div className="flex flex-col gap-5 px-4 py-5 sm:px-7">
         {noData ? <EmptyPeriod firstDataDay={context.firstDataDay} /> : children(context, filters)}
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Exportar": baixa a planilha da tela com o período, o setor e os filtros dela. Fora do Business, o
+ * botão fica desligado, com o porquê ao lado para o leitor de tela e no "title".
+ */
+function ExportButton({
+  screen,
+  filters,
+  allowed,
+  disabled,
+}: {
+  screen: ExportScreen;
+  filters: ReportFilters;
+  allowed: boolean;
+  disabled: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function download() {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await exportReport(screen, {
+        ...filters.query,
+        ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+        ...(screen === "sales" ? { groupBy: filters.grouping } : {}),
+      });
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2.5">
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11"
+        disabled={!allowed || disabled || busy}
+        title={allowed ? undefined : t.exportLocked}
+        aria-describedby={allowed ? undefined : "relatorio-exportar-bloqueado"}
+        onClick={download}
+      >
+        <Download aria-hidden className="size-4" />
+        {busy ? t.exporting : t.export}
+      </Button>
+      {!allowed && (
+        <span id="relatorio-exportar-bloqueado" className="sr-only">
+          {t.exportLocked}
+        </span>
+      )}
+      {failed && (
+        <span role="alert" className="text-sm text-destructive">
+          {t.exportError}
+        </span>
+      )}
     </div>
   );
 }

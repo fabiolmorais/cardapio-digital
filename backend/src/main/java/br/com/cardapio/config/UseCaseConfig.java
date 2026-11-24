@@ -1,11 +1,13 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.in.report.AuthorizeReportExportUseCase;
 import br.com.cardapio.application.port.in.report.GetPhoneRodizioReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
 import br.com.cardapio.application.port.out.report.PhoneRodizioReportPort;
 import br.com.cardapio.application.port.out.report.TableReportPort;
 import br.com.cardapio.application.port.out.report.TeamReportPort;
+import br.com.cardapio.application.service.report.AuthorizeReportExportService;
 import br.com.cardapio.application.service.report.GetPhoneRodizioReportService;
 import br.com.cardapio.application.service.report.GetTableReportService;
 import br.com.cardapio.application.service.report.GetTeamReportService;
@@ -1190,6 +1192,11 @@ class UseCaseConfig {
                                                               Clock clock) {
         return new GetPhoneRodizioReportService(subscriptionPort, establishmentTimeZonePort, sectorPort,
                 phoneRodizioReportPort, clock);
+    }
+
+    @Bean
+    AuthorizeReportExportUseCase authorizeReportExportUseCase(SubscriptionPort subscriptionPort) {
+        return new AuthorizeReportExportService(subscriptionPort);
     }
 
     @Bean

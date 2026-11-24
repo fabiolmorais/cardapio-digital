@@ -19,7 +19,7 @@ const ratio = (part: number, whole: number) => (whole === 0 ? 0 : part / whole);
 /** Pedido pelo celular e rodízio (desenho 14.7): a tela inteira é do Business. */
 export function PhoneRodizioScreen() {
   return (
-    <ReportsScreen title={m.title} businessOnly={m.businessText}>
+    <ReportsScreen exportAs="phone-and-rodizio" title={m.title} businessOnly={m.businessText}>
       {(_, filters) => <PhoneRodizioBody filters={filters} />}
     </ReportsScreen>
   );
