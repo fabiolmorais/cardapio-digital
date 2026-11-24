@@ -1,8 +1,8 @@
 "use client";
 
-import { ChartColumn, Check, Download, Lock } from "lucide-react";
+import { ChartColumn, Check, ChevronDown, Download, Lock } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
@@ -14,12 +14,16 @@ import {
   exportReport,
   useReportContext,
   useReportSectors,
+  type ExportFormat,
   type ExportScreen,
   type ReportContext,
 } from "./reports-api";
 import { useReportFilters } from "./use-report-filters";
 
 const t = messages.reports;
+
+/** A ordem do menu "Exportar": o Excel primeiro, que é o que o dono mais abre. */
+const EXPORT_FORMATS: ExportFormat[] = ["XLSX", "PDF", "CSV"];
 
 export type ReportFilters = ReturnType<typeof useReportFilters>;
 
@@ -182,8 +186,8 @@ function Screen({
 }
 
 /**
- * "Exportar": baixa a planilha da tela com o período, o setor e os filtros dela. Fora do Business, o
- * botão fica desligado, com o porquê ao lado para o leitor de tela e no "title".
+ * "Exportar": um menu com Excel, PDF e CSV, que baixa a tela com o período, o setor e os filtros dela.
+ * Fora do Business, o botão fica desligado, com o porquê para o leitor de tela e no "title".
  */
 function ExportButton({
   screen,
@@ -196,43 +200,116 @@ function ExportButton({
   allowed: boolean;
   disabled: boolean;
 }) {
-  const [busy, setBusy] = useState(false);
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<ExportFormat | null>(null);
   const [failed, setFailed] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const items = useRef<(HTMLButtonElement | null)[]>([]);
 
-  async function download() {
-    setBusy(true);
+  // Fecha ao tocar fora do menu.
+  useEffect(() => {
+    if (!open) return;
+    function outside(event: PointerEvent) {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open]);
+
+  // Ao abrir, o foco vai para a primeira opção.
+  useEffect(() => {
+    if (open) items.current[0]?.focus();
+  }, [open]);
+
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  function onMenuKey(event: KeyboardEvent<HTMLDivElement>) {
+    const index = items.current.findIndex((item) => item === document.activeElement);
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      items.current[(index + step + EXPORT_FORMATS.length) % EXPORT_FORMATS.length]?.focus();
+    }
+  }
+
+  async function download(format: ExportFormat) {
+    setOpen(false);
+    setBusy(format);
     setFailed(false);
     try {
-      await exportReport(screen, {
-        ...filters.query,
-        ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
-        ...(screen === "sales" ? { groupBy: filters.grouping } : {}),
-      });
+      await exportReport(
+        screen,
+        {
+          ...filters.query,
+          ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+          ...(screen === "sales" ? { groupBy: filters.grouping } : {}),
+        },
+        format,
+      );
     } catch {
       setFailed(true);
     } finally {
-      setBusy(false);
+      setBusy(null);
+      trigger.current?.focus();
     }
   }
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div ref={root} className="relative flex items-center gap-2.5">
       <Button
+        ref={trigger}
         type="button"
         variant="outline"
         className="h-11"
-        disabled={!allowed || disabled || busy}
+        disabled={!allowed || disabled || busy !== null}
         title={allowed ? undefined : t.exportLocked}
         aria-describedby={allowed ? undefined : "relatorio-exportar-bloqueado"}
-        onClick={download}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? `${id}menu` : undefined}
+        onClick={() => setOpen((value) => !value)}
       >
         <Download aria-hidden className="size-4" />
         {busy ? t.exporting : t.export}
+        <ChevronDown aria-hidden className="size-4" />
       </Button>
       {!allowed && (
         <span id="relatorio-exportar-bloqueado" className="sr-only">
           {t.exportLocked}
         </span>
+      )}
+      {open && (
+        <div
+          id={`${id}menu`}
+          role="menu"
+          aria-label={t.export}
+          onKeyDown={onMenuKey}
+          className="absolute top-full right-0 z-20 mt-2 flex w-64 flex-col rounded-2xl border border-border bg-popover p-1.5 shadow-lg"
+        >
+          {EXPORT_FORMATS.map((format, i) => (
+            <button
+              key={format}
+              ref={(el) => {
+                items.current[i] = el;
+              }}
+              type="button"
+              role="menuitem"
+              onClick={() => download(format)}
+              className="flex min-h-11 flex-col items-start justify-center rounded-xl px-3 py-2 text-left hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
+            >
+              <span className="text-sm font-semibold">{t.exportFormats[format].label}</span>
+              <span className="text-xs text-muted-foreground">{t.exportFormats[format].hint}</span>
+            </button>
+          ))}
+        </div>
       )}
       {failed && (
         <span role="alert" className="text-sm text-destructive">

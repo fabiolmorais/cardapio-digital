@@ -289,6 +289,8 @@ export function useSendSummaryTest() {
 /** As telas que exportam em CSV (R12), pelo nome do endereço da API. */
 export type ExportScreen = "overview" | "sales" | "menu" | "kitchen" | "team" | "tables" | "phone-and-rodizio";
 export type ExportParams = ReportParams & { categoryId?: string; groupBy?: Grouping };
+export type ExportFormat = "CSV" | "XLSX" | "PDF";
+const EXTENSIONS: Record<ExportFormat, string> = { CSV: "csv", XLSX: "xlsx", PDF: "pdf" };
 
 const EXPORT_NAMES: Record<ExportScreen, string> = {
   overview: "visao-geral",
@@ -300,10 +302,10 @@ const EXPORT_NAMES: Record<ExportScreen, string> = {
   "phone-and-rodizio": "celular-e-rodizio",
 };
 
-/** Baixa a planilha da tela ("ohchefe-vendas-2026-11-01-a-2026-11-30.csv"). */
-export async function exportReport(screen: ExportScreen, params: ExportParams) {
+/** Baixa a planilha da tela no formato escolhido ("ohchefe-vendas-2026-11-01-a-2026-11-30.xlsx"). */
+export async function exportReport(screen: ExportScreen, params: ExportParams, format: ExportFormat) {
   const { from, to, sectorId, categoryId, groupBy } = params;
-  const base = { from, to, sectorId };
+  const base = { from, to, sectorId, format };
   const options = { parseAs: "blob" as const };
   const result = await (() => {
     switch (screen) {
@@ -326,7 +328,7 @@ export async function exportReport(screen: ExportScreen, params: ExportParams) {
   if (!result.data) throw new Error(String(result.response.status));
   // O nome é o mesmo que o servidor põe no Content-Disposition: o cabeçalho não chega ao front, que
   // fica em outro endereço (o CORS não o expõe).
-  const name = `ohchefe-${EXPORT_NAMES[screen]}-${from}-a-${to}.csv`;
+  const name = `ohchefe-${EXPORT_NAMES[screen]}-${from}-a-${to}.${EXTENSIONS[format]}`;
   const url = URL.createObjectURL(result.data as Blob);
   const link = document.createElement("a");
   link.href = url;

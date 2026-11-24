@@ -1677,7 +1677,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** O Atendimento e equipe em CSV (Business) */
+        /** O Atendimento e equipe em CSV, Excel ou PDF (Business) */
         get: operations["exportTeamReport"];
         put?: never;
         post?: never;
@@ -1711,7 +1711,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** As Mesas e ocupação em CSV (Business) */
+        /** As Mesas e ocupação em CSV, Excel ou PDF (Business) */
         get: operations["exportTableReport"];
         put?: never;
         post?: never;
@@ -1745,7 +1745,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** As Vendas em CSV (Business) */
+        /** As Vendas em CSV, Excel ou PDF (Business) */
         get: operations["exportSalesReport"];
         put?: never;
         post?: never;
@@ -1779,7 +1779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** O Celular e rodízio em CSV (Business) */
+        /** O Celular e rodízio em CSV, Excel ou PDF (Business) */
         get: operations["exportPhoneRodizioReport"];
         put?: never;
         post?: never;
@@ -1813,7 +1813,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A Visão geral em CSV (Business) */
+        /** A Visão geral em CSV, Excel ou PDF (Business) */
         get: operations["exportOverviewReport"];
         put?: never;
         post?: never;
@@ -1864,7 +1864,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** O Cardápio em CSV, com todos os produtos (Business) */
+        /** O Cardápio em CSV, Excel ou PDF, com todos os produtos (Business) */
         get: operations["exportMenuReport"];
         put?: never;
         post?: never;
@@ -1898,7 +1898,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A Cozinha e tempos em CSV (Business) */
+        /** A Cozinha e tempos em CSV, Excel ou PDF (Business) */
         get: operations["exportKitchenReport"];
         put?: never;
         post?: never;
@@ -11040,6 +11040,7 @@ export interface operations {
                 from: string;
                 to: string;
                 sectorId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11047,13 +11048,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11160,6 +11163,7 @@ export interface operations {
                 from: string;
                 to: string;
                 sectorId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11167,13 +11171,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11282,6 +11288,7 @@ export interface operations {
                 to: string;
                 sectorId?: string;
                 groupBy?: "DAY" | "WEEK" | "MONTH";
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11289,13 +11296,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11402,6 +11411,7 @@ export interface operations {
                 from: string;
                 to: string;
                 sectorId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11409,13 +11419,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11522,6 +11534,7 @@ export interface operations {
                 from: string;
                 to: string;
                 sectorId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11529,13 +11542,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11708,6 +11723,7 @@ export interface operations {
                 to: string;
                 sectorId?: string;
                 categoryId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11715,13 +11731,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */
@@ -11830,6 +11848,7 @@ export interface operations {
                 to: string;
                 sectorId?: string;
                 categoryId?: string;
+                format?: "CSV" | "XLSX" | "PDF";
             };
             header?: never;
             path?: never;
@@ -11837,13 +11856,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A planilha em CSV (UTF-8, ponto e vírgula) */
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Datas inválidas ou período de mais de 12 meses */

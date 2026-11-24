@@ -99,6 +99,34 @@ class ReportExportControllerTest {
                 : "Resumo\r\n");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"overview", "sales", "menu", "kitchen", "team", "tables", "phone-and-rodizio"})
+    void everyScreenExportsAnExcelAndAPdf(String screen) {
+        data.onPlan(sakura, "business");
+
+        MvcTestResult xlsx = data.get(sakura, export(screen) + "&format=XLSX");
+        MvcTestResult pdf = data.get(sakura, export(screen) + "&format=PDF");
+
+        assertThat(xlsx).hasStatusOk();
+        assertThat(xlsx.getResponse().getContentType())
+                .isEqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertThat(xlsx.getResponse().getHeader(HttpHeaders.CONTENT_DISPOSITION)).endsWith(".xlsx\"");
+        assertThat(xlsx.getResponse().getContentAsByteArray()).startsWith('P', 'K');
+        assertThat(pdf).hasStatusOk();
+        assertThat(pdf.getResponse().getContentType()).isEqualTo("application/pdf");
+        assertThat(pdf.getResponse().getHeader(HttpHeaders.CONTENT_DISPOSITION)).endsWith(".pdf\"");
+        assertThat(new String(pdf.getResponse().getContentAsByteArray(), 0, 5, StandardCharsets.US_ASCII))
+                .isEqualTo("%PDF-");
+    }
+
+    @Test
+    void outsideTheBusinessNoFormatExports() {
+        assertThat(data.get(sakura, export("sales") + "&format=XLSX")).hasStatus(HttpStatus.FORBIDDEN);
+        assertThat(data.get(sakura, export("sales") + "&format=PDF")).hasStatus(HttpStatus.FORBIDDEN);
+        data.onPlan(sakura, "business");
+        assertThat(data.get(sakura, export("sales") + "&format=DOC")).hasStatus(HttpStatus.BAD_REQUEST);
+    }
+
     @Test
     void theSalesSheet() {
         data.onPlan(sakura, "business");

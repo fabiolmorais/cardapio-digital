@@ -1,7 +1,10 @@
 package br.com.cardapio.adapter.in.web.report;
 
-import br.com.cardapio.adapter.in.web.report.csv.Csv;
-import br.com.cardapio.adapter.in.web.report.csv.ReportCsv;
+import br.com.cardapio.adapter.in.web.report.export.CsvFormat;
+import br.com.cardapio.adapter.in.web.report.export.PdfFormat;
+import br.com.cardapio.adapter.in.web.report.export.ReportSheets;
+import br.com.cardapio.adapter.in.web.report.export.Sheet;
+import br.com.cardapio.adapter.in.web.report.export.XlsxFormat;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.application.port.in.report.AuthorizeReportExportUseCase;
 import br.com.cardapio.application.port.in.report.GetKitchenReportUseCase;
@@ -46,6 +49,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,9 +57,9 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * A exportação dos relatórios em CSV (RF29): uma planilha por tela, com o mesmo período e setor da
- * tela. Só o dono e o gerente, e só nos planos com exportação (Business); antes de calcular, confere o
- * plano.
+ * A exportação dos relatórios (RF29) em CSV, Excel ou PDF: as mesmas tabelas da tela, com o mesmo
+ * período, setor e filtros. Só o dono e o gerente, e só nos planos com exportação (Business); antes de
+ * calcular, confere o plano.
  */
 @RestController
 @RequestMapping("/api/v1/reports")
@@ -64,13 +68,32 @@ import java.util.function.Supplier;
 @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
 class ReportExportController {
 
-    private static final MediaType CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);
+    private static final String XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String PDF_TYPE = "application/pdf";
+
+    /** O formato do arquivo: o tipo e a extensão. */
+    enum ExportFormat {
+        CSV(new MediaType("text", "csv", StandardCharsets.UTF_8), "csv"),
+        XLSX(MediaType.parseMediaType(XLSX_TYPE), "xlsx"),
+        PDF(MediaType.APPLICATION_PDF, "pdf");
+
+        private final MediaType type;
+        private final String extension;
+
+        ExportFormat(MediaType type, String extension) {
+            this.type = type;
+            this.extension = extension;
+        }
+    }
 
     /** As respostas comuns das exportações, para a descrição da API. */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @ApiResponse(responseCode = "200", description = "A planilha em CSV (UTF-8, ponto e vírgula)", content = @Content(
-            mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
+    @ApiResponse(responseCode = "200", description = "A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF",
+            content = {
+                    @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")),
+                    @Content(mediaType = XLSX_TYPE, schema = @Schema(type = "string", format = "binary")),
+                    @Content(mediaType = PDF_TYPE, schema = @Schema(type = "string", format = "binary"))})
     @ApiResponse(responseCode = "400", description = "Datas inválidas ou período de mais de 12 meses", content = @Content(
             mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "403", description = "O plano não exporta relatórios (é do Business)", content = @Content(
@@ -90,11 +113,12 @@ class ReportExportController {
     private final GetTeamReportUseCase team;
     private final GetTableReportUseCase tables;
     private final GetPhoneRodizioReportUseCase phoneRodizio;
+    private final Clock clock;
 
     ReportExportController(AuthorizeReportExportUseCase authorize, GetOverviewReportUseCase overview,
                            GetSalesReportUseCase sales, GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen,
                            GetTeamReportUseCase team, GetTableReportUseCase tables,
-                           GetPhoneRodizioReportUseCase phoneRodizio) {
+                           GetPhoneRodizioReportUseCase phoneRodizio, Clock clock) {
         this.authorize = authorize;
         this.overview = overview;
         this.sales = sales;
@@ -103,6 +127,7 @@ class ReportExportController {
         this.team = team;
         this.tables = tables;
         this.phoneRodizio = phoneRodizio;
+        this.clock = clock;
     }
 
     private static ReportQuery query(Jwt jwt, LocalDate from, LocalDate to, UUID sectorId) {
@@ -110,53 +135,62 @@ class ReportExportController {
                 sectorId == null ? null : new SectorId(sectorId));
     }
 
-    /** Confere o plano, monta a planilha e devolve como anexo ("ohchefe-vendas-2026-11-01-a-2026-11-30.csv"). */
-    private ResponseEntity<byte[]> export(ReportQuery query, String name, Supplier<Csv> csv) {
+    /** Confere o plano, monta a planilha e devolve como anexo ("ohchefe-vendas-2026-11-01-a-2026-11-30.xlsx"). */
+    private ResponseEntity<byte[]> export(ReportQuery query, String name, ExportFormat format, Supplier<Sheet> build) {
         authorize.authorize(query.establishmentId());
-        byte[] body = csv.get().bytes();
-        String file = "ohchefe-%s-%s-a-%s.csv".formatted(name, query.from(), query.to());
+        Sheet sheet = build.get();
+        byte[] body = switch (format) {
+            case CSV -> CsvFormat.bytes(sheet);
+            case XLSX -> XlsxFormat.bytes(sheet);
+            case PDF -> PdfFormat.bytes(sheet, clock.instant());
+        };
+        String file = "ohchefe-%s-%s-a-%s.%s".formatted(name, query.from(), query.to(), format.extension);
         return ResponseEntity.ok()
-                .contentType(CSV)
+                .contentType(format.type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(file).build().toString())
                 .body(body);
     }
 
-    @GetMapping(value = "/overview/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportOverviewReport", summary = "A Visão geral em CSV (Business)")
+    @GetMapping(value = "/overview/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportOverviewReport", summary = "A Visão geral em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> overview(@AuthenticationPrincipal Jwt jwt,
                                     @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                     @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                    @RequestParam(required = false) UUID sectorId) {
+                                    @RequestParam(required = false) UUID sectorId,
+                                    @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "visao-geral", () -> ReportCsv.overview(overview.get(query)));
+        return export(query, "visao-geral", format, () -> ReportSheets.overview(overview.get(query)));
     }
 
-    @GetMapping(value = "/sales/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportSalesReport", summary = "As Vendas em CSV (Business)")
+    @GetMapping(value = "/sales/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportSalesReport", summary = "As Vendas em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> sales(@AuthenticationPrincipal Jwt jwt,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                  @RequestParam(required = false) UUID sectorId,
-                                 @RequestParam(defaultValue = "DAY") SalesReportResponse.Grouping groupBy) {
+                                 @RequestParam(defaultValue = "DAY") SalesReportResponse.Grouping groupBy,
+                                 @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "vendas",
-                () -> ReportCsv.sales(sales.get(query, SeriesGrouping.valueOf(groupBy.name()))));
+        return export(query, "vendas", format,
+                () -> ReportSheets.sales(sales.get(query, SeriesGrouping.valueOf(groupBy.name()))));
     }
 
-    @GetMapping(value = "/menu/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportMenuReport", summary = "O Cardápio em CSV, com todos os produtos (Business)")
+    @GetMapping(value = "/menu/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportMenuReport",
+            summary = "O Cardápio em CSV, Excel ou PDF, com todos os produtos (Business)")
     @ExportResponses
     ResponseEntity<byte[]> menu(@AuthenticationPrincipal Jwt jwt,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                 @RequestParam(required = false) UUID sectorId,
-                                @RequestParam(required = false) UUID categoryId) {
+                                @RequestParam(required = false) UUID categoryId,
+                                @RequestParam(defaultValue = "CSV") ExportFormat format) {
         MenuReportQuery query = new MenuReportQuery(query(jwt, from, to, sectorId),
                 categoryId == null ? null : new MenuCategoryId(categoryId));
-        return export(query.report(), "cardapio", () -> {
+        return export(query.report(), "cardapio", format, () -> {
             // A tabela inteira: as páginas, uma depois da outra (a API pagina; a planilha leva tudo).
             List<MenuProduct> products = new ArrayList<>();
             ResultPage<MenuProduct> page;
@@ -165,56 +199,60 @@ class ReportExportController {
                 page = menu.products(query, ProductSort.REVENUE, new PageQuery(number++, PageQuery.MAX_SIZE));
                 products.addAll(page.content());
             } while (number < page.totalPages());
-            return ReportCsv.menu(menu.get(query), products);
+            return ReportSheets.menu(menu.get(query), products);
         });
     }
 
-    @GetMapping(value = "/kitchen/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportKitchenReport", summary = "A Cozinha e tempos em CSV (Business)")
+    @GetMapping(value = "/kitchen/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportKitchenReport", summary = "A Cozinha e tempos em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> kitchen(@AuthenticationPrincipal Jwt jwt,
                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                    @RequestParam(required = false) UUID sectorId,
-                                   @RequestParam(required = false) UUID categoryId) {
+                                   @RequestParam(required = false) UUID categoryId,
+                                   @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "cozinha", () -> ReportCsv.kitchen(kitchen.get(new KitchenReportQuery(query,
+        return export(query, "cozinha", format, () -> ReportSheets.kitchen(kitchen.get(new KitchenReportQuery(query,
                 categoryId == null ? null : new MenuCategoryId(categoryId)))));
     }
 
-    @GetMapping(value = "/team/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportTeamReport", summary = "O Atendimento e equipe em CSV (Business)")
+    @GetMapping(value = "/team/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportTeamReport", summary = "O Atendimento e equipe em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> team(@AuthenticationPrincipal Jwt jwt,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                @RequestParam(required = false) UUID sectorId) {
+                                @RequestParam(required = false) UUID sectorId,
+                                @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "equipe", () -> ReportCsv.team(team.get(query)));
+        return export(query, "equipe", format, () -> ReportSheets.team(team.get(query)));
     }
 
-    @GetMapping(value = "/tables/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportTableReport", summary = "As Mesas e ocupação em CSV (Business)")
+    @GetMapping(value = "/tables/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportTableReport", summary = "As Mesas e ocupação em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> tables(@AuthenticationPrincipal Jwt jwt,
                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                  @RequestParam(required = false) UUID sectorId) {
+                                  @RequestParam(required = false) UUID sectorId,
+                                  @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "mesas", () -> {
+        return export(query, "mesas", format, () -> {
             var report = tables.get(query);
-            return ReportCsv.tables(report, report.period().zone());
+            return ReportSheets.tables(report, report.period().zone());
         });
     }
 
-    @GetMapping(value = "/phone-and-rodizio/export", produces = {"text/csv", "application/problem+json"})
-    @Operation(operationId = "exportPhoneRodizioReport", summary = "O Celular e rodízio em CSV (Business)")
+    @GetMapping(value = "/phone-and-rodizio/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @Operation(operationId = "exportPhoneRodizioReport", summary = "O Celular e rodízio em CSV, Excel ou PDF (Business)")
     @ExportResponses
     ResponseEntity<byte[]> phones(@AuthenticationPrincipal Jwt jwt,
                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                  @RequestParam(required = false) UUID sectorId) {
+                                  @RequestParam(required = false) UUID sectorId,
+                                  @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "celular-e-rodizio", () -> ReportCsv.phoneAndRodizio(phoneRodizio.get(query)));
+        return export(query, "celular-e-rodizio", format, () -> ReportSheets.phoneAndRodizio(phoneRodizio.get(query)));
     }
 }

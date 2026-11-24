@@ -921,7 +921,7 @@ test("Celular e rodízio: o Pro vê que é do Business e o Business vê quem lan
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
 
-test("Exportar: no Pro o botão fica desligado; no Business baixa a planilha da tela com os filtros", async ({
+test("Exportar: no Pro o botão fica desligado; no Business o menu baixa a tela em Excel e PDF com os filtros", async ({
   page,
   request,
   browser,
@@ -933,21 +933,17 @@ test("Exportar: no Pro o botão fica desligado; no Business baixa a planilha da 
   await page.goto("/admin/relatorios/vendas?periodo=7d");
   const button = page.getByRole("button", { name: "Exportar" });
   await expect(button).toBeDisabled();
-  await expect(button).toHaveAccessibleDescription("A exportação em CSV é do plano Business.");
+  await expect(button).toHaveAccessibleDescription("A exportação (CSV, Excel e PDF) é do plano Business.");
 
   // No Business: o contexto libera a exportação e o servidor devolve a planilha.
   await page.route("**/api/v1/reports/context", async (route) => {
     const response = await route.fetch();
     await route.fulfill({ response, json: { ...(await response.json()), level: "FULL", canExport: true } });
   });
-  let asked: URL | null = null;
+  const asked: URL[] = [];
   await page.route("**/api/v1/reports/sales/export?**", async (route) => {
-    asked = new URL(route.request().url());
-    await route.fulfill({
-      status: 200,
-      contentType: "text/csv;charset=UTF-8",
-      body: "﻿Resumo\r\nIndicador;Período;Comparação\r\n",
-    });
+    asked.push(new URL(route.request().url()));
+    await route.fulfill({ status: 200, contentType: "application/octet-stream", body: "conteúdo" });
   });
   await page.route("**/api/v1/reports/sales?**", async (route) => {
     const response = await route.fetch();
@@ -955,12 +951,29 @@ test("Exportar: no Pro o botão fica desligado; no Business baixa a planilha da 
   });
   await page.reload();
 
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Exportar" }).click();
-  const from = asked!.searchParams.get("from");
-  const to = asked!.searchParams.get("to");
-  expect((await download).suggestedFilename()).toBe(`ohchefe-vendas-${from}-a-${to}.csv`);
-  expect(asked!.searchParams.get("groupBy")).toBe("DAY");
+  // O menu: Excel, PDF e CSV; o Esc fecha e devolve o foco ao botão.
+  const exportButton = page.getByRole("button", { name: "Exportar" });
+  await exportButton.click();
+  await expect(page.getByRole("menuitem")).toHaveText([/^Excel/, /^PDF/, /^CSV/]);
+  await expect(page.getByRole("menuitem", { name: /Excel/ })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(exportButton).toBeFocused();
+
+  for (const [format, extension] of [
+    ["Excel", "xlsx"],
+    ["PDF", "pdf"],
+  ] as const) {
+    await exportButton.click();
+    const download = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: new RegExp(format) }).click();
+    const last = () => asked[asked.length - 1];
+    expect((await download).suggestedFilename()).toBe(
+      `ohchefe-vendas-${last().searchParams.get("from")}-a-${last().searchParams.get("to")}.${extension}`,
+    );
+  }
+  expect(asked.map((url) => url.searchParams.get("format"))).toEqual(["XLSX", "PDF"]);
+  expect(asked[0].searchParams.get("groupBy")).toBe("DAY");
 });
 
 test("Alertas em tempo real: bloqueados no Pro; no Business, liga a comanda, muda o limite e salva", async ({
