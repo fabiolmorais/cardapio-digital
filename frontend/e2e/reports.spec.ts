@@ -811,3 +811,98 @@ test("Mesas e ocupação: o Pro vê que é do Business e o Business vê o mapa d
   await expect(moves).toContainText("Mesa de onde mais saemD5 · 14");
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
+
+test("Celular e rodízio: o Pro vê que é do Business e o Business vê quem lança os pedidos, o QR e o rodízio", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/celular-e-rodizio?periodo=today");
+  await expect(page.getByRole("region", { name: "Celular e rodízio é um relatório do Business" })).toContainText(
+    "celular do cliente",
+  );
+
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, level: "FULL", firstDataDay: body.today } });
+  });
+  await page.route("**/api/v1/reports/phone-and-rodizio?**", async (route) => {
+    const day = new URL(route.request().url()).searchParams.get("from");
+    await route.fulfill({
+      json: {
+        period: { from: day, to: day },
+        grouping: "DAY",
+        origin: [{ start: day, end: day, phone: 68, staff: 32 }],
+        funnel: { tabs: 1776, scanned: 1502, phoneOrdered: 1238 },
+        phones: {
+          phonesPerTab: 2.3,
+          orderingPerTab: 1.6,
+          scanToOrderSeconds: 360,
+          scannedNoOrder: 264,
+          rejected: 11,
+          blocked: 3,
+        },
+        presence: [
+          { method: "WIFI", sessions: 810 },
+          { method: "GPS", sessions: 120 },
+          { method: "STAFF", sessions: 70 },
+        ],
+        rodizio: {
+          tabs: 306,
+          people: 1284,
+          revenueCents: 15894000,
+          extraCents: 4130000,
+          rounds: 1285,
+          items: 12583,
+          timeSeconds: 6720,
+          withLimit: 210,
+          reachedLimit: 29,
+        },
+        tiers: [
+          { tier: "Adultos", people: 1102 },
+          { tier: "Crianças", people: 182 },
+        ],
+        topItems: [
+          { name: "Sashimi de salmão", quantity: 2140 },
+          { name: "Hot roll", quantity: 1860 },
+        ],
+        card: { servingSeconds: 280800, pausedSeconds: 79200 },
+        topCuts: [{ name: "Picanha", quantity: 312 }],
+      },
+    });
+  });
+  await page.reload();
+
+  await expect(page.getByRole("region", { name: "Quem lança os pedidos" })).toContainText(
+    "68% dos pedidos do período saíram do celular do cliente.",
+  );
+  await expect(page.getByRole("button", { name: /: 68% pelo celular \(68\), 32% pelo garçom \(32\)$/ })).toBeVisible();
+
+  const funnel = page.getByRole("region", { name: "Do QR ao pedido" });
+  await expect(
+    funnel.getByRole("img", {
+      name: "1776 comandas, 1502 com alguém que escaneou o QR, 1238 com pedido pelo celular.",
+    }),
+  ).toContainText("Alguém escaneou o QR1.50285%");
+  await expect(funnel).toContainText("Celulares por mesa2,3 · 1,6 pedem");
+  await expect(funnel).toContainText("Do QR ao primeiro pedido6 min");
+  await expect(funnel).toContainText("Escanearam e não pediram nada264 mesas");
+  await expect(funnel).toContainText("Celulares bloqueados (trote)3");
+  await expect(page.getByRole("region", { name: "Como a presença foi confirmada" })).toContainText(
+    "Wi-Fi do salão81%810 celulares",
+  );
+
+  const rodizio = page.getByRole("region", { name: "Rodízio", exact: true });
+  await expect(rodizio).toContainText("Pessoas no rodízio1.2841.102 adultos · 182 crianças");
+  await expect(rodizio).toContainText("Faturamento do rodízioR$ 158.940,00+ R$ 41.300,00 à parte");
+  await expect(rodizio).toContainText("Rodadas por mesa4,29,8 itens por pessoa");
+  await expect(rodizio).toContainText("Tempo médio no rodízio1 h 52 min14% das mesas chegaram ao tempo limite");
+  await expect(page.getByRole("region", { name: "Mais pedidos no rodízio" })).toContainText("Sashimi de salmão2.140");
+  const passagem = page.getByRole("region", { name: "Passagem: cartão e cortes" });
+  await expect(passagem).toContainText("Verde (pode servir)78%78 h 00 min");
+  await expect(passagem).toContainText("Picanha312 pedidos");
+  await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+});

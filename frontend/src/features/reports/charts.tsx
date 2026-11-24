@@ -297,7 +297,16 @@ export function ColumnChart({
 export type Segment = { key: string; label: string; value: number; color: string };
 
 /** Uma barra dividida em partes (forma de pagamento), com a legenda em linhas: cor, nome, % e valor. */
-export function SplitBar({ segments, label }: { segments: Segment[]; label: string }) {
+export function SplitBar({
+  segments,
+  label,
+  format = formatCents,
+}: {
+  segments: Segment[];
+  label: string;
+  /** O valor de cada parte na legenda; em centavos, a menos que venha outro formato. */
+  format?: (value: number) => string;
+}) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const share = (value: number) => (total === 0 ? 0 : Math.round((value / total) * 100));
   return (
@@ -308,7 +317,7 @@ export function SplitBar({ segments, label }: { segments: Segment[]; label: stri
           .map((s) => (
             <i
               key={s.key}
-              title={`${s.label} · ${formatCents(s.value)} · ${share(s.value)}%`}
+              title={`${s.label} · ${format(s.value)} · ${share(s.value)}%`}
               className="block h-full first:rounded-l last:rounded-r"
               style={{ width: `${(s.value / total) * 100}%`, background: s.color }}
             />
@@ -322,7 +331,7 @@ export function SplitBar({ segments, label }: { segments: Segment[]; label: stri
               {s.label}
             </span>
             <span className="text-muted-foreground tabular-nums">{share(s.value)}%</span>
-            <span className="min-w-24 text-right font-mono text-[13px] tabular-nums">{formatCents(s.value)}</span>
+            <span className="min-w-24 text-right font-mono text-[13px] tabular-nums">{format(s.value)}</span>
           </li>
         ))}
       </ul>
