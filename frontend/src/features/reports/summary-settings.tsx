@@ -6,45 +6,58 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatCents } from "@/lib/format";
+import { LockedCard } from "./locked";
 import { messages } from "@/messages/pt-BR";
 import { formatRange } from "./period";
 import {
+  useReportAlerts,
+  useSaveReportAlerts,
   useSaveSummarySettings,
   useSendSummaryTest,
   useSummaryPreview,
   useSummarySettings,
+  type ReportAlerts,
   type SummarySettings,
 } from "./reports-api";
 import { Loading, ReportsGate } from "./reports-page";
 
 const t = messages.reports.summary;
+const a = t.alerts;
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => ({ value: String(hour), label: t.hourOption(hour) }));
 
-/** A configuração do resumo diário (desenhos 14.8 e 14.15), com os blocos do Pro. */
+/**
+ * O resumo diário e os alertas (desenhos 14.8 e 14.15). O resumo é do Pro em diante; os alertas, do
+ * Business (no Pro, aparecem bloqueados).
+ */
 export function SummaryScreen() {
-  return <ReportsGate>{() => <SummaryLoader />}</ReportsGate>;
+  return <ReportsGate>{(context) => <SummaryLoader full={context.level === "FULL"} />}</ReportsGate>;
 }
 
-function SummaryLoader() {
+function SummaryLoader({ full }: { full: boolean }) {
   const settings = useSummarySettings();
-  if (settings.isError) {
+  const alerts = useReportAlerts(full);
+  if (settings.isError || alerts.isError) {
     return (
       <div className="flex flex-col items-start gap-3 px-4 py-6 sm:px-7">
         <p role="alert" className="text-destructive">
-          {t.loadError}
+          {settings.isError ? t.loadError : a.loadError}
         </p>
-        <Button variant="outline" className="h-11" onClick={() => settings.refetch()}>
+        <Button
+          variant="outline"
+          className="h-11"
+          onClick={() => (settings.isError ? settings.refetch() : alerts.refetch())}
+        >
           {messages.reports.retry}
         </Button>
       </div>
     );
   }
-  if (!settings.data) return <Loading />;
-  return <SummaryForm initial={settings.data} />;
+  if (!settings.data || (full && !alerts.data)) return <Loading />;
+  return <SummaryForm initial={settings.data} initialAlerts={full ? (alerts.data ?? null) : null} />;
 }
 
-function SummaryForm({ initial }: { initial: SummarySettings }) {
+function SummaryForm({ initial, initialAlerts }: { initial: SummarySettings; initialAlerts: ReportAlerts | null }) {
   const id = useId();
   const [email, setEmail] = useState(initial.emailEnabled);
   const [push, setPush] = useState(initial.pushEnabled);
@@ -52,19 +65,25 @@ function SummaryForm({ initial }: { initial: SummarySettings }) {
   const [receivers, setReceivers] = useState(
     () => new Set(initial.recipients.filter((r) => r.receives).map((r) => r.userId)),
   );
+  const [alerts, setAlerts] = useState<ReportAlerts | null>(initialAlerts);
   const [notice, setNotice] = useState<string | null>(null);
   const save = useSaveSummarySettings();
+  const saveAlerts = useSaveReportAlerts();
+  const saving = save.isPending || saveAlerts.isPending;
 
   function changed() {
     setNotice(null);
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    save.mutate(
-      { emailEnabled: email, pushEnabled: push, sendHour: hour, receiverIds: [...receivers] },
-      { onSuccess: () => setNotice(t.saved) },
-    );
+    try {
+      await save.mutateAsync({ emailEnabled: email, pushEnabled: push, sendHour: hour, receiverIds: [...receivers] });
+      if (alerts) await saveAlerts.mutateAsync(alerts);
+      setNotice(alerts ? t.savedWithAlerts : t.saved);
+    } catch {
+      // O erro aparece embaixo do título (save.isError ou saveAlerts.isError).
+    }
   }
 
   return (
@@ -74,8 +93,8 @@ function SummaryForm({ initial }: { initial: SummarySettings }) {
           <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
-        <Button type="submit" size="xl" disabled={save.isPending}>
-          {save.isPending ? t.saving : t.save}
+        <Button type="submit" size="xl" disabled={saving}>
+          {saving ? t.saving : t.save}
         </Button>
       </header>
 
@@ -84,7 +103,7 @@ function SummaryForm({ initial }: { initial: SummarySettings }) {
           {notice}
         </p>
       )}
-      {save.isError && (
+      {(save.isError || saveAlerts.isError) && (
         <p role="alert" className="text-sm text-destructive">
           {t.saveError}
         </p>
@@ -167,6 +186,19 @@ function SummaryForm({ initial }: { initial: SummarySettings }) {
           </fieldset>
         </section>
         <Preview />
+        {alerts ? (
+          <Alerts
+            value={alerts}
+            onChange={(next) => {
+              changed();
+              setAlerts(next);
+            }}
+          />
+        ) : (
+          <div className="xl:col-start-1">
+            <LockedCard title={a.title} text={a.locked} />
+          </div>
+        )}
       </div>
     </form>
   );
@@ -234,6 +266,130 @@ function Preview() {
         </p>
       )}
     </aside>
+  );
+}
+
+type Limit = { enabled: keyof ReportAlerts; value: keyof ReportAlerts; min: number; max: number; unit: string };
+
+const LIMITS: { title: string; text: string; limit: Limit }[] = [
+  {
+    title: a.kitchen,
+    text: a.kitchenText,
+    limit: { enabled: "kitchenEnabled", value: "kitchenMinutes", min: 5, max: 120, unit: a.minutes },
+  },
+  {
+    title: a.call,
+    text: a.callText,
+    limit: { enabled: "callEnabled", value: "callMinutes", min: 1, max: 30, unit: a.minutes },
+  },
+  {
+    title: a.tab,
+    text: a.tabText,
+    limit: { enabled: "tabEnabled", value: "tabHours", min: 1, max: 24, unit: a.hours },
+  },
+];
+
+/** Os alertas em tempo real (REL-78): cada um liga e desliga, com o limite ao lado. */
+function Alerts({ value, onChange }: { value: ReportAlerts; onChange: (next: ReportAlerts) => void }) {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={`${id}alerts`}
+      className="flex min-w-0 flex-col gap-4 rounded-[20px] border border-border bg-card p-5 sm:p-6 xl:col-start-1"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 id={`${id}alerts`} className="text-lg font-semibold">
+          {a.title}
+        </h2>
+        <p className="text-sm text-muted-foreground">{a.text}</p>
+      </div>
+      {LIMITS.map(({ title, text, limit }) => {
+        const enabled = value[limit.enabled] as boolean;
+        const amount = value[limit.value] as number;
+        return (
+          <div key={title} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="font-medium">{title}</span>
+              <span className="text-sm text-muted-foreground">
+                {text} {amount} {limit.unit}
+              </span>
+            </div>
+            <LimitField
+              key={title}
+              label={a.limitLabel(title, limit.unit)}
+              value={amount}
+              min={limit.min}
+              max={limit.max}
+              unit={limit.unit}
+              disabled={!enabled}
+              onChange={(next) => onChange({ ...value, [limit.value]: next })}
+            />
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label={title}
+              checked={enabled}
+              onChange={(event) => onChange({ ...value, [limit.enabled]: event.target.checked })}
+              className="size-5 shrink-0 accent-primary"
+            />
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+/**
+ * O limite de um alerta. Enquanto a pessoa digita, o texto fica como está; ao sair do campo, o valor
+ * volta para a faixa permitida (apagar e digitar "30" não vira 120 no meio do caminho).
+ */
+function LimitField({
+  label,
+  value,
+  min,
+  max,
+  unit,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  disabled: boolean;
+  onChange: (next: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  function commit() {
+    const typed = Math.round(Number(draft));
+    const next = Number.isNaN(typed) || draft.trim() === "" ? value : Math.min(max, Math.max(min, typed));
+    setDraft(String(next));
+    if (next !== value) onChange(next);
+  }
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span className="sr-only">{label}</span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        value={draft}
+        disabled={disabled}
+        title={a.range(min, max, unit)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          const typed = Number(event.target.value);
+          if (event.target.value.trim() !== "" && Number.isInteger(typed) && typed >= min && typed <= max) {
+            onChange(typed);
+          }
+        }}
+        onBlur={commit}
+        className="h-11 w-20 rounded-xl border border-input bg-transparent px-3 text-right text-base text-foreground tabular-nums disabled:opacity-50"
+      />
+      {unit}
+    </label>
   );
 }
 

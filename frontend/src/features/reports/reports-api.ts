@@ -202,6 +202,34 @@ export function useSaveSummarySettings() {
   });
 }
 
+export type ReportAlerts = Schemas["ReportAlerts"];
+
+/** Os alertas em tempo real (Business): só busca quando o plano tem. */
+export function useReportAlerts(enabled: boolean) {
+  return useQuery({
+    queryKey: ["reports", "alerts"],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/alerts");
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    enabled,
+    retry: false,
+  });
+}
+
+export function useSaveReportAlerts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: ReportAlerts) => {
+      const { data, response } = await api.PUT("/api/v1/reports/alerts", { body });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    onSuccess: (saved) => queryClient.setQueryData(["reports", "alerts"], saved),
+  });
+}
+
 /** O resumo do último dia que já terminou, como ele sairia agora. */
 export function useSummaryPreview() {
   return useQuery({
