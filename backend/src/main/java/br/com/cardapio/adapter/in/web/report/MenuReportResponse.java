@@ -28,6 +28,6 @@ record MenuReportResponse(
         return new MenuReportResponse(Level.valueOf(r.level().name()), Range.of(r.period()), r.itemsRevenue().cents(),
                 r.itemsSold(), r.activeProducts(), r.byCategory().stream().map(Category::of).toList(),
                 r.slowSellers().stream().map(Product::of).toList(),
-                r.full() == null ? null : MenuFullDtos.Full.of(r.full()));
+                r.full() == null ? null : MenuFullDtos.Full.of(r.full(), r.period().zone()));
     }
 }

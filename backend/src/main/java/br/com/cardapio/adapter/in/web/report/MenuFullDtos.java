@@ -3,12 +3,17 @@ package br.com.cardapio.adapter.in.web.report;
 import br.com.cardapio.application.port.in.report.MenuFull;
 import br.com.cardapio.application.port.in.report.MenuProduct;
 import br.com.cardapio.domain.report.model.AttentionPoint;
+import br.com.cardapio.domain.report.model.LeftInCart;
+import br.com.cardapio.domain.report.model.MenuInterest;
+import br.com.cardapio.domain.report.model.ProductInterest;
 import br.com.cardapio.domain.report.model.OptionSales;
 import br.com.cardapio.domain.report.model.ProductPair;
 import br.com.cardapio.domain.report.model.VariantSales;
 import br.com.cardapio.domain.report.model.VideoComparison;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,6 +90,47 @@ final class MenuFullDtos {
         }
     }
 
+    @Schema(name = "ReportProductInterest", description = "Quantos celulares viram o produto e quantos desses pediram")
+    record Interest(@Schema(requiredMode = REQUIRED) String name, @Schema(requiredMode = REQUIRED) int viewers,
+                    @Schema(requiredMode = REQUIRED) int ordered) {
+        static Interest of(ProductInterest p) {
+            return new Interest(p.name(), p.viewers(), p.ordered());
+        }
+    }
+
+    @Schema(name = "ReportLeftInCart", description = "Um produto que ficou no carrinho: em quantos celulares e unidades")
+    record Left(@Schema(requiredMode = REQUIRED) String name, @Schema(requiredMode = REQUIRED) int sessions,
+                @Schema(requiredMode = REQUIRED) int units) {
+        static Left of(LeftInCart l) {
+            return new Left(l.name(), l.sessions(), l.units());
+        }
+    }
+
+    @Schema(name = "ReportMenuInterest", description = """
+            Os eventos do celular (REL-27, 28, 29). "Visto": abriu o prato ou viu o reel 2 s; "pediu": o mesmo
+            celular pediu o produto.""")
+    record PhoneInterest(
+            @Schema(description = "O dia do primeiro evento gravado, no fuso do restaurante; ausente sem nenhum")
+            LocalDate recordingSince,
+            @Schema(requiredMode = REQUIRED, description = "Visto x pedido, dos mais vistos") List<Interest> viewed,
+            @Schema(requiredMode = REQUIRED, description = "Os reels mais vistos") List<Interest> reels,
+            @Schema(requiredMode = REQUIRED, description = "Celulares que puseram algo no carrinho")
+            int cartSessions,
+            @Schema(requiredMode = REQUIRED, description = "Desses, os que não enviaram pedido nenhum")
+            int cartsNotSent,
+            @Schema(requiredMode = REQUIRED, description = "O que ficou no carrinho sem ser pedido, pelo preço de hoje")
+            long leftCents,
+            @Schema(requiredMode = REQUIRED, description = "Os produtos que mais ficam no carrinho")
+            List<Left> mostLeft) {
+        static PhoneInterest of(MenuInterest i, ZoneId zone) {
+            return new PhoneInterest(
+                    i.recordingSince() == null ? null : i.recordingSince().atZone(zone).toLocalDate(),
+                    i.viewed().stream().map(Interest::of).toList(), i.reels().stream().map(Interest::of).toList(),
+                    i.carts().withCart(), i.carts().notSent(), i.leftValue().cents(),
+                    i.mostLeft().stream().map(Left::of).toList());
+        }
+    }
+
     @Schema(name = "MenuFull", description = "Os blocos do Business")
     record Full(@Schema(requiredMode = REQUIRED) List<Canceled> mostCanceled,
                 @Schema(requiredMode = REQUIRED) List<ProductSizes> sizes,
@@ -92,11 +138,13 @@ final class MenuFullDtos {
                 @Schema(requiredMode = REQUIRED, description = "O que os adicionais pagos somaram")
                 long paidOptionsCents,
                 @Schema(requiredMode = REQUIRED) List<Pair> pairs,
-                @Schema(requiredMode = REQUIRED) Video video) {
-        static Full of(MenuFull f) {
+                @Schema(requiredMode = REQUIRED) Video video,
+                @Schema(requiredMode = REQUIRED) PhoneInterest interest) {
+        static Full of(MenuFull f, ZoneId zone) {
             return new Full(f.mostCanceled().stream().map(Canceled::of).toList(),
                     f.sizes().stream().map(ProductSizes::of).toList(), f.options().stream().map(Option::of).toList(),
-                    f.paidOptions().cents(), f.pairs().stream().map(Pair::of).toList(), Video.of(f.video()));
+                    f.paidOptions().cents(), f.pairs().stream().map(Pair::of).toList(), Video.of(f.video()),
+                    PhoneInterest.of(f.interest(), zone));
         }
     }
 }

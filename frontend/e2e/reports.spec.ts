@@ -457,6 +457,9 @@ test("no Cardápio, o Pro vê os blocos do Business bloqueados e o Business vê 
     "Opções e adicionais",
     "Pedidos juntos",
     "Com vídeo x sem vídeo",
+    "Visto x pedido",
+    "Carrinhos não enviados",
+    "Reels mais vistos",
   ]) {
     await expect(page.getByRole("region", { name: `${block} (disponível no Business)` })).toBeVisible();
   }
@@ -503,6 +506,18 @@ test("no Cardápio, o Pro vê os blocos do Business bloqueados e o Business vê 
           paidOptionsCents: 106000,
           pairs: [{ first: "Guioza", second: "Chopp 500 ml", firstTabs: 100, together: 41 }],
           video: { withVideo: 12, withVideoSold: 732, withoutVideo: 52, withoutVideoSold: 1976 },
+          interest: {
+            recordingSince: "2026-11-01",
+            viewed: [
+              { name: "Guioza", viewers: 80, ordered: 20 },
+              { name: "Lámen", viewers: 40, ordered: 30 },
+            ],
+            reels: [{ name: "Guioza", viewers: 50, ordered: 12 }],
+            cartSessions: 120,
+            cartsNotSent: 9,
+            leftCents: 41290,
+            mostLeft: [{ name: "Chá gelado", sessions: 6, units: 11 }],
+          },
         },
       },
     });
@@ -523,6 +538,15 @@ test("no Cardápio, o Pro vê os blocos do Business bloqueados e o Business vê 
     "Guioza + Chopp 500 mlem 41% das mesas",
   );
   await expect(page.getByRole("region", { name: "Com vídeo x sem vídeo" })).toContainText("61 por item");
+  const viewed = page.getByRole("region", { name: "Visto x pedido" });
+  await expect(viewed.getByText("Guioza: 80 celulares viram, 20 pediram (25%)")).toBeAttached();
+  await expect(viewed).toContainText("40 viram · 30 pediram · 75%");
+  await expect(page.getByRole("region", { name: "Reels mais vistos" })).toContainText("50 viram · 12 pediram · 24%");
+  const carts = page.getByRole("region", { name: "Carrinhos não enviados" });
+  await expect(carts).toContainText("9carrinhos não enviados");
+  await expect(carts).toContainText("de 120 celulares que puseram algo no carrinho");
+  await expect(carts).toContainText("R$ 412,90 ficou no carrinho sem ser pedido");
+  await expect(carts).toContainText("Chá gelado6 celulares · 11 un.");
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
 });
 

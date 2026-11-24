@@ -10,6 +10,12 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      # Sempre o plano com os valores de verdade. Depois de algumas execuções da mesma consulta, o
+      # Postgres passa ao plano genérico (sem olhar os parâmetros), que nos relatórios errava feio as
+      # estimativas: "Pedidos juntos" com 12 meses passava de 4 minutos. Planejar de novo custa
+      # milissegundos.
+      connection-init-sql: SET plan_cache_mode = force_custom_plan
   flyway:
     # Só o Flyway altera a estrutura do banco, com usuário próprio.
     user: ${FLYWAY_USERNAME:${DB_USERNAME}}
