@@ -93,6 +93,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os alertas em tempo real do restaurante (Business) */
+        get: operations["getReportAlerts"];
+        /** Liga, desliga e muda os limites dos alertas (Business) */
+        put: operations["updateReportAlerts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/tables/{token}/rodizio/card": {
         parameters: {
             query?: never;
@@ -2725,6 +2743,27 @@ export interface components {
              */
             sendHour: number;
             recipients: components["schemas"]["DailySummaryRecipient"][];
+        };
+        /** @description Os alertas em tempo real: cada um liga e desliga e tem o limite */
+        ReportAlerts: {
+            kitchenEnabled: boolean;
+            /**
+             * Format: int32
+             * @description Itens em preparo há mais de (min)
+             */
+            kitchenMinutes: number;
+            callEnabled: boolean;
+            /**
+             * Format: int32
+             * @description Mesa chamando há mais de (min)
+             */
+            callMinutes: number;
+            tabEnabled: boolean;
+            /**
+             * Format: int32
+             * @description Comanda aberta há mais de (h)
+             */
+            tabHours: number;
         };
         RodizioCardRequest: {
             /**
@@ -6402,6 +6441,77 @@ export interface operations {
             };
             /** @description Quem recebe não é dono nem gerente do restaurante */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getReportAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A configuração (sem configuração, o padrão) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportAlerts"];
+                };
+            };
+            /** @description O plano não tem os alertas (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateReportAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportAlerts"];
+            };
+        };
+        responses: {
+            /** @description Salva */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportAlerts"];
+                };
+            };
+            /** @description Limite fora da faixa */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não tem os alertas (é do Business) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

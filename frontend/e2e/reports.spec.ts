@@ -948,3 +948,59 @@ test("Exportar: no Pro o botão fica desligado; no Business baixa a planilha da 
   expect((await download).suggestedFilename()).toBe(`ohchefe-vendas-${from}-a-${to}.csv`);
   expect(asked!.searchParams.get("groupBy")).toBe("DAY");
 });
+
+test("Alertas em tempo real: bloqueados no Pro; no Business, liga a comanda, muda o limite e salva", async ({
+  page,
+  request,
+}) => {
+  const { email } = await createAccount(request);
+  await loginThroughForm(page, email);
+
+  await page.goto("/admin/relatorios/resumo");
+  await expect(page.getByRole("region", { name: "Alertas em tempo real (disponível no Business)" })).toBeVisible();
+
+  await page.route("**/api/v1/reports/context", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), level: "FULL" } });
+  });
+  let saved: Record<string, unknown> | null = null;
+  await page.route("**/api/v1/reports/alerts", async (route) => {
+    if (route.request().method() === "PUT") {
+      saved = route.request().postDataJSON();
+      await route.fulfill({ json: saved });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        kitchenEnabled: true,
+        kitchenMinutes: 25,
+        callEnabled: true,
+        callMinutes: 3,
+        tabEnabled: false,
+        tabHours: 6,
+      },
+    });
+  });
+  await page.reload();
+
+  const alerts = page.getByRole("region", { name: "Alertas em tempo real" });
+  await expect(alerts).toContainText("Itens em preparo há mais de 25 min");
+  const hours = alerts.getByLabel("Comanda aberta há muito tempo: limite em horas");
+  await expect(hours).toBeDisabled();
+  await alerts.getByRole("switch", { name: "Comanda aberta há muito tempo" }).check();
+  await hours.fill("4");
+  await alerts.getByLabel("Cozinha atrasando: limite em minutos").fill("500");
+  await alerts.getByLabel("Cozinha atrasando: limite em minutos").blur();
+  await expect(alerts.getByLabel("Cozinha atrasando: limite em minutos")).toHaveValue("120");
+  await page.getByRole("button", { name: "Salvar" }).click();
+
+  await expect(page.getByRole("status").filter({ hasText: "Resumo diário e alertas salvos." })).toBeVisible();
+  expect(saved).toEqual({
+    kitchenEnabled: true,
+    kitchenMinutes: 120,
+    callEnabled: true,
+    callMinutes: 3,
+    tabEnabled: true,
+    tabHours: 4,
+  });
+});
