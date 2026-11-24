@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 import java.util.Set;
 
 public class CloseTabService implements CloseTabUseCase {
@@ -69,19 +70,19 @@ public class CloseTabService implements CloseTabUseCase {
     @Override
     @Transactional
     public StaffTab close(EstablishmentId establishmentId, TabId tabId, UserId by, PaymentMethod paymentMethod) {
-        return close(establishmentId, tabId, by, paymentMethod, null);
+        return close(establishmentId, tabId, by, paymentMethod, (ServiceChoice) null);
     }
 
     @Override
     @Transactional
     public StaffTab close(EstablishmentId establishmentId, TabId tabId, UserId by, PaymentMethod paymentMethod,
-                          Boolean serviceAccepted) {
+                          ServiceChoice service) {
         TabView found = tabs.findView(establishmentId, tabId).orElseThrow(TabNotFoundException::new);
         // A taxa de serviço (RF39): a escolhida, a confirmada agora pelo garçom ou, se ninguém
         // escolheu, a do restaurante, aceita. Fica copiada na comanda fechada.
         ServiceChargeSettings serviceSettings = ServiceCharges.settingsOf(settings, establishmentId);
-        Tab chosen = found.tab().status().isOpen() && serviceAccepted != null
-                ? found.tab().chooseService(serviceSettings, serviceAccepted) : found.tab();
+        Tab chosen = found.tab().status().isOpen() && service != null
+                ? found.tab().chooseService(serviceSettings, service) : found.tab();
         TabView view = new TabView(found.tab().status().isOpen()
                 ? chosen.withService(chosen.effectiveService(serviceSettings)) : chosen,
                 found.tableLabel(), found.sectorName());
@@ -119,7 +120,7 @@ public class CloseTabService implements CloseTabUseCase {
         events.publish(new TabClosed(establishmentId, closed.tableId(), closed.id(), now));
         return StaffTab.from(new TabView(closed, view.tableLabel(), view.sectorName()), items, null, rodizio, all,
                 orders.findStaffNames(establishmentId, StaffTab.staffOf(items)), closed.service(),
-                serviceSettings.destination(),
+                serviceSettings,
                 waiter == null ? null : orders.findStaffNames(establishmentId, Set.of(waiter)).get(waiter));
     }
 }

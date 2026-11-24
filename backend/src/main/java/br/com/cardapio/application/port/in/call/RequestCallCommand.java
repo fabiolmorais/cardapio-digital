@@ -2,6 +2,7 @@ package br.com.cardapio.application.port.in.call;
 
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 
 import java.util.Objects;
 
@@ -10,12 +11,10 @@ import java.util.Objects;
  *
  * @param sessionToken  o cookie da sessão do celular; null se não veio
  * @param paymentMethod só no pedido de conta
- */
-/**
- * @param serviceAccepted no pedido de conta: a mesa aceitou a taxa de serviço (RF39)? null: não disse
+ * @param service       no pedido de conta: a escolha da mesa para a taxa de serviço (RF39); null: não disse
  */
 public record RequestCallCommand(String tableToken, String sessionToken, CallType type, PaymentMethod paymentMethod,
-                                 Boolean serviceAccepted) {
+                                 ServiceChoice service) {
 
     public RequestCallCommand {
         Objects.requireNonNull(type);

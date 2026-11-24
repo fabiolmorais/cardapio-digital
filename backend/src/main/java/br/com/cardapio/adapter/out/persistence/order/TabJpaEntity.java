@@ -47,6 +47,9 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "service_accepted")
     private Boolean serviceAccepted;
 
+    @Column(name = "service_custom_cents")
+    private Long serviceCustomCents;
+
     @Column(name = "service_cents")
     private Long serviceCents;
 
@@ -63,5 +66,6 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     String getPaymentMethod() { return paymentMethod; }
     Integer getServicePercent() { return servicePercent; }
     Boolean getServiceAccepted() { return serviceAccepted; }
+    Long getServiceCustomCents() { return serviceCustomCents; }
     Long getServiceCents() { return serviceCents; }
 }

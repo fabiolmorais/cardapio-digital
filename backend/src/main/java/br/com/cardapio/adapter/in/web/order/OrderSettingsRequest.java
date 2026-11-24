@@ -32,7 +32,9 @@ record OrderSettingsRequest(
             @Schema(requiredMode = REQUIRED, description = "O percentual, de 1 a 20", example = "10")
             @Min(1) @Max(20) int percent,
             @Schema(requiredMode = REQUIRED, description = "Para quem fica registrada")
-            @NotNull ServiceDestination destination
+            @NotNull ServiceDestination destination,
+            @Schema(description = "A mesa pode escolher outro valor no lugar do percentual (vazio: não pode)")
+            Boolean customAllowed
     ) {
     }
 }

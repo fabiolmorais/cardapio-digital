@@ -19,6 +19,6 @@ record OrderSettingsResponse(
         return new OrderSettingsResponse(s.orderingEnabled(), s.approvalRequired(), s.staffOrderingEnabled(),
                 s.maxAmount() == null ? null : s.maxAmount().cents(), s.maxItems(),
                 new OrderSettingsRequest.ServiceChargeRequest(s.serviceCharge().enabled(), s.serviceCharge().percent(),
-                        s.serviceCharge().destination()));
+                        s.serviceCharge().destination(), s.serviceCharge().customAllowed()));
     }
 }

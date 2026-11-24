@@ -28,11 +28,11 @@ export async function fetchTab(id: string): Promise<StaffTab> {
 export async function closeTab(
   id: string,
   paymentMethod: PaymentMethod | undefined,
-  serviceAccepted?: boolean,
+  service?: { serviceAccepted: boolean; serviceCustomCents?: number },
 ): Promise<StaffTab> {
   const { data, error, response } = await api.POST("/api/v1/tabs/{id}/close", {
     params: { path: { id } },
-    body: { paymentMethod, serviceAccepted },
+    body: { paymentMethod, ...service },
   });
   if (!data) throw problem(error, response.status);
   return data;

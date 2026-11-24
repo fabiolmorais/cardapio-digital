@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.order;
 
+import br.com.cardapio.adapter.in.web.shared.ServiceChoices;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.order.CloseTabUseCase;
@@ -121,7 +122,8 @@ class TabController {
                            @Valid @RequestBody CloseTabRequest request) {
         var user = AuthenticatedUser.from(jwt);
         return StaffTabResponse.from(closeTab.close(user.establishmentId(), new TabId(id), user.userId(),
-                request.paymentMethod(), request.serviceAccepted()));
+                request.paymentMethod(),
+                ServiceChoices.of(request.serviceAccepted(), request.serviceCustomCents())));
     }
 
     @PostMapping("/{id}/move")

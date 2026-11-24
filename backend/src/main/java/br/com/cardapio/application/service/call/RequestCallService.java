@@ -30,6 +30,7 @@ import br.com.cardapio.application.port.out.order.TabPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.ServiceChargeSettings;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 
@@ -86,8 +87,8 @@ public class RequestCallService implements RequestCallUseCase {
         // Já há um aberto deste tipo? É ele que volta (no máximo, com a forma de pagamento nova).
         // A liberação é de cada celular: só conta o aberto por ele mesmo.
         Optional<Call> open = findOpen(establishmentId, visit, command.type());
-        if (command.type() == CallType.BILL && command.serviceAccepted() != null) {
-            chooseService(establishmentId, visit.table().id(), command.serviceAccepted(), open, now);
+        if (command.type() == CallType.BILL && command.service() != null) {
+            chooseService(establishmentId, visit.table().id(), command.service(), open, now);
         }
         if (open.isPresent()) {
             return new RequestedCall(view(changePaymentIfNeeded(open.get(), command)), false);
@@ -113,15 +114,15 @@ public class RequestCallService implements RequestCallUseCase {
     }
 
     /**
-     * A mesa aceitou ou tirou a taxa de serviço ao pedir a conta (RF39): fica gravado na comanda.
+     * A mesa aceitou, tirou ou trocou a taxa de serviço ao pedir a conta (RF39): fica gravado na comanda.
      * Se o pedido de conta já estava aberto, a equipe recebe o aviso para ver o valor novo.
      */
-    private void chooseService(EstablishmentId establishmentId, DiningTableId tableId, boolean accepted,
+    private void chooseService(EstablishmentId establishmentId, DiningTableId tableId, ServiceChoice choice,
                                Optional<Call> open, Instant now) {
         tabs.findOpen(establishmentId, tableId).ifPresent(tab -> {
             ServiceChargeSettings settings = orderSettings.find(establishmentId)
                     .map(OrderSettings::serviceCharge).orElse(ServiceChargeSettings.DEFAULT);
-            Tab chosen = tab.chooseService(settings, accepted);
+            Tab chosen = tab.chooseService(settings, choice);
             if (!chosen.equals(tab) && tabs.saveService(chosen)) {
                 open.ifPresent(call -> events.publish(CallChanged.of(call, now)));
             }

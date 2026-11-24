@@ -69,6 +69,15 @@ public record Tab(
      * (o restaurante não cobra e ninguém escolheu antes), nada muda.
      */
     public Tab chooseService(ServiceChargeSettings settings, boolean accepted) {
+        return chooseService(settings, ServiceChoice.of(accepted));
+    }
+
+    /**
+     * A escolha da taxa, com outro valor: só se o restaurante permite (o percentual ou tirar a taxa
+     * valem sempre). Sem taxa, nada muda, como em {@link #chooseService(ServiceChargeSettings, boolean)}.
+     */
+    public Tab chooseService(ServiceChargeSettings settings, ServiceChoice choice) {
+        Objects.requireNonNull(choice);
         if (!status.isOpen()) {
             throw new TabStateException("Esta comanda já foi fechada");
         }
@@ -76,7 +85,10 @@ public record Tab(
         if (current == null) {
             return this;
         }
-        return withService(current.accept(accepted));
+        if (choice.isCustom() && !settings.customAllowed() && !choice.custom().equals(current.custom())) {
+            throw new InvalidValueException("Este restaurante não aceita outro valor de serviço");
+        }
+        return withService(current.choose(choice));
     }
 
     /** A mesma comanda com esta taxa (null: sem taxa). */

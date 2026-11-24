@@ -139,11 +139,16 @@ class ServiceChargeFlowTest {
 
     private static final String SETTINGS = """
             {"orderingEnabled":true,"approvalRequired":false,
-             "serviceCharge":{"enabled":%s,"percent":%d,"destination":"%s"}}
+             "serviceCharge":{"enabled":%s,"percent":%d,"destination":"%s","customAllowed":%s}}
             """;
 
+    private void serviceCharge(Restaurant r, boolean enabled, int percent, String destination, boolean custom) {
+        assertThat(send("PUT", r.owner(), "/api/v1/order-settings",
+                SETTINGS.formatted(enabled, percent, destination, custom))).hasStatusOk();
+    }
+
     private void serviceCharge(Restaurant r, boolean enabled, int percent, String destination) {
-        assertThat(send("PUT", r.owner(), "/api/v1/order-settings", SETTINGS.formatted(enabled, percent, destination)))
+        assertThat(send("PUT", r.owner(), "/api/v1/order-settings", SETTINGS.formatted(enabled, percent, destination, false)))
                 .hasStatusOk();
     }
 
@@ -278,14 +283,110 @@ class ServiceChargeFlowTest {
 
     @Test
     void onlyOwnerOrManagerSetsItAndOnlyFromOneToTwentyPercent() throws Exception {
-        assertThat(send("PUT", sakura.owner(), "/api/v1/order-settings", SETTINGS.formatted(true, 25, "TEAM")))
+        assertThat(send("PUT", sakura.owner(), "/api/v1/order-settings", SETTINGS.formatted(true, 25, "TEAM", false)))
                 .hasStatus(HttpStatus.BAD_REQUEST);
-        assertThat(send("PUT", sakura.waiter(), "/api/v1/order-settings", SETTINGS.formatted(true, 10, "TEAM")))
+        assertThat(send("PUT", sakura.waiter(), "/api/v1/order-settings", SETTINGS.formatted(true, 10, "TEAM", false)))
                 .hasStatus(HttpStatus.FORBIDDEN);
         // Outro restaurante ligando a taxa não muda nada aqui.
         Restaurant tanuki = newRestaurant("Tanuki");
         serviceCharge(tanuki, true, 10, "TEAM");
         assertThat(json(send("GET", sakura.owner(), "/api/v1/order-settings", null), "$.serviceCharge.enabled"))
                 .isEqualTo("false");
+    }
+
+    private MvcTestResult bill(Restaurant r, Cookie phone, String body) {
+        return mvc.post().uri("/api/v1/public/tables/" + r.qr04() + "/calls").cookie(phone)
+                .contentType(MediaType.APPLICATION_JSON).content(body).exchange();
+    }
+
+    @Test
+    void anotherAmountStartsOffAndIsRefused() throws Exception {
+        serviceCharge(sakura, true, 10, "TEAM");
+        Cookie ana = phone(sakura);
+        order(sakura, ana, sakura.guioza(), 2);
+
+        assertThat(json(send("GET", sakura.owner(), "/api/v1/order-settings", null),
+                "$.serviceCharge.customAllowed")).isEqualTo("false");
+        assertThat(json(atTheTable(sakura, ana), "$.service.customAllowed")).isEqualTo("false");
+        assertThat(bill(sakura, ana, """
+                {"type":"BILL","paymentMethod":"PIX","serviceCustomCents":500}
+                """)).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(json(atTheTable(sakura, ana), "$.dueCents")).isEqualTo("6578");
+    }
+
+    @Test
+    void theTableChoosesAnotherAmountAndTheWaiterSeesAndChangesIt() throws Exception {
+        serviceCharge(sakura, true, 10, "TEAM", true);
+        Cookie ana = phone(sakura);
+        MvcTestResult placed = order(sakura, ana, sakura.guioza(), 2);
+
+        MvcTestResult offered = atTheTable(sakura, ana);
+        assertThat(json(offered, "$.service.customAllowed")).isEqualTo("true");
+        assertThat(json(offered, "$.service.percentAmountCents")).isEqualTo("598");
+
+        // Pedido de conta com R$ 10 de serviço, no lugar dos 10% (R$ 5,98).
+        assertThat(bill(sakura, ana, """
+                {"type":"BILL","paymentMethod":"CARD","serviceAccepted":true,"serviceCustomCents":1000}
+                """)).hasStatus(HttpStatus.CREATED);
+        MvcTestResult table = atTheTable(sakura, ana);
+        assertThat(json(table, "$.service.customCents")).isEqualTo("1000");
+        assertThat(json(table, "$.service.amountCents")).isEqualTo("1000");
+        assertThat(json(table, "$.service.percentAmountCents")).isEqualTo("598");
+        assertThat(json(table, "$.dueCents")).isEqualTo("6980");
+
+        String callId = json(send("GET", sakura.waiter(), "/api/v1/calls", null), "$.content[0].id");
+        assertThat(send("POST", sakura.waiter(), "/api/v1/calls/" + callId + "/accept", null)).hasStatusOk();
+        MvcTestResult bill = send("GET", sakura.waiter(), "/api/v1/calls/" + callId + "/bill", null);
+        assertThat(json(bill, "$.service.customCents")).isEqualTo("1000");
+        assertThat(json(bill, "$.dueCents")).isEqualTo("6980");
+        // Na maquininha, o cliente pede R$ 15: o garçom troca e recebe tudo.
+        assertThat(send("POST", sakura.waiter(), "/api/v1/calls/" + callId + "/payment",
+                "{\"amountCents\":7480,\"paymentMethod\":\"CARD\",\"serviceCustomCents\":1500}")).hasStatusOk();
+
+        deliver(sakura, placed);
+        String tabId = openTab(sakura);
+        MvcTestResult closed = send("POST", sakura.waiter(), "/api/v1/tabs/" + tabId + "/close", "{}");
+        assertThat(closed).hasStatusOk();
+        assertThat(json(closed, "$.totalCents")).isEqualTo("5980");
+        assertThat(json(closed, "$.service.customCents")).isEqualTo("1500");
+        assertThat(jdbc.queryForObject("SELECT service_cents FROM tab WHERE id = ?::uuid", Long.class, tabId))
+                .isEqualTo(1500L);
+        // O resumo do dia soma o outro valor como serviço, fora do faturado.
+        MvcTestResult floor = send("GET", sakura.owner(), "/api/v1/live/floor", null);
+        assertThat(json(floor, "$.revenueTodayCents")).isEqualTo("5980");
+        assertThat(json(floor, "$.serviceToday.totalCents")).isEqualTo("1500");
+    }
+
+    @Test
+    void theWaiterGoesBackToThePercentWhenClosing() throws Exception {
+        serviceCharge(sakura, true, 10, "TEAM", true);
+        Cookie ana = phone(sakura);
+        deliver(sakura, order(sakura, ana, sakura.guioza(), 1));
+        assertThat(bill(sakura, ana, """
+                {"type":"BILL","paymentMethod":"PIX","serviceCustomCents":500}
+                """)).hasStatus(HttpStatus.CREATED);
+        assertThat(bill(sakura, ana, """
+                {"type":"BILL","paymentMethod":"PIX","serviceAccepted":false,"serviceCustomCents":500}
+                """)).hasStatus(HttpStatus.BAD_REQUEST);
+
+        MvcTestResult closed = send("POST", sakura.waiter(), "/api/v1/tabs/" + openTab(sakura) + "/close",
+                "{\"paymentMethod\":\"PIX\",\"serviceAccepted\":true}");
+
+        assertThat(json(closed, "$.service.amountCents")).isEqualTo("299");
+        assertThat(closed.getResponse().getContentAsString()).doesNotContain("\"customCents\":5");
+        assertThat(json(closed, "$.payments[0].amountCents")).isEqualTo(String.valueOf(2990 + 299));
+    }
+
+    @Test
+    void anotherRestaurantNeverChangesThisTabsService() throws Exception {
+        serviceCharge(sakura, true, 10, "TEAM", true);
+        Cookie ana = phone(sakura);
+        order(sakura, ana, sakura.guioza(), 1);
+        Restaurant tanuki = newRestaurant("Tanuki");
+        serviceCharge(tanuki, true, 10, "TEAM", true);
+
+        assertThat(send("POST", tanuki.waiter(), "/api/v1/tabs/" + openTab(sakura) + "/close",
+                "{\"paymentMethod\":\"PIX\",\"serviceCustomCents\":100000}")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(json(atTheTable(sakura, ana), "$.service.amountCents")).isEqualTo("299");
     }
 }

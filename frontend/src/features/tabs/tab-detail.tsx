@@ -17,7 +17,8 @@ import { clock } from "./open-tabs";
 import { closeTab, fetchTab, type PaymentMethod, type StaffTab } from "./tabs-api";
 import { Notice } from "@/components/notice";
 import { MoveTabDialog, type MoveTarget } from "./move-tab-dialog";
-import { dueOf, ServiceSwitch } from "./service-switch";
+import { pickBody, pickCents, pickOf, pickReady, type ServicePick } from "@/lib/service-pick";
+import { dueOf, serviceLabel, ServiceSwitch } from "./service-switch";
 import { TabPeople } from "./tab-people";
 
 const t = messages.panel.tab;
@@ -76,12 +77,12 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
   const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
   // A taxa de serviço (RF39): como a mesa escolheu (ou aceita, se ninguém mexeu); o garçom troca na hora.
   const service = tab.service ?? null;
-  const [serviceOn, setServiceOn] = useState(service?.accepted ?? true);
-  const due = dueOf(service, serviceOn, tab.dueCents);
+  const [pick, setPick] = useState<ServicePick>(service ? pickOf(service) : { kind: "PERCENT" });
+  const due = dueOf(service, pick, tab);
   // A mesa já pagou tudo adiantado: fecha sem cobrar e sem perguntar a forma (já foi informada).
   const settled = due === 0;
   const close = useMutation({
-    mutationFn: () => closeTab(tab.id, settled ? undefined : method, service ? serviceOn : undefined),
+    mutationFn: () => closeTab(tab.id, settled ? undefined : method, service ? pickBody(pick) : undefined),
     onSuccess: (closed) => {
       onClosed(closed);
       void queryClient.invalidateQueries({ queryKey: ["open-tabs"] });
@@ -152,7 +153,9 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           {service && (
             <p className="text-sm text-muted-foreground">
               {service.accepted
-                ? messages.panel.service.charged(service.percent, formatCents(service.amountCents))
+                ? service.customCents != null
+                  ? messages.panel.service.chargedCustom(formatCents(service.amountCents))
+                  : messages.panel.service.charged(service.percent, formatCents(service.amountCents))
                 : messages.panel.service.removed}
             </p>
           )}
@@ -281,10 +284,10 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
           <span className="font-semibold">{t.total}</span>
           <span className="font-mono text-lg font-bold tabular-nums">{formatCents(tab.totalCents)}</span>
         </div>
-        {service && serviceOn && (
+        {service && pick.kind !== "NONE" && (
           <div className="flex items-baseline justify-between text-sm">
-            <span className="text-muted-foreground">{messages.panel.service.label(service.percent)}</span>
-            <span className="font-mono tabular-nums">+ {formatCents(service.amountCents)}</span>
+            <span className="text-muted-foreground">{serviceLabel(service, pick)}</span>
+            <span className="font-mono tabular-nums">+ {formatCents(pickCents(service, pick))}</span>
           </div>
         )}
         {tab.payments.length > 0 && (
@@ -306,7 +309,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
 
       {tab.overpaidCents > 0 && <Notice tone="warning">{t.overpaid(formatCents(tab.overpaidCents))}</Notice>}
 
-      {service && <ServiceSwitch service={service} on={serviceOn} disabled={close.isPending} onChange={setServiceOn} />}
+      {service && <ServiceSwitch service={service} pick={pick} disabled={close.isPending} onChange={setPick} />}
 
       {!settled && (
         <fieldset className="flex flex-col gap-2">
@@ -349,7 +352,7 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
       )}
       <Button
         className="h-13 bg-emerald-700 text-base font-bold text-white hover:bg-emerald-600"
-        disabled={close.isPending || onTheWay.length > 0}
+        disabled={close.isPending || onTheWay.length > 0 || (service !== null && !pickReady(pick))}
         onClick={() => close.mutate()}
       >
         {close.isPending ? t.closing : settled ? t.closeSettled : t.close(tp[method])}

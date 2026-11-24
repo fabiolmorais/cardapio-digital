@@ -3159,6 +3159,8 @@ export interface components {
              * @enum {string}
              */
             destination: "TEAM" | "WAITER";
+            /** @description A mesa pode escolher outro valor no lugar do percentual (vazio: não pode) */
+            customAllowed?: boolean;
         };
         OrderSettings: {
             orderingEnabled: boolean;
@@ -3388,6 +3390,12 @@ export interface components {
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @description A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava */
             serviceAccepted?: boolean;
+            /**
+             * Format: int64
+             * @description Outro valor de serviço, em centavos, no lugar do percentual (se o restaurante permitir)
+             * @example 1000
+             */
+            serviceCustomCents?: number;
         };
         ItemChoice: {
             /** @example Escolha os sabores */
@@ -3423,9 +3431,21 @@ export interface components {
             accepted: boolean;
             /**
              * Format: int64
-             * @description A taxa sobre o consumo, em centavos
+             * @description A taxa escolhida (o outro valor, ou o percentual), em centavos
              */
             amountCents: number;
+            /**
+             * Format: int64
+             * @description O percentual sobre o consumo, em centavos
+             */
+            percentAmountCents: number;
+            /**
+             * Format: int64
+             * @description O outro valor escolhido, em centavos; ausente quando vale o percentual
+             */
+            customCents?: number;
+            /** @description O restaurante deixa escolher outro valor */
+            customAllowed: boolean;
             /**
              * Format: int64
              * @description O que falta pagar, com a taxa
@@ -3877,6 +3897,12 @@ export interface components {
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @description Só no pedido de conta: a mesa aceita a taxa de serviço? Vazio: não mudou */
             serviceAccepted?: boolean;
+            /**
+             * Format: int64
+             * @description Outro valor de serviço, em centavos, no lugar do percentual (se o restaurante permitir)
+             * @example 1000
+             */
+            serviceCustomCents?: number;
         };
         TableCall: {
             /** Format: uuid */
@@ -4242,6 +4268,12 @@ export interface components {
             paymentMethod: "PIX" | "CARD" | "CASH";
             /** @description A mesa pagou a taxa de serviço? Vazio: fica a escolha que já estava */
             serviceAccepted?: boolean;
+            /**
+             * Format: int64
+             * @description Outro valor de serviço, em centavos, no lugar do percentual (se o restaurante permitir)
+             * @example 1000
+             */
+            serviceCustomCents?: number;
         };
         EstablishmentAccess: {
             /** Format: uuid */

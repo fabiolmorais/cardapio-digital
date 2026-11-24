@@ -77,4 +77,56 @@ class ServiceChargeTest {
         assertThat(closing.tab().serviceCharged()).isEqualTo(Money.ofCents(12_99));
         assertThat(closing.finalPayment().amount()).isEqualTo(Money.ofCents(142_89));
     }
+
+    private static final ServiceChargeSettings CUSTOM = new ServiceChargeSettings(true, 10, ServiceDestination.TEAM,
+            true);
+
+    @Test
+    void anotherAmountReplacesThePercentOnlyWhenAccepted() {
+        ServiceCharge five = new ServiceCharge(10, true, Money.ofCents(5_00));
+
+        assertThat(five.amountOn(Money.ofCents(379_30))).isEqualTo(Money.ofCents(5_00));
+        assertThat(five.percentOn(Money.ofCents(379_30))).isEqualTo(Money.ofCents(37_93));
+        assertThat(five.chargedOn(Money.ofCents(379_30))).isEqualTo(Money.ofCents(5_00));
+        // Tirar ou voltar ao percentual esquece o outro valor.
+        assertThat(five.accept(false)).isEqualTo(new ServiceCharge(10, false));
+        assertThat(five.accept(true).custom()).isNull();
+        assertThatThrownBy(() -> new ServiceCharge(10, false, Money.ofCents(5_00)))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> new ServiceCharge(10, true, Money.ZERO)).isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> new ServiceCharge(10, true, Money.ofCents(100_001)))
+                .isInstanceOf(InvalidValueException.class);
+        assertThatThrownBy(() -> new ServiceChoice(false, Money.ofCents(5_00)))
+                .isInstanceOf(InvalidValueException.class);
+    }
+
+    @Test
+    void anotherAmountOnlyWhenTheRestaurantAllows() {
+        assertThat(ServiceChargeSettings.DEFAULT.customAllowed()).isFalse();
+        assertThatThrownBy(() -> tab.chooseService(ON, ServiceChoice.custom(Money.ofCents(10_00))))
+                .isInstanceOf(InvalidValueException.class);
+
+        Tab ten = tab.chooseService(CUSTOM, ServiceChoice.custom(Money.ofCents(10_00)));
+        assertThat(ten.service()).isEqualTo(new ServiceCharge(10, true, Money.ofCents(10_00)));
+        // O restaurante desligou depois: a escolha já feita continua valendo, mas não troca por outra.
+        assertThat(ten.chooseService(ON, ServiceChoice.custom(Money.ofCents(10_00)))).isEqualTo(ten);
+        assertThatThrownBy(() -> ten.chooseService(ON, ServiceChoice.custom(Money.ofCents(20_00))))
+                .isInstanceOf(InvalidValueException.class);
+        assertThat(ten.chooseService(ON, ServiceChoice.PERCENT).service()).isEqualTo(new ServiceCharge(10, true));
+        // Sem taxa no restaurante, nada muda, nem com outro valor.
+        assertThat(tab.chooseService(ServiceChargeSettings.DEFAULT, ServiceChoice.custom(Money.ofCents(5_00))))
+                .isSameAs(tab);
+    }
+
+    @Test
+    void closingChargesTheOtherAmountApartFromTheTotal() {
+        Tab chosen = tab.chooseService(CUSTOM, ServiceChoice.custom(Money.ofCents(5_00)));
+
+        Tab.Closing closing = chosen.close(UserId.newId(), PaymentMethod.PIX, List.of(), Money.ofCents(129_90),
+                List.of(), NOW);
+
+        assertThat(closing.tab().total()).isEqualTo(Money.ofCents(129_90));
+        assertThat(closing.tab().serviceCharged()).isEqualTo(Money.ofCents(5_00));
+        assertThat(closing.finalPayment().amount()).isEqualTo(Money.ofCents(134_90));
+    }
 }

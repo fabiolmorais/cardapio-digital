@@ -52,6 +52,7 @@ class OrderSettingsController {
                 AuthenticatedUser.from(jwt).establishmentId(), body.orderingEnabled(), body.approvalRequired(),
                 body.staffOrderingEnabled(), body.maxAmountCents() == null ? null : Money.ofCents(body.maxAmountCents()), body.maxItems(),
                 body.serviceCharge() == null ? null : new ServiceChargeSettings(body.serviceCharge().enabled(),
-                        body.serviceCharge().percent(), body.serviceCharge().destination()))));
+                        body.serviceCharge().percent(), body.serviceCharge().destination(),
+                        Boolean.TRUE.equals(body.serviceCharge().customAllowed())))));
     }
 }

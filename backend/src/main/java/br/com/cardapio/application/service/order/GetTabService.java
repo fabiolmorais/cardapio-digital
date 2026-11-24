@@ -61,7 +61,7 @@ public class GetTabService implements GetTabUseCase {
         return StaffTab.from(view, found, billRequestedWith,
                 tabRodizios.findByTab(establishmentId, tabId).orElse(null), payments.findPayments(establishmentId, tabId),
                 orders.findStaffNames(establishmentId, StaffTab.staffOf(found)),
-                open ? tab.effectiveService(serviceSettings) : tab.service(), serviceSettings.destination(),
+                open ? tab.effectiveService(serviceSettings) : tab.service(), serviceSettings,
                 open ? ServiceCharges.waiterNameOf(tabs, orders, serviceSettings, tab) : null)
                 .withMoves(moves.findByTab(establishmentId, tabId),
                         moves.findMergedInto(establishmentId, tabId).orElse(null));

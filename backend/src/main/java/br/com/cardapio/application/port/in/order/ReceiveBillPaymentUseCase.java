@@ -5,6 +5,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.model.CallId;
 import br.com.cardapio.domain.call.model.PaymentMethod;
+import br.com.cardapio.domain.order.model.ServiceChoice;
 import br.com.cardapio.domain.shared.model.Money;
 
 /**
@@ -19,9 +20,9 @@ public interface ReceiveBillPaymentUseCase {
     /**
      * Recebe o valor e conclui o pedido de conta.
      *
-     * @param serviceAccepted o garçom confirmou a taxa de serviço (o cliente pode mudar de ideia na
-     *                        maquininha); null: fica a escolha da mesa
+     * @param service o garçom confirmou a taxa de serviço: o percentual, sem ou outro valor (o cliente
+     *                pode mudar de ideia na maquininha); null: fica a escolha da mesa
      */
     StaffCall receive(EstablishmentId establishmentId, CallId callId, UserId by, Money amount, PaymentMethod method,
-                      Boolean serviceAccepted);
+                      ServiceChoice service);
 }

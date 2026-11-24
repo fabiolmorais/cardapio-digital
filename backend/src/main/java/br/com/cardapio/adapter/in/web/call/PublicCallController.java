@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.call;
 
+import br.com.cardapio.adapter.in.web.shared.ServiceChoices;
 import br.com.cardapio.adapter.in.web.tablesession.TableSessionCookie;
 import br.com.cardapio.application.port.in.call.CancelCallUseCase;
 import br.com.cardapio.application.port.in.call.ListTableCallsUseCase;
@@ -67,7 +68,7 @@ class PublicCallController {
             @Valid @RequestBody CallRequest request) {
         RequestedCall result = requestCall.request(
                 new RequestCallCommand(token, session, request.type(), request.paymentMethod(),
-                        request.serviceAccepted()));
+                        ServiceChoices.of(request.serviceAccepted(), request.serviceCustomCents())));
         return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
                 .body(TableCallResponse.from(result.call()));
     }

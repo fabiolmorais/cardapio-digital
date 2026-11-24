@@ -1,5 +1,6 @@
 package br.com.cardapio.adapter.in.web.call;
 
+import br.com.cardapio.adapter.in.web.shared.ServiceChoices;
 import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
 import br.com.cardapio.adapter.in.web.shared.PageResponse;
 import br.com.cardapio.application.port.in.call.AcceptCallUseCase;
@@ -128,7 +129,8 @@ class StaffCallController {
                                      @Valid @RequestBody ReceivePaymentRequest request) {
         var user = AuthenticatedUser.from(jwt);
         return StaffCallResponse.from(billPayment.receive(user.establishmentId(), new CallId(id), user.userId(),
-                Money.ofCents(request.amountCents()), request.paymentMethod(), request.serviceAccepted()));
+                Money.ofCents(request.amountCents()), request.paymentMethod(),
+                ServiceChoices.of(request.serviceAccepted(), request.serviceCustomCents())));
     }
 
     @PostMapping("/{id}/release")

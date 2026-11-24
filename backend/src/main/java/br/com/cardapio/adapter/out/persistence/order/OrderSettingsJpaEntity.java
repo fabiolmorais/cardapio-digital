@@ -40,6 +40,9 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "service_charge_destination", nullable = false)
     private String serviceChargeDestination;
 
+    @Column(name = "service_charge_custom_allowed", nullable = false)
+    private boolean serviceChargeCustomAllowed;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -49,7 +52,7 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     OrderSettingsJpaEntity(UUID id, UUID establishmentId, boolean orderingEnabled, boolean approvalRequired,
                            boolean staffOrderingEnabled, Long maxAmountCents, Integer maxItems,
                            boolean serviceChargeEnabled, int serviceChargePercent, String serviceChargeDestination,
-                           Instant updatedAt) {
+                           boolean serviceChargeCustomAllowed, Instant updatedAt) {
         super(establishmentId);
         this.id = id;
         this.orderingEnabled = orderingEnabled;
@@ -60,6 +63,7 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
         this.serviceChargeEnabled = serviceChargeEnabled;
         this.serviceChargePercent = serviceChargePercent;
         this.serviceChargeDestination = serviceChargeDestination;
+        this.serviceChargeCustomAllowed = serviceChargeCustomAllowed;
         this.updatedAt = updatedAt;
     }
 
@@ -72,5 +76,6 @@ class OrderSettingsJpaEntity extends EstablishmentScopedEntity {
     boolean isServiceChargeEnabled() { return serviceChargeEnabled; }
     int getServiceChargePercent() { return serviceChargePercent; }
     String getServiceChargeDestination() { return serviceChargeDestination; }
+    boolean isServiceChargeCustomAllowed() { return serviceChargeCustomAllowed; }
     Instant getUpdatedAt() { return updatedAt; }
 }
