@@ -1,5 +1,10 @@
 package br.com.cardapio.config;
 
+import br.com.cardapio.application.port.in.rating.ManageRatingsUseCase;
+import br.com.cardapio.application.port.in.rating.RateServiceUseCase;
+import br.com.cardapio.application.port.out.rating.RatingPort;
+import br.com.cardapio.application.service.rating.ManageRatingsService;
+import br.com.cardapio.application.service.rating.RateServiceService;
 import br.com.cardapio.application.port.in.menu.PurgeMenuEventsUseCase;
 import br.com.cardapio.application.port.in.menu.RecordMenuEventsUseCase;
 import br.com.cardapio.application.port.out.menu.MenuEventPort;
@@ -1313,5 +1318,19 @@ class UseCaseConfig {
     ResetPasswordUseCase resetPasswordUseCase(PasswordResetPort passwordResetPort, PasswordHasher passwordHasher,
                                               Clock clock) {
         return new ResetPasswordService(passwordResetPort, passwordHasher, clock);
+    }
+
+    @Bean
+    RateServiceUseCase rateServiceUseCase(DiningTablePort diningTablePort, TableSessionPort tableSessionPort,
+                                          RatingPort ratingPort, TabPort tabPort, OrderPort orderPort,
+                                          EventPublisherPort eventPublisherPort, Clock clock) {
+        return new RateServiceService(diningTablePort, tableSessionPort, ratingPort, tabPort, orderPort,
+                eventPublisherPort, clock);
+    }
+
+    @Bean
+    ManageRatingsUseCase manageRatingsUseCase(RatingPort ratingPort,
+                                              EstablishmentTimeZonePort establishmentTimeZonePort, Clock clock) {
+        return new ManageRatingsService(ratingPort, establishmentTimeZonePort, clock);
     }
 }

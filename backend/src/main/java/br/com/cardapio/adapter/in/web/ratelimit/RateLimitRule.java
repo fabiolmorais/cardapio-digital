@@ -21,9 +21,9 @@ enum RateLimitRule {
     PAIRING(Set.of("POST"), "/api/v1/device-pairings"),
     /** Um celular abrindo a sessão da mesa (cada QR escaneado). */
     TABLE_SESSION(Set.of("POST"), "/api/v1/public/tables/[^/]+/session"),
-    /** O que a mesa faz: chamar, pedir, provar a presença, virar o cartão, cancelar. */
+    /** O que a mesa faz: chamar, pedir, provar a presença, virar o cartão, cancelar, avaliar. */
     TABLE_ACTIONS(Set.of("POST", "PUT", "DELETE"),
-            "/api/v1/public/tables/[^/]+/(calls|orders|rounds|presence|rodizio/card|order-items)(/[^/]+)?"),
+            "/api/v1/public/tables/[^/]+/(calls|orders|rounds|presence|rodizio/card|order-items|rating)(/[^/]+)?"),
     /**
      * Os eventos do cardápio (prato aberto, reel visto, carrinho): à parte das ações, com um limite
      * folgado, porque todos os celulares do salão saem pelo mesmo IP do Wi-Fi e mandam em lote.

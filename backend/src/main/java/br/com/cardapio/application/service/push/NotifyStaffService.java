@@ -11,6 +11,7 @@ import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.push.model.PushMessage;
+import br.com.cardapio.domain.rating.event.LowRatingReceived;
 import br.com.cardapio.domain.push.model.PushSubscription;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,8 @@ public class NotifyStaffService implements NotifyStaffUseCase {
 
     /** Quem atende a mesa: dono, gerente e garçom. A cozinha acompanha pela tela dela. */
     static final List<String> FLOOR_ROLES = List.of("OWNER", "MANAGER", "STAFF");
+    /** A nota baixa avisa só quem responde pelo atendimento. */
+    static final List<String> MANAGER_ROLES = List.of("OWNER", "MANAGER");
     /** O toque na notificação abre o painel (o app instalado). */
     static final String PANEL = "/painel";
 
@@ -37,7 +40,8 @@ public class NotifyStaffService implements NotifyStaffUseCase {
 
     /**
      * Só o que pede alguém indo à mesa: o chamado que acabou de chegar (ou que mudou a forma de
-     * pagamento) e o pedido parado na confirmação do garçom. A tag é a do chamado ou do pedido: um
+     * pagamento), o pedido parado na confirmação do garçom e, só para dono e gerente, a nota baixa no
+     * atendimento (RF40). A tag é a do chamado, do pedido ou da avaliação: um
      * aviso repetido substitui o anterior no aparelho, em vez de empilhar.
      */
     @Override
@@ -53,8 +57,14 @@ public class NotifyStaffService implements NotifyStaffUseCase {
                     new PushMessage("Mesa " + table, "Pedido para confirmar", PANEL, "order-" + o.orderId().value()));
             default -> Optional.empty();
         };
+        if (event instanceof LowRatingReceived r) {
+            message = tables.find(r.establishmentId(), r.tableId()).map(DiningTable::label).map(table ->
+                    new PushMessage("Mesa " + table, "Nota " + r.stars() + " no atendimento", PANEL,
+                            "rating-" + r.ratingId().value()));
+        }
+        List<String> roles = event instanceof LowRatingReceived ? MANAGER_ROLES : FLOOR_ROLES;
         message.ifPresent(m -> {
-            for (PushSubscription subscription : subscriptions.findForRoles(event.establishmentId(), FLOOR_ROLES)) {
+            for (PushSubscription subscription : subscriptions.findForRoles(event.establishmentId(), roles)) {
                 if (sender.send(subscription, m) == Delivery.GONE) {
                     subscriptions.deleteGone(subscription.endpoint());
                 }

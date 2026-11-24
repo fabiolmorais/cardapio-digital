@@ -98,6 +98,10 @@ class SecurityConfig {
                         // Os eventos do cardápio (etapa C2): o prato aberto, o reel visto, o item no carrinho. Sem
                         // login, como os botões da mesa; o caso de uso exige a sessão válida desta mesa.
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/events").permitAll()
+                        // A avaliação do atendimento (RF40, etapa C5) e o toque no Google: o mesmo caso dos botões
+                        // da mesa; o caso de uso exige o cookie desta mesa, com a presença confirmada.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/rating").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/tables/*/rating/google").permitAll()
                         // O vídeo do prato (Guia 22): o aviso do serviço de vídeo (vale só com o token
                         // secreto, conferido no controller) e o serviço de vídeo falso do desenvolvimento
                         // (as rotas só existem com app.video.provider=fake; o envio vale com a assinatura).

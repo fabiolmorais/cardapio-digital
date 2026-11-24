@@ -12,6 +12,8 @@ import br.com.cardapio.domain.order.event.TabMoved;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rating.event.LowRatingReceived;
+import br.com.cardapio.domain.rating.model.RatingId;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
@@ -68,6 +70,11 @@ class RealtimeMessages {
         static final String KIND = "TabMoved";
     }
 
+    record LowRatingReceivedMessage(String kind, UUID establishmentId, UUID tableId, UUID ratingId, int stars,
+                                    Instant occurredAt) {
+        static final String KIND = "LowRatingReceived";
+    }
+
     String toJson(DomainEvent event) {
         Object message = switch (event) {
             case OrderChanged o -> new OrderChangedMessage(OrderChangedMessage.KIND, o.establishmentId().value(),
@@ -84,6 +91,8 @@ class RealtimeMessages {
             case TabMoved t -> new TabMovedMessage(TabMovedMessage.KIND, t.establishmentId().value(),
                     t.tableId().value(), t.fromTableId().value(), t.toTableId().value(), t.tabId().value(),
                     t.occurredAt());
+            case LowRatingReceived r -> new LowRatingReceivedMessage(LowRatingReceivedMessage.KIND,
+                    r.establishmentId().value(), r.tableId().value(), r.ratingId().value(), r.stars(), r.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
         };
         return json.writeValueAsString(message);
@@ -124,6 +133,11 @@ class RealtimeMessages {
             PhoneBlockChangedMessage m = json.treeToValue(node, PhoneBlockChangedMessage.class);
             return new PhoneBlockChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new TableSessionId(m.sessionId()), m.blocked(), m.occurredAt());
+        }
+        if (LowRatingReceivedMessage.KIND.equals(kind)) {
+            LowRatingReceivedMessage m = json.treeToValue(node, LowRatingReceivedMessage.class);
+            return new LowRatingReceived(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new RatingId(m.ratingId()), m.stars(), m.occurredAt());
         }
         throw new IllegalArgumentException("Mensagem de tempo real desconhecida: " + kind);
     }

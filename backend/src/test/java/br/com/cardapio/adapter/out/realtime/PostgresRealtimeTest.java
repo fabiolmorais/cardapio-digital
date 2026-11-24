@@ -13,6 +13,8 @@ import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
 import br.com.cardapio.domain.order.model.TabId;
+import br.com.cardapio.domain.rating.event.LowRatingReceived;
+import br.com.cardapio.domain.rating.model.RatingId;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.support.IntegrationTest;
@@ -147,6 +149,17 @@ class PostgresRealtimeTest {
         transaction.executeWithoutResult(status -> publisher.publish(changed));
 
         assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(changed);
+    }
+
+    @Test
+    void aLowRatingTravelsTheSameWay() throws Exception {
+        BlockingQueue<DomainEvent> mine = listen(sakura);
+        LowRatingReceived low = new LowRatingReceived(sakura, DiningTableId.newId(), RatingId.newId(), 2,
+                Instant.now().truncatedTo(ChronoUnit.MICROS));
+
+        transaction.executeWithoutResult(status -> publisher.publish(low));
+
+        assertThat(mine.poll(5, TimeUnit.SECONDS)).isEqualTo(low);
     }
 
     /**

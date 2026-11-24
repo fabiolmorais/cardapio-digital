@@ -4,6 +4,7 @@ import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
 import br.com.cardapio.domain.order.event.TabMoved;
+import br.com.cardapio.domain.rating.event.LowRatingReceived;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
 import br.com.cardapio.domain.shared.event.DomainEvent;
 import br.com.cardapio.domain.tablesession.event.PhoneBlockChanged;
@@ -42,6 +43,10 @@ public record LiveEvent(String name, Map<String, String> data) {
             case PhoneBlockChanged p -> Optional.of(new LiveEvent("phone", Map.of(
                     "tableId", p.tableId().value().toString(),
                     "blocked", String.valueOf(p.blocked()))));
+            // Nota baixa: o painel de dono e gerente busca o alerta. Sem o comentário nem quem atendeu.
+            case LowRatingReceived r -> Optional.of(new LiveEvent("rating", Map.of(
+                    "ratingId", r.ratingId().value().toString(),
+                    "tableId", r.tableId().value().toString())));
             // A mudança sai uma vez para cada mesa; para a equipe, basta a da mesa de origem.
             case TabMoved t when t.leftThisTable() -> Optional.of(new LiveEvent("tab-moved", Map.of(
                     "tabId", t.tabId().value().toString(),

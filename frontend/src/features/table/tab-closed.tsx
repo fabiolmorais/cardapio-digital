@@ -1,8 +1,29 @@
 import { Check } from "lucide-react";
 import { tablePage } from "@/messages/table.pt-BR";
+import { RatingCard } from "./rating-card";
 
-/** "Conta fechada": o garçom fechou a comanda, e a visita deste celular acabou. */
-export function TabClosed() {
+/**
+ * "Conta fechada": o garçom fechou a comanda, e a visita deste celular acabou. Com o token, mostra
+ * embaixo a avaliação do atendimento (RF40), que ainda vale por um tempo depois do fechamento.
+ */
+export function TabClosed({
+  token,
+  reviewUrl = null,
+  place = null,
+}: {
+  token?: string;
+  reviewUrl?: string | null;
+  place?: string | null;
+}) {
+  return (
+    <>
+      <Closed />
+      {token && <RatingCard token={token} reviewUrl={reviewUrl} place={place} />}
+    </>
+  );
+}
+
+function Closed() {
   return (
     <section role="status" className="flex flex-col items-center gap-5 pt-10 text-center">
       <span className="flex size-28 items-center justify-center rounded-full bg-(--mesa-glass)">

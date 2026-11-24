@@ -17,6 +17,8 @@ import { fetchKitchenQueue } from "@/features/orders/orders-api";
 import { useLiveOrders } from "@/features/orders/use-live-orders";
 import { PrintingLink } from "@/features/printing/printing-link";
 import { PushTag } from "@/features/pwa/push-tag";
+import { LowRatingAlerts } from "@/features/ratings/low-rating-alerts";
+import { MyRating } from "@/features/ratings/my-rating";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useMe } from "./use-me";
 import { formatCents } from "@/lib/format";
@@ -134,6 +136,8 @@ function Live({ role }: { role: Role }) {
       </header>
 
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-7">
+        {canManageTeam(role) && <LowRatingAlerts />}
+        {role === "STAFF" && <MyRating />}
         {kitchenRole && (
           <div className="grid gap-4 lg:grid-cols-2">
             <KitchenLink />

@@ -18,6 +18,9 @@ class RateLimitRuleTest {
         assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/session")).contains(RateLimitRule.TABLE_SESSION);
         assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/calls")).contains(RateLimitRule.TABLE_ACTIONS);
         assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/events")).contains(RateLimitRule.TABLE_EVENTS);
+        assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/rating")).contains(RateLimitRule.TABLE_ACTIONS);
+        assertThat(RateLimitRule.of("POST", "/api/v1/public/tables/abc123/rating/google"))
+                .contains(RateLimitRule.TABLE_ACTIONS);
         assertThat(RateLimitRule.of("DELETE", "/api/v1/public/tables/abc123/calls/9f1c"))
                 .contains(RateLimitRule.TABLE_ACTIONS);
         assertThat(RateLimitRule.of("PUT", "/api/v1/public/tables/abc123/rodizio/card"))
