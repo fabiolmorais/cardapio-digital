@@ -6,6 +6,7 @@ import br.com.cardapio.application.port.in.floor.UpdateTableUseCase;
 import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
+import br.com.cardapio.application.port.out.report.ReportSummaryPort;
 import br.com.cardapio.application.service.plan.PlanAllowances;
 import br.com.cardapio.domain.floor.exception.SectorInactiveException;
 import br.com.cardapio.domain.floor.exception.SectorNotFoundException;
@@ -21,11 +22,14 @@ public class UpdateTableService implements UpdateTableUseCase {
     private final SectorPort sectors;
     private final DiningTablePort tables;
     private final SubscriptionPort subscriptions;
+    private final ReportSummaryPort reportSummary;
 
-    public UpdateTableService(SectorPort sectors, DiningTablePort tables, SubscriptionPort subscriptions) {
+    public UpdateTableService(SectorPort sectors, DiningTablePort tables, SubscriptionPort subscriptions,
+                              ReportSummaryPort reportSummary) {
         this.sectors = sectors;
         this.tables = tables;
         this.subscriptions = subscriptions;
+        this.reportSummary = reportSummary;
     }
 
     @Override
@@ -40,6 +44,7 @@ public class UpdateTableService implements UpdateTableUseCase {
                 throw new TableLabelTakenException(table.label());
             }
         }
+        boolean movedSector = command.sectorId() != null && !command.sectorId().equals(table.sectorId());
         if (command.sectorId() != null) {
             table = table.moveTo(command.sectorId());
         }
@@ -60,6 +65,11 @@ public class UpdateTableService implements UpdateTableUseCase {
         }
 
         tables.save(table);
+        // O resumo diário guarda os números por setor (ADR 0014): com a mesa em outro setor, o passado
+        // dela muda de setor nos relatórios, e o resumo do restaurante é refeito na próxima volta.
+        if (movedSector) {
+            reportSummary.invalidate(command.establishmentId());
+        }
         return TableSummary.from(table);
     }
 }

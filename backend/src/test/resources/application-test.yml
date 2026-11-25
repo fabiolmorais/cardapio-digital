@@ -19,3 +19,7 @@ app:
   security:
     jwt:
       secret: chave-so-para-testes-com-mais-de-32-bytes-0123456789
+  # O resumo diário dos relatórios (ADR 0014) não roda sozinho nos testes: eles gravam dias passados
+  # depois de a aplicação subir, e o ReportSummaryTest chama a tarefa quando precisa.
+  reports:
+    summary-initial-delay: P3650D

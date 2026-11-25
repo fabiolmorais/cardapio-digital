@@ -9,6 +9,7 @@ import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.in.report.OverviewFull;
 import br.com.cardapio.application.port.out.report.KitchenReportPort;
 import br.com.cardapio.application.port.out.report.OperationReportPort;
+import br.com.cardapio.application.port.out.report.ReportSummaryPort;
 import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -53,11 +54,13 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
     private final OperationReportPort operations;
     private final KitchenReportPort kitchen;
     private final RevenueGoalPort goals;
+    private final SummarizedReads reads;
     private final Clock clock;
 
     public GetOverviewReportService(SubscriptionPort subscriptions, EstablishmentTimeZonePort timeZones,
                                     SectorPort sectors, SalesReportPort sales, OperationReportPort operations,
-                                    KitchenReportPort kitchen, RevenueGoalPort goals, Clock clock) {
+                                    KitchenReportPort kitchen, RevenueGoalPort goals, ReportSummaryPort summary,
+                                    Clock clock) {
         this.subscriptions = subscriptions;
         this.timeZones = timeZones;
         this.sectors = sectors;
@@ -65,6 +68,7 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
         this.operations = operations;
         this.kitchen = kitchen;
         this.goals = goals;
+        this.reads = new SummarizedReads(summary, sales, kitchen);
         this.clock = clock;
     }
 
@@ -85,7 +89,7 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
                         sales.revenueByDay(id, comparison.start(), scope.comparisonEnd(), period.zone(), scope.sector())),
                 sales.payments(id, period.start(), period.end(), scope.sector()),
                 SalesAnalysis.weekdayHourAverages(period, sales.revenueByWeekdayAndHour(id, period, scope.sector())),
-                sales.topItems(id, period.start(), period.end(), scope.sector(), TOP_ITEMS),
+                reads.topItems(id, period.start(), period.end(), period.zone(), scope.sector(), TOP_ITEMS),
                 scope.access().level().covers(ReportLevel.FULL) ? full(id, scope) : null);
     }
 
@@ -106,8 +110,8 @@ public class GetOverviewReportService implements GetOverviewReportUseCase {
                 today(id, scope),
                 operations.waiters(id, period.start(), period.end(), sector, WAITERS),
                 OverviewAnalysis.attention(
-                        kitchen.averages(id, recentStart, period.end(), sector),
-                        kitchen.averages(id, usualStart, recentStart, sector),
+                        reads.prepAverages(id, recentStart, period.end(), zone, sector),
+                        reads.prepAverages(id, usualStart, recentStart, zone, sector),
                         operations.forgottenTabs(id, startOfToday, sector),
                         operations.canceled(id, period.start(), period.end(), sector)),
                 goal(id, zone, scope.now()));
