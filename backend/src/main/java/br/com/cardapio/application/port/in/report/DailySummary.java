@@ -4,6 +4,7 @@ import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
+import br.com.cardapio.domain.report.model.RatingStats;
 import br.com.cardapio.domain.report.model.ReportTotals;
 import br.com.cardapio.domain.report.model.SlowAttention;
 import br.com.cardapio.domain.report.model.SummaryWindow;
@@ -19,12 +20,22 @@ import java.util.Optional;
  *
  * @param champion o produto que mais faturou
  * @param peak     a hora em que chegaram as mesas que mais faturaram
+ * @param rating   as avaliações do atendimento no dia (Business); vazio sem nenhuma
  */
 public record DailySummary(String establishmentName, SummaryWindow window, ReportTotals current,
                            ReportTotals compared, Optional<Duration> averagePrep,
                            Optional<Duration> comparedAveragePrep, Optional<ItemSales> champion,
                            Optional<HourlyRevenue> peak, Optional<SlowAttention> attention,
-                           List<PaymentTotal> payments, Optional<GoalProgress> goal) {
+                           List<PaymentTotal> payments, Optional<GoalProgress> goal,
+                           Optional<RatingStats> rating) {
+
+    public DailySummary(String establishmentName, SummaryWindow window, ReportTotals current, ReportTotals compared,
+                        Optional<Duration> averagePrep, Optional<Duration> comparedAveragePrep,
+                        Optional<ItemSales> champion, Optional<HourlyRevenue> peak, Optional<SlowAttention> attention,
+                        List<PaymentTotal> payments, Optional<GoalProgress> goal) {
+        this(establishmentName, window, current, compared, averagePrep, comparedAveragePrep, champion, peak,
+                attention, payments, goal, Optional.empty());
+    }
 
     /** Dia sem nenhuma comanda fechada não gera resumo. */
     public boolean hasActivity() {

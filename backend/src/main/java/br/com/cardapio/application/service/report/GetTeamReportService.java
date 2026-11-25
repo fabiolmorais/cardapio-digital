@@ -6,7 +6,12 @@ import br.com.cardapio.application.port.in.report.TeamReport;
 import br.com.cardapio.application.port.out.account.EstablishmentTimeZonePort;
 import br.com.cardapio.application.port.out.floor.SectorPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
+import br.com.cardapio.application.port.out.report.RatingReportPort;
 import br.com.cardapio.application.port.out.report.TeamReportPort;
+import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.application.port.shared.ResultPage;
+import br.com.cardapio.domain.report.model.RatingComment;
+import br.com.cardapio.domain.report.service.RatingAnalysis;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.report.model.TableCalls;
 import br.com.cardapio.domain.report.service.TeamAnalysis;
@@ -22,10 +27,12 @@ public class GetTeamReportService implements GetTeamReportUseCase {
     private final EstablishmentTimeZonePort timeZones;
     private final SectorPort sectors;
     private final TeamReportPort team;
+    private final RatingReportPort ratings;
     private final Clock clock;
 
     public GetTeamReportService(SubscriptionPort subscriptions, EstablishmentTimeZonePort timeZones,
-                                SectorPort sectors, TeamReportPort team, Clock clock) {
+                                SectorPort sectors, TeamReportPort team, RatingReportPort ratings, Clock clock) {
+        this.ratings = ratings;
         this.subscriptions = subscriptions;
         this.timeZones = timeZones;
         this.sectors = sectors;
@@ -51,6 +58,19 @@ public class GetTeamReportService implements GetTeamReportUseCase {
                 TeamAnalysis.topTables(tables, TeamAnalysis.TOP_TABLES), TeamAnalysis.average(tables),
                 team.duplicateWarnings(id, period.start(), period.end(), sector),
                 TeamAnalysis.busiest(team.shiftLoads(id, period.start(), period.end(), period.zone(), sector),
-                        TeamAnalysis.TOP_LOADS));
+                        TeamAnalysis.TOP_LOADS),
+                ratings.stats(id, period.start(), period.end(), period.zone(), RatingAnalysis.LUNCH_UNTIL, sector),
+                ratings.stats(id, scope.comparison().start(), scope.comparisonEnd(), period.zone(),
+                        RatingAnalysis.LUNCH_UNTIL, sector).average(),
+                RatingAnalysis.trend(period, ratings.byDay(id, period.start(), period.end(), period.zone(), sector)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPage<RatingComment> comments(ReportQuery query, boolean onlyLow, PageQuery page) {
+        ReportScope scope = ReportScope.resolve(query, subscriptions, timeZones, sectors, clock);
+        scope.access().requireFull();
+        var period = scope.period();
+        return ratings.comments(query.establishmentId(), period.start(), period.end(), scope.sector(), onlyLow, page);
     }
 }

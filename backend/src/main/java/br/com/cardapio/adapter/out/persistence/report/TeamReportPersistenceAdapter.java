@@ -112,38 +112,45 @@ class TeamReportPersistenceAdapter implements TeamReportPort {
                         WITH activity AS (
                             SELECT c.accepted_by AS user_id, 1 AS calls,
                                    extract(epoch FROM c.accepted_at - c.created_at) AS response,
-                                   0 AS delivered, 0 AS closed, 0::bigint AS revenue, 0 AS orders, 0::bigint AS tips
+                                   0 AS delivered, 0 AS closed, 0::bigint AS revenue, 0 AS orders, 0::bigint AS tips,
+                                   0 AS ratings, 0 AS stars
                             FROM call c
                             WHERE c.establishment_id = :establishmentId AND c.accepted_by IS NOT NULL
                               AND c.created_at >= :start AND c.created_at < :end AND""" + inSector("c", sector) + """
                             UNION ALL
-                            SELECT i.delivered_by, 0, NULL, i.quantity, 0, 0, 0, 0
+                            SELECT i.delivered_by, 0, NULL, i.quantity, 0, 0, 0, 0, 0, 0
                             FROM order_item i
                             JOIN customer_order o ON o.id = i.order_id AND o.establishment_id = :establishmentId
                             WHERE i.establishment_id = :establishmentId AND i.delivered_by IS NOT NULL
                               AND i.delivered_at >= :start AND i.delivered_at < :end AND""" + inSector("o", sector) + """
                             UNION ALL
-                            SELECT t.closed_by, 0, NULL, 0, 1, t.total_cents, 0, 0
+                            SELECT t.closed_by, 0, NULL, 0, 1, t.total_cents, 0, 0, 0, 0
                             FROM tab t
                             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
                               AND t.closed_by IS NOT NULL
                               AND t.closed_at >= :start AND t.closed_at < :end AND""" + inSector("t", sector) + """
                             UNION ALL
-                            SELECT o.placed_by, 0, NULL, 0, 0, 0, 1, 0
+                            SELECT o.placed_by, 0, NULL, 0, 0, 0, 1, 0, 0, 0
                             FROM customer_order o
                             WHERE o.establishment_id = :establishmentId AND o.placed_by IS NOT NULL
                               AND o.status = 'SENT'
                               AND o.created_at >= :start AND o.created_at < :end AND""" + inSector("o", sector) + """
                             UNION ALL
-                            SELECT t.service_waiter_id, 0, NULL, 0, 0, 0, 0, t.service_cents
+                            SELECT t.service_waiter_id, 0, NULL, 0, 0, 0, 0, t.service_cents, 0, 0
                             FROM tab t
                             WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
                               AND t.service_destination = 'WAITER' AND t.service_waiter_id IS NOT NULL
                               AND t.closed_at >= :start AND t.closed_at < :end AND""" + inSector("t", sector) + """
+                            UNION ALL
+                            SELECT r.waiter_id, 0, NULL, 0, 0, 0, 0, 0, 1, r.stars
+                            FROM service_rating r
+                            WHERE r.establishment_id = :establishmentId AND r.waiter_id IS NOT NULL
+                              AND r.created_at >= :start AND r.created_at < :end AND""" + inSector("r", sector) + """
                         )
                         SELECT a.user_id, u.name, sum(a.calls) AS calls, avg(a.response) AS response,
                                sum(a.delivered) AS delivered, sum(a.closed) AS closed, sum(a.revenue) AS revenue,
-                               sum(a.orders) AS orders, coalesce(sum(a.tips), 0) AS tips
+                               sum(a.orders) AS orders, coalesce(sum(a.tips), 0) AS tips,
+                               sum(a.ratings) AS ratings, sum(a.stars) AS stars
                         FROM activity a
                         JOIN app_user u ON u.id = a.user_id
                         GROUP BY a.user_id, u.name
@@ -153,7 +160,7 @@ class TeamReportPersistenceAdapter implements TeamReportPort {
                 .query((rs, row) -> new WaiterStats(new UserId(rs.getObject("user_id", UUID.class)),
                         rs.getString("name"), rs.getInt("calls"), seconds(rs, "response"), rs.getInt("delivered"),
                         rs.getInt("closed"), Money.ofCents(rs.getLong("revenue")), rs.getInt("orders"),
-                        Money.ofCents(rs.getLong("tips"))))
+                        Money.ofCents(rs.getLong("tips")), rs.getInt("ratings"), rs.getLong("stars")))
                 .list();
     }
 

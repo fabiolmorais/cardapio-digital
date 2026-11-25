@@ -80,7 +80,8 @@ final class DailySummaryDtos {
                    @Schema(requiredMode = REQUIRED) Totals current,
                    @Schema(requiredMode = REQUIRED, description = "O mesmo dia da semana anterior") Totals compared,
                    Long averagePrepSeconds, Long comparedAveragePrepSeconds, Item champion, Peak peak,
-                   Attention attention, @Schema(requiredMode = REQUIRED) List<Payment> payments) {
+                   Attention attention, @Schema(requiredMode = REQUIRED) List<Payment> payments,
+                   @Schema(description = "As avaliações do dia (Business); ausente sem nenhuma") DayRating rating) {
         static Summary of(DailySummary s) {
             return new Summary(s.establishmentName(), s.window().day(), s.window().start(), s.window().end(), Totals.of(s.current()),
                     Totals.of(s.compared()), s.averagePrep().map(Duration::toSeconds).orElse(null),
@@ -89,8 +90,14 @@ final class DailySummaryDtos {
                     s.peak().map(p -> new Peak(p.hour(), p.revenue().cents(), p.tabs())).orElse(null),
                     s.attention().map(a -> new Attention(a.name(), a.dayAverage().toSeconds(),
                             a.usualAverage().toSeconds())).orElse(null),
-                    s.payments().stream().map(Payment::of).toList());
+                    s.payments().stream().map(Payment::of).toList(),
+                    s.rating().map(r -> new DayRating(r.count(), r.average(), r.low())).orElse(null));
         }
+    }
+
+    @Schema(name = "DailySummaryRating", description = "As avaliações do atendimento no dia")
+    record DayRating(@Schema(requiredMode = REQUIRED) int count, @Schema(requiredMode = REQUIRED) double average,
+                     @Schema(requiredMode = REQUIRED, description = "Notas 1 e 2") int low) {
     }
 
     @Schema(name = "DailySummaryTestResult")

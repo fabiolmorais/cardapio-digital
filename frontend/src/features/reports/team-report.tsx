@@ -8,6 +8,7 @@ import { BarList, ChartCard, ColumnChart, KpiTile, NoData } from "./charts";
 import { formatDuration, timeVariation } from "./durations";
 import { formatDayMonth, formatWeekday, lengthOf } from "./period";
 import { useTeamReport, type TeamReport } from "./reports-api";
+import { TeamRatings } from "./team-ratings";
 import { BlockError, Loading, ReportsScreen, type ReportFilters } from "./reports-page";
 
 const t = messages.reports;
@@ -15,6 +16,7 @@ const m = t.team;
 
 const onePlace = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 const share = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 0 });
+const rating = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -45,6 +47,7 @@ function TeamBody({ filters }: { filters: ReportFilters }) {
         <Warnings report={data} />
         <Shifts report={data} />
       </div>
+      <TeamRatings report={data} params={filters.query} />
     </>
   );
 }
@@ -80,7 +83,7 @@ function Numbers({ report, days }: { report: TeamReport; days: number }) {
   );
 }
 
-type Column = "calls" | "response" | "delivered" | "closedTabs" | "revenue" | "staffOrders" | "tips";
+type Column = "calls" | "response" | "delivered" | "closedTabs" | "revenue" | "staffOrders" | "tips" | "rating";
 type Waiter = TeamReport["waiters"][number];
 
 const COLUMNS: { key: Column; value: (w: Waiter) => number; show: (w: Waiter) => string }[] = [
@@ -96,6 +99,12 @@ const COLUMNS: { key: Column; value: (w: Waiter) => number; show: (w: Waiter) =>
   { key: "revenue", value: (w) => w.revenueCents, show: (w) => formatCents(w.revenueCents) },
   { key: "staffOrders", value: (w) => w.staffOrders, show: (w) => String(w.staffOrders) },
   { key: "tips", value: (w) => w.tipsCents, show: (w) => (w.tipsCents > 0 ? formatCents(w.tipsCents) : "—") },
+  {
+    key: "rating",
+    // Nota: quem tem nota (5 avaliações ou mais) vem primeiro, da maior; depois, por quantas avaliações.
+    value: (w) => (w.ratingAverage ?? 0) * 1000 + w.ratings,
+    show: (w) => m.ratingCell(w.ratingAverage == null ? null : rating.format(w.ratingAverage), w.ratings),
+  },
 ];
 
 /** A tabela de garçons (REL-46 a 49, 54), ordenável por qualquer coluna. */
@@ -109,7 +118,7 @@ function Waiters({ report }: { report: TeamReport }) {
         <NoData text={m.waitersEmpty} height={140} />
       ) : (
         <div className="relative -mx-5 overflow-x-auto px-5">
-          <table className="w-full min-w-[860px] border-collapse text-sm">
+          <table className="w-full min-w-[940px] border-collapse text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold tracking-[.4px] text-muted-foreground uppercase">
                 <th scope="col" className="border-b border-border py-3 pr-3 font-semibold">

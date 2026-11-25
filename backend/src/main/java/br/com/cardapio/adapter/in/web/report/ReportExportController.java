@@ -19,6 +19,7 @@ import br.com.cardapio.application.port.in.report.MenuProduct;
 import br.com.cardapio.application.port.in.report.MenuReportQuery;
 import br.com.cardapio.application.port.in.report.ReportQuery;
 import br.com.cardapio.application.port.shared.PageQuery;
+import br.com.cardapio.domain.report.model.RatingComment;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.floor.model.SectorId;
 import br.com.cardapio.domain.menu.model.MenuCategoryId;
@@ -226,7 +227,17 @@ class ReportExportController {
                                 @RequestParam(required = false) UUID sectorId,
                                 @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
-        return export(query, "equipe", format, () -> ReportSheets.team(team.get(query)));
+        return export(query, "equipe", format, () -> {
+            // Os comentários inteiros do período: as páginas, uma depois da outra.
+            List<RatingComment> comments = new ArrayList<>();
+            ResultPage<RatingComment> page;
+            int number = 0;
+            do {
+                page = team.comments(query, false, new PageQuery(number++, PageQuery.MAX_SIZE));
+                comments.addAll(page.content());
+            } while (number < page.totalPages());
+            return ReportSheets.team(team.get(query), comments);
+        });
     }
 
     @GetMapping(value = "/tables/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})

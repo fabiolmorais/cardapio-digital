@@ -687,6 +687,8 @@ test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamad
             revenueCents: 245000,
             staffOrders: 5,
             tipsCents: 1500,
+            ratings: 7,
+            ratingAverage: 4.7,
           },
           {
             userId: "00000000-0000-4000-8000-000000000002",
@@ -698,6 +700,7 @@ test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamad
             revenueCents: 180000,
             staffOrders: 9,
             tipsCents: 9000,
+            ratings: 3,
           },
         ],
         responseByHour: [
@@ -713,8 +716,56 @@ test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamad
         warningsShown: 10,
         warningsConfirmed: 3,
         busiestShifts: [{ day: "2026-11-15", hour: 21, calls: 18, waiters: 2 }],
+        ratings: {
+          count: 10,
+          average: 4.5,
+          comparedAverage: 4.2,
+          low: 1,
+          high: 8,
+          googleClicks: 4,
+          closedTabs: 40,
+          byStars: [1, 0, 1, 2, 6],
+          lunch: { count: 4, average: 4.8 },
+          dinner: { count: 6, average: 4.3 },
+          praisedTags: [
+            { tag: "FRIENDLINESS", times: 6 },
+            { tag: "FOOD", times: 3 },
+            { tag: "SPEED", times: 0 },
+            { tag: "AMBIENCE", times: 0 },
+          ],
+          improveTags: [
+            { tag: "SPEED", times: 2 },
+            { tag: "FOOD", times: 0 },
+            { tag: "FRIENDLINESS", times: 0 },
+            { tag: "AMBIENCE", times: 0 },
+          ],
+          trend: [{ from: day, to: day, count: 10, average: 4.5 }],
+        },
       },
     });
+  });
+  await page.route("**/api/v1/reports/team/comments?**", async (route) => {
+    const onlyLow = new URL(route.request().url()).searchParams.get("onlyLow") === "true";
+    const all = [
+      {
+        tableLabel: "07",
+        waiterName: "Bruno Reis",
+        stars: 1,
+        tags: ["SPEED"],
+        comment: "A conta demorou",
+        createdAt: "2026-11-15T23:10:00Z",
+      },
+      {
+        tableLabel: "04",
+        waiterName: "Ana Lima",
+        stars: 5,
+        tags: ["FRIENDLINESS"],
+        comment: "A Ana foi ótima",
+        createdAt: "2026-11-15T22:10:00Z",
+      },
+    ];
+    const content = onlyLow ? all.filter((c) => c.stars <= 2) : all;
+    await route.fulfill({ json: { content, page: 0, size: 10, totalElements: content.length, totalPages: 1 } });
   });
   await page.reload();
 
@@ -743,6 +794,25 @@ test("Atendimento e equipe: o Pro vê que é do Business e o Business vê chamad
     "Dom 15/11, 21h: 2 garçons9 chamados por garçom",
   );
   await expect(page.getByText("Conhecer o Business")).toHaveCount(0);
+
+  // A nota na tabela (com 5 avaliações ou mais) e o bloco das avaliações.
+  await expect(waiters.getByRole("row", { name: /Ana Lima/ })).toContainText("4,7 · 7");
+  await expect(waiters.getByRole("row", { name: /Bruno Reis/ })).toContainText("— · 3");
+  const ratings = page.getByRole("region", { name: "Avaliações do atendimento" });
+  await expect(ratings).toContainText("Nota média4,5 de 5▲ 0,3");
+  await expect(ratings).toContainText("Avaliações1025% das comandas");
+  await expect(ratings).toContainText("Foram ao Google4de 8 notas 4 ou 5 (50%)");
+  const split = page.getByRole("region", { name: "Como as notas se dividem" });
+  await expect(split).toContainText("5 estrelas6 · 60%");
+  await expect(split).toContainText("Almoço (até 16h)4,8 · 4 avaliações");
+  const tags = page.getByRole("region", { name: "Atalhos mais marcados" });
+  await expect(tags).toContainText("Simpatia6");
+  await expect(tags).toContainText("Rapidez2");
+  const comments = page.getByRole("region", { name: "Comentários" });
+  await expect(comments).toContainText("“A Ana foi ótima”");
+  await comments.getByRole("button", { name: "Notas baixas" }).click();
+  await expect(comments).not.toContainText("A Ana foi ótima");
+  await expect(comments).toContainText("“A conta demorou”");
 });
 
 test("Mesas e ocupação: o Pro vê que é do Business e o Business vê o mapa do salão, a ocupação e as esquecidas", async ({

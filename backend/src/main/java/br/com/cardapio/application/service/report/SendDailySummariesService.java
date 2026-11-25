@@ -1,6 +1,7 @@
 package br.com.cardapio.application.service.report;
 
 import br.com.cardapio.application.port.in.report.DailySummary;
+import br.com.cardapio.application.port.out.report.RatingReportPort;
 import br.com.cardapio.application.port.out.report.RevenueGoalPort;
 import br.com.cardapio.application.port.in.report.SendDailySummariesUseCase;
 import br.com.cardapio.application.port.out.email.EmailSenderPort;
@@ -45,13 +46,13 @@ public class SendDailySummariesService implements SendDailySummariesUseCase {
     private final String publicUrl;
 
     public SendDailySummariesService(SubscriptionPort subscriptions, DailySummaryPort summaries,
-                                     SalesReportPort sales, KitchenReportPort kitchen, RevenueGoalPort goals,
+                                     SalesReportPort sales, KitchenReportPort kitchen, RevenueGoalPort goals, RatingReportPort ratings,
                                      EmailSenderPort email,
                                      PushSubscriptionPort pushSubscriptions, PushSenderPort push, Clock clock,
                                      String publicUrl) {
         this.subscriptions = subscriptions;
         this.summaries = summaries;
-        this.builder = new DailySummaryBuilder(sales, kitchen, goals);
+        this.builder = new DailySummaryBuilder(sales, kitchen, goals, ratings);
         this.email = email;
         this.pushSubscriptions = pushSubscriptions;
         this.push = push;

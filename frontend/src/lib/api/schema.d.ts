@@ -1775,6 +1775,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/team/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os comentários das avaliações do período, do mais novo (Business, paginado) */
+        get: operations["listTeamRatingComments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/tables": {
         parameters: {
             query?: never;
@@ -4830,6 +4847,84 @@ export interface components {
             /** Format: date */
             to: string;
         };
+        /** @description Quantas avaliações e a nota média de um grupo */
+        ReportRatingGroup: {
+            /** Format: int32 */
+            count: number;
+            /**
+             * Format: double
+             * @description Ausente sem avaliações
+             */
+            average?: number;
+        };
+        /** @description A nota de um dia ou de uma semana */
+        ReportRatingPoint: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** Format: int32 */
+            count: number;
+            /**
+             * Format: double
+             * @description Ausente sem avaliações
+             */
+            average?: number;
+        };
+        /** @description Um atalho e quantas vezes foi marcado */
+        ReportRatingTag: {
+            /** @enum {string} */
+            tag: "SPEED" | "FRIENDLINESS" | "FOOD" | "AMBIENCE";
+            /** Format: int32 */
+            times: number;
+        };
+        /** @description As avaliações do atendimento no período */
+        ReportRatings: {
+            /** Format: int32 */
+            count: number;
+            /**
+             * Format: double
+             * @description A nota média, com uma casa; ausente sem avaliações
+             */
+            average?: number;
+            /**
+             * Format: double
+             * @description A nota média no período de comparação
+             */
+            comparedAverage?: number;
+            /**
+             * Format: int32
+             * @description Notas 1 e 2
+             */
+            low: number;
+            /**
+             * Format: int32
+             * @description Notas 4 e 5 (as que viram o convite ao Google)
+             */
+            high: number;
+            /**
+             * Format: int32
+             * @description Quantos tocaram em "Avaliar no Google"
+             */
+            googleClicks: number;
+            /**
+             * Format: int32
+             * @description As comandas fechadas no período
+             */
+            closedTabs: number;
+            /** @description Quantas de cada nota, de 1 a 5 */
+            byStars: number[];
+            /** @description Até as 16h */
+            lunch: components["schemas"]["ReportRatingGroup"];
+            /** @description Das 16h em diante */
+            dinner: components["schemas"]["ReportRatingGroup"];
+            /** @description Os atalhos nas notas 4 e 5, do mais marcado */
+            praisedTags: components["schemas"]["ReportRatingTag"][];
+            /** @description Os atalhos nas notas 1 a 3, do mais marcado */
+            improveTags: components["schemas"]["ReportRatingTag"][];
+            /** @description A nota ao longo do período: por dia ou por semana */
+            trend: components["schemas"]["ReportRatingPoint"][];
+        };
         /** @description Uma hora de um dia: chamados e pessoas do salão no turno */
         ReportShiftLoad: {
             /** Format: date */
@@ -4875,6 +4970,16 @@ export interface components {
              * @description A taxa de serviço destinada a ela
              */
             tipsCents: number;
+            /**
+             * Format: int32
+             * @description Avaliações das mesas que ela mais atendeu
+             */
+            ratings: number;
+            /**
+             * Format: double
+             * @description A nota média (uma casa); ausente com menos de 5 avaliações
+             */
+            ratingAverage?: number;
         };
         /** @description Atendimento e equipe (Business) */
         TeamReport: {
@@ -4906,6 +5011,30 @@ export interface components {
             warningsConfirmed: number;
             /** @description As horas com mais chamados por pessoa do salão no turno */
             busiestShifts: components["schemas"]["ReportShiftLoad"][];
+            /** @description As avaliações do atendimento no período (REL-83, 84) */
+            ratings: components["schemas"]["ReportRatings"];
+        };
+        PageResponseReportRatingComment: {
+            content: components["schemas"]["ReportRatingComment"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @description Uma avaliação com comentário */
+        ReportRatingComment: {
+            tableLabel: string;
+            waiterName?: string;
+            /** Format: int32 */
+            stars: number;
+            tags: ("SPEED" | "FRIENDLINESS" | "FOOD" | "AMBIENCE")[];
+            comment: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         /** @description Uma comanda aberta tempo demais */
         ReportForgottenTab: {
@@ -5782,6 +5911,8 @@ export interface components {
             peak?: components["schemas"]["DailySummaryPeak"];
             attention?: components["schemas"]["DailySummaryAttention"];
             payments: components["schemas"]["ReportPayment"][];
+            /** @description As avaliações do dia (Business); ausente sem nenhuma */
+            rating?: components["schemas"]["DailySummaryRating"];
         };
         /** @description O item que demorou bem mais que o normal */
         DailySummaryAttention: {
@@ -5802,6 +5933,18 @@ export interface components {
             revenueCents: number;
             /** Format: int32 */
             tabs: number;
+        };
+        /** @description As avaliações do atendimento no dia */
+        DailySummaryRating: {
+            /** Format: int32 */
+            count: number;
+            /** Format: double */
+            average: number;
+            /**
+             * Format: int32
+             * @description Notas 1 e 2
+             */
+            low: number;
         };
         /** @description O que a tela dos relatórios precisa saber antes de pedir os números */
         ReportContext: {
@@ -11732,6 +11875,51 @@ export interface operations {
             };
             /** @description Período fora do histórico do plano ou no futuro */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listTeamRatingComments: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                sectorId?: string;
+                onlyLow?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página dos comentários */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseReportRatingComment"];
+                };
+            };
+            /** @description O plano não tem este relatório (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor não encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

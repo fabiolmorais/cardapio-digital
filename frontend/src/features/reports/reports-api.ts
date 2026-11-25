@@ -132,6 +132,15 @@ export function useTeamReport(params: ReportParams) {
   });
 }
 
+export type RatingComment = Schemas["ReportRatingComment"];
+
+/** Os comentários das avaliações do período, paginados ("Ver mais"); só as notas baixas, se pedido. */
+export async function fetchTeamComments(params: ReportParams & { onlyLow: boolean; page: number; size: number }) {
+  const { data, response } = await api.GET("/api/v1/reports/team/comments", { params: { query: params } });
+  if (!data) throw new Error(String(response.status));
+  return data;
+}
+
 export function useTableReport(params: ReportParams) {
   return useQuery({
     queryKey: ["reports", "tables", params],
