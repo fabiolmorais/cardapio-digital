@@ -8,6 +8,8 @@ public record PlanUsage(long tables, long users, long sectors) {
             case TABLES -> tables;
             case USERS -> users;
             case SECTORS -> sectors;
+            // As unidades são contadas na empresa, e não em cada restaurante: ver PlanAllowance.
+            case UNITS -> throw new IllegalArgumentException("unidades não fazem parte do uso do restaurante");
         };
     }
 }

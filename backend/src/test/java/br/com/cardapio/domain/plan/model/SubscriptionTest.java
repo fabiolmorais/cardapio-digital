@@ -84,6 +84,6 @@ class SubscriptionTest {
     private static Plan plan(String name, Money monthly) {
         return new Plan(new PlanId(UUID.randomUUID()), name.toLowerCase(), name, monthly,
                 monthly == null ? null : Money.ofCents(monthly.cents() * 10), Limit.unlimited(), Limit.unlimited(),
-                Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1);
+                Limit.unlimited(), Limit.of(1), 0, Set.of(), SupportLevel.EMAIL, 1);
     }
 }

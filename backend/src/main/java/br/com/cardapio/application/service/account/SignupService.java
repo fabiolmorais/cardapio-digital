@@ -63,7 +63,7 @@ public class SignupService implements SignupUseCase {
         Establishment establishment = Establishment.create(
                 organization.id(),
                 command.establishmentName(),
-                availableSlug(command.establishmentName())
+                Slugs.available(loadEstablishmentPort, command.establishmentName())
         );
 
         User owner = User.create(
@@ -82,15 +82,5 @@ public class SignupService implements SignupUseCase {
         subscriptions.save(Subscription.startTrial(organization.id(), trialPlan.id(), clock.instant()));
 
         return new SignupResult(organization.id(), establishment.id(), owner.id(), establishment.slug().value());
-    }
-
-    private Slug availableSlug(String establishmentName) {
-        Slug base = Slug.from(establishmentName);
-        Slug candidate = base;
-        int suffix = 2;
-        while (loadEstablishmentPort.existsBySlug(candidate)) {
-            candidate = base.withSuffix(suffix++);
-        }
-        return candidate;
     }
 }

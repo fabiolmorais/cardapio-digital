@@ -28,7 +28,14 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
                 AND m.userId = :userId
             """;
 
-    @Query(ACTIVE_MEMBERSHIP + " order by e.name")
+    /**
+     * A unidade usada por último primeiro (a sessão mais nova da pessoa em cada uma; o login entra
+     * nela), depois por nome.
+     */
+    @Query(ACTIVE_MEMBERSHIP + """
+             order by (SELECT max(r.createdAt) FROM RefreshTokenJpaEntity r
+                        WHERE r.userId = m.userId AND r.establishmentId = e.id) desc nulls last, e.name, e.id
+            """)
     List<ActiveMembershipRow> findActiveByUser(@Param("userId") UUID userId);
 
     @Query(ACTIVE_MEMBERSHIP + " and e.id = :establishmentId")

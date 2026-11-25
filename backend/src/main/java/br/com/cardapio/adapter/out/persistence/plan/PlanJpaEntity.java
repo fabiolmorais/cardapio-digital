@@ -38,6 +38,9 @@ class PlanJpaEntity {
     @Column(name = "max_sectors")
     private Integer maxSectors;
 
+    @Column(name = "max_units")
+    private Integer maxUnits;
+
     @Column(name = "history_days", nullable = false)
     private int historyDays;
 
@@ -65,6 +68,7 @@ class PlanJpaEntity {
     Integer getMaxTables() { return maxTables; }
     Integer getMaxUsers() { return maxUsers; }
     Integer getMaxSectors() { return maxSectors; }
+    Integer getMaxUnits() { return maxUnits; }
     int getHistoryDays() { return historyDays; }
     List<String> getEntitlements() { return entitlements; }
     String getSupportLevel() { return supportLevel; }

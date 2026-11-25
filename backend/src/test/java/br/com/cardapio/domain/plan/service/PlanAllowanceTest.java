@@ -22,7 +22,7 @@ class PlanAllowanceTest {
 
     private static Plan plan(String name, Limit tables, Limit users, Limit sectors, Set<PlanFeature> features) {
         return new Plan(new PlanId(UUID.randomUUID()), name.toLowerCase(), name, Money.ofCents(6990),
-                Money.ofCents(69900), tables, users, sectors, 90, features, SupportLevel.EMAIL, 1);
+                Money.ofCents(69900), tables, users, sectors, Limit.of(1), 90, features, SupportLevel.EMAIL, 1);
     }
 
     private final Plan essential = plan("Essencial", Limit.of(20), Limit.of(5), Limit.of(1),
@@ -39,6 +39,22 @@ class PlanAllowanceTest {
                 PlanResource.TABLES))
                 .isInstanceOf(PlanLimitReachedException.class)
                 .hasMessage("O plano Essencial permite até 20 mesas ativas. Para ter mais, mude de plano.");
+    }
+
+    @Test
+    void unitsAreCountedByWhoCallsAndOnlyTheEnterpriseHasMore() {
+        // O Essencial ao Business têm uma unidade só; a segunda pede o Enterprise.
+        assertThatThrownBy(() -> PlanAllowance.checkRoomForOneMore(essential, 1, PlanResource.UNITS))
+                .isInstanceOf(PlanLimitReachedException.class)
+                .hasMessage("O plano Essencial permite até 1 unidade ativa. Para ter mais, mude de plano.");
+        Plan unlimitedUnits = new Plan(new PlanId(UUID.randomUUID()), "enterprise", "Enterprise", null, null,
+                Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0,
+                Set.of(PlanFeature.MULTI_UNIT), SupportLevel.DEDICATED_MANAGER, 4);
+        assertThatCode(() -> PlanAllowance.checkRoomForOneMore(unlimitedUnits, 40, PlanResource.UNITS))
+                .doesNotThrowAnyException();
+        // As unidades não fazem parte do uso de um restaurante.
+        assertThatThrownBy(() -> new PlanUsage(1, 1, 1).of(PlanResource.UNITS))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

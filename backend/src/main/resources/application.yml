@@ -89,6 +89,7 @@ app:
     enabled: ${RATE_LIMIT_ENABLED:true}
     rules:
       login: { requests: 20, window: 10m }
+      switch: { requests: 60, window: 10m }
       password-reset: { requests: 10, window: 1h }
       signup: { requests: 10, window: 1h }
       pin: { requests: 60, window: 10m }

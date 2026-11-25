@@ -56,7 +56,7 @@ public class LoginService implements LoginUseCase {
             throw new InvalidCredentialsException();
         }
 
-        // Por enquanto, entra no primeiro estabelecimento. A troca de estabelecimento vem com as redes (fase 3).
+        // Entra na unidade usada por último; as outras ficam no seletor (RF31).
         ActiveMembership membership = memberships.getFirst();
         return sessionIssuer.start(user, membership);
     }
