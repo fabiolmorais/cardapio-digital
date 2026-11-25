@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 enum RateLimitRule {
     /** Entrar com e-mail e senha. */
     LOGIN(Set.of("POST"), "/api/v1/auth/login"),
+    /** Trocar de unidade (já exige login; o limite só segura um script em volta). */
+    SWITCH(Set.of("POST"), "/api/v1/auth/switch"),
     /** Criar uma conta (o teste grátis). */
     SIGNUP(Set.of("POST"), "/api/v1/signup"),
     /** "Esqueci a senha": pedir o link e trocar a senha com ele. */

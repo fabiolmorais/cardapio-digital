@@ -14,7 +14,7 @@ class PlanTest {
 
     private static Plan plan(Money monthly, Money annual, int historyDays, Set<PlanFeature> features) {
         return new Plan(new PlanId(UUID.randomUUID()), "pro", "Pro", monthly, annual,
-                Limit.of(50), Limit.unlimited(), Limit.of(3), historyDays, features, SupportLevel.WHATSAPP, 2);
+                Limit.of(50), Limit.unlimited(), Limit.of(3), Limit.of(1), historyDays, features, SupportLevel.WHATSAPP, 2);
     }
 
     @Test
@@ -60,10 +60,10 @@ class PlanTest {
     @Test
     void requiresCodeAndName() {
         assertThatThrownBy(() -> new Plan(new PlanId(UUID.randomUUID()), " ", "Pro", null, null,
-                Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1))
+                Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new Plan(new PlanId(UUID.randomUUID()), "pro", "", null, null,
-                Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1))
+                Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0, Set.of(), SupportLevel.EMAIL, 1))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

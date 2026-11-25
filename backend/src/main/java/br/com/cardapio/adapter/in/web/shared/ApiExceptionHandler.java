@@ -68,7 +68,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({TeamPermissionException.class, PinNotAllowedOnDeviceException.class,
             TvModeNotAllowedException.class, PresenceRequiredException.class, SessionBlockedException.class,
-            ReportsNotInPlanException.class})
+            ReportsNotInPlanException.class, UnitPermissionException.class})
     ProblemDetail handleForbidden(DomainException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }

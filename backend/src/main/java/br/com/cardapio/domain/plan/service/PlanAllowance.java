@@ -19,8 +19,13 @@ public final class PlanAllowance {
 
     /** Cabe mais um (mesa, pessoa ou setor) no plano? Senão, PlanLimitReachedException. */
     public static void checkRoomForOneMore(Plan plan, PlanUsage usage, PlanResource resource) {
+        checkRoomForOneMore(plan, usage.of(resource), resource);
+    }
+
+    /** O mesmo, com o que já está em uso contado por quem chama (as unidades, contadas na empresa). */
+    public static void checkRoomForOneMore(Plan plan, long inUse, PlanResource resource) {
         Limit limit = resource.limitIn(plan);
-        if (!limit.allows(Math.toIntExact(usage.of(resource) + 1))) {
+        if (!limit.allows(Math.toIntExact(inUse + 1))) {
             throw new PlanLimitReachedException(plan.name(), resource, limit.max());
         }
     }

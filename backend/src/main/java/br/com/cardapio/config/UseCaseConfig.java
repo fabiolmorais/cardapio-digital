@@ -40,6 +40,7 @@ import br.com.cardapio.application.port.in.order.TabPeopleUseCase;
 import br.com.cardapio.application.service.order.TabPeopleService;
 import br.com.cardapio.application.port.in.device.CloseExpiredShiftsUseCase;
 import br.com.cardapio.application.service.device.CloseExpiredShiftsService;
+import br.com.cardapio.application.port.in.unit.ManageUnitsUseCase;
 import br.com.cardapio.application.port.in.account.*;
 import br.com.cardapio.application.port.in.account.RequestPasswordResetUseCase;
 import br.com.cardapio.application.port.in.account.ResetPasswordUseCase;
@@ -203,6 +204,7 @@ import br.com.cardapio.application.port.out.security.RandomTokenGenerator;
 import br.com.cardapio.application.port.out.tablesession.TableSessionPort;
 import br.com.cardapio.application.port.out.team.TeamMemberPort;
 import br.com.cardapio.application.port.out.video.VideoHostingPort;
+import br.com.cardapio.application.service.unit.ManageUnitsService;
 import br.com.cardapio.application.service.account.*;
 import br.com.cardapio.application.service.account.RequestPasswordResetService;
 import br.com.cardapio.application.service.account.ResetPasswordService;
@@ -348,6 +350,20 @@ class UseCaseConfig {
                                                 LoadMembershipPort loadMembershipPort, SessionIssuer sessionIssuer,
                                                 Clock clock) {
         return new RefreshSessionService(refreshTokenPort, loadUserPort, loadMembershipPort, sessionIssuer, clock);
+    }
+
+    @Bean
+    SwitchEstablishmentUseCase switchEstablishmentUseCase(LoadUserPort loadUserPort,
+                                                          LoadMembershipPort loadMembershipPort,
+                                                          RefreshTokenPort refreshTokenPort,
+                                                          SessionIssuer sessionIssuer, Clock clock) {
+        return new SwitchEstablishmentService(loadUserPort, loadMembershipPort, refreshTokenPort, sessionIssuer, clock);
+    }
+
+    @Bean
+    ManageUnitsUseCase manageUnitsUseCase(UnitPort unitPort, LoadEstablishmentPort loadEstablishmentPort,
+                                          SubscriptionPort subscriptionPort, Clock clock) {
+        return new ManageUnitsService(unitPort, loadEstablishmentPort, subscriptionPort, clock);
     }
 
     @Bean

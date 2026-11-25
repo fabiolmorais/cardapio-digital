@@ -8,7 +8,10 @@ import java.util.Optional;
 
 public interface LoadMembershipPort {
 
-    /** Todos os estabelecimentos em que a pessoa trabalha (login: ela ainda não escolheu um). */
+    /**
+     * Todos os estabelecimentos em que a pessoa trabalha, o usado por último primeiro (o login
+     * entra nele), depois por nome.
+     */
     List<ActiveMembership> findActiveByUser(UserId userId);
 
     /** O vínculo da pessoa com um estabelecimento específico; vazio se ela não trabalha lá. */

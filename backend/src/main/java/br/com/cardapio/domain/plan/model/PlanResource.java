@@ -2,11 +2,15 @@ package br.com.cardapio.domain.plan.model;
 
 import br.com.cardapio.domain.shared.model.Limit;
 
-/** O que o plano conta: mesas, pessoas da equipe e setores ativos. */
+/**
+ * O que o plano conta: mesas, pessoas da equipe e setores ativos (em cada restaurante) e as
+ * unidades ativas (na empresa).
+ */
 public enum PlanResource {
     TABLES("mesa ativa", "mesas ativas"),
     USERS("pessoa ativa na equipe", "pessoas ativas na equipe"),
-    SECTORS("setor ativo", "setores ativos");
+    SECTORS("setor ativo", "setores ativos"),
+    UNITS("unidade ativa", "unidades ativas");
 
     private final String one;
     private final String many;
@@ -26,6 +30,7 @@ public enum PlanResource {
             case TABLES -> plan.maxTables();
             case USERS -> plan.maxUsers();
             case SECTORS -> plan.maxSectors();
+            case UNITS -> plan.maxUnits();
         };
     }
 }

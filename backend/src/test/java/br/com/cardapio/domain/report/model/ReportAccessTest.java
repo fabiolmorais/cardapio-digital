@@ -29,7 +29,7 @@ class ReportAccessTest {
 
     private static Plan plan(int historyDays, PlanFeature... features) {
         return new Plan(new PlanId(UUID.randomUUID()), "plano", "Plano", Money.ofCents(14990), Money.ofCents(149900),
-                Limit.of(50), Limit.unlimited(), Limit.of(3), historyDays, Set.of(features), SupportLevel.WHATSAPP, 1);
+                Limit.of(50), Limit.unlimited(), Limit.of(3), Limit.of(1), historyDays, Set.of(features), SupportLevel.WHATSAPP, 1);
     }
 
     private static final ReportAccess ESSENCIAL = ReportAccess.of(plan(90));

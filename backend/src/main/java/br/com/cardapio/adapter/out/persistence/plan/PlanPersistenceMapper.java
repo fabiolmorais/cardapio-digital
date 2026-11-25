@@ -24,6 +24,7 @@ final class PlanPersistenceMapper {
                 toLimit(entity.getMaxTables()),
                 toLimit(entity.getMaxUsers()),
                 toLimit(entity.getMaxSectors()),
+                toLimit(entity.getMaxUnits()),
                 entity.getHistoryDays(),
                 entity.getEntitlements().stream()
                         .map(PlanFeature::valueOf)

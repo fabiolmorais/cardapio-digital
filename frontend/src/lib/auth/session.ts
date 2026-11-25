@@ -165,6 +165,38 @@ export async function endSession() {
   channel()?.postMessage("logout");
 }
 
+/** Para onde a aba vai depois de trocar de unidade: o "Ao vivo" existe em todas. */
+const AFTER_SWITCH = "/painel";
+
+/**
+ * Troca de unidade (RF31): o back encerra a sessão de agora e grava o cookie da unidade nova. Na
+ * mesma trava da renovação, porque também troca o cookie. Depois, esta aba e as outras abrem o
+ * "Ao vivo" de novo, já na unidade nova (nada da unidade antiga fica na tela nem no cache).
+ * Devolve false se a troca foi recusada.
+ */
+export async function switchEstablishment(establishmentId: string): Promise<boolean> {
+  const token = await getFreshAccessToken();
+  if (!token) return false;
+  const data = await withRefreshLock(async () => {
+    try {
+      const { data } = await authApi.POST("/api/v1/auth/switch", {
+        body: { establishmentId },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data ?? null;
+    } catch {
+      return null;
+    }
+  });
+  if (!data) return false;
+  startSession(data);
+  channel()?.postMessage("switch");
+  // Carga completa de propósito: o cache, o tempo real (SSE) e a tela da unidade antiga somem juntos.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign(AFTER_SWITCH);
+  return true;
+}
+
 let broadcast: BroadcastChannel | null | undefined;
 
 function channel(): BroadcastChannel | null {
@@ -173,6 +205,9 @@ function channel(): BroadcastChannel | null {
   broadcast = new BroadcastChannel(CHANNEL);
   broadcast.onmessage = (event) => {
     if (event.data === "logout") setState(ANONYMOUS);
+    // Outra aba trocou de unidade: o cookie já é o da unidade nova; esta aba recomeça nela.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    if (event.data === "switch") window.location.assign(AFTER_SWITCH);
   };
   return broadcast;
 }

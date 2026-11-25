@@ -42,8 +42,9 @@ public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
             Limit.unlimited(), Set.of(PlanFeature.PRODUCT_VIDEOS));
     /** Sob consulta: sem preço. */
     public static final Plan ENTERPRISE = new Plan(new PlanId(UUID.nameUUIDFromBytes("enterprise".getBytes())),
-            "enterprise", "Enterprise", null, null, Limit.unlimited(), Limit.unlimited(), Limit.unlimited(), 0,
-            Set.of(PlanFeature.PRODUCT_VIDEOS), SupportLevel.DEDICATED_MANAGER, 4);
+            "enterprise", "Enterprise", null, null, Limit.unlimited(), Limit.unlimited(), Limit.unlimited(),
+            Limit.unlimited(), 0, Set.of(PlanFeature.PRODUCT_VIDEOS, PlanFeature.MULTI_UNIT),
+            SupportLevel.DEDICATED_MANAGER, 4);
     private static final List<Plan> CATALOG = List.of(ESSENTIAL, PRO, ENTERPRISE);
 
     public final List<Subscription> saved = new ArrayList<>();
@@ -63,7 +64,8 @@ public class InMemorySubscriptions implements SubscriptionPort, LoadPlansPort {
     private static Plan plan(String code, String name, Limit tables, Limit users, Limit sectors,
                              Set<PlanFeature> features) {
         return new Plan(new PlanId(UUID.nameUUIDFromBytes(code.getBytes())), code, name, Money.ofCents(6990),
-                Money.ofCents(69900), tables, users, sectors, 90, features, SupportLevel.EMAIL, 1);
+                Money.ofCents(69900), tables, users, sectors, sectors.isUnlimited() ? Limit.unlimited() : Limit.of(1),
+                90, features, SupportLevel.EMAIL, 1);
     }
 
     /** A assinatura cancelada: a mesa para de chamar e pedir. */

@@ -21,6 +21,7 @@ public record Plan(
         Limit maxTables,
         Limit maxUsers,
         Limit maxSectors,
+        Limit maxUnits,
         int historyDays,
         Set<PlanFeature> features,
         SupportLevel support,
@@ -31,6 +32,7 @@ public record Plan(
         Objects.requireNonNull(maxTables, "limite de mesas é obrigatório");
         Objects.requireNonNull(maxUsers, "limite de usuários é obrigatório");
         Objects.requireNonNull(maxSectors, "limite de setores é obrigatório");
+        Objects.requireNonNull(maxUnits, "limite de unidades é obrigatório");
         Objects.requireNonNull(support, "suporte é obrigatório");
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("código é obrigatório");

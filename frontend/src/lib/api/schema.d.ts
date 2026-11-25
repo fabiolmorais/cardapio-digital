@@ -377,6 +377,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As unidades ativas da empresa, por nome */
+        get: operations["listUnits"];
+        put?: never;
+        /** Cria uma unidade na empresa, vazia, com quem pediu como dono */
+        post: operations["createUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/team-members": {
         parameters: {
             query?: never;
@@ -1363,6 +1381,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca de unidade: encerra a sessão de agora e abre outra na unidade escolhida (novo cookie) */
+        post: operations["switchEstablishment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -1586,6 +1621,23 @@ export interface paths {
         head?: never;
         /** Renomeia a categoria */
         patch: operations["renameMenuCategory"];
+        trace?: never;
+    };
+    "/api/v1/units/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quantas unidades a empresa tem e quantas o plano permite */
+        get: operations["getUnitAllowance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/tabs": {
@@ -3491,6 +3543,38 @@ export interface components {
              */
             textOnLight: string;
         };
+        /** @description Uma unidade nova da empresa */
+        CreateUnitRequest: {
+            /** @example Sakura Moema */
+            name: string;
+            /**
+             * @description America/Sao_Paulo, America/Manaus, America/Cuiaba, America/Rio_Branco ou America/Noronha
+             * @example America/Sao_Paulo
+             */
+            timeZone: string;
+        };
+        /** @description Uma unidade da empresa */
+        Unit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description O endereço da mesa: /m/… usa o QR de cada mesa; este é o nome curto */
+            slug: string;
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * Format: int64
+             * @description Mesas ativas
+             */
+            activeTables: number;
+            /**
+             * Format: int64
+             * @description Pessoas ativas na equipe
+             */
+            activeTeam: number;
+            /** @description É a unidade em que quem pediu está agora */
+            current: boolean;
+        };
         /** @description Cadastro de uma pessoa da equipe */
         AddTeamMemberRequest: {
             /** @example Carlos Souza */
@@ -4460,6 +4544,10 @@ export interface components {
              */
             serviceCustomCents?: number;
         };
+        SwitchEstablishmentRequest: {
+            /** Format: uuid */
+            establishmentId: string;
+        };
         EstablishmentAccess: {
             /** Format: uuid */
             id: string;
@@ -4539,6 +4627,33 @@ export interface components {
         AvailabilityRequest: {
             /** @description false: "Esgotado hoje" */
             available: boolean;
+        };
+        PageResponseUnit: {
+            content: components["schemas"]["Unit"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        UnitAllowance: {
+            /** @example Enterprise */
+            planName: string;
+            /**
+             * Format: int64
+             * @description Unidades ativas da empresa
+             */
+            used: number;
+            /**
+             * Format: int32
+             * @description Nulo = sem limite
+             */
+            max: number | null;
+            /** @description Ainda cabe mais uma */
+            canAddMore: boolean;
         };
         PageResponseTeamMember: {
             content: components["schemas"]["TeamMember"][];
@@ -6387,6 +6502,8 @@ export interface components {
             /** @description Vazio para quem entra só por PIN (garçom, cozinha) */
             email?: string;
             establishment: components["schemas"]["EstablishmentAccess"];
+            /** @description Todas as unidades em que a pessoa trabalha, por nome (o seletor) */
+            establishments: components["schemas"]["EstablishmentAccess"][];
         };
         /** @description O salão agora: cada mesa ativa e o resumo do dia */
         LiveFloor: {
@@ -7894,6 +8011,91 @@ export interface operations {
             };
             /** @description Instagram ou link de avaliação inválido */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listUnits: {
+        parameters: {
+            query?: {
+                /** @description Número da página, começando em 0 */
+                page?: number;
+                /** @description Itens por página (1 a 100) */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página das unidades */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseUnit"];
+                };
+            };
+            /** @description Só o dono cuida das unidades */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    createUnit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUnitRequest"];
+            };
+        };
+        responses: {
+            /** @description Criada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unit"];
+                };
+            };
+            /** @description Nome vazio ou fuso fora da lista */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Só o dono cuida das unidades */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não permite mais unidades */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10853,6 +11055,41 @@ export interface operations {
             };
         };
     };
+    switchEstablishment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchEstablishmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Sessão aberta na unidade escolhida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description A pessoa não trabalha nessa unidade */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     refreshSession: {
         parameters: {
             query?: never;
@@ -11478,6 +11715,35 @@ export interface operations {
             };
             /** @description Já existe uma categoria com esse nome */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getUnitAllowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O uso e o limite */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitAllowance"];
+                };
+            };
+            /** @description Só o dono cuida das unidades */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

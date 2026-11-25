@@ -3,6 +3,7 @@
 import {
   BellRing,
   BookOpen,
+  Building2,
   ChartColumn,
   ChefHat,
   ChevronLeft,
@@ -30,6 +31,7 @@ import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useLiveCount } from "@/features/live/use-live-count";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
+import { UnitSwitcher } from "@/features/units/unit-switcher";
 import { canManageTeam, type Role } from "@/features/team/team-rules";
 import { useLogout } from "@/lib/auth/use-logout";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
@@ -95,6 +97,8 @@ const MANAGEMENT: Item[] = [
     ],
   },
   { href: "/admin/comandas", label: t.nav.tabs, icon: Receipt },
+  // As unidades da empresa (RF31): só o dono.
+  { href: "/admin/unidades", label: t.nav.units, icon: Building2, roles: ["OWNER"] },
   { href: "/admin/assinatura", label: t.nav.subscription, icon: CreditCard },
 ];
 
@@ -124,16 +128,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <Suspense fallback={null}>
             <BackButton />
           </Suspense>
-          <span
-            aria-hidden
-            className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary text-[13px] font-bold text-primary-foreground"
-          >
-            {establishment ? initials(establishment.name) : ""}
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate font-semibold">{establishment?.name ?? t.loading}</span>
-            <span className="text-sm text-muted-foreground">{t.staffPanel}</span>
-          </span>
+          <UnitSwitcher current={establishment} subtitle={t.staffPanel} />
           <Button
             variant="ghost"
             size="icon-lg"
@@ -244,7 +239,7 @@ function ShellNav({
   const groups: { label: string | null; items: Item[] }[] = [
     { label: null, items: LIVE.filter(allowed) },
     { label: t.screens, items: SCREENS.filter(allowed) },
-    ...(role && canManageTeam(role) ? [{ label: t.management, items: MANAGEMENT }] : []),
+    ...(role && canManageTeam(role) ? [{ label: t.management, items: MANAGEMENT.filter(allowed) }] : []),
   ];
   return (
     <nav aria-label={t.navigation} className="flex flex-col gap-1">

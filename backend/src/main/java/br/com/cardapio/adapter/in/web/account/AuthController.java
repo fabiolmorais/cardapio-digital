@@ -6,6 +6,14 @@ import br.com.cardapio.application.port.in.account.LoginUseCase;
 import br.com.cardapio.application.port.in.account.LogoutUseCase;
 import br.com.cardapio.application.port.in.account.PinLoginUseCase;
 import br.com.cardapio.application.port.in.account.RefreshSessionUseCase;
+import br.com.cardapio.application.port.in.account.SwitchEstablishmentUseCase;
+import br.com.cardapio.adapter.in.web.shared.AuthenticatedUser;
+import br.com.cardapio.domain.account.model.EstablishmentId;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import java.util.UUID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,14 +34,17 @@ class AuthController {
     private final RefreshSessionUseCase refreshSession;
     private final LogoutUseCase logout;
     private final PinLoginUseCase pinLogin;
+    private final SwitchEstablishmentUseCase switchEstablishment;
     private final RefreshTokenCookie cookie;
 
     AuthController(LoginUseCase login, RefreshSessionUseCase refreshSession, LogoutUseCase logout,
-                   PinLoginUseCase pinLogin, RefreshTokenCookie cookie) {
+                   PinLoginUseCase pinLogin, SwitchEstablishmentUseCase switchEstablishment,
+                   RefreshTokenCookie cookie) {
         this.login = login;
         this.refreshSession = refreshSession;
         this.logout = logout;
         this.pinLogin = pinLogin;
+        this.switchEstablishment = switchEstablishment;
         this.cookie = cookie;
     }
 
@@ -72,6 +83,25 @@ class AuthController {
     ResponseEntity<LoginResponse> refresh(
             @CookieValue(name = RefreshTokenCookie.NAME, required = false) String refreshToken) {
         return withSession(refreshSession.refresh(refreshToken));
+    }
+
+    @PostMapping("/switch")
+    @Operation(operationId = "switchEstablishment", security = @SecurityRequirement(name = "bearer"),
+            summary = "Troca de unidade: encerra a sessão de agora e abre outra na unidade escolhida (novo cookie)")
+    @ApiResponse(responseCode = "200", description = "Sessão aberta na unidade escolhida")
+    @ApiResponse(responseCode = "404", description = "A pessoa não trabalha nessa unidade",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    ResponseEntity<LoginResponse> switchTo(
+            @AuthenticationPrincipal Jwt jwt,
+            @CookieValue(name = RefreshTokenCookie.NAME, required = false) String refreshToken,
+            @Valid @RequestBody SwitchEstablishmentRequest request) {
+        AuthenticatedUser user = AuthenticatedUser.from(jwt);
+        return withSession(switchEstablishment.switchTo(user.userId(), refreshToken,
+                new EstablishmentId(request.establishmentId())));
+    }
+
+    @Schema(name = "SwitchEstablishmentRequest")
+    record SwitchEstablishmentRequest(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID establishmentId) {
     }
 
     @PostMapping("/logout")
