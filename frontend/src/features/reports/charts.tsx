@@ -131,7 +131,7 @@ const compact = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFra
  * O eixo: um passo redondo (1, 2, 2,5 ou 5 × 10ⁿ) e quantos passos cabem até passar do maior valor,
  * de 3 a 5 linhas. Assim os rótulos ficam redondos ("3 mil", "2 mil"), e não "1,9 mil" ou "625".
  */
-function axis(max: number) {
+export function axis(max: number) {
   if (max <= 0) return { top: 1, steps: [1, 0] };
   const rough = max / 4;
   const magnitude = 10 ** Math.floor(Math.log10(rough));

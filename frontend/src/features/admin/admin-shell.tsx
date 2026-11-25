@@ -29,7 +29,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useMe } from "@/features/account/use-me";
 import { useLiveCount } from "@/features/live/use-live-count";
+import { useReportContext } from "@/features/reports/reports-api";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { UnitSwitcher } from "@/features/units/unit-switcher";
 import { canManageTeam, type Role } from "@/features/team/team-rules";
@@ -42,13 +44,16 @@ import { cn } from "cn";
 const t = messages.admin;
 
 /** O item do menu; `roles`: só para esses papéis (sem a lista, para todos). */
-/** `children`: as telas de dentro (os relatórios), embaixo do item, sempre à vista. */
+/**
+ * `children`: as telas de dentro (os relatórios), embaixo do item, sempre à vista; `unitsOnly`: só
+ * para quem tem a comparação entre unidades (o back decide).
+ */
 type Item = {
   href: string;
   label: string;
   icon: LucideIcon;
   roles?: readonly Role[];
-  children?: { href: string; label: string }[];
+  children?: { href: string; label: string; unitsOnly?: boolean }[];
 };
 
 const MANAGERS = ["OWNER", "MANAGER"] as const;
@@ -93,6 +98,7 @@ const MANAGEMENT: Item[] = [
       { href: "/admin/relatorios/equipe", label: t.nav.reportsTeam },
       { href: "/admin/relatorios/mesas", label: t.nav.reportsTables },
       { href: "/admin/relatorios/celular-e-rodizio", label: t.nav.reportsPhone },
+      { href: "/admin/relatorios/unidades", label: t.nav.reportsUnits, unitsOnly: true },
       { href: "/admin/relatorios/resumo", label: t.nav.reportsSummary },
     ],
   },
@@ -225,6 +231,17 @@ function isActive(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * A tela "Unidades" dos relatórios (REL-80) aparece para o dono com duas unidades ou mais, quando o
+ * contexto dos relatórios diz que a comparação existe (Enterprise e dono de todas).
+ */
+function useUnitComparison(role: Role | undefined) {
+  const me = useMe(role === "OWNER");
+  const many = role === "OWNER" && (me.data?.establishments.length ?? 0) >= 2;
+  const context = useReportContext(many);
+  return many && context.data?.unitComparison === true;
+}
+
 function ShellNav({
   pathname,
   role,
@@ -236,6 +253,7 @@ function ShellNav({
 }) {
   const allowed = (item: Item) => !item.roles || (role !== undefined && item.roles.includes(role));
   const live = useLiveCount(role);
+  const units = useUnitComparison(role);
   const groups: { label: string | null; items: Item[] }[] = [
     { label: null, items: LIVE.filter(allowed) },
     { label: t.screens, items: SCREENS.filter(allowed) },
@@ -282,24 +300,26 @@ function ShellNav({
               <div key={href} className="flex flex-col gap-1">
                 {link}
                 <div role="group" aria-label={text} className="ml-5 flex flex-col gap-0.5 border-l border-input pl-2">
-                  {children.map((child) => {
-                    const on = isActive(pathname, child.href);
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={onNavigate}
-                        aria-current={on ? "page" : undefined}
-                        aria-label={t.nav.within(text, child.label)}
-                        className={cn(
-                          "flex h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                          on && "bg-secondary text-foreground",
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    );
-                  })}
+                  {children
+                    .filter((child) => !child.unitsOnly || units)
+                    .map((child) => {
+                      const on = isActive(pathname, child.href);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onNavigate}
+                          aria-current={on ? "page" : undefined}
+                          aria-label={t.nav.within(text, child.label)}
+                          className={cn(
+                            "flex h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                            on && "bg-secondary text-foreground",
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
             );

@@ -15,7 +15,9 @@ import java.time.ZoneId;
  * @param earliestDay   o primeiro dia que o plano deixa consultar; null = sem limite
  * @param firstDataDay  o dia da primeira comanda fechada; null = ainda não há dados
  * @param maxPeriodDays o maior período de uma vez
+ * @param unitComparison a tela "Unidades" (REL-80) existe para esta pessoa
  */
 public record ReportContext(ReportLevel level, boolean canExport, ZoneId timeZone, LocalDate today,
-                            LocalDate earliestDay, LocalDate firstDataDay, int maxPeriodDays) {
+                            LocalDate earliestDay, LocalDate firstDataDay, int maxPeriodDays,
+                            boolean unitComparison) {
 }

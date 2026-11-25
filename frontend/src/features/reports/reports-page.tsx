@@ -36,10 +36,16 @@ export function ReportsScreen({
   title,
   filter,
   businessOnly,
+  units = false,
   exportAs,
   children,
 }: {
   title: string;
+  /**
+   * A comparação entre unidades (REL-80): sem o setor (cada unidade tem os seus), sem o aviso de "sem
+   * dados" da unidade de agora (as outras podem ter), e só para quem o back libera.
+   */
+  units?: boolean;
   /** A planilha desta tela (o botão "Exportar", ligado só nos planos com exportação). */
   exportAs?: ExportScreen;
   /** Um filtro a mais, só desta tela (a categoria, no Cardápio). */
@@ -53,13 +59,30 @@ export function ReportsScreen({
       {(context) =>
         businessOnly && context.level !== "FULL" ? (
           <BusinessOnly title={title} text={businessOnly} />
+        ) : units && !context.unitComparison ? (
+          <UnitsUnavailable title={title} />
         ) : (
-          <Screen title={title} context={context} filter={filter} exportAs={exportAs}>
+          <Screen title={title} context={context} filter={filter} exportAs={exportAs} units={units}>
             {children}
           </Screen>
         )
       }
     </ReportsGate>
+  );
+}
+
+/** A comparação entre unidades sem acesso (outro plano, uma unidade só, ou não ser dono de todas). */
+function UnitsUnavailable({ title }: { title: string }) {
+  return (
+    <div className="flex flex-col gap-3 px-4 py-6 sm:px-7">
+      <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{title}</h1>
+      <p role="status" className="max-w-2xl text-muted-foreground">
+        {t.units.unavailable}
+      </p>
+      <Link href="/admin/unidades" className={cn(buttonVariants({ variant: "outline" }), "h-11 w-fit")}>
+        {t.units.manage}
+      </Link>
+    </div>
   );
 }
 
@@ -118,17 +141,19 @@ function Screen({
   context,
   filter,
   exportAs,
+  units,
   children,
 }: {
   title: string;
   context: ReportContext;
+  units: boolean;
   exportAs?: ExportScreen;
   filter?: (filters: ReportFilters) => ReactNode;
   children: (context: ReportContext, filters: ReportFilters) => ReactNode;
 }) {
   const filters = useReportFilters(context);
   const { period } = filters;
-  const noData = !context.firstDataDay || period.to < context.firstDataDay;
+  const noData = !units && (!context.firstDataDay || period.to < context.firstDataDay);
 
   return (
     <div className="flex flex-col">
@@ -171,7 +196,7 @@ function Screen({
               onApply={filters.chooseRange}
             />
           </div>
-          <SectorFilter value={filters.sectorId} onChange={filters.chooseSector} />
+          {!units && <SectorFilter value={filters.sectorId} onChange={filters.chooseSector} />}
           {filter?.(filters)}
           {exportAs && (
             <ExportButton screen={exportAs} filters={filters} allowed={context.canExport} disabled={noData} />

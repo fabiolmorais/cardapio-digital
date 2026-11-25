@@ -116,6 +116,11 @@ class ManageUnitsServiceTest {
         }
 
         @Override
+        public List<UnitMembership> unitsFor(OrganizationId organizationId, UserId userId) {
+            return List.of();
+        }
+
+        @Override
         public void saveUnit(Establishment unit, Membership owner) {
             saved.add(unit);
             owners.add(owner);

@@ -994,6 +994,7 @@ export const messages = {
       reportsTeam: "Atendimento e equipe",
       reportsTables: "Mesas e ocupação",
       reportsPhone: "Celular e rodízio",
+      reportsUnits: "Unidades",
       reportsSummary: "Resumo diário",
       /** O nome do item de um submenu: "Relatórios: Cardápio" (o "Cardápio" da gestão é outro). */
       within: (group: string, item: string) => `${group}: ${item}`,
@@ -2421,6 +2422,65 @@ export const messages = {
           byCategory: "O preparo médio de cada categoria do cardápio.",
           delayed: "As horas em que os pratos prontos mais esperaram para chegar à mesa.",
         },
+      },
+    },
+    units: {
+      title: "Unidades",
+      unavailable:
+        "A comparação entre unidades é do plano Enterprise e aparece para quem é dono de duas unidades ou mais, de todas as unidades da empresa.",
+      manage: "Ver as unidades",
+      intro: (count: number) =>
+        `${count} unidades. Cada uma conta os dias no próprio fuso; sem filtro de setor, porque cada unidade tem os seus.`,
+      network: "A rede no período",
+      kpi: {
+        revenue: "Faturamento da rede",
+        tabs: "Comandas",
+        ticket: "Tíquete médio",
+        rating: "Nota média",
+        ratingOf: "de 5",
+        ratings: (count: number) => (count === 1 ? "1 avaliação" : `${count} avaliações`),
+        fewRatings: "menos de 5 avaliações",
+      },
+      table: {
+        title: "Lado a lado",
+        hint: "toque no título de uma coluna para ordenar",
+        unit: "Unidade",
+        network: "Rede",
+        columns: {
+          revenue: "Faturamento",
+          tabs: "Comandas",
+          ticket: "Tíquete médio",
+          prep: "Preparo médio",
+          response: "Resposta ao chamado",
+          rating: "Nota média",
+        },
+        sortBy: (column: string) => `Ordenar por ${column}`,
+        best: "melhor",
+        bestLabel: (value: string) => `${value}, o melhor`,
+        rating: (average: string | null, count: number) =>
+          average === null ? `— · ${count}` : `${average} · ${count}`,
+        note: 'Preparo médio: da cozinha receber até o item ficar pronto. Resposta ao chamado: do chamado até o garçom aceitar. Nota: a média das avaliações e quantas foram; com menos de 5, "—". Embaixo do faturamento, a comparação com o período anterior.',
+      },
+      evolution: {
+        title: "Evolução no período",
+        show: "O que mostrar",
+        revenue: "Faturamento",
+        tabs: "Comandas",
+        others: "Outras unidades",
+        note: {
+          DAY: "Um ponto por dia.",
+          WEEK: "A média por dia de cada semana (a primeira e a última podem estar pela metade).",
+          MONTH: "A média por dia de cada mês (o primeiro e o último podem estar pela metade).",
+        },
+        many: (count: number) => `Com mais de 5 unidades, as 5 que mais faturaram e as outras ${count} somadas.`,
+        tip: (unit: string, when: string, value: string) => `${unit}, ${when}: ${value}`,
+        perDay: (value: string) => `${value} por dia`,
+        chart: (metric: string, parts: string) => `${metric} por dia, no período: ${parts}.`,
+        from: (unit: string, first: string, last: string) => `${unit} de ${first} para ${last}`,
+      },
+      share: {
+        title: "Parte no faturamento",
+        chart: (parts: string) => `Parte de cada unidade no faturamento: ${parts}`,
       },
     },
     businessOnly: {
