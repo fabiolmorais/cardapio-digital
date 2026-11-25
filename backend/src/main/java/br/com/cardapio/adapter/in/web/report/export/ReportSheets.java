@@ -8,8 +8,10 @@ import br.com.cardapio.application.port.in.report.PhoneRodizioReport;
 import br.com.cardapio.application.port.in.report.SalesReport;
 import br.com.cardapio.application.port.in.report.TableReport;
 import br.com.cardapio.application.port.in.report.TeamReport;
+import br.com.cardapio.application.port.in.report.UnitComparison;
 import br.com.cardapio.domain.report.model.RatingComment;
 import br.com.cardapio.domain.report.model.ReportTotals;
+import br.com.cardapio.domain.report.model.TimeAverage;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -314,5 +316,30 @@ public final class ReportSheets {
         sheet.section("Cortes mais pedidos", "Corte", "Pedidos");
         r.topCuts().forEach(c -> sheet.row(text(c.name()), number(c.quantity())));
         return sheet;
+    }
+
+    /**
+     * A comparação entre unidades (REL-80): a tabela lado a lado (com a rede no fim) e a evolução de
+     * cada unidade, ponto a ponto.
+     */
+    public static Sheet units(UnitComparison c) {
+        Sheet sheet = new Sheet("Unidades", c.period()).section("Unidades", "Unidade", "Faturamento (R$)",
+                "Faturamento anterior (R$)", "Comandas", "Comandas anteriores", "Tíquete médio (R$)",
+                "Preparo médio (min)", "Resposta ao chamado (min)", "Nota média", "Avaliações");
+        c.units().forEach(u -> sheet.row(text(u.name()), money(u.current().revenue()), money(u.compared().revenue()),
+                number(u.current().tabs()), number(u.compared().tabs()), average(u.current()),
+                time(u.prep()), time(u.callResponse()), decimal(u.ratingAverage(), 1), number(u.ratings().count())));
+        var n = c.network();
+        sheet.row(text("Rede"), money(n.current().revenue()), money(n.compared().revenue()),
+                number(n.current().tabs()), number(n.compared().tabs()), average(n.current()),
+                time(n.prep()), time(n.callResponse()), decimal(n.ratingAverage(), 1), number(n.ratings().count()));
+        sheet.section("Evolução", "Unidade", "Início", "Fim", "Faturamento por dia (R$)", "Comandas por dia");
+        c.units().forEach(u -> u.series().forEach(p -> sheet.row(text(u.name()), day(p.start()), day(p.end()),
+                money(p.revenuePerDay()), decimal(p.tabsPerDay(), 1))));
+        return sheet;
+    }
+
+    private static Sheet.Cell time(TimeAverage average) {
+        return minutes(average.average());
     }
 }

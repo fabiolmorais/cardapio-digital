@@ -8,10 +8,14 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.Membership;
 import br.com.cardapio.domain.account.model.OrganizationId;
 import br.com.cardapio.domain.account.model.Slug;
+import br.com.cardapio.domain.account.model.UnitMembership;
 import br.com.cardapio.domain.account.model.UnitSummary;
+import br.com.cardapio.domain.account.model.UserId;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -81,5 +85,26 @@ class UnitPersistenceAdapter implements UnitPort {
     public void saveUnit(Establishment unit, Membership owner) {
         establishments.save(AccountPersistenceMapper.toEntity(unit));
         memberships.save(AccountPersistenceMapper.toEntity(owner));
+    }
+
+    @Override
+    public List<UnitMembership> unitsFor(OrganizationId organizationId, UserId userId) {
+        return jdbc.sql("""
+                        SELECT e.id, e.name, e.time_zone,
+                               EXISTS (SELECT 1 FROM membership m
+                                        WHERE m.establishment_id = e.id AND m.user_id = :user
+                                          AND m.active AND m.role = 'OWNER') AS owner
+                          FROM establishment e
+                         WHERE e.organization_id = :org AND e.active
+                         ORDER BY lower(e.name), e.id
+                        """)
+                .param("org", organizationId.value())
+                .param("user", userId.value())
+                .query((rs, n) -> new UnitMembership(
+                        new EstablishmentId(rs.getObject("id", UUID.class)),
+                        rs.getString("name"),
+                        ZoneId.of(rs.getString("time_zone")),
+                        rs.getBoolean("owner")))
+                .list();
     }
 }

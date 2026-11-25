@@ -15,6 +15,8 @@
   --color-report-pix: var(--report-pix);
   --color-report-card: var(--report-card);
   --color-report-cash: var(--report-cash);
+  --color-report-unit-4: var(--report-unit-4);
+  --color-report-unit-5: var(--report-unit-5);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -93,6 +95,9 @@
   --report-pix: #3987e5;
   --report-card: #d95926;
   --report-cash: #199e70;
+  /* A 4.ª e a 5.ª unidade na comparação entre unidades (as 3 primeiras usam Pix, cartão e dinheiro). */
+  --report-unit-4: #7c4ddb;
+  --report-unit-5: #c23a8a;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -134,6 +139,8 @@
   --report-pix: #3987e5;
   --report-card: #d95926;
   --report-cash: #199e70;
+  --report-unit-4: #a685f0;
+  --report-unit-5: #e070b0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

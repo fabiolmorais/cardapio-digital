@@ -1793,6 +1793,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As unidades lado a lado e a evolução no período (Enterprise, dono de todas as unidades) */
+        get: operations["getUnitComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/units/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A comparação entre unidades em CSV, Excel ou PDF (Enterprise, dono de todas as unidades) */
+        get: operations["exportUnitComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/team": {
         parameters: {
             query?: never;
@@ -4917,6 +4951,79 @@ export interface components {
             /** Format: int64 */
             priceCents: number;
         };
+        /** @description Dias do restaurante, do primeiro ao último (inclusive) */
+        ReportRange: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        /** @description As comandas fechadas do período */
+        ReportTotals: {
+            /**
+             * Format: int64
+             * @description Faturamento, sem a taxa de serviço
+             */
+            revenueCents: number;
+            /** Format: int32 */
+            tabs: number;
+            /** Format: int64 */
+            averageTicketCents: number;
+        };
+        /** @description A comparação entre unidades (REL-80, Enterprise) */
+        UnitComparison: {
+            /** @description O período no fuso da unidade de agora */
+            period: components["schemas"]["ReportRange"];
+            comparison: components["schemas"]["ReportRange"];
+            /**
+             * @description Por dia até 14 dias, por semana até 6 meses, por mês acima
+             * @enum {string}
+             */
+            grouping: "DAY" | "WEEK" | "MONTH";
+            /** @description Da que mais faturou para a que menos faturou */
+            units: components["schemas"]["UnitComparisonUnit"][];
+            network: components["schemas"]["UnitFigures"];
+        };
+        /** @description Um ponto da evolução, com as médias por dia */
+        UnitComparisonPoint: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int64 */
+            revenuePerDayCents: number;
+            tabsPerDay: number;
+        };
+        UnitComparisonUnit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            figures: components["schemas"]["UnitFigures"];
+            series: components["schemas"]["UnitComparisonPoint"][];
+        };
+        /** @description Os números de uma unidade, ou da rede inteira */
+        UnitFigures: {
+            current: components["schemas"]["ReportTotals"];
+            /** @description O período anterior */
+            compared: components["schemas"]["ReportTotals"];
+            /**
+             * Format: int64
+             * @description Preparo médio, em segundos; ausente sem preparos
+             */
+            prepSeconds?: number;
+            /**
+             * Format: int64
+             * @description Resposta média ao chamado, em segundos; ausente sem chamados aceitos
+             */
+            callResponseSeconds?: number;
+            /**
+             * Format: double
+             * @description A nota média, com uma casa; ausente com menos de 5 avaliações
+             */
+            ratingAverage?: number;
+            /** Format: int32 */
+            ratings: number;
+        };
         /** @description A resposta média ao chamado numa hora do dia */
         ReportCallHour: {
             /** Format: int32 */
@@ -4954,13 +5061,6 @@ export interface components {
              * @description De pedir a conta até a comanda fechar, em média
              */
             billToCloseSeconds?: number;
-        };
-        /** @description Dias do restaurante, do primeiro ao último (inclusive) */
-        ReportRange: {
-            /** Format: date */
-            from: string;
-            /** Format: date */
-            to: string;
         };
         /** @description Quantas avaliações e a nota média de um grupo */
         ReportRatingGroup: {
@@ -5328,18 +5428,6 @@ export interface components {
             averageTicketCents: number;
             /** Format: int64 */
             revenueCents: number;
-        };
-        /** @description As comandas fechadas do período */
-        ReportTotals: {
-            /**
-             * Format: int64
-             * @description Faturamento, sem a taxa de serviço
-             */
-            revenueCents: number;
-            /** Format: int32 */
-            tabs: number;
-            /** Format: int64 */
-            averageTicketCents: number;
         };
         /** @description Os blocos do Business */
         SalesFull: {
@@ -6095,6 +6183,8 @@ export interface components {
              * @description O maior período de uma vez, em dias
              */
             maxPeriodDays: number;
+            /** @description A tela Unidades (Enterprise, dono de todas as unidades) existe */
+            unitComparison: boolean;
         };
         PageResponseRating: {
             content: components["schemas"]["Rating"][];
@@ -12023,6 +12113,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseRodizioQuote"];
+                };
+            };
+        };
+    };
+    getUnitComparison: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As unidades, da que mais faturou para a que menos, e a rede */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitComparison"];
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Quem não é dono */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Sem a comparação: fora do Enterprise, com uma unidade só ou sem ser dono de todas */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    exportUnitComparison: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                format?: "CSV" | "XLSX" | "PDF";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A planilha: CSV (UTF-8, ponto e vírgula), Excel ou PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description Datas inválidas ou período de mais de 12 meses */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O plano não exporta relatórios (é do Business) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Setor ou categoria não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Período fora do histórico do plano ou no futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

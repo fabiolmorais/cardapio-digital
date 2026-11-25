@@ -14,6 +14,8 @@ import br.com.cardapio.application.port.in.report.GetPhoneRodizioReportUseCase;
 import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
+import br.com.cardapio.application.port.in.report.GetUnitComparisonUseCase;
+import br.com.cardapio.application.port.in.report.UnitComparisonQuery;
 import br.com.cardapio.application.port.in.report.KitchenReportQuery;
 import br.com.cardapio.application.port.in.report.MenuProduct;
 import br.com.cardapio.application.port.in.report.MenuReportQuery;
@@ -114,12 +116,13 @@ class ReportExportController {
     private final GetTeamReportUseCase team;
     private final GetTableReportUseCase tables;
     private final GetPhoneRodizioReportUseCase phoneRodizio;
+    private final GetUnitComparisonUseCase units;
     private final Clock clock;
 
     ReportExportController(AuthorizeReportExportUseCase authorize, GetOverviewReportUseCase overview,
                            GetSalesReportUseCase sales, GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen,
                            GetTeamReportUseCase team, GetTableReportUseCase tables,
-                           GetPhoneRodizioReportUseCase phoneRodizio, Clock clock) {
+                           GetPhoneRodizioReportUseCase phoneRodizio, GetUnitComparisonUseCase units, Clock clock) {
         this.authorize = authorize;
         this.overview = overview;
         this.sales = sales;
@@ -128,6 +131,7 @@ class ReportExportController {
         this.team = team;
         this.tables = tables;
         this.phoneRodizio = phoneRodizio;
+        this.units = units;
         this.clock = clock;
     }
 
@@ -265,5 +269,19 @@ class ReportExportController {
                                   @RequestParam(defaultValue = "CSV") ExportFormat format) {
         ReportQuery query = query(jwt, from, to, sectorId);
         return export(query, "celular-e-rodizio", format, () -> ReportSheets.phoneAndRodizio(phoneRodizio.get(query)));
+    }
+
+    @GetMapping(value = "/units/export", produces = {"text/csv", XLSX_TYPE, PDF_TYPE, "application/problem+json"})
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(operationId = "exportUnitComparison",
+            summary = "A comparação entre unidades em CSV, Excel ou PDF (Enterprise, dono de todas as unidades)")
+    @ExportResponses
+    ResponseEntity<byte[]> units(@AuthenticationPrincipal Jwt jwt,
+                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                 @RequestParam(defaultValue = "CSV") ExportFormat format) {
+        UnitComparisonQuery query = ReportController.unitQuery(jwt, from, to);
+        return export(new ReportQuery(query.establishmentId(), from, to, null), "unidades", format,
+                () -> ReportSheets.units(units.get(query)));
     }
 }

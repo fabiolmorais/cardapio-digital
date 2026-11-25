@@ -10,6 +10,8 @@ import br.com.cardapio.application.port.in.report.GetSalesReportUseCase;
 import br.com.cardapio.application.port.in.report.GetPhoneRodizioReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTableReportUseCase;
 import br.com.cardapio.application.port.in.report.GetTeamReportUseCase;
+import br.com.cardapio.application.port.in.report.GetUnitComparisonUseCase;
+import br.com.cardapio.application.port.in.report.UnitComparisonQuery;
 import br.com.cardapio.application.port.in.report.KitchenReportQuery;
 import br.com.cardapio.application.port.in.report.MenuReportQuery;
 import br.com.cardapio.application.port.in.report.ReportQuery;
@@ -57,10 +59,12 @@ class ReportController {
     private final GetTeamReportUseCase team;
     private final GetTableReportUseCase tables;
     private final GetPhoneRodizioReportUseCase phoneRodizio;
+    private final GetUnitComparisonUseCase units;
 
     ReportController(GetReportContextUseCase context, GetOverviewReportUseCase overview, GetSalesReportUseCase sales,
                      GetMenuReportUseCase menu, GetKitchenReportUseCase kitchen, GetTeamReportUseCase team,
-                     GetTableReportUseCase tables, GetPhoneRodizioReportUseCase phoneRodizio) {
+                     GetTableReportUseCase tables, GetPhoneRodizioReportUseCase phoneRodizio,
+                     GetUnitComparisonUseCase units) {
         this.context = context;
         this.overview = overview;
         this.sales = sales;
@@ -69,6 +73,7 @@ class ReportController {
         this.team = team;
         this.tables = tables;
         this.phoneRodizio = phoneRodizio;
+        this.units = units;
     }
 
     @GetMapping("/context")
@@ -76,7 +81,33 @@ class ReportController {
             summary = "O plano, o fuso, o histórico liberado e desde quando há dados")
     @ApiResponse(responseCode = "200", description = "O contexto dos relatórios (também no Essencial)")
     ReportContextResponse context(@AuthenticationPrincipal Jwt jwt) {
-        return ReportContextResponse.from(context.get(AuthenticatedUser.from(jwt).establishmentId()));
+        AuthenticatedUser user = AuthenticatedUser.from(jwt);
+        return ReportContextResponse.from(context.get(user.establishmentId(), user.userId()));
+    }
+
+    @GetMapping("/units")
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(operationId = "getUnitComparison",
+            summary = "As unidades lado a lado e a evolução no período (Enterprise, dono de todas as unidades)")
+    @ApiResponse(responseCode = "200", description = "As unidades, da que mais faturou para a que menos, e a rede")
+    @ApiResponse(responseCode = "400", description = "Datas inválidas ou período de mais de 12 meses", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "Quem não é dono", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Sem a comparação: fora do Enterprise, com uma unidade só ou sem ser "
+            + "dono de todas", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Período fora do histórico do plano ou no futuro", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    UnitComparisonResponse units(@AuthenticationPrincipal Jwt jwt,
+                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return UnitComparisonResponse.from(units.get(unitQuery(jwt, from, to)));
+    }
+
+    static UnitComparisonQuery unitQuery(Jwt jwt, LocalDate from, LocalDate to) {
+        AuthenticatedUser user = AuthenticatedUser.from(jwt);
+        return new UnitComparisonQuery(user.establishmentId(), user.userId(), from, to);
     }
 
     @GetMapping("/overview")

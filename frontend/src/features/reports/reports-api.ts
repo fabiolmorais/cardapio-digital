@@ -10,6 +10,7 @@ export type KitchenReport = Schemas["KitchenReport"];
 export type TeamReport = Schemas["TeamReport"];
 export type TableReport = Schemas["TableReport"];
 export type PhoneRodizioReport = Schemas["PhoneRodizioReport"];
+export type UnitComparison = Schemas["UnitComparison"];
 export type SummarySettings = Schemas["DailySummarySettings"];
 export type SummarySettingsRequest = Schemas["DailySummarySettingsRequest"];
 export type DailySummary = Schemas["DailySummary"];
@@ -124,6 +125,20 @@ export function useTeamReport(params: ReportParams) {
     queryKey: ["reports", "team", params],
     queryFn: async () => {
       const { data, response } = await api.GET("/api/v1/reports/team", { params: { query: params } });
+      if (!data) throw new Error(String(response.status));
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** A comparação entre unidades (REL-80, Enterprise): só os dias, sem setor. */
+export function useUnitComparisonReport(params: { from: string; to: string }) {
+  return useQuery({
+    queryKey: ["reports", "units", params],
+    queryFn: async () => {
+      const { data, response } = await api.GET("/api/v1/reports/units", { params: { query: params } });
       if (!data) throw new Error(String(response.status));
       return data;
     },
@@ -296,7 +311,8 @@ export function useSendSummaryTest() {
 }
 
 /** As telas que exportam em CSV (R12), pelo nome do endereço da API. */
-export type ExportScreen = "overview" | "sales" | "menu" | "kitchen" | "team" | "tables" | "phone-and-rodizio";
+export type ExportScreen =
+  "overview" | "sales" | "menu" | "kitchen" | "team" | "tables" | "phone-and-rodizio" | "units";
 export type ExportParams = ReportParams & { categoryId?: string; groupBy?: Grouping };
 export type ExportFormat = "CSV" | "XLSX" | "PDF";
 const EXTENSIONS: Record<ExportFormat, string> = { CSV: "csv", XLSX: "xlsx", PDF: "pdf" };
@@ -309,6 +325,7 @@ const EXPORT_NAMES: Record<ExportScreen, string> = {
   team: "equipe",
   tables: "mesas",
   "phone-and-rodizio": "celular-e-rodizio",
+  units: "unidades",
 };
 
 /** Baixa a planilha da tela no formato escolhido ("ohchefe-vendas-2026-11-01-a-2026-11-30.xlsx"). */
@@ -332,6 +349,9 @@ export async function exportReport(screen: ExportScreen, params: ExportParams, f
         return api.GET("/api/v1/reports/tables/export", { params: { query: base }, ...options });
       case "phone-and-rodizio":
         return api.GET("/api/v1/reports/phone-and-rodizio/export", { params: { query: base }, ...options });
+      case "units":
+        // Sem setor: cada unidade tem os seus.
+        return api.GET("/api/v1/reports/units/export", { params: { query: { from, to, format } }, ...options });
     }
   })();
   if (!result.data) throw new Error(String(result.response.status));

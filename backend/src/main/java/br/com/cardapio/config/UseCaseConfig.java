@@ -113,6 +113,7 @@ import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
 import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
+import br.com.cardapio.application.port.in.report.GetUnitComparisonUseCase;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
 import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
 import br.com.cardapio.application.port.out.report.MenuInterestReportPort;
@@ -132,6 +133,7 @@ import br.com.cardapio.application.service.report.GetOverviewReportService;
 import br.com.cardapio.application.service.report.GetSalesReportService;
 import br.com.cardapio.application.port.out.report.ReportActivityPort;
 import br.com.cardapio.application.service.report.GetReportContextService;
+import br.com.cardapio.application.service.report.GetUnitComparisonService;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.plan.RequestPlanUseCase;
 import br.com.cardapio.application.port.in.plan.SendTrialNoticesUseCase;
@@ -1173,8 +1175,20 @@ class UseCaseConfig {
     @Bean
     GetReportContextUseCase getReportContextUseCase(SubscriptionPort subscriptionPort,
                                                     EstablishmentTimeZonePort establishmentTimeZonePort,
-                                                    ReportActivityPort reportActivityPort, Clock clock) {
-        return new GetReportContextService(subscriptionPort, establishmentTimeZonePort, reportActivityPort, clock);
+                                                    ReportActivityPort reportActivityPort, UnitPort unitPort,
+                                                    Clock clock) {
+        return new GetReportContextService(subscriptionPort, establishmentTimeZonePort, reportActivityPort, unitPort,
+                clock);
+    }
+
+    @Bean
+    GetUnitComparisonUseCase getUnitComparisonUseCase(SubscriptionPort subscriptionPort, UnitPort unitPort,
+                                                      SalesReportPort salesReportPort,
+                                                      KitchenReportPort kitchenReportPort,
+                                                      TeamReportPort teamReportPort,
+                                                      RatingReportPort ratingReportPort, Clock clock) {
+        return new GetUnitComparisonService(subscriptionPort, unitPort, salesReportPort, kitchenReportPort,
+                teamReportPort, ratingReportPort, clock);
     }
 
     @Bean

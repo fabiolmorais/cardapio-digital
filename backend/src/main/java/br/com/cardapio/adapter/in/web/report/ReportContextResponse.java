@@ -22,13 +22,15 @@ record ReportContextResponse(
         @Schema(description = "O dia da primeira comanda fechada; ausente enquanto não há dados")
         LocalDate firstDataDay,
         @Schema(requiredMode = REQUIRED, description = "O maior período de uma vez, em dias")
-        int maxPeriodDays) {
+        int maxPeriodDays,
+        @Schema(requiredMode = REQUIRED, description = "A tela Unidades (Enterprise, dono de todas as unidades) existe")
+        boolean unitComparison) {
 
     enum Level { NONE, BASIC, FULL }
 
     static ReportContextResponse from(ReportContext context) {
         return new ReportContextResponse(Level.valueOf(context.level().name()), context.canExport(),
                 context.timeZone().getId(), context.today(), context.earliestDay(), context.firstDataDay(),
-                context.maxPeriodDays());
+                context.maxPeriodDays(), context.unitComparison());
     }
 }
