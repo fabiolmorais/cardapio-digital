@@ -6,7 +6,9 @@ import java.time.LocalDate;
 import br.com.cardapio.domain.shared.model.Money;
 import br.com.cardapio.domain.report.service.GoalAnalysis;
 import br.com.cardapio.domain.report.model.GoalProgress;
+import br.com.cardapio.application.port.out.report.RatingReportPort;
 import br.com.cardapio.application.port.out.report.RevenueGoalPort;
+import br.com.cardapio.domain.report.service.RatingAnalysis;
 import br.com.cardapio.application.port.out.report.KitchenReportPort;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -26,14 +28,17 @@ final class DailySummaryBuilder {
     private final SalesReportPort sales;
     private final KitchenReportPort kitchen;
     private final RevenueGoalPort goals;
+    private final RatingReportPort ratings;
 
-    DailySummaryBuilder(SalesReportPort sales, KitchenReportPort kitchen, RevenueGoalPort goals) {
+    DailySummaryBuilder(SalesReportPort sales, KitchenReportPort kitchen, RevenueGoalPort goals,
+                        RatingReportPort ratings) {
+        this.ratings = ratings;
         this.sales = sales;
         this.kitchen = kitchen;
         this.goals = goals;
     }
 
-    /** @param withGoal o plano tem a meta (Business) */
+    /** @param withGoal o plano tem a meta e as avaliações (Business) */
     DailySummary build(EstablishmentId id, String name, SummaryWindow window, boolean withGoal) {
         SummaryWindow before = window.weekBefore();
         Instant start = window.start();
@@ -52,7 +57,9 @@ final class DailySummaryBuilder {
                         Optional.empty())),
                 DailySummaryAnalysis.attention(prep, usual),
                 sales.payments(id, start, end, Optional.empty()),
-                withGoal ? goal(id, window) : Optional.empty());
+                withGoal ? goal(id, window) : Optional.empty(),
+                withGoal ? Optional.of(ratings.stats(id, start, end, window.zone(), RatingAnalysis.LUNCH_UNTIL,
+                        Optional.empty())).filter(r -> r.count() > 0) : Optional.empty());
     }
 
     /**

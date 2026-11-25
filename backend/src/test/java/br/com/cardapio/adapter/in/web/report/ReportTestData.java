@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -259,6 +260,24 @@ final class ReportTestData {
                     """, UUID.randomUUID(), owner.establishmentId(), order, position++, item.product(), item.name(),
                     item.priceCents(), item.quantity(), Timestamp.from(at), Timestamp.from(at), owner.userId());
         }
+    }
+
+    /**
+     * Uma avaliação do atendimento (C5) feita por um celular novo da mesa, em {@code at}; {@code waiter} pode
+     * ser null. {@code tags}: SPEED, FRIENDLINESS, FOOD, AMBIENCE.
+     */
+    UUID rating(Owner owner, Place place, UUID waiter, int stars, String comment, Instant at, String... tags) {
+        UUID session = session(owner, place, at.minusSeconds(3600));
+        UUID id = UUID.randomUUID();
+        List<String> marked = List.of(tags);
+        jdbc.update("""
+                INSERT INTO service_rating (id, establishment_id, session_id, table_id, waiter_id, stars, tag_speed,
+                                            tag_friendliness, tag_food, tag_ambience, comment, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, owner.establishmentId(), session, place.table(), waiter, stars, marked.contains("SPEED"),
+                marked.contains("FRIENDLINESS"), marked.contains("FOOD"), marked.contains("AMBIENCE"), comment,
+                Timestamp.from(at));
+        return id;
     }
 
     /** Um evento do celular no cardápio (C2): PRODUCT_VIEW, REEL_VIEW ou CART_ADD. */

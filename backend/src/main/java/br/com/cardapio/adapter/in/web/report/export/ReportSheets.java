@@ -8,6 +8,7 @@ import br.com.cardapio.application.port.in.report.PhoneRodizioReport;
 import br.com.cardapio.application.port.in.report.SalesReport;
 import br.com.cardapio.application.port.in.report.TableReport;
 import br.com.cardapio.application.port.in.report.TeamReport;
+import br.com.cardapio.domain.report.model.RatingComment;
 import br.com.cardapio.domain.report.model.ReportTotals;
 
 import java.time.Duration;
@@ -182,7 +183,12 @@ public final class ReportSheets {
     }
 
     /** Atendimento e equipe (14.5). */
-    public static Sheet team(TeamReport r) {
+    private static final Map<String, String> RATING_TAGS = Map.of("SPEED", "Rapidez", "FRIENDLINESS", "Simpatia",
+            "FOOD", "Comida", "AMBIENCE", "Ambiente");
+    private static final DateTimeFormatter HOUR = DateTimeFormatter.ofPattern("HH:mm");
+
+    /** Atendimento e equipe (14.5), com as avaliações (14.16) e os comentários do período. */
+    public static Sheet team(TeamReport r, List<RatingComment> comments) {
         Sheet sheet = new Sheet("Atendimento e equipe", r.period()).section("Resumo", "Indicador", "Período", "Comparação")
                 .row(text("Chamados"), number(r.current().calls()), number(r.compared().calls()))
                 .row(text("Resposta ao chamado (min)"), minutes(r.current().response()),
@@ -191,10 +197,10 @@ public final class ReportSheets {
                 .row(text("Da conta pedida ao fechamento (min)"), minutes(r.current().billToClose()),
                         minutes(r.compared().billToClose()));
         sheet.section("Garçons", "Garçom", "Chamados", "Resposta (min)", "Itens entregues", "Comandas fechadas",
-                "Faturamento (R$)", "Pedidos lançados", "Gorjeta (R$)");
+                "Faturamento (R$)", "Pedidos lançados", "Gorjeta (R$)", "Avaliações", "Nota");
         r.waiters().forEach(w -> sheet.row(text(w.name()), number(w.calls()), minutes(w.response()),
                 number(w.delivered()), number(w.closedTabs()), money(w.revenue()), number(w.staffOrders()),
-                money(w.tips())));
+                money(w.tips()), number(w.ratings()), decimal(w.ratingAverage(), 1)));
         sheet.section("Resposta por hora", "Hora", "Resposta (min)", "Chamados");
         r.responseByHour().forEach(h -> sheet.row(number(h.hour()), minutes(h.average()), number(h.count())));
         sheet.section("Chamados por tipo", "Tipo", "Chamados", "Cancelados pelo cliente");
@@ -205,6 +211,35 @@ public final class ReportSheets {
                 .row(text("Avisos mostrados"), number(r.warnings().shown()))
                 .row(text("Garçom confirmou"), number(r.warnings().confirmed()))
                 .row(text("Garçom tirou o item"), number(r.warnings().shown() - r.warnings().confirmed()));
+        var ratings = r.ratings();
+        sheet.section("Avaliações", "Indicador", "Valor")
+                .row(text("Nota média"), decimal(ratings.average(), 1))
+                .row(text("Nota média na comparação"), decimal(r.comparedRatingAverage(), 1))
+                .row(text("Avaliações"), number(ratings.count()))
+                .row(text("Comandas fechadas"), number(ratings.closedTabs()))
+                .row(text("Notas baixas (1 ou 2)"), number(ratings.low()))
+                .row(text("Notas 4 ou 5"), number(ratings.high()))
+                .row(text("Foram ao Google"), number(ratings.googleClicks()))
+                .row(text("Nota no almoço (até 16h)"), decimal(ratings.lunch().average(), 1))
+                .row(text("Nota no jantar (das 16h)"), decimal(ratings.dinner().average(), 1));
+        sheet.section("Nota ao longo do período", "De", "Até", "Avaliações", "Nota");
+        r.ratingTrend().forEach(p -> sheet.row(day(p.from()), day(p.to()), number(p.count()),
+                decimal(p.average(), 1)));
+        sheet.section("Notas", "Estrelas", "Avaliações");
+        for (int stars = 5; stars >= 1; stars--) {
+            sheet.row(number(stars), number(ratings.byStars().get(stars - 1)));
+        }
+        sheet.section("Atalhos", "Atalho", "Nos elogios (4 ou 5)", "No que melhorar (1 a 3)");
+        RATING_TAGS.keySet().stream().sorted().forEach(tag -> sheet.row(text(RATING_TAGS.get(tag)),
+                number(ratings.praisedTags().getOrDefault(tag, 0)),
+                number(ratings.improveTags().getOrDefault(tag, 0))));
+        sheet.section("Comentários", "Dia", "Hora", "Mesa", "Garçom", "Nota", "Atalhos", "Comentário");
+        comments.forEach(c -> {
+            var at = c.createdAt().atZone(r.period().zone());
+            sheet.row(day(at.toLocalDate()), text(HOUR.format(at)), text(c.tableLabel()),
+                    text(c.waiterName() == null ? "" : c.waiterName()), number(c.stars()),
+                    text(String.join(", ", c.tags().stream().map(RATING_TAGS::get).toList())), text(c.comment()));
+        });
         return sheet;
     }
 

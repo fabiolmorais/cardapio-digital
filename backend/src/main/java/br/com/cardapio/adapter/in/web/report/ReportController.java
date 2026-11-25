@@ -199,6 +199,26 @@ class ReportController {
         return TeamReportResponse.from(team.get(query(jwt, from, to, sectorId)));
     }
 
+    @GetMapping("/team/comments")
+    @Operation(operationId = "listTeamRatingComments",
+            summary = "Os comentários das avaliações do período, do mais novo (Business, paginado)")
+    @ApiResponse(responseCode = "200", description = "Uma página dos comentários")
+    @ApiResponse(responseCode = "403", description = "O plano não tem este relatório (é do Business)", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Setor não encontrado", content = @Content(
+            mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    PageResponse<TeamReportResponse.Comment> teamComments(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) UUID sectorId,
+            @RequestParam(defaultValue = "false") boolean onlyLow,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
+        return PageResponse.from(team.comments(query(jwt, from, to, sectorId), onlyLow, new PageQuery(page, size)),
+                TeamReportResponse.Comment::of);
+    }
+
     @GetMapping("/tables")
     @Operation(operationId = "getTableReport", summary = "Mesas e ocupação do período (Business)")
     @ApiResponse(responseCode = "200", description = "A permanência, o giro, o mapa do salão e a ocupação")

@@ -8,6 +8,7 @@ import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.HourlyRevenue;
 import br.com.cardapio.domain.report.model.ItemSales;
 import br.com.cardapio.domain.report.model.PaymentTotal;
+import br.com.cardapio.domain.report.model.RatingStats;
 import br.com.cardapio.domain.report.model.ReportTotals;
 import br.com.cardapio.domain.report.model.SlowAttention;
 import br.com.cardapio.domain.report.model.SummaryWindow;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -137,5 +139,21 @@ class DailySummaryMessagesTest {
         assertThat(DailySummaryMessages.duration(Duration.ofSeconds(731))).isEqualTo("12 min");
         assertThat(DailySummaryMessages.duration(Duration.ofMinutes(65))).isEqualTo("1 h 05 min");
         assertThat(DailySummaryMessages.money(5)).isEqualTo("R$ 0,05");
+    }
+
+    @Test
+    void theRatingsOfTheDayGoInTheSummary() {
+        DailySummary f = friday();
+        var ratings = new RatingStats(12, 55, 1, 10, 4, List.of(1, 0, 1, 3, 7), RatingStats.StarTotal.NONE,
+                RatingStats.StarTotal.NONE, Map.of(), Map.of(), 84);
+        var withRatings = new DailySummary(f.establishmentName(), f.window(), f.current(), f.compared(),
+                f.averagePrep(), f.comparedAveragePrep(), f.champion(), f.peak(), f.attention(), f.payments(),
+                Optional.empty(), Optional.of(ratings));
+
+        var email = DailySummaryMessages.email(withRatings, MARINA, Role.OWNER, "https://ohchefe.test");
+
+        assertThat(email.text()).contains("Avaliações: Nota 4,6 de 5 em 12 avaliações (1 nota baixa).");
+        assertThat(DailySummaryMessages.email(f, MARINA, Role.OWNER, "https://ohchefe.test").text())
+                .doesNotContain("Avaliações");
     }
 }

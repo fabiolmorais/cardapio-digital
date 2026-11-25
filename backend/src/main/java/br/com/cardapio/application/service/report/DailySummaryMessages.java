@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.report.DailySummary;
 import br.com.cardapio.application.port.out.email.EmailMessage;
 import br.com.cardapio.domain.account.model.Role;
 import br.com.cardapio.domain.push.model.PushMessage;
+import br.com.cardapio.domain.report.model.RatingStats;
 import br.com.cardapio.domain.report.model.GoalProgress;
 import br.com.cardapio.domain.report.model.PaymentTotal;
 import br.com.cardapio.domain.report.model.ReportTotals;
@@ -246,7 +247,18 @@ final class DailySummaryMessages {
             }
             lines.add(new String[]{"Pagamentos", String.join(" · ", parts) + " (com a taxa de serviço)."});
         }
+        s.rating().ifPresent(r -> lines.add(new String[]{"Avaliações", ratingText(r)}));
         return lines;
+    }
+
+    /** "Nota 4,6 de 5 em 12 avaliações (1 nota baixa)." */
+    static String ratingText(RatingStats r) {
+        String average = String.format(java.util.Locale.forLanguageTag("pt-BR"), "%.1f", r.average());
+        String text = "Nota " + average + " de 5 em " + (r.count() == 1 ? "1 avaliação" : r.count() + " avaliações");
+        if (r.low() > 0) {
+            text += " (" + (r.low() == 1 ? "1 nota baixa" : r.low() + " notas baixas") + ")";
+        }
+        return text + ".";
     }
 
     static String reportsUrl(String publicUrl, LocalDate day) {

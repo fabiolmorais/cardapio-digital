@@ -305,6 +305,18 @@ function Preview() {
                     <b>{t.champion}:</b> {t.championText(data.champion.name, data.champion.quantity)}
                   </p>
                 )}
+                {data.rating && (
+                  <p>
+                    <b>{t.ratings}:</b>{" "}
+                    {t.ratingsText(
+                      new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(
+                        data.rating.average,
+                      ),
+                      data.rating.count,
+                      data.rating.low,
+                    )}
+                  </p>
+                )}
               </>
             )}
           </>

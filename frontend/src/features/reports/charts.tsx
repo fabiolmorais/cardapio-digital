@@ -167,6 +167,7 @@ export function ColumnChart({
   stacked = false,
   unit = 100,
   tickFormat = (value: number) => compact.format(value),
+  top: fixedTop,
 }: {
   columns: Column[];
   label: string;
@@ -175,12 +176,17 @@ export function ColumnChart({
   stacked?: boolean;
   unit?: number;
   tickFormat?: (value: number) => string;
+  /** O topo do eixo, fixo e inteiro (na unidade do gráfico): a nota vai até 5, com uma linha por ponto. */
+  top?: number;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const highest = Math.max(
     ...columns.map((c) => (stacked ? c.value + (c.previous ?? 0) : Math.max(c.value, c.previous ?? 0))),
   );
-  const { top: topInUnits, steps } = axis(highest / unit);
+  const { top: topInUnits, steps } =
+    fixedTop === undefined
+      ? axis(highest / unit)
+      : { top: fixedTop, steps: Array.from({ length: fixedTop + 1 }, (_, i) => fixedTop - i) };
   const top = topInUnits * unit;
   const ticks = steps.map(tickFormat);
   const every = columns.length > 16 ? Math.ceil(columns.length / 10) : 1;
