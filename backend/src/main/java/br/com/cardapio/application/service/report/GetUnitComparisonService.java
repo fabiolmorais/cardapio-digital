@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.out.account.UnitPort;
 import br.com.cardapio.application.port.out.plan.SubscriptionPort;
 import br.com.cardapio.application.port.out.report.KitchenReportPort;
 import br.com.cardapio.application.port.out.report.RatingReportPort;
+import br.com.cardapio.application.port.out.report.ReportSummaryPort;
 import br.com.cardapio.application.port.out.report.SalesReportPort;
 import br.com.cardapio.application.port.out.report.TeamReportPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
@@ -40,18 +41,18 @@ public class GetUnitComparisonService implements GetUnitComparisonUseCase {
     private final SubscriptionPort subscriptions;
     private final UnitPort units;
     private final SalesReportPort sales;
-    private final KitchenReportPort kitchen;
+    private final SummarizedReads reads;
     private final TeamReportPort team;
     private final RatingReportPort ratings;
     private final Clock clock;
 
     public GetUnitComparisonService(SubscriptionPort subscriptions, UnitPort units, SalesReportPort sales,
                                     KitchenReportPort kitchen, TeamReportPort team, RatingReportPort ratings,
-                                    Clock clock) {
+                                    ReportSummaryPort summary, Clock clock) {
         this.subscriptions = subscriptions;
         this.units = units;
         this.sales = sales;
-        this.kitchen = kitchen;
+        this.reads = new SummarizedReads(summary, sales, kitchen);
         this.team = team;
         this.ratings = ratings;
         this.clock = clock;
@@ -101,7 +102,8 @@ public class GetUnitComparisonService implements GetUnitComparisonUseCase {
         return new UnitPerformance(id, unit.name(),
                 sales.totals(id, period.start(), period.end(), Optional.empty()),
                 sales.totals(id, comparison.start(), comparisonEnd, Optional.empty()),
-                UnitComparisonAnalysis.prep(kitchen.averages(id, period.start(), period.end(), Optional.empty())),
+                UnitComparisonAnalysis.prep(reads.prepAverages(id, period.start(), period.end(), period.zone(),
+                        Optional.empty())),
                 UnitComparisonAnalysis.response(calls.calls(), calls.response()),
                 new RatingStats.StarTotal(stats.count(), stats.starSum()),
                 UnitComparisonAnalysis.perDay(SalesAnalysis.series(period,

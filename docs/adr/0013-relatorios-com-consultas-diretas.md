@@ -1,6 +1,6 @@
 # 0013 — Relatórios com consultas diretas nas tabelas da operação
 
-**Status:** aceita (21/11/2026). Implementação na fase 2 (RF24, RF29), conforme o plano dos relatórios (etapas R0 a R14).
+**Status:** aceita (21/11/2026). Implementação na fase 2 (RF24, RF29), conforme o plano dos relatórios (etapas R0 a R14). Complementada pelo ADR 0014 (resumo diário por produto nos períodos longos).
 
 ## Contexto
 

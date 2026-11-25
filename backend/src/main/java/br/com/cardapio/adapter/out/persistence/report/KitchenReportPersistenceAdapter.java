@@ -8,6 +8,7 @@ import br.com.cardapio.domain.menu.model.ProductId;
 import br.com.cardapio.domain.report.model.KitchenItem;
 import br.com.cardapio.domain.report.model.PrepAverage;
 import br.com.cardapio.domain.report.model.PrepTime;
+import br.com.cardapio.domain.report.model.PrepTotal;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -99,6 +100,35 @@ class KitchenReportPersistenceAdapter implements KitchenReportPort {
                 .query((rs, row) -> new PrepAverage(new ProductId(rs.getObject("product_id", UUID.class)),
                         rs.getString("name"), rs.getInt("preparations"),
                         Duration.ofSeconds(Math.round(rs.getDouble("seconds")))))
+                .list();
+    }
+
+    /** A mesma conta do resumo diário (o tempo de cada item em milissegundos), para as partes se somarem. */
+    @Override
+    public List<PrepTotal> prepTotals(EstablishmentId establishmentId, Instant start, Instant end,
+                                      Optional<SectorId> sector) {
+        return jdbc.sql("""
+                        SELECT i.product_id, p.name, count(*) AS preparations,
+                               sum(round(1000 * greatest(0, extract(epoch FROM i.ready_at
+                                   - greatest(i.created_at, coalesce(o.approved_at, i.created_at)))))) AS millis
+                        FROM order_item i
+                        JOIN customer_order o ON o.id = i.order_id AND o.establishment_id = :establishmentId
+                        JOIN product p ON p.id = i.product_id AND p.establishment_id = :establishmentId
+                        WHERE i.establishment_id = :establishmentId
+                          AND i.created_at >= :start AND i.created_at < :end
+                          AND i.ready_at IS NOT NULL
+                          AND i.status <> 'CANCELED'
+                          AND (CAST(:sectorId AS uuid) IS NULL OR o.table_id IN (
+                              SELECT dt.id FROM dining_table dt
+                              WHERE dt.establishment_id = :establishmentId AND dt.sector_id = CAST(:sectorId AS uuid)))
+                        GROUP BY i.product_id, p.name
+                        """)
+                .param("establishmentId", establishmentId.value())
+                .param("start", OffsetDateTime.ofInstant(start, ZoneOffset.UTC))
+                .param("end", OffsetDateTime.ofInstant(end, ZoneOffset.UTC))
+                .param("sectorId", sector.map(SectorId::value).orElse(null), Types.OTHER)
+                .query((rs, row) -> new PrepTotal(new ProductId(rs.getObject("product_id", UUID.class)),
+                        rs.getString("name"), rs.getInt("preparations"), rs.getLong("millis")))
                 .list();
     }
 

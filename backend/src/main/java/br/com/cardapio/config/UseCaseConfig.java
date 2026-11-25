@@ -114,6 +114,8 @@ import br.com.cardapio.application.port.in.order.UpdateOrderSettingsUseCase;
 import br.com.cardapio.application.port.in.plan.GetSubscriptionUseCase;
 import br.com.cardapio.application.port.in.report.GetReportContextUseCase;
 import br.com.cardapio.application.port.in.report.GetUnitComparisonUseCase;
+import br.com.cardapio.application.port.in.report.RefreshReportSummaryUseCase;
+import br.com.cardapio.application.port.out.report.ReportSummaryPort;
 import br.com.cardapio.application.port.in.report.GetOverviewReportUseCase;
 import br.com.cardapio.application.port.in.report.GetMenuReportUseCase;
 import br.com.cardapio.application.port.out.report.MenuInterestReportPort;
@@ -134,6 +136,7 @@ import br.com.cardapio.application.service.report.GetSalesReportService;
 import br.com.cardapio.application.port.out.report.ReportActivityPort;
 import br.com.cardapio.application.service.report.GetReportContextService;
 import br.com.cardapio.application.service.report.GetUnitComparisonService;
+import br.com.cardapio.application.service.report.RefreshReportSummaryService;
 import br.com.cardapio.application.port.in.plan.ListPlansUseCase;
 import br.com.cardapio.application.port.in.plan.RequestPlanUseCase;
 import br.com.cardapio.application.port.in.plan.SendTrialNoticesUseCase;
@@ -510,8 +513,8 @@ class UseCaseConfig {
 
     @Bean
     UpdateTableUseCase updateTableUseCase(SectorPort sectorPort, DiningTablePort diningTablePort,
-                                          SubscriptionPort subscriptionPort) {
-        return new UpdateTableService(sectorPort, diningTablePort, subscriptionPort);
+                                          SubscriptionPort subscriptionPort, ReportSummaryPort reportSummaryPort) {
+        return new UpdateTableService(sectorPort, diningTablePort, subscriptionPort, reportSummaryPort);
     }
 
     @Bean
@@ -1186,9 +1189,10 @@ class UseCaseConfig {
                                                       SalesReportPort salesReportPort,
                                                       KitchenReportPort kitchenReportPort,
                                                       TeamReportPort teamReportPort,
-                                                      RatingReportPort ratingReportPort, Clock clock) {
+                                                      RatingReportPort ratingReportPort,
+                                                      ReportSummaryPort reportSummaryPort, Clock clock) {
         return new GetUnitComparisonService(subscriptionPort, unitPort, salesReportPort, kitchenReportPort,
-                teamReportPort, ratingReportPort, clock);
+                teamReportPort, ratingReportPort, reportSummaryPort, clock);
     }
 
     @Bean
@@ -1197,9 +1201,15 @@ class UseCaseConfig {
                                                       SectorPort sectorPort, SalesReportPort salesReportPort,
                                                       OperationReportPort operationReportPort,
                                                       KitchenReportPort kitchenReportPort,
-                                                      RevenueGoalPort revenueGoalPort, Clock clock) {
+                                                      RevenueGoalPort revenueGoalPort,
+                                                      ReportSummaryPort reportSummaryPort, Clock clock) {
         return new GetOverviewReportService(subscriptionPort, establishmentTimeZonePort, sectorPort, salesReportPort,
-                operationReportPort, kitchenReportPort, revenueGoalPort, clock);
+                operationReportPort, kitchenReportPort, revenueGoalPort, reportSummaryPort, clock);
+    }
+
+    @Bean
+    RefreshReportSummaryUseCase refreshReportSummaryUseCase(ReportSummaryPort reportSummaryPort, Clock clock) {
+        return new RefreshReportSummaryService(reportSummaryPort, clock);
     }
 
     @Bean

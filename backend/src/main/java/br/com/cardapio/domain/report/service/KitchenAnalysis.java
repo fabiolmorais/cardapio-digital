@@ -18,9 +18,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,31 +185,55 @@ public final class KitchenAnalysis {
      * chegar e sai ao ficar pronto; num empate, o que sai vai antes do que entra.
      */
     public static List<HourPeak> peaks(Collection<KitchenItem> items, ZoneId zone) {
-        record Event(Instant at, int delta) {
-        }
-        List<Event> events = new ArrayList<>();
+        // Cada evento vira um número só (o instante em nanossegundos, vezes dois, mais 1 se é entrada):
+        // ordenar os números põe os eventos na ordem do tempo, com a saída antes da entrada no empate.
+        // Com 12 meses são centenas de milhares de eventos; objetos e comparadores pesavam (ADR 0014).
+        long[] events = new long[items.size() * 2];
+        int count = 0;
         for (KitchenItem i : items) {
             if (i.ready() != null) {
-                events.add(new Event(i.received(), 1));
-                events.add(new Event(i.ready().isBefore(i.received()) ? i.received() : i.ready(), -1));
+                Instant out = i.ready().isBefore(i.received()) ? i.received() : i.ready();
+                events[count++] = nanos(i.received()) * 2 + 1;
+                events[count++] = nanos(out) * 2;
             }
         }
-        events.sort(Comparator.comparing(Event::at).thenComparingInt(Event::delta));
-        Map<LocalDate, Map<Integer, Integer>> peaks = new TreeMap<>();
+        Arrays.sort(events, 0, count);
+        ZoneRules rules = zone.getRules();
+        Map<Long, Integer> peakByHour = new HashMap<>();
+        long hour = Long.MIN_VALUE;
+        int peak = 0;
         int preparing = 0;
-        for (Event e : events) {
-            preparing += e.delta();
-            var local = e.at().atZone(zone);
-            peaks.computeIfAbsent(local.toLocalDate(), d -> new TreeMap<>())
-                    .merge(local.getHour(), preparing, Math::max);
+        for (int k = 0; k < count; k++) {
+            long event = events[k];
+            preparing += (event & 1) == 1 ? 1 : -1;
+            long nanos = event >> 1;
+            long second = Math.floorDiv(nanos, 1_000_000_000L);
+            int offset = rules.getOffset(Instant.ofEpochSecond(second)).getTotalSeconds();
+            long localHour = Math.floorDiv(second + offset, 3600);
+            if (localHour != hour) {
+                if (hour != Long.MIN_VALUE) {
+                    peakByHour.merge(hour, peak, Math::max);
+                }
+                hour = localHour;
+                peak = preparing;
+            } else {
+                peak = Math.max(peak, preparing);
+            }
+        }
+        if (hour != Long.MIN_VALUE) {
+            peakByHour.merge(hour, peak, Math::max);
         }
         List<HourPeak> result = new ArrayList<>();
-        peaks.forEach((day, hours) -> hours.forEach((hour, peak) -> {
-            if (peak > 0) {
-                result.add(new HourPeak(day, hour, peak));
-            }
-        }));
+        peakByHour.entrySet().stream()
+                .filter(e -> e.getValue() > 0)
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> result.add(new HourPeak(LocalDate.ofEpochDay(Math.floorDiv(e.getKey(), 24)),
+                        (int) Math.floorMod(e.getKey(), 24), e.getValue())));
         return result;
+    }
+
+    private static long nanos(Instant at) {
+        return Math.addExact(Math.multiplyExact(at.getEpochSecond(), 1_000_000_000L), at.getNano());
     }
 
     /** O preparo médio por categoria, da mais lenta para a mais rápida (REL-36). */
