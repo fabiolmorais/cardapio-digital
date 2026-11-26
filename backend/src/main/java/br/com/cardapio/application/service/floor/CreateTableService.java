@@ -43,12 +43,20 @@ public class CreateTableService implements CreateTableUseCase {
                 .filter(Sector::active)
                 .orElseThrow(SectorNotFoundException::new);
 
-        DiningTable table = DiningTable.create(command.establishmentId(), command.sectorId(), command.label(),
-                new TableToken(tokens.generate()), clock.instant());
+        // O balcão (ADR 0015) também tem um token (a coluna é obrigatória), mas ele nunca vira QR Code.
+        TableToken token = new TableToken(tokens.generate());
+        DiningTable table = command.kind().isCounter()
+                ? DiningTable.createCounter(command.establishmentId(), command.sectorId(), command.label(), token,
+                        clock.instant())
+                : DiningTable.create(command.establishmentId(), command.sectorId(), command.label(), token,
+                        clock.instant());
         if (tables.labelExists(command.establishmentId(), table.label(), null)) {
             throw new TableLabelTakenException(table.label());
         }
-        PlanAllowances.requireRoomForOneMore(subscriptions, command.establishmentId(), PlanResource.TABLES);
+        // O balcão não conta no limite de mesas do plano.
+        if (!table.isCounter()) {
+            PlanAllowances.requireRoomForOneMore(subscriptions, command.establishmentId(), PlanResource.TABLES);
+        }
         tables.save(table);
         return TableSummary.from(table);
     }

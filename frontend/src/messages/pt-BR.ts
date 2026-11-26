@@ -275,6 +275,53 @@ export const messages = {
     },
   },
   panel: {
+    /** Comandas no balcão (RF45, ADR 0015, desenhos 10.7, 10.8 e 7.7). */
+    counter: {
+      title: "Balcão",
+      subtitle: (counters: number, tabs: number) =>
+        `${counters === 1 ? "1 balcão" : `${counters} balcões`} · ${tabs === 1 ? "1 comanda aberta" : `${tabs} comandas abertas`}`,
+      loading: "Carregando o balcão…",
+      loadError: "Não foi possível carregar o balcão.",
+      retry: "Tentar de novo",
+      none: "Nenhum balcão cadastrado. O dono ou o gerente cadastra em Mesas e QR Codes.",
+      empty: "Nenhuma comanda aberta neste balcão.",
+      hint: "Cada pessoa do balcão tem a sua comanda. Só a equipe lança os pedidos aqui.",
+      newTab: "Nova comanda no balcão",
+      tag: "Balcão",
+      label: (place: string, name: string) => `${place} · ${name}`,
+      card: (card: string) => `Cartão ${card}`,
+      since: (time: string) => `desde ${time}`,
+      items: (onTheWay: number, totalCents: number) =>
+        onTheWay > 0
+          ? onTheWay === 1
+            ? "1 a caminho"
+            : `${onTheWay} a caminho`
+          : totalCents > 0
+            ? "tudo entregue"
+            : "sem pedidos",
+      tabLabel: (name: string, card: string | null | undefined) =>
+        `Comanda de ${name}${card ? `, cartão ${card}` : ""}`,
+      form: {
+        title: "Nova comanda no balcão",
+        renameTitle: "Nome e cartão",
+        name: "Como chamar o cliente",
+        nameHint: 'Um nome ou um sinal: "camisa azul". Até 40 letras.',
+        card: "Número do cartão (opcional)",
+        cardHint: "Se a casa usa cartões numerados. Não pode repetir entre as comandas abertas.",
+        counter: "Balcão",
+        open: "Abrir comanda",
+        opening: "Abrindo…",
+        save: "Salvar",
+        saving: "Salvando…",
+        cancel: "Cancelar",
+      },
+      order: "Fazer pedido",
+      rename: "Nome e cartão",
+      moveHint:
+        "O cliente sentou? Mudar de mesa leva a comanda para uma mesa livre ou junta com a comanda da mesa dos amigos. O nome continua na comanda.",
+      openMap: (name: string) => `Ver as comandas do ${name}`,
+      mapTabs: (tabs: number) => (tabs === 1 ? "1 comanda aberta" : `${tabs} comandas abertas`),
+    },
     title: "Painel",
     liveNow: (date: string) => `Ao vivo · ${date}`,
     greeting: (name: string) => `Olá, ${name}`,
@@ -415,7 +462,9 @@ export const messages = {
       close: "Fechar",
     },
     moveTab: {
-      title: (table: string) => `Mudar a comanda da Mesa ${table}`,
+      title: (from: string) => `Mudar a comanda ${from}`,
+      fromTable: (table: string) => `da Mesa ${table}`,
+      fromCounter: (name: string) => `de ${name}`,
       hint: "Escolha a mesa para onde o grupo foi. Os celulares, os chamados e o rodízio vão junto.",
       loading: "Carregando as mesas…",
       loadError: "Não foi possível carregar as mesas.",
@@ -424,9 +473,9 @@ export const messages = {
       none: "Nenhuma outra mesa ativa.",
       table: (label: string) => `Mesa ${label}`,
       tableTotal: (label: string, total: string) => `Mesa ${label} · ${total}`,
-      confirmMove: (from: string, to: string) => `Mudar a comanda da Mesa ${from} para a Mesa ${to}?`,
+      confirmMove: (from: string, to: string) => `Mudar a comanda ${from} para a Mesa ${to}?`,
       confirmMerge: (from: string, fromTotal: string, to: string, toTotal: string, sum: string) =>
-        `Juntar a comanda da Mesa ${from} (${fromTotal}) com a da Mesa ${to} (${toTotal})? ` +
+        `Juntar a comanda ${from} (${fromTotal}) com a da Mesa ${to} (${toTotal})? ` +
         `Fica uma comanda só, na Mesa ${to}, com ${sum}. Não dá para desfazer.`,
       move: (to: string) => `Mudar para a Mesa ${to}`,
       merge: "Juntar as comandas",
@@ -495,7 +544,8 @@ export const messages = {
       itemTotal: (name: string, total: number) => `${name}: ${total} no total`,
       tableQty: (quantity: number) => `×${quantity}`,
       tableLate: (quantity: number, minutes: number) => `×${quantity} · ${minutes} min`,
-      noteAt: (note: string, table: string) => `${note} · Mesa ${table}`,
+      /** place: "Mesa 04" ou "Balcão · João". */
+      noteAt: (note: string, place: string) => `${note} · ${place}`,
       open: "Abrir a tela da cozinha",
       openHint: "A fila de pedidos em tela cheia, com “Começar” e “Pronto”.",
       back: "Voltar ao painel",
@@ -536,6 +586,8 @@ export const messages = {
       recentEmpty: "Nenhuma comanda impressa ainda.",
       reprint: "Reimprimir",
       reprintLabel: (table: string, number: number) => `Reimprimir a comanda da mesa ${table}, pedido nº ${number}`,
+      reprintCounterLabel: (name: string, number: number) =>
+        `Reimprimir a comanda de ${name}, no balcão, pedido nº ${number}`,
       loadError: "Não foi possível falar com o servidor. Tentando de novo…",
       howTitle: "Para imprimir sem a janela de confirmação",
       howSteps: [
@@ -547,6 +599,10 @@ export const messages = {
       howNote: "Sem esse ajuste, o Chrome mostra a janela de impressão a cada pedido, e alguém precisa confirmar.",
       ticket: {
         table: (label: string) => `MESA ${label}`,
+        /** No balcão (ADR 0015, desenho 9.6): "BALCÃO" grande e o cliente embaixo. */
+        counter: "BALCÃO",
+        counterGuest: (name: string, card: string | null | undefined) =>
+          `${name}${card ? ` · cartão ${card}` : ""}`.toUpperCase(),
         order: (number: number, time: string) => `Pedido nº ${number} · ${time}`,
         canceled: "*** CANCELADO ***",
         reprint: "REIMPRESSÃO",
@@ -625,6 +681,7 @@ export const messages = {
       review: (items: number, total: string | null) =>
         `Revisar pedido · ${items} ${items === 1 ? "item" : "itens"}${total ? ` · ${total}` : ""}`,
       reviewTitle: (table: string) => `Revisar pedido · Mesa ${table}`,
+      reviewCounterTitle: (place: string) => `Revisar pedido · ${place}`,
       noteOf: (name: string) => `Observação de ${name}`,
       notePlaceholder: "Observação (opcional)",
       send: (total: string | null) => `Enviar para a cozinha${total ? ` · ${total}` : ""}`,
@@ -920,6 +977,9 @@ export const messages = {
     count: (n: number) => (n === 1 ? "1 comanda fechada" : `${n} comandas fechadas`),
     empty: "Nenhuma comanda fechada no período.",
     tableLabel: (label: string, sector: string) => `Mesa ${label} · ${sector}`,
+    counterLabel: (place: string, name: string, card: string | null | undefined, sector: string) =>
+      `${place} · ${name}${card ? ` · Cartão ${card}` : ""} · ${sector}`,
+    openCounter: (name: string, when: string) => `Comanda de ${name}, no balcão, fechada em ${when}`,
     tableOption: (label: string) => `Mesa ${label}`,
     open: (label: string, when: string) => `Comanda da mesa ${label}, fechada em ${when}`,
     previous: "Anterior",
@@ -930,6 +990,8 @@ export const messages = {
       loading: "Carregando a comanda…",
       loadError: "Não foi possível carregar a comanda.",
       title: (label: string) => `Mesa ${label}`,
+      counterTitle: (place: string, name: string) => `${place} · ${name}`,
+      card: (card: string) => `Cartão ${card}`,
       opened: "Abriu",
       closed: "Fechou",
       payment: "Pagamento",
@@ -984,6 +1046,7 @@ export const messages = {
       floorLive: "Mesas",
       openTabs: "Comandas abertas",
       ratings: "Avaliações",
+      counter: "Balcão",
       liveCount: (n: number) => (n === 1 ? "1 coisa aberta" : `${n} coisas abertas`),
       rodizios: "Rodízios",
       reports: "Relatórios",
@@ -1247,6 +1310,8 @@ export const messages = {
     title: "Mesas e QR Codes",
     subtitle: "Cada mesa tem um QR único. Trocar o QR de uma mesa não afeta as outras.",
     newTable: "Nova mesa",
+    newCounter: "Balcão",
+    newCounterLabel: "Novo balcão",
     sectors: "Setores",
     all: "Todas",
     sectorCount: (name: string, count: number) => `${name} · ${count}`,
@@ -1281,8 +1346,14 @@ export const messages = {
       INACTIVE: "Desativada",
     },
     tableName: (label: string) => `Mesa ${label}`,
+    /** O nome do lugar: "Mesa 04" ou o nome do balcão ("Balcão do bar"). */
+    placeName: (label: string, counter: boolean) => (counter ? label : `Mesa ${label}`),
+    counterBadge: "Balcão · sem QR Code",
+    counterNoQr: "Sem QR Code",
+    counterSituation: "Balcão",
     qrIssued: (date: string) => `Gerado em ${date}`,
     activeLabel: (label: string) => `Mesa ${label} ativa`,
+    counterActiveLabel: (name: string) => `${name} ativo`,
     panel: {
       empty: "Escolha uma mesa na lista para ver o display e trocar o QR.",
       qrActive: "QR ativo",
@@ -1300,6 +1371,10 @@ export const messages = {
       rotateWarning: "Trocar o QR invalida o display impresso desta mesa. Use se alguém fotografou o código.",
       rotate: (label: string) => `Trocar QR da mesa ${label}`,
       rotated: "QR trocado. Imprima o display de novo.",
+      counterText:
+        "O balcão não tem QR Code. A equipe abre uma comanda para cada cliente, com o nome dele, e lança os pedidos. Ele não conta no limite de mesas do plano.",
+      counterOpen: "Ver as comandas do balcão",
+      editCounter: "Editar balcão",
     },
     sectorForm: {
       createTitle: "Novo setor",
@@ -1319,6 +1394,14 @@ export const messages = {
       labelHint: "Até 10 caracteres: letras, números, espaço e hífen.",
       sector: "Setor",
       create: "Criar mesa",
+      counterCreateTitle: "Novo balcão",
+      counterEditTitle: (name: string) => `Editar ${name}`,
+      counterText:
+        "Para quem pede em pé, no balcão. Ele aceita várias comandas ao mesmo tempo, cada uma com o nome do cliente. Não tem QR Code e não conta no limite de mesas.",
+      counterName: "Nome",
+      counterPlaceholder: "Ex.: Balcão do bar",
+      counterHint: "Até 30 caracteres: letras, números, espaço e hífen.",
+      counterCreate: "Criar balcão",
       save: "Salvar",
       saving: "Salvando…",
       cancel: "Cancelar",

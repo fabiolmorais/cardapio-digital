@@ -25,4 +25,12 @@ interface LiveTableRow {
     long getItemsOnTheWay();
 
     long getRodizioPeople();
+
+    String getKind();
+
+    long getCounterTabs();
+
+    long getCounterTotalCents();
+
+    long getCounterItemsOnTheWay();
 }

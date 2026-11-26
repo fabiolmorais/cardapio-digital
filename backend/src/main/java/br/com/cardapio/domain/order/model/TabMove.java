@@ -81,9 +81,8 @@ public record TabMove(
         }
         Instant openedAt = merged() && other != null && other.openedAt().isBefore(survivor.openedAt())
                 ? other.openedAt() : survivor.openedAt();
-        return new Tab(survivor.id(), survivor.establishmentId(), toTableId, survivor.status(), openedAt,
-                survivor.closedAt(), survivor.closedBy(), survivor.total(), survivor.paymentMethod(), survivor.service(),
-                survivor.serviceCharged());
+        // Do balcão para uma mesa, a comanda deixa de ser do balcão (o nome do cliente continua).
+        return survivor.atTable(toTableId, openedAt);
     }
 
     private static void requireOpen(Tab tab) {

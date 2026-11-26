@@ -6,12 +6,16 @@ import br.com.cardapio.application.port.out.floor.DiningTablePort;
 import br.com.cardapio.application.port.out.order.OrderPort;
 import br.com.cardapio.application.port.out.order.OrderSettingsPort;
 import br.com.cardapio.application.port.out.order.TabPort;
+import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.application.port.out.rodizio.RodizioPort;
 import br.com.cardapio.application.port.out.rodizio.TabRodizioPort;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.exception.TabNotFoundException;
+import br.com.cardapio.domain.order.exception.TabStateException;
+import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.order.model.AlreadyOrdered;
 import br.com.cardapio.domain.order.model.OrderSettings;
 import br.com.cardapio.domain.order.model.Tab;
@@ -47,7 +51,9 @@ public class GetStaffOrderSheetService implements GetStaffOrderSheetUseCase {
     @Transactional(readOnly = true)
     public StaffOrderSheet get(EstablishmentId establishmentId, DiningTableId tableId) {
         Instant now = clock.instant();
+        // O balcão (ADR 0015) lança pela comanda de cada cliente, não pelo lugar.
         DiningTable table = tables.find(establishmentId, tableId).filter(DiningTable::active)
+                .filter(found -> !found.isCounter())
                 .orElseThrow(TableNotFoundException::new);
         boolean enabled = settings.find(establishmentId)
                 .orElseGet(() -> OrderSettings.defaults(establishmentId, now)).staffOrderingEnabled();
@@ -61,5 +67,21 @@ public class GetStaffOrderSheetService implements GetStaffOrderSheetUseCase {
                 .map(r -> new StaffOrderSheet.Rodizio(r.name(), r.productIds()))
                 .orElse(null);
         return new StaffOrderSheet(table.id(), table.label(), enabled, alreadyOrdered, rodizio);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public StaffOrderSheet getForCounterTab(EstablishmentId establishmentId, TabId tabId) {
+        Instant now = clock.instant();
+        TabView view = tabs.findView(establishmentId, tabId)
+                .filter(found -> found.tab().atCounter())
+                .orElseThrow(TabNotFoundException::new);
+        if (!view.tab().status().isOpen()) {
+            throw new TabStateException("Esta comanda já foi fechada");
+        }
+        List<AlreadyOrdered> alreadyOrdered = AlreadyOrderedItems.of(orders, establishmentId,
+                orders.findByTab(establishmentId, tabId), now);
+        return new StaffOrderSheet(view.tab().tableId(), view.tableLabel(), true, alreadyOrdered, null,
+                view.tab().guest());
     }
 }

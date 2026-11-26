@@ -65,8 +65,23 @@ function useView(): [View, (view: View) => void] {
   ];
 }
 
-/** Uma ficha: os itens de um pedido que estão no mesmo passo. */
-type Ticket = { key: string; lane: Lane; tableLabel: string; orderNumber: number; items: KitchenItem[] };
+/** Uma ficha: os itens de um pedido que estão no mesmo passo. No balcão, o nome do cliente (ADR 0015). */
+type Ticket = {
+  key: string;
+  lane: Lane;
+  tableLabel: string;
+  counterName?: string | null;
+  counterCard?: string | null;
+  orderNumber: number;
+  items: KitchenItem[];
+};
+
+/** O lugar do item: "Mesa 04" ou, no balcão, "Balcão do bar · João". */
+function placeOf(item: { tableLabel: string; counterName?: string | null }) {
+  return item.counterName
+    ? messages.panel.counter.label(item.tableLabel, item.counterName)
+    : `${t.table} ${item.tableLabel}`;
+}
 
 /** Junta a fila (já por ordem de chegada) em fichas por pedido e por passo, mantendo a ordem. */
 function tickets(queue: KitchenItem[]): Ticket[] {
@@ -76,7 +91,16 @@ function tickets(queue: KitchenItem[]): Ticket[] {
     const key = `${item.orderId}|${lane}`;
     const ticket = byKey.get(key);
     if (ticket) ticket.items.push(item);
-    else byKey.set(key, { key, lane, tableLabel: item.tableLabel, orderNumber: item.orderNumber, items: [item] });
+    else
+      byKey.set(key, {
+        key,
+        lane,
+        tableLabel: item.tableLabel,
+        counterName: item.counterName,
+        counterCard: item.counterCard,
+        orderNumber: item.orderNumber,
+        items: [item],
+      });
   }
   return [...byKey.values()];
 }
@@ -203,7 +227,7 @@ function Board() {
                   const waited = (now - since) / 1000;
                   const level = levelOf(waited);
                   const readyAt = Math.min(...ticket.items.map((i) => Date.parse(i.readyAt ?? i.createdAt)));
-                  const title = `${t.table} ${ticket.tableLabel} · ${t.order(ticket.orderNumber)}`;
+                  const title = `${placeOf(ticket)} · ${t.order(ticket.orderNumber)}`;
                   return (
                     <article
                       key={ticket.key}
@@ -220,11 +244,19 @@ function Board() {
                           lane !== "READY" && level === "late" && "bg-destructive/15",
                         )}
                       >
-                        <span className="flex flex-1 flex-col">
-                          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground/80 uppercase">
-                            {t.table}
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span
+                            className={cn(
+                              "text-[11px] font-semibold tracking-wide uppercase",
+                              ticket.counterName ? "text-brand-text" : "text-muted-foreground/80",
+                            )}
+                          >
+                            {ticket.counterName ? messages.panel.counter.tag : t.table}
+                            {ticket.counterCard && ` · ${messages.panel.counter.card(ticket.counterCard)}`}
                           </span>
-                          <span className="text-[26px] leading-[26px] font-bold">{ticket.tableLabel}</span>
+                          <span className="truncate text-[26px] leading-[26px] font-bold">
+                            {ticket.counterName ?? ticket.tableLabel}
+                          </span>
                         </span>
                         <span className="flex flex-col items-end gap-1">
                           {lane === "READY" ? (
@@ -360,15 +392,16 @@ function aggregate(queue: KitchenItem[]): Aggregate[] {
     }
     entry.total += item.quantity;
     const since = Date.parse(item.createdAt);
-    const table = entry.tables.find((t) => t.label === item.tableLabel);
+    const place = placeOf(item);
+    const table = entry.tables.find((t) => t.label === place);
     if (table) {
       table.quantity += item.quantity;
       table.since = Math.min(table.since, since);
     } else {
-      entry.tables.push({ label: item.tableLabel, quantity: item.quantity, since });
+      entry.tables.push({ label: place, quantity: item.quantity, since });
     }
-    if (item.note && !entry.notes.some((n) => n.note === item.note && n.table === item.tableLabel)) {
-      entry.notes.push({ note: item.note, table: item.tableLabel });
+    if (item.note && !entry.notes.some((n) => n.note === item.note && n.table === place)) {
+      entry.notes.push({ note: item.note, table: place });
     }
   }
   // Os que mais pedem primeiro; no empate, quem espera há mais tempo.
@@ -429,7 +462,7 @@ function ByItem({ queue, now }: { queue: KitchenItem[]; now: number }) {
                       tableLate && "bg-destructive/15 text-destructive",
                     )}
                   >
-                    {t.table} {table.label}
+                    {table.label}
                     <span className={tableLate ? "text-destructive" : "text-muted-foreground"}>
                       {tableLate ? t.tableLate(table.quantity, minutes) : t.tableQty(table.quantity)}
                     </span>

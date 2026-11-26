@@ -11,6 +11,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.menu.model.ProductId;
+import br.com.cardapio.domain.order.model.CounterGuest;
 import br.com.cardapio.domain.order.model.Order;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
@@ -204,7 +205,8 @@ class OrderPersistenceAdapter implements OrderPort {
         for (int i = 0; i < content.size(); i++) {
             KitchenItemRow r = content.get(i);
             views.add(new KitchenItemView(found.get(i), r.orderNumber(), new DiningTableId(r.tableId()),
-                    r.tableLabel(), r.sectorName()));
+                    r.tableLabel(), r.sectorName(), r.counterName() == null ? null
+                            : new CounterGuest(r.counterName(), r.counterCard())));
         }
         return new ResultPage<>(views, page.page(), page.size(), rows.getTotalElements());
     }

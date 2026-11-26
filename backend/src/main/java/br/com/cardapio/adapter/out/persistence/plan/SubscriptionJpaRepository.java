@@ -32,7 +32,8 @@ interface SubscriptionJpaRepository extends JpaRepository<SubscriptionJpaEntity,
 
     /** O que o plano conta, numa consulta só: mesas, pessoas da equipe e setores ativos. */
     @Query(nativeQuery = true, value = """
-            SELECT (SELECT count(*) FROM dining_table WHERE establishment_id = :establishmentId AND active) AS tables,
+            SELECT (SELECT count(*) FROM dining_table WHERE establishment_id = :establishmentId AND active
+                       AND kind = 'TABLE') AS tables,
                    (SELECT count(*) FROM membership WHERE establishment_id = :establishmentId AND active) AS users,
                    (SELECT count(*) FROM sector WHERE establishment_id = :establishmentId AND active) AS sectors
             """)

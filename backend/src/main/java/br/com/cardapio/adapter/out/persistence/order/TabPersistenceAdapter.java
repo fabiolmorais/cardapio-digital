@@ -11,6 +11,7 @@ import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.model.CounterGuest;
 import br.com.cardapio.domain.order.model.Tab;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.order.model.TabPeriod;
@@ -100,6 +101,17 @@ class TabPersistenceAdapter implements TabPort {
     }
 
     @Override
+    public ResultPage<OpenTabView> findOpenAtCounter(EstablishmentId establishmentId, DiningTableId counterId,
+                                                     PageQuery page) {
+        establishmentFilter.enable(establishmentId);
+        Page<OpenTabRow> rows = tabs.findOpenAtCounter(establishmentId.value(), counterId.value(),
+                PageRequest.of(page.page(), page.size()));
+        return new ResultPage<>(rows.map(r -> new OpenTabView(toDomain(r.tab()), r.tableLabel(), r.sectorName(),
+                Money.ofCents(r.totalCents()), r.itemsOnTheWay().intValue())).getContent(), page.page(),
+                page.size(), rows.getTotalElements());
+    }
+
+    @Override
     public ResultPage<ClosedTabView> findClosed(EstablishmentId establishmentId, TabPeriod period,
                                                 DiningTableId tableId, PageQuery page) {
         Page<ClosedTabRow> rows = tabs.findClosed(establishmentId.value(), period.from(), period.to(),
@@ -107,7 +119,7 @@ class TabPersistenceAdapter implements TabPort {
         return new ResultPage<>(rows.map(r -> new ClosedTabView(new TabId(r.getId()), r.getTableLabel(),
                 r.getSectorName(), r.getOpenedAt(), r.getClosedAt(), Money.ofCents(r.getTotalCents()),
                 r.getPaymentMethod() == null ? null : PaymentMethod.valueOf(r.getPaymentMethod()),
-                r.getClosedByName())).getContent(), page.page(),
+                r.getClosedByName(), r.getCustomerName(), r.getCardNumber())).getContent(), page.page(),
                 page.size(), rows.getTotalElements());
     }
 
@@ -119,13 +131,38 @@ class TabPersistenceAdapter implements TabPort {
                 e.getPaymentMethod() == null ? null : PaymentMethod.valueOf(e.getPaymentMethod()),
                 e.getServicePercent() == null ? null : new ServiceCharge(e.getServicePercent(), e.getServiceAccepted(),
                         e.getServiceCustomCents() == null ? null : Money.ofCents(e.getServiceCustomCents())),
-                e.getServiceCents() == null ? null : Money.ofCents(e.getServiceCents()));
+                e.getServiceCents() == null ? null : Money.ofCents(e.getServiceCents()),
+                e.isAtCounter(), e.getCustomerName() == null ? null
+                        : new CounterGuest(e.getCustomerName(), e.getCardNumber()));
+    }
+
+    @Override
+    public boolean insertAtCounter(Tab tab) {
+        CounterGuest guest = tab.guest();
+        try {
+            return tabs.insertAtCounter(tab.id().value(), tab.establishmentId().value(), tab.tableId().value(),
+                    tab.openedAt(), guest.name(), guest.card()) == 1;
+        } catch (DataIntegrityViolationException e) {
+            // O cartão já está numa comanda aberta (índice tab_open_card_number_uq).
+            return false;
+        }
+    }
+
+    @Override
+    public boolean saveGuest(Tab tab) {
+        CounterGuest guest = tab.guest();
+        try {
+            return tabs.saveGuest(tab.id().value(), tab.establishmentId().value(), guest.name(), guest.card()) == 1;
+        } catch (DataIntegrityViolationException e) {
+            return false;
+        }
     }
 
     @Override
     public boolean saveMoved(Tab t) {
         try {
-            return tabs.saveMoved(t.id().value(), t.establishmentId().value(), t.tableId().value(), t.openedAt()) == 1;
+            return tabs.saveMoved(t.id().value(), t.establishmentId().value(), t.tableId().value(), t.openedAt(),
+                    t.atCounter()) == 1;
         } catch (DataIntegrityViolationException e) {
             // A mesa nova acabou de ganhar uma comanda aberta: o índice "uma aberta por mesa" recusou.
             return false;

@@ -35,7 +35,9 @@ public record Tab(
         Money total,
         PaymentMethod paymentMethod,
         ServiceCharge service,
-        Money serviceCharged
+        Money serviceCharged,
+        boolean atCounter,
+        CounterGuest guest
 ) {
 
     public Tab {
@@ -44,11 +46,42 @@ public record Tab(
         Objects.requireNonNull(tableId);
         Objects.requireNonNull(status);
         Objects.requireNonNull(openedAt);
+        if (atCounter && guest == null) {
+            throw new IllegalArgumentException("a comanda do balcão precisa do nome do cliente");
+        }
     }
 
     public static Tab open(EstablishmentId establishmentId, DiningTableId tableId, Instant now) {
         return new Tab(TabId.newId(), establishmentId, tableId, TabStatus.OPEN, now, null, null, null, null, null,
-                null);
+                null, false, null);
+    }
+
+    /**
+     * A comanda de um cliente do balcão (ADR 0015): abre na hora, sem pedido, com o nome (e o cartão).
+     * O lugar precisa ser um balcão; o serviço confere antes.
+     */
+    public static Tab openAtCounter(EstablishmentId establishmentId, DiningTableId counterId, CounterGuest guest,
+                                    Instant now) {
+        return new Tab(TabId.newId(), establishmentId, counterId, TabStatus.OPEN, now, null, null, null, null, null,
+                null, true, Objects.requireNonNull(guest));
+    }
+
+    /** Corrige o nome ou o cartão do cliente, com a comanda aberta. */
+    public Tab rename(CounterGuest newGuest) {
+        if (!status.isOpen()) {
+            throw new TabStateException("Esta comanda já foi fechada");
+        }
+        if (!atCounter && guest == null) {
+            throw new TabStateException("Só a comanda do balcão tem o nome do cliente");
+        }
+        return new Tab(id, establishmentId, tableId, status, openedAt, closedAt, closedBy, total, paymentMethod,
+                service, serviceCharged, atCounter, Objects.requireNonNull(newGuest));
+    }
+
+    /** O mesmo lugar e a mesma comanda, fora do balcão (foi para uma mesa); o nome continua. */
+    public Tab atTable(DiningTableId table, Instant openedSince) {
+        return new Tab(id, establishmentId, table, status, openedSince, closedAt, closedBy, total, paymentMethod,
+                service, serviceCharged, false, guest);
     }
 
     /**
@@ -94,7 +127,7 @@ public record Tab(
     /** A mesma comanda com esta taxa (null: sem taxa). */
     public Tab withService(ServiceCharge newService) {
         return new Tab(id, establishmentId, tableId, status, openedAt, closedAt, closedBy, total, paymentMethod,
-                newService, serviceCharged);
+                newService, serviceCharged, atCounter, guest);
     }
 
     /**
@@ -164,6 +197,6 @@ public record Tab(
             main = payments.getLast().method();
         }
         return new Closing(new Tab(id, establishmentId, tableId, TabStatus.CLOSED, openedAt, now, by,
-                balance.total(), main, service, service == null ? null : balance.service()), last);
+                balance.total(), main, service, service == null ? null : balance.service(), atCounter, guest), last);
     }
 }

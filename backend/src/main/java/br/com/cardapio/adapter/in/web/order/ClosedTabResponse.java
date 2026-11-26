@@ -18,10 +18,12 @@ record ClosedTabResponse(
         @Schema(requiredMode = REQUIRED) Instant closedAt,
         @Schema(requiredMode = REQUIRED, description = "O que foi cobrado") long totalCents,
         @Schema(description = "Como a mesa pagou; ausente se fechou sem nada a cobrar") PaymentMethod paymentMethod,
-        @Schema(description = "Quem fechou") String closedByName
+        @Schema(description = "Quem fechou") String closedByName,
+        @Schema(description = "A comanda do balcão (ADR 0015): como a equipe chamou o cliente") String customerName,
+        @Schema(description = "O número do cartão, se houve") String cardNumber
 ) {
     static ClosedTabResponse from(ClosedTab t) {
         return new ClosedTabResponse(t.id().value(), t.tableLabel(), t.sectorName(), t.openedAt(), t.closedAt(),
-                t.total().cents(), t.paymentMethod(), t.closedByName());
+                t.total().cents(), t.paymentMethod(), t.closedByName(), t.customerName(), t.cardNumber());
     }
 }

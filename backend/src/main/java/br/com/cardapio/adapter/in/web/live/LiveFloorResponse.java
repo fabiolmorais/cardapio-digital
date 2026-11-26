@@ -4,6 +4,7 @@ import br.com.cardapio.application.port.in.live.LiveFloor;
 import br.com.cardapio.domain.call.model.CallStatus;
 import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
+import br.com.cardapio.domain.floor.model.TableKind;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -51,7 +52,11 @@ record LiveFloorResponse(
             @Schema(requiredMode = REQUIRED) int itemsOnTheWay,
             @Schema(requiredMode = REQUIRED, description = "Pessoas no rodízio; zero fora do rodízio") int rodizioPeople,
             @Schema(description = "O chamado aberto que mais importa; ausente se nenhum") Call call,
-            @Schema(requiredMode = REQUIRED, description = "Pedidos esperando a confirmação do garçom") int waitingOrders
+            @Schema(requiredMode = REQUIRED, description = "Pedidos esperando a confirmação do garçom") int waitingOrders,
+            @Schema(requiredMode = REQUIRED, description = "Mesa ou balcão; no balcão, o total e os itens a caminho "
+                    + "somam as comandas abertas dele") TableKind kind,
+            @Schema(requiredMode = REQUIRED, description = "No balcão, quantas comandas abertas; zero na mesa")
+            int counterTabs
     ) {
     }
 
@@ -72,7 +77,7 @@ record LiveFloorResponse(
                         t.itemsOnTheWay(), t.rodizioPeople(),
                         t.call() == null ? null : new Call(t.call().type(), t.call().status(), t.call().paymentMethod(),
                                 t.call().createdAt(), t.call().acceptedByName()),
-                        t.waitingOrders())).toList(),
+                        t.waitingOrders(), t.kind(), t.counterTabs())).toList(),
                 f.occupied(), f.revenueToday() == null ? null : f.revenueToday().cents(), f.averageWaitSeconds(),
                 f.serviceToday() == null ? null : new ServiceToday(f.serviceToday().total().cents(),
                         f.serviceToday().byWaiter().stream()

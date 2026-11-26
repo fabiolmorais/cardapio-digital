@@ -61,6 +61,11 @@ class LgpdScriptsTest {
         String sector = json(send("POST", owner, "/api/v1/sectors", "{\"name\":\"Salão\"}"), "$.id");
         String qr = json(send("POST", owner, "/api/v1/tables",
                 "{\"label\":\"04\",\"sectorId\":\"%s\"}".formatted(sector)), "$.publicToken");
+        // A comanda do balcão guarda como chamar o cliente (ADR 0015): dado pessoal, ainda que informal.
+        String counter = json(send("POST", owner, "/api/v1/tables",
+                "{\"label\":\"Balcão\",\"sectorId\":\"%s\",\"kind\":\"COUNTER\"}".formatted(sector)), "$.id");
+        send("POST", owner, "/api/v1/counter-tabs",
+                "{\"counterId\":\"%s\",\"name\":\"Cliente de %s\",\"card\":\"77\"}".formatted(counter, waiter));
         String category = json(send("POST", owner, "/api/v1/menu-categories", "{\"name\":\"Pastéis\"}"), "$.id");
         send("POST", owner, "/api/v1/products", """
                 {"categoryId":"%s","name":"Pastel de queijo","priceCents":1290,"featured":false,"available":true}
@@ -120,7 +125,10 @@ class LgpdScriptsTest {
 
         assertThat(JsonPath.<String>read(data, "$.empresa.email")).isEqualTo(sakura.email());
         assertThat(JsonPath.<List<String>>read(data, "$.equipe[*].nome")).containsExactly("Marina", "Pastel do Carlos");
-        assertThat(JsonPath.<List<String>>read(data, "$.mesas[*].mesa")).containsExactly("04");
+        assertThat(JsonPath.<List<String>>read(data, "$.mesas[*].mesa")).containsExactly("04", "Balcão");
+        assertThat(JsonPath.<List<String>>read(data, "$.mesas[*].tipo")).containsExactly("TABLE", "COUNTER");
+        assertThat(JsonPath.<List<String>>read(data, "$.comandas[*].cliente")).containsExactly("Cliente de Pastel do Carlos");
+        assertThat(JsonPath.<List<String>>read(data, "$.comandas[*].cartao")).containsExactly("77");
         assertThat(JsonPath.<List<String>>read(data, "$.cardapio[0].produtos[*].nome")).containsExactly("Pastel de queijo");
         assertThat(JsonPath.<String>read(data, "$.assinatura.plano")).isEqualTo("Pro");
         assertThat(data).doesNotContain(tanuki.email()).doesNotContain("Pastel da Ana")
@@ -144,6 +152,8 @@ class LgpdScriptsTest {
         assertThat(JsonPath.<List<String>>read(data, "$.equipe[*].nome"))
                 .containsExactly("Pessoa anonimizada", "Pessoa anonimizada");
         assertThat(JsonPath.<String>read(data, "$.assinatura.status")).isEqualTo("CANCELED");
+        assertThat(JsonPath.<List<String>>read(data, "$.comandas[*].cliente")).containsExactly("Cliente anonimizado");
+        assertThat(JsonPath.<List<Object>>read(data, "$.comandas[*].cartao")).containsExactly((Object) null);
         // O cardápio é dado do negócio, não da pessoa: fica.
         assertThat(JsonPath.<List<String>>read(data, "$.cardapio[0].produtos[*].nome")).containsExactly("Pastel de queijo");
 

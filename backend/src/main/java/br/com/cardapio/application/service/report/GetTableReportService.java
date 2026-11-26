@@ -44,16 +44,18 @@ public class GetTableReportService implements GetTableReportUseCase {
         var comparison = scope.comparison();
         var sector = scope.sector();
         List<TableUsage> tables = report.usage(id, period.start(), period.end(), sector);
+        // O balcão (ADR 0015) aparece no mapa, mas não é mesa: fica fora do giro e da ocupação.
+        int tableCount = (int) tables.stream().filter(t -> !t.counter()).count();
         StayTotals current = report.stays(id, period.start(), period.end(), sector);
         StayTotals compared = report.stays(id, comparison.start(), scope.comparisonEnd(), sector);
         return new TableReport(period, comparison, current, compared,
-                OccupancyAnalysis.turnover(current.tabs(), tables.size(), period.days()),
-                OccupancyAnalysis.turnover(compared.tabs(), tables.size(), comparison.days()),
+                OccupancyAnalysis.turnover(current.tabs(), tableCount, period.days()),
+                OccupancyAnalysis.turnover(compared.tabs(), tableCount, comparison.days()),
                 OccupancyAnalysis.perOccupiedHour(current.revenue(), current.occupied()),
                 OccupancyAnalysis.perOccupiedHour(compared.revenue(), compared.occupied()),
                 tables,
                 OccupancyAnalysis.occupancy(report.occupied(id, period.start(), period.end(), scope.now(), sector),
-                        tables.size(), period.zone(), period.start(), period.end()),
+                        tableCount, period.zone(), period.start(), period.end()),
                 report.forgotten(id, period.start(), period.end(), scope.now(), OccupancyAnalysis.FORGOTTEN, sector,
                         OccupancyAnalysis.FORGOTTEN_SHOWN),
                 report.moves(id, period.start(), period.end(), sector));

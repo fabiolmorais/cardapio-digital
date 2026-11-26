@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Schema(name = "UpdateTableRequest", description = "Só os campos enviados mudam")
 record UpdateTableRequest(
-        @Schema(example = "04") @Size(min = 1, max = 10) String label,
+        @Schema(example = "04") @Size(min = 1, max = 30) String label,
         @Schema(description = "Mover para outro setor") UUID sectorId,
         @Schema(description = "Ativar ou desativar a mesa") Boolean active
 ) {

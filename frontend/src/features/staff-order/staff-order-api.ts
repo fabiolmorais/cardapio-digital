@@ -20,11 +20,16 @@ function problem(error: unknown, status: number): Error {
   return new Error(typeof detail === "string" ? detail : String(status));
 }
 
-/** Se o lançamento está liberado, o que a mesa já pediu e o rodízio dela. */
-export async function fetchStaffOrderSheet(tableId: string): Promise<StaffOrderSheet> {
-  const { data, error, response } = await api.GET("/api/v1/tables/{id}/staff-order", {
-    params: { path: { id: tableId } },
-  });
+/** Onde o pedido vai: a comanda da mesa ou a comanda de um cliente do balcão (ADR 0015). */
+export type StaffOrderTarget = { kind: "table"; id: string } | { kind: "counter"; id: string };
+
+/** Se o lançamento está liberado, o que a mesa (ou a comanda do balcão) já pediu e o rodízio dela. */
+export async function fetchStaffOrderSheet(target: StaffOrderTarget): Promise<StaffOrderSheet> {
+  const params = { params: { path: { id: target.id } } };
+  const { data, error, response } =
+    target.kind === "table"
+      ? await api.GET("/api/v1/tables/{id}/staff-order", params)
+      : await api.GET("/api/v1/counter-tabs/{id}/staff-order", params);
   if (!data) throw problem(error, response.status);
   return data;
 }
@@ -36,11 +41,12 @@ export async function fetchStaffMenu(): Promise<Schemas["PublicMenu"]> {
   return data;
 }
 
-export async function placeStaffOrder(tableId: string, body: PlaceStaffOrder): Promise<Schemas["StaffOrder"]> {
-  const { data, error, response } = await api.POST("/api/v1/tables/{id}/orders", {
-    params: { path: { id: tableId } },
-    body,
-  });
+export async function placeStaffOrder(target: StaffOrderTarget, body: PlaceStaffOrder): Promise<Schemas["StaffOrder"]> {
+  const request = { params: { path: { id: target.id } }, body };
+  const { data, error, response } =
+    target.kind === "table"
+      ? await api.POST("/api/v1/tables/{id}/orders", request)
+      : await api.POST("/api/v1/counter-tabs/{id}/orders", request);
   if (data) return data;
   const duplicates = (error as { duplicates?: AlreadyOrderedItem[] } | undefined)?.duplicates;
   if (response.status === 409 && duplicates?.length) {

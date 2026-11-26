@@ -67,8 +67,12 @@ export function ClosedTabDetail({ id }: { id: string }) {
     <div className="flex max-w-2xl flex-col gap-5 px-4 py-6 sm:px-7">
       {back}
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">{t.title(data.tableLabel)}</h1>
-        <p className="text-sm text-muted-foreground">{data.sectorName}</p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {data.customerName ? t.counterTitle(data.tableLabel, data.customerName) : t.title(data.tableLabel)}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {data.cardNumber ? `${t.card(data.cardNumber)} · ${data.sectorName}` : data.sectorName}
+        </p>
       </header>
 
       {data.status !== "CLOSED" && <p className="rounded-xl bg-muted p-3 text-sm">{t.stillOpen}</p>}

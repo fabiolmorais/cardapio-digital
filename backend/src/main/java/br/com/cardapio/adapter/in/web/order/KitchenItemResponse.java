@@ -25,11 +25,14 @@ record KitchenItemResponse(
         @Schema(requiredMode = REQUIRED, description = "Quando foi pedido") Instant createdAt,
         @Schema(description = "Quando a cozinha começou") Instant preparingAt,
         @Schema(description = "Quando ficou pronto") Instant readyAt,
-        @Schema(requiredMode = REQUIRED, description = "O tamanho e as escolhas") ChoicesResponse choices
+        @Schema(requiredMode = REQUIRED, description = "O tamanho e as escolhas") ChoicesResponse choices,
+        @Schema(description = "No balcão (ADR 0015): como a equipe chama o cliente") String counterName,
+        @Schema(description = "No balcão: o número do cartão, se houver") String counterCard
 ) {
     static KitchenItemResponse from(KitchenItem i) {
         return new KitchenItemResponse(i.id().value(), i.orderId().value(), i.orderNumber(), i.tableLabel(),
                 i.sectorName(), i.productId().value(), i.productName(), i.photoUrl(), i.quantity(), i.note(), i.status(), i.createdAt(), i.preparingAt(),
-                i.readyAt(), ChoicesResponse.from(i.choices()));
+                i.readyAt(), ChoicesResponse.from(i.choices()),
+                i.counter() == null ? null : i.counter().name(), i.counter() == null ? null : i.counter().card());
     }
 }

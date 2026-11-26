@@ -6,6 +6,7 @@ import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.Sector;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.floor.model.TableToken;
 
 final class FloorPersistenceMapper {
@@ -30,12 +31,12 @@ final class FloorPersistenceMapper {
 
     static DiningTableJpaEntity toEntity(DiningTable t) {
         return new DiningTableJpaEntity(t.id().value(), t.establishmentId().value(), t.sectorId().value(), t.label(),
-                t.token().value(), t.tokenIssuedAt(), t.active());
+                t.token().value(), t.tokenIssuedAt(), t.active(), t.kind().name());
     }
 
     static DiningTable toDomain(DiningTableJpaEntity e) {
         return new DiningTable(new DiningTableId(e.getId()), new EstablishmentId(e.getEstablishmentId()),
                 new SectorId(e.getSectorId()), e.getLabel(), new TableToken(e.getPublicToken()),
-                e.getTokenIssuedAt(), e.isActive());
+                e.getTokenIssuedAt(), e.isActive(), TableKind.valueOf(e.getKind()));
     }
 }

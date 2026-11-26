@@ -42,6 +42,12 @@ FROM alvo a WHERE e.id = a.establishment_id;
 UPDATE order_item i SET note = NULL
 FROM alvo a WHERE i.establishment_id = a.establishment_id AND i.note IS NOT NULL;
 
+-- O nome do cliente do balcão (ADR 0015): o banco exige um nome na comanda aberta do balcão, então
+-- ele vira um texto fixo; o cartão sai.
+UPDATE tab t SET customer_name = 'Cliente anonimizado', card_number = NULL
+FROM alvo a WHERE t.establishment_id = a.establishment_id
+  AND (t.customer_name IS NOT NULL OR t.card_number IS NOT NULL);
+
 UPDATE refresh_token t SET revoked_at = now()
 FROM alvo a WHERE t.establishment_id = a.establishment_id AND t.revoked_at IS NULL;
 

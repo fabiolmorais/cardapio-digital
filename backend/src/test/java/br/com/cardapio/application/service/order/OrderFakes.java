@@ -129,7 +129,43 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
     @Override
     public Optional<Tab> findOpen(EstablishmentId establishmentId, DiningTableId tableId) {
         return tabs.values().stream().filter(t -> t.establishmentId().equals(establishmentId)
-                && t.tableId().equals(tableId) && t.status().isOpen()).findFirst();
+                && t.tableId().equals(tableId) && t.status().isOpen() && !t.atCounter()).findFirst();
+    }
+
+    @Override
+    public boolean insertAtCounter(Tab tab) {
+        String card = tab.guest().card();
+        boolean taken = card != null && tabs.values().stream().anyMatch(t -> t.status().isOpen() && t.guest() != null
+                && card.equalsIgnoreCase(t.guest().card()));
+        if (taken) {
+            return false;
+        }
+        tabs.put(tab.id(), tab);
+        return true;
+    }
+
+    @Override
+    public boolean saveGuest(Tab tab) {
+        String card = tab.guest().card();
+        boolean taken = card != null && tabs.values().stream().anyMatch(t -> !t.id().equals(tab.id())
+                && t.status().isOpen() && t.guest() != null && card.equalsIgnoreCase(t.guest().card()));
+        if (taken || !tabs.containsKey(tab.id())) {
+            return false;
+        }
+        tabs.put(tab.id(), tab);
+        return true;
+    }
+
+    @Override
+    public ResultPage<OpenTabView> findOpenAtCounter(EstablishmentId establishmentId, DiningTableId counterId,
+                                                     PageQuery page) {
+        List<OpenTabView> found = tabs.values().stream()
+                .filter(t -> t.establishmentId().equals(establishmentId) && t.status().isOpen() && t.atCounter()
+                        && t.tableId().equals(counterId))
+                .sorted(Comparator.comparing(Tab::openedAt))
+                .map(t -> new OpenTabView(t, "Balcão", "Bar", Money.ZERO, 0))
+                .toList();
+        return new ResultPage<>(found, page.page(), page.size(), found.size());
     }
 
     @Override
@@ -331,7 +367,8 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
                 })
                 .sorted(Comparator.comparing(Tab::closedAt).reversed())
                 .map(t -> new ClosedTabView(t.id(), "?", "?", t.openedAt(), t.closedAt(), t.total(),
-                        t.paymentMethod(), null))
+                        t.paymentMethod(), null, t.guest() == null ? null : t.guest().name(),
+                        t.guest() == null ? null : t.guest().card()))
                 .toList();
         return new ResultPage<>(found, page.page(), page.size(), found.size());
     }
@@ -342,8 +379,8 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
         if (current == null || !current.status().isOpen()) {
             return false;
         }
-        boolean taken = tabs.values().stream().anyMatch(t -> !t.id().equals(tab.id()) && t.status().isOpen()
-                && t.tableId().equals(tab.tableId()));
+        boolean taken = !tab.atCounter() && tabs.values().stream().anyMatch(t -> !t.id().equals(tab.id())
+                && t.status().isOpen() && !t.atCounter() && t.tableId().equals(tab.tableId()));
         if (taken) {
             return false;
         }
@@ -358,7 +395,7 @@ final class OrderFakes implements ProductPort, OrderSettingsPort, TabPort, Order
             return false;
         }
         tabs.put(tabId, new Tab(t.id(), t.establishmentId(), t.tableId(), TabStatus.MERGED, t.openedAt(), null, null,
-                null, null, t.service(), null));
+                null, null, t.service(), null, t.atCounter(), t.guest()));
         return true;
     }
 

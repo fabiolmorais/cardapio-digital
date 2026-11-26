@@ -86,6 +86,10 @@ public class MoveTabService implements MoveTabUseCase {
         if (!to.active()) {
             throw new TabMoveException("A Mesa " + to.label() + " está desativada. Escolha outra.");
         }
+        // O destino é sempre uma mesa (ADR 0015): da mesa para o balcão e entre comandas do balcão, ainda não.
+        if (to.isCounter()) {
+            throw new TabMoveException("Escolha uma mesa: a comanda não vai para o balcão.");
+        }
         if (source.tableId().equals(to.id())) {
             throw new TabMoveException("A comanda já está nesta mesa. Escolha outra.");
         }

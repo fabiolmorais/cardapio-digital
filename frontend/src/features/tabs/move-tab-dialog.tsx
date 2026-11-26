@@ -14,7 +14,18 @@ import { moveTab, type MovedTab } from "./tabs-api";
 const t = messages.panel.moveTab;
 
 /** A comanda que vai mudar: o id, a mesa de agora e o total (para a confirmação da junção). */
-export type MoveTarget = { tabId: string; tableId: string; tableLabel: string; totalCents: number };
+/** `counterName`: a comanda é do balcão (ADR 0015); o texto fala do cliente, e não da mesa. */
+export type MoveTarget = {
+  tabId: string;
+  tableId: string;
+  tableLabel: string;
+  totalCents: number;
+  counterName?: string | null;
+};
+
+function fromText(target: MoveTarget) {
+  return target.counterName ? t.fromCounter(target.counterName) : t.fromTable(target.tableLabel);
+}
 
 /**
  * "Mudar de mesa" (RF44, ADR 0012): as mesas do salão por setor, as livres e as com comanda (que
@@ -53,25 +64,26 @@ function Picker({ target, onMoved }: { target: MoveTarget; onMoved: (moved: Move
     },
   });
 
-  const others = (floor.data?.tables ?? []).filter((table) => table.id !== target.tableId);
+  // O destino é sempre uma mesa (ADR 0015): o balcão não aparece na lista.
+  const others = (floor.data?.tables ?? []).filter((table) => table.id !== target.tableId && table.kind !== "COUNTER");
 
   if (chosen) {
     const merging = chosen.tabId != null;
     return (
       <>
         <DialogHeader>
-          <DialogTitle className="text-lg">{t.title(target.tableLabel)}</DialogTitle>
+          <DialogTitle className="text-lg">{t.title(fromText(target))}</DialogTitle>
         </DialogHeader>
         <p className="text-base">
           {merging
             ? t.confirmMerge(
-                target.tableLabel,
+                fromText(target),
                 formatCents(target.totalCents),
                 chosen.label,
                 formatCents(chosen.tabTotalCents),
                 formatCents(target.totalCents + chosen.tabTotalCents),
               )
-            : t.confirmMove(target.tableLabel, chosen.label)}
+            : t.confirmMove(fromText(target), chosen.label)}
         </p>
         <p role="alert" aria-live="assertive" className="min-h-5 text-sm text-destructive">
           {move.error?.message ?? ""}
@@ -100,7 +112,7 @@ function Picker({ target, onMoved }: { target: MoveTarget; onMoved: (moved: Move
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="text-lg">{t.title(target.tableLabel)}</DialogTitle>
+        <DialogTitle className="text-lg">{t.title(fromText(target))}</DialogTitle>
       </DialogHeader>
       <p className="text-sm text-muted-foreground">{t.hint}</p>
       {floor.isPending && <p className="text-muted-foreground">{t.loading}</p>}

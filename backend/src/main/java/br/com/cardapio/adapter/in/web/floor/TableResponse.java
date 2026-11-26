@@ -1,6 +1,7 @@
 package br.com.cardapio.adapter.in.web.floor;
 
 import br.com.cardapio.application.port.in.floor.TableSummary;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.floor.model.TableSituation;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -18,10 +19,11 @@ record TableResponse(
         @Schema(requiredMode = REQUIRED, description = "Quando o QR atual foi gerado") Instant tokenIssuedAt,
         @Schema(requiredMode = REQUIRED) boolean active,
         @Schema(requiredMode = REQUIRED, description = "Como a mesa está agora (comanda, conta pedida, rodízio)")
-        TableSituation situation
+        TableSituation situation,
+        @Schema(requiredMode = REQUIRED, description = "Mesa ou balcão (o balcão não tem QR Code)") TableKind kind
 ) {
     static TableResponse from(TableSummary t) {
         return new TableResponse(t.id().value(), t.sectorId().value(), t.label(), t.publicToken(), t.tokenIssuedAt(),
-                t.active(), t.situation());
+                t.active(), t.situation(), t.kind());
     }
 }

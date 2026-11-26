@@ -6,6 +6,7 @@ import br.com.cardapio.application.port.out.order.TabView;
 import br.com.cardapio.domain.account.model.UserId;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.model.CounterGuest;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderOrigin;
@@ -47,7 +48,8 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                        Instant openedAt,
                        Instant closedAt, Money total, Money paid, Money due, Money overpaid, List<Payment> payments,
                        PaymentMethod paymentMethod, PaymentMethod billRequestedWith, TableRodizio rodizio,
-                       List<Order> orders, List<Move> moves, TabId mergedInto, ServiceOffer service) {
+                       List<Order> orders, List<Move> moves, TabId mergedInto, ServiceOffer service,
+                       boolean atCounter, CounterGuest guest) {
 
     public StaffTab {
         payments = List.copyOf(payments);
@@ -65,7 +67,7 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
         return new StaffTab(id, tableId, tableLabel, sectorName, status, openedAt, closedAt, total, paid, due,
                 overpaid, payments, paymentMethod, billRequestedWith, rodizio, orders,
                 newMoves.stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
-                        m.movedByName(), m.movedAt())).toList(), newMergedInto, service);
+                        m.movedByName(), m.movedAt())).toList(), newMergedInto, service, atCounter, guest);
     }
 
     /** Um pagamento recebido: quanto, como e quando. */
@@ -118,7 +120,8 @@ public record StaffTab(TabId id, DiningTableId tableId, String tableLabel, Strin
                         o.order().origin() instanceof OrderOrigin.Staff staff ? staffNames.get(staff.userId()) : null,
                         o.order().duplicateConfirmed(),
                         o.items().stream().map(TableOrder.Item::from).toList())).toList(), List.of(), null,
-                ServiceOffer.of(service, balance.total(), open ? balance.paid() : balance.total(), settings, waiterName));
+                ServiceOffer.of(service, balance.total(), open ? balance.paid() : balance.total(), settings, waiterName),
+                tab.atCounter(), tab.guest());
     }
 
     /** Quem da equipe lançou estes pedidos. */

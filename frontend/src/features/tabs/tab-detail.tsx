@@ -2,7 +2,7 @@
 
 import { ItemChoicesText } from "@/features/orders/item-choices";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRightLeft, Check, ChevronLeft } from "lucide-react";
+import { ArrowRightLeft, Check, ChevronLeft, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,6 +11,8 @@ import { formatCents } from "@/lib/format";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { RodizioDialog, type RodizioTarget } from "@/features/rodizio/rodizio-dialog";
+import { CounterTabDialog } from "@/features/counter/counter-tab-dialog";
+import { PlaceBadge } from "@/features/counter/place-badge";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
 import { clock } from "./open-tabs";
@@ -75,6 +77,9 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
   const tabPath = (id: string) => pathname.replace(tab.id, id);
   const [method, setMethod] = useState<PaymentMethod>(tab.billRequestedWith ?? "PIX");
   const [rodizioTarget, setRodizioTarget] = useState<RodizioTarget | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  // No balcão (ADR 0015): a comanda é de um cliente, não de uma mesa.
+  const atCounter = tab.atCounter;
   // A taxa de serviço (RF39): como a mesa escolheu (ou aceita, se ninguém mexeu); o garçom troca na hora.
   const service = tab.service ?? null;
   const [pick, setPick] = useState<ServicePick>(service ? pickOf(service) : { kind: "PERCENT" });
@@ -94,19 +99,21 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
 
   const header = (
     <header className="flex items-center gap-3">
-      <Link href="/painel" aria-label={t.back} className={buttonVariants({ variant: "outline", size: "icon-lg" })}>
+      <Link
+        href={atCounter ? "/painel/balcao" : "/painel"}
+        aria-label={t.back}
+        className={buttonVariants({ variant: "outline", size: "icon-lg" })}
+      >
         <ChevronLeft aria-hidden />
       </Link>
-      <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-muted leading-none">
-        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-          {messages.panel.calls.table}
-        </span>
-        <span className="text-xl font-bold">{tab.tableLabel}</span>
-      </span>
-      <span className="flex flex-col">
+      <PlaceBadge tableLabel={tab.tableLabel} counterName={atCounter ? tab.customerName : null} size="lg" />
+      <span className="flex min-w-0 flex-col">
         <h1 className="text-xl font-bold">{open ? t.openTitle : t.closedTitle}</h1>
         <span className="text-sm text-muted-foreground">
-          {tab.sectorName} · {t.since(clock(tab.openedAt))}
+          {atCounter ? tab.tableLabel : tab.sectorName}
+          {/* Veio do balcão para a mesa: o nome do cliente continua. */}
+          {!atCounter && tab.customerName && ` · ${tab.customerName}`}
+          {tab.cardNumber && ` · ${messages.panel.counter.card(tab.cardNumber)}`} · {t.since(clock(tab.openedAt))}
         </span>
       </span>
     </header>
@@ -178,7 +185,27 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
         </span>
       )}
 
-      {tab.rodizio ? (
+      {atCounter && (
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/painel/balcao/${tab.id}/pedido`} className={cn(buttonVariants(), "h-11")}>
+            <Plus aria-hidden />
+            {messages.panel.counter.order}
+          </Link>
+          <Button variant="outline" className="h-11" onClick={() => setRenaming(true)}>
+            <Pencil aria-hidden />
+            {messages.panel.counter.rename}
+          </Button>
+          <CounterTabDialog
+            open={renaming}
+            onOpenChange={setRenaming}
+            tab={tab}
+            onSaved={() => void queryClient.invalidateQueries({ queryKey: ["tab", tab.id] })}
+          />
+        </div>
+      )}
+
+      {/* O rodízio é por pessoas na mesa: não abre no balcão. */}
+      {atCounter ? null : tab.rodizio ? (
         <section
           aria-label={t.rodizio(tab.rodizio.name, tab.rodizio.people)}
           className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4"
@@ -232,12 +259,19 @@ function Body({ tab, onClosed }: { tab: StaffTab; onClosed: (closed: StaffTab) =
         variant="outline"
         className="h-11 self-start"
         onClick={() =>
-          setMoveTarget({ tabId: tab.id, tableId: tab.tableId, tableLabel: tab.tableLabel, totalCents: tab.totalCents })
+          setMoveTarget({
+            tabId: tab.id,
+            tableId: tab.tableId,
+            tableLabel: tab.tableLabel,
+            totalCents: tab.totalCents,
+            counterName: tab.atCounter ? tab.customerName : null,
+          })
         }
       >
         <ArrowRightLeft aria-hidden />
         {t.moveTable}
       </Button>
+      {atCounter && <p className="-mt-2 text-sm text-muted-foreground">{messages.panel.counter.moveHint}</p>}
       <MoveTabDialog
         target={moveTarget}
         onClose={() => setMoveTarget(null)}

@@ -13,5 +13,6 @@ import java.time.Instant;
  * @param closedByName o nome de quem fechou; null se a pessoa saiu da equipe e o cadastro sumiu
  */
 public record ClosedTabView(TabId id, String tableLabel, String sectorName, Instant openedAt, Instant closedAt,
-                            Money total, PaymentMethod paymentMethod, String closedByName) {
+                            Money total, PaymentMethod paymentMethod, String closedByName, String customerName,
+                            String cardNumber) {
 }

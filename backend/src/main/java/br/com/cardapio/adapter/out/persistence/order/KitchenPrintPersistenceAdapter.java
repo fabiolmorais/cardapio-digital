@@ -7,6 +7,7 @@ import br.com.cardapio.application.port.shared.PageQuery;
 import br.com.cardapio.application.port.shared.ResultPage;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
+import br.com.cardapio.domain.order.model.CounterGuest;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItem;
 import br.com.cardapio.domain.order.model.OrderItemId;
@@ -100,7 +101,8 @@ class KitchenPrintPersistenceAdapter implements KitchenPrintPort {
 
     private static PrintJobView view(PrintJobRow h, List<OrderItem> lines) {
         return new PrintJobView(new OrderId(h.orderId()), h.orderNumber(), new DiningTableId(h.tableId()),
-                h.tableLabel(), h.sectorName(), lines);
+                h.tableLabel(), h.sectorName(), lines,
+                h.counterName() == null ? null : new CounterGuest(h.counterName(), h.counterCard()));
     }
 
     @Override

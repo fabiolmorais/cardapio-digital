@@ -15,6 +15,7 @@ import br.com.cardapio.application.service.order.Tabs;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.call.model.Call;
 import br.com.cardapio.domain.call.model.CallType;
+import br.com.cardapio.domain.floor.exception.CounterNotAllowedException;
 import br.com.cardapio.domain.floor.exception.TableNotFoundException;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.order.model.Tab;
@@ -23,6 +24,7 @@ import br.com.cardapio.domain.rodizio.exception.RodizioAlreadyActiveException;
 import br.com.cardapio.domain.rodizio.exception.RodizioNotFoundException;
 import br.com.cardapio.domain.rodizio.model.Rodizio;
 import br.com.cardapio.domain.rodizio.model.TabRodizio;
+import br.com.cardapio.domain.shared.exception.InvalidValueException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -66,6 +68,10 @@ public class ActivateRodizioService implements ActivateRodizioUseCase {
         var establishmentId = command.establishmentId();
         DiningTable table = tables.find(establishmentId, command.tableId()).filter(DiningTable::active)
                 .orElseThrow(TableNotFoundException::new);
+        // O rodízio é por pessoas na mesa: não abre no balcão (ADR 0015).
+        if (table.isCounter()) {
+            throw new CounterNotAllowedException("O rodízio não abre no balcão");
+        }
         Rodizio rodizio = rodizios.find(establishmentId, command.rodizioId()).filter(Rodizio::active)
                 .orElseThrow(RodizioNotFoundException::new);
         Instant now = clock.instant();

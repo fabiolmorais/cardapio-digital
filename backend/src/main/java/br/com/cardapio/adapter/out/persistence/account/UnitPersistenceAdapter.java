@@ -59,7 +59,7 @@ class UnitPersistenceAdapter implements UnitPort {
         var content = jdbc.sql("""
                         SELECT e.id, e.name, e.slug, e.created_at,
                                (SELECT count(*) FROM dining_table t
-                                 WHERE t.establishment_id = e.id AND t.active) AS tables,
+                                 WHERE t.establishment_id = e.id AND t.active AND t.kind = 'TABLE') AS tables,
                                (SELECT count(*) FROM membership m
                                  WHERE m.establishment_id = e.id AND m.active) AS team
                           FROM establishment e

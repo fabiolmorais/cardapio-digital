@@ -7,8 +7,8 @@ import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
 import { fetchLiveFloor } from "./live-api";
 
 export const LIVE_FLOOR_KEY = ["live-floor"] as const;
-/** Os avisos que mudam o mapa: chamado, pedido, comanda, rodízio e celular entrando ou saindo. */
-const EVENTS = ["ready", "call", "order", "tab", "tab-moved", "rodizio", "presence", "phone"];
+/** Os avisos que mudam o mapa: chamado, pedido, comanda (também a do balcão), rodízio e celular entrando ou saindo. */
+const EVENTS = ["ready", "call", "order", "tab", "tab-moved", "rodizio", "presence", "phone", "counter-tab"];
 
 /**
  * O salão ao vivo (mesas e resumo), atualizado a cada aviso do tempo real e conferido a cada

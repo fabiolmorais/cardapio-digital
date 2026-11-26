@@ -7,11 +7,12 @@ import { formatCents } from "@/lib/format";
 import { useRequiredSession } from "@/lib/auth/use-required-session";
 import { messages } from "@/messages/pt-BR";
 import { cn } from "cn";
+import { PlaceBadge } from "@/features/counter/place-badge";
 import { fetchOpenTabs } from "./tabs-api";
 
 const t = messages.panel.tabs;
 const OPEN_TABS_KEY = ["open-tabs"] as const;
-const TAB_EVENTS = ["order", "tab", "tab-moved"] as const;
+const TAB_EVENTS = ["order", "tab", "tab-moved", "counter-tab"] as const;
 
 /** A hora no relógio deste aparelho (que está no restaurante). */
 export function clock(iso: string) {
@@ -45,15 +46,14 @@ export function OpenTabs() {
             <li key={tab.id}>
               <Link
                 href={`/painel/comandas/${tab.id}`}
-                aria-label={t.open(tab.tableLabel)}
+                aria-label={
+                  tab.atCounter && tab.customerName
+                    ? messages.panel.counter.tabLabel(tab.customerName, tab.cardNumber)
+                    : t.open(tab.tableLabel)
+                }
                 className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
-                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-muted leading-none">
-                  <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    {messages.panel.calls.table}
-                  </span>
-                  <span className="text-lg font-bold">{tab.tableLabel}</span>
-                </span>
+                <PlaceBadge tableLabel={tab.tableLabel} counterName={tab.atCounter ? tab.customerName : null} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="font-semibold">{formatCents(tab.totalCents)}</span>
                   <span

@@ -266,7 +266,10 @@ function Station({ restaurant }: { restaurant: string }) {
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="font-semibold">
-                    {messages.panel.kitchen.table} {job.tableLabel} · {messages.panel.kitchen.order(job.orderNumber)}
+                    {job.counterName
+                      ? messages.panel.counter.label(job.tableLabel, job.counterName)
+                      : `${messages.panel.kitchen.table} ${job.tableLabel}`}{" "}
+                    · {messages.panel.kitchen.order(job.orderNumber)}
                   </span>
                   <span className="truncate text-sm text-muted-foreground">
                     {job.items
@@ -279,7 +282,11 @@ function Station({ restaurant }: { restaurant: string }) {
                 </span>
                 <Button
                   variant="secondary"
-                  aria-label={t.reprintLabel(job.tableLabel, job.orderNumber)}
+                  aria-label={
+                    job.counterName
+                      ? t.reprintCounterLabel(job.counterName, job.orderNumber)
+                      : t.reprintLabel(job.tableLabel, job.orderNumber)
+                  }
                   onClick={() => print({ job, variant: "reprint", printedAt: new Date() })}
                 >
                   {t.reprint}
