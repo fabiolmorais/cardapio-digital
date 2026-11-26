@@ -124,7 +124,7 @@ function Screen({ target }: { target: StaffOrderTarget }) {
       className={cn(buttonVariants({ variant: "ghost" }), "h-11 self-start")}
     >
       <ArrowLeft aria-hidden />
-      {t.back}
+      {target.kind === "table" ? t.back : t.backToTab}
     </Link>
   );
   if (sheet.isPending || menu.isPending) return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
@@ -306,10 +306,10 @@ function OrderForm({
 
       {sheet.alreadyOrdered.length > 0 && (
         <section
-          aria-label={t.alreadyTitle}
+          aria-label={place ? t.alreadyCounterTitle : t.alreadyTitle}
           className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-3.5"
         >
-          <h2 className="text-sm font-semibold">{t.alreadyTitle}</h2>
+          <h2 className="text-sm font-semibold">{place ? t.alreadyCounterTitle : t.alreadyTitle}</h2>
           <AlreadyList items={sheet.alreadyOrdered} />
         </section>
       )}
@@ -507,7 +507,7 @@ function OrderForm({
         <DuplicateDialog
           key={duplicates.map((d) => `${d.productId}${d.orderedAt}`).join()}
           duplicates={duplicates}
-          tableLabel={sheet.tableLabel}
+          title={sheet.counterName ? t.duplicateCounterTitle(sheet.counterName) : t.duplicateTitle(sheet.tableLabel)}
           onCancel={() => {
             setDuplicates([]);
             setReviewing(true);
@@ -585,12 +585,13 @@ function AlreadyList({ items }: { items: AlreadyOrderedItem[] }) {
 /** A trava de duplicados: para cada produto repetido, tirar do pedido ou confirmar que é outro. */
 function DuplicateDialog({
   duplicates,
-  tableLabel,
+  title,
   onCancel,
   onResolve,
 }: {
   duplicates: AlreadyOrderedItem[];
-  tableLabel: string;
+  /** "A Mesa 04 já pediu isto" ou, no balcão, "João já pediu isto". */
+  title: string;
   onCancel: () => void;
   onResolve: (decisions: Record<string, Decision>) => void;
 }) {
@@ -601,7 +602,7 @@ function DuplicateDialog({
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t.duplicateTitle(tableLabel)}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           {products.map(([id, name]) => (

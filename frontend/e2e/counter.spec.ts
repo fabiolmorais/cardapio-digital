@@ -62,9 +62,19 @@ test("o balcão: comanda com o nome do cliente, pedido da equipe, cozinha e ida 
   // O pedido sai pela comanda, mesmo com o lançamento pela equipe desligado nas mesas.
   await page.getByRole("link", { name: "Fazer pedido" }).click();
   await expect(page.getByRole("heading", { name: "Balcão do bar · João" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Voltar à comanda" })).toHaveAttribute("href", new URL(tabUrl).pathname);
   await page.getByRole("button", { name: "Adicionar Chopp" }).click();
   await page.getByRole("button", { name: /^Revisar pedido/ }).click();
   await page.getByRole("button", { name: /^Enviar para a cozinha/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: "enviado para a cozinha" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Já pedido nesta comanda" })).toContainText("Chopp");
+  // A trava de pedido repetido fala do cliente, e não de uma mesa.
+  await page.getByRole("button", { name: "Adicionar Chopp" }).click();
+  await page.getByRole("button", { name: /^Revisar pedido/ }).click();
+  await page.getByRole("button", { name: /^Enviar para a cozinha/ }).click();
+  const repeated = page.getByRole("dialog", { name: "João já pediu isto" });
+  await repeated.getByRole("button", { name: "Chopp é outro pedido, enviar mesmo assim" }).click();
+  await repeated.getByRole("button", { name: "Continuar" }).click();
   await expect(page.getByRole("status").filter({ hasText: "enviado para a cozinha" })).toBeVisible();
 
   // A cozinha vê o cliente do balcão, e não uma mesa.
@@ -76,7 +86,7 @@ test("o balcão: comanda com o nome do cliente, pedido da equipe, cozinha e ida 
   await expect(ticket).toContainText("Chopp");
 
   await page.goto("/painel/balcao");
-  await expect(page.getByRole("link", { name: "Comanda de João, cartão 12" })).toContainText(/R\$\s12,00/);
+  await expect(page.getByRole("link", { name: "Comanda de João, cartão 12" })).toContainText(/R\$\s24,00/);
 
   // O cliente sentou: a comanda vai para a mesa 04 com o nome.
   await page.goto(tabUrl);
