@@ -21,4 +21,8 @@ public interface ClosedTabRow {
     String getPaymentMethod();
 
     String getClosedByName();
+
+    String getCustomerName();
+
+    String getCardNumber();
 }

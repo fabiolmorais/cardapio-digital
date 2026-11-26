@@ -51,7 +51,9 @@ public class GetLiveFloorService implements GetLiveFloorUseCase {
         List<LiveFloor.Table> tables = floor.findTables(establishmentId, now).stream()
                 .map(t -> table(t, openCalls.getOrDefault(t.id(), List.of()), waiting.getOrDefault(t.id(), 0L)))
                 .toList();
-        int occupied = (int) tables.stream().filter(t -> t.state() != LiveFloor.State.FREE).count();
+        // O balcão não é mesa ocupada: fica fora da conta (ADR 0015).
+        int occupied = (int) tables.stream()
+                .filter(t -> !t.kind().isCounter() && t.state() != LiveFloor.State.FREE).count();
         var wait = floor.averageWaitSeconds(establishmentId, now);
         return new LiveFloor(tables, occupied, withRevenue ? floor.revenueOn(establishmentId, now) : null,
                 wait.isPresent() ? wait.getAsLong() : null, withRevenue ? floor.serviceOn(establishmentId, now) : null);
@@ -66,12 +68,14 @@ public class GetLiveFloorService implements GetLiveFloorUseCase {
         LiveFloor.State state = bill != null ? LiveFloor.State.BILL
                 : waiting != null ? LiveFloor.State.CALLING
                 : shown != null ? LiveFloor.State.OCCUPIED
-                : t.phones() > 0 || t.tabId() != null || waitingOrders > 0 ? LiveFloor.State.OCCUPIED
+                : t.phones() > 0 || t.tabId() != null || t.counterTabs() > 0 || waitingOrders > 0
+                ? LiveFloor.State.OCCUPIED
                 : LiveFloor.State.FREE;
         LiveFloor.Call call = shown == null ? null
                 : new LiveFloor.Call(shown.call().type(), shown.call().status(), shown.call().paymentMethod(),
                         shown.call().createdAt(), shown.acceptedByName());
         return new LiveFloor.Table(t.id(), t.label(), t.sectorId(), t.sectorName(), state, t.phones(), t.tabId(),
-                t.tabOpenedAt(), t.tabTotal(), t.itemsOnTheWay(), t.rodizioPeople(), call, (int) waitingOrders);
+                t.tabOpenedAt(), t.tabTotal(), t.itemsOnTheWay(), t.rodizioPeople(), call, (int) waitingOrders,
+                t.kind(), t.counterTabs());
     }
 }

@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { messages } from "@/messages/pt-BR";
+import { cn } from "cn";
 import { ErrorText } from "@/features/subscription/error-text";
 import type { DiningTable, Sector } from "./floor-api";
 
@@ -84,20 +85,23 @@ export function SectorFormDialog({
   );
 }
 
-/** Criar ou editar mesa (com table: editar rótulo e setor). */
+/** Criar ou editar mesa (com table: editar rótulo e setor). Com counter, o balcão (ADR 0015). */
 export function TableFormDialog({
   open,
   onOpenChange,
   sectors,
   table,
   defaultSectorId,
+  counter = false,
   onSave,
 }: Open & {
   sectors: Sector[];
   table?: DiningTable;
   defaultSectorId?: string;
+  counter?: boolean;
   onSave: (values: { label: string; sectorId: string }) => Promise<unknown>;
 }) {
+  const f = t.tableForm;
   const mutation = useMutation({ mutationFn: onSave, onSuccess: () => onOpenChange(false) });
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -120,27 +124,34 @@ export function TableFormDialog({
       <DialogContent className={contentClass}>
         <DialogHeader>
           <DialogTitle className="text-lg">
-            {table ? t.tableForm.editTitle(table.label) : t.tableForm.createTitle}
+            {counter
+              ? table
+                ? f.counterEditTitle(table.label)
+                : f.counterCreateTitle
+              : table
+                ? f.editTitle(table.label)
+                : f.createTitle}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-5">
+          {counter && <p className="-mt-2 text-sm text-muted-foreground">{f.counterText}</p>}
           <div className="flex flex-col gap-2">
             <Label htmlFor="table-label" className="text-muted-foreground">
-              {t.tableForm.label}
+              {counter ? f.counterName : f.label}
             </Label>
             <Input
               id="table-label"
               name="label"
               required
-              maxLength={10}
+              maxLength={counter ? 30 : 10}
               autoComplete="off"
               defaultValue={table?.label}
-              placeholder={t.tableForm.labelPlaceholder}
+              placeholder={counter ? f.counterPlaceholder : f.labelPlaceholder}
               aria-describedby="table-label-hint"
-              className="h-12 rounded-xl px-4 font-mono text-base"
+              className={cn("h-12 rounded-xl px-4 text-base", !counter && "font-mono")}
             />
             <span id="table-label-hint" className="text-sm text-muted-foreground">
-              {t.tableForm.labelHint}
+              {counter ? f.counterHint : f.labelHint}
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -168,7 +179,7 @@ export function TableFormDialog({
               {t.tableForm.cancel}
             </DialogClose>
             <Button type="submit" size="lg" className="h-11 px-4" disabled={mutation.isPending}>
-              {mutation.isPending ? t.tableForm.saving : table ? t.tableForm.save : t.tableForm.create}
+              {mutation.isPending ? f.saving : table ? f.save : counter ? f.counterCreate : f.create}
             </Button>
           </DialogFooter>
         </form>

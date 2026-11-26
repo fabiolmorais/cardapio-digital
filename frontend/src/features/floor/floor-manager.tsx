@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { canManageTeam } from "@/features/team/team-rules";
 import { useSession } from "@/lib/auth/use-session";
 import { subscribeStaffEvents } from "@/lib/realtime/shared-staff-events";
@@ -19,6 +20,7 @@ import {
   fetchSectors,
   fetchTableDisplay,
   fetchTables,
+  isCounter,
   renameSector,
   rotateTableToken,
   saveFile,
@@ -40,6 +42,7 @@ type DialogState =
   | { kind: "rename-sector"; sector: Sector }
   | { kind: "deactivate-sector"; sector: Sector }
   | { kind: "new-table" }
+  | { kind: "new-counter" }
   | { kind: "edit-table"; table: DiningTable }
   | { kind: "rotate"; table: DiningTable }
   | null;
@@ -135,13 +138,24 @@ export function FloorManager() {
         <PlanMeter
           kind="tables"
           role={session.establishment.role}
-          used={tableList.filter((table) => table.active).length}
+          used={tableList.filter((table) => table.active && !isCounter(table)).length}
         />
         {activeSectors.length > 0 && (
-          <Button size="xl" onClick={() => setDialog({ kind: "new-table" })}>
-            <Plus aria-hidden />
-            {t.newTable}
-          </Button>
+          <>
+            <Button
+              size="xl"
+              variant="outline"
+              aria-label={t.newCounterLabel}
+              onClick={() => setDialog({ kind: "new-counter" })}
+            >
+              <Plus aria-hidden />
+              {t.newCounter}
+            </Button>
+            <Button size="xl" onClick={() => setDialog({ kind: "new-table" })}>
+              <Plus aria-hidden />
+              {t.newTable}
+            </Button>
+          </>
         )}
       </header>
 
@@ -263,15 +277,21 @@ export function FloorManager() {
                           onClick={() => setSelectedId(table.id)}
                           className="h-10 rounded-lg px-2 font-mono font-semibold hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                         >
-                          {t.tableName(table.label)}
+                          {t.placeName(table.label, isCounter(table))}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{sectorName.get(table.sectorId) ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground xl:max-2xl:hidden">
-                        {t.qrIssued(day.format(new Date(table.tokenIssuedAt)))}
+                        {isCounter(table) ? t.counterNoQr : t.qrIssued(day.format(new Date(table.tokenIssuedAt)))}
                       </td>
                       <td className="px-4 py-3">
-                        <SituationBadge situation={table.situation} />
+                        {isCounter(table) ? (
+                          <span className="inline-flex h-6 items-center rounded-full bg-primary/15 px-2.5 text-xs font-semibold text-brand-text">
+                            {t.counterSituation}
+                          </span>
+                        ) : (
+                          <SituationBadge situation={table.situation} />
+                        )}
                       </td>
                       <td className="px-4 py-2">
                         <ActiveSwitch
@@ -321,17 +341,18 @@ export function FloorManager() {
         }}
       />
       <TableFormDialog
-        key={dialog?.kind === "edit-table" ? dialog.table.id : `new-table-${activeFilter}`}
-        open={dialog?.kind === "new-table" || dialog?.kind === "edit-table"}
+        key={dialog?.kind === "edit-table" ? dialog.table.id : `${dialog?.kind ?? "new-table"}-${activeFilter}`}
+        open={dialog?.kind === "new-table" || dialog?.kind === "new-counter" || dialog?.kind === "edit-table"}
         onOpenChange={close}
         sectors={activeSectors}
         table={dialog?.kind === "edit-table" ? dialog.table : undefined}
+        counter={dialog?.kind === "new-counter" || (dialog?.kind === "edit-table" && isCounter(dialog.table))}
         defaultSectorId={filterSector?.active ? filterSector.id : undefined}
         onSave={async ({ label, sectorId }) => {
           if (dialog?.kind === "edit-table") {
             await updateTable(dialog.table.id, { label, sectorId });
           } else {
-            const created = await createTable(label, sectorId);
+            const created = await createTable(label, sectorId, dialog?.kind === "new-counter");
             setSelectedId(created.id);
           }
           await refresh();
@@ -401,7 +422,7 @@ function ActiveSwitch({ table, onToggle }: { table: DiningTable; onToggle: () =>
       type="button"
       role="switch"
       aria-checked={table.active}
-      aria-label={t.activeLabel(table.label)}
+      aria-label={isCounter(table) ? t.counterActiveLabel(table.label) : t.activeLabel(table.label)}
       disabled={busy}
       onClick={async () => {
         setBusy(true);
@@ -465,6 +486,9 @@ function TablePanel({
         {t.panel.empty}
       </aside>
     );
+  }
+  if (isCounter(table)) {
+    return <CounterPanel table={table} onEdit={onEdit} />;
   }
   return (
     <aside
@@ -551,6 +575,30 @@ function TablePanel({
       <Button variant="destructive" size="xl" onClick={() => onRotate(table)}>
         <RefreshCw aria-hidden />
         {t.panel.rotate(table.label)}
+      </Button>
+    </aside>
+  );
+}
+
+/** O balcão (desenho 12.11): sem QR Code, só o nome, o setor e o caminho para as comandas. */
+function CounterPanel({ table, onEdit }: { table: DiningTable; onEdit: (table: DiningTable) => void }) {
+  return (
+    <aside
+      aria-label={table.label}
+      className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 xl:max-w-80 2xl:max-w-sm"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold">{table.label}</h2>
+        <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-brand-text">
+          {t.counterBadge}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{t.panel.counterText}</p>
+      <Link href="/painel/balcao" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
+        {t.panel.counterOpen}
+      </Link>
+      <Button variant="outline" size="xl" onClick={() => onEdit(table)}>
+        {t.panel.editCounter}
       </Button>
     </aside>
   );

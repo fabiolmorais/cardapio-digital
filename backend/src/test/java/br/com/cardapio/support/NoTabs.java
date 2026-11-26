@@ -87,4 +87,20 @@ public final class NoTabs implements TabPort, OrderSettingsPort {
     public void save(OrderSettings settings) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean insertAtCounter(Tab tab) {
+        return false;
+    }
+
+    @Override
+    public boolean saveGuest(Tab tab) {
+        return false;
+    }
+
+    @Override
+    public ResultPage<OpenTabView> findOpenAtCounter(EstablishmentId establishmentId, DiningTableId counterId,
+                                                     PageQuery page) {
+        return new ResultPage<>(List.of(), page.page(), page.size(), 0);
+    }
 }

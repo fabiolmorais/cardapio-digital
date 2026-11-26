@@ -69,9 +69,12 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
      */
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.KitchenItemRow(
-                       i, o.number, o.tableId, t.label, s.name)
+                       i, o.number, o.tableId, t.label, s.name,
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT' AND i.status IN :statuses
@@ -92,9 +95,12 @@ interface OrderItemJpaRepository extends JpaRepository<OrderItemJpaEntity, UUID>
     /** Os cortes do rodízio de passagem a caminho (na fila, em preparo ou prontos), dos pedidos enviados. */
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.KitchenItemRow(
-                       i, o.number, o.tableId, t.label, s.name)
+                       i, o.number, o.tableId, t.label, s.name,
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN TabRodizioJpaEntity r ON r.id = i.tabRodizioId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId

@@ -64,13 +64,16 @@ final class StaffOrderResponses {
             boolean orderingEnabled,
             @Schema(requiredMode = REQUIRED, description = "O que conta para a trava de pedido duplicado")
             List<Item> alreadyOrdered,
-            @Schema(description = "O rodízio ativo na comanda; ausente se não houver") Rodizio rodizio
+            @Schema(description = "O rodízio ativo na comanda; ausente se não houver") Rodizio rodizio,
+            @Schema(description = "No balcão (ADR 0015): como a equipe chama o cliente") String counterName,
+            @Schema(description = "No balcão: o número do cartão, se houver") String counterCard
     ) {
         static Sheet from(StaffOrderSheet s) {
             return new Sheet(s.tableId().value(), s.tableLabel(), s.orderingEnabled(),
                     s.alreadyOrdered().stream().map(Item::from).toList(),
                     s.rodizio() == null ? null : new Rodizio(s.rodizio().name(),
-                            s.rodizio().productIds().stream().map(ProductId::value).toList()));
+                            s.rodizio().productIds().stream().map(ProductId::value).toList()),
+                    s.counter() == null ? null : s.counter().name(), s.counter() == null ? null : s.counter().card());
         }
     }
 

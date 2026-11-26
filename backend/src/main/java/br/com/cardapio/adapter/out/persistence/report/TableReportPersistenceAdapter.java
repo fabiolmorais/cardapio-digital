@@ -79,7 +79,7 @@ class TableReportPersistenceAdapter implements TableReportPort {
                                  AS a_la_carte
                         FROM tab t
                         LEFT JOIN tab_rodizio r ON r.tab_id = t.id AND r.establishment_id = :establishmentId
-                        WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+                        WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED' AND NOT t.at_counter
                           AND t.closed_at >= :start AND t.closed_at < :end AND""" + inSector("t.table_id", sector),
                 establishmentId, start, end, sector)
                 .query((rs, row) -> new StayTotals(rs.getInt("tabs"), Money.ofCents(rs.getLong("revenue")),
@@ -92,7 +92,7 @@ class TableReportPersistenceAdapter implements TableReportPort {
     public List<TableUsage> usage(EstablishmentId establishmentId, Instant start, Instant end,
                                   Optional<SectorId> sector) {
         return sql("""
-                        SELECT dt.label, s.name AS sector, count(t.id) AS tabs,
+                        SELECT dt.label, s.name AS sector, dt.kind, count(t.id) AS tabs,
                                coalesce(sum(t.total_cents), 0) AS revenue
                         FROM dining_table dt
                         JOIN sector s ON s.id = dt.sector_id AND s.establishment_id = :establishmentId
@@ -100,12 +100,12 @@ class TableReportPersistenceAdapter implements TableReportPort {
                           AND t.status = 'CLOSED' AND t.closed_at >= :start AND t.closed_at < :end
                         WHERE dt.establishment_id = :establishmentId AND dt.active
                           AND""" + inSector("dt.id", sector) + """
-                        GROUP BY dt.id, dt.label, s.id, s.position, s.name
+                        GROUP BY dt.id, dt.label, dt.kind, s.id, s.position, s.name
                         ORDER BY s.position, s.name, s.id, length(dt.label), dt.label, dt.id
                         """,
                 establishmentId, start, end, sector)
                 .query((rs, row) -> new TableUsage(rs.getString("label"), rs.getString("sector"), rs.getInt("tabs"),
-                        Money.ofCents(rs.getLong("revenue"))))
+                        Money.ofCents(rs.getLong("revenue")), "COUNTER".equals(rs.getString("kind"))))
                 .list();
     }
 
@@ -115,12 +115,12 @@ class TableReportPersistenceAdapter implements TableReportPort {
         // Fechadas pelo índice do fechamento; abertas pelo das comandas abertas.
         return sql("""
                         SELECT t.table_id, t.opened_at, t.closed_at AS until FROM tab t
-                        WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+                        WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED' AND NOT t.at_counter
                           AND t.closed_at > :start AND t.opened_at < :end AND""" + inSector("t.table_id", sector) + """
                         UNION ALL
                         SELECT t.table_id, t.opened_at, CAST(:now AS timestamptz) AS until FROM tab t
                         WHERE t.establishment_id = :establishmentId AND t.status IN ('OPEN', 'CLOSING')
-                          AND t.opened_at < :end AND""" + inSector("t.table_id", sector),
+                          AND NOT t.at_counter AND t.opened_at < :end AND""" + inSector("t.table_id", sector),
                 establishmentId, start, end, sector)
                 .param("now", utc(now))
                 .query((rs, row) -> new OccupiedInterval(new DiningTableId(rs.getObject("table_id", UUID.class)),

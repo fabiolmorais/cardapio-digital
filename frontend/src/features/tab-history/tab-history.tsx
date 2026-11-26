@@ -192,11 +192,19 @@ function History({ timeZone }: { timeZone: string }) {
                 <li key={tab.id}>
                   <Link
                     href={`/admin/comandas/${tab.id}`}
-                    aria-label={t.open(tab.tableLabel, dateTime(tab.closedAt, timeZone))}
+                    aria-label={
+                      tab.customerName
+                        ? t.openCounter(tab.customerName, dateTime(tab.closedAt, timeZone))
+                        : t.open(tab.tableLabel, dateTime(tab.closedAt, timeZone))
+                    }
                     className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none focus-visible:ring-inset sm:grid-cols-[1.4fr_1fr_1fr_1fr_auto]"
                   >
                     <span className="flex min-w-0 flex-col">
-                      <span className="font-semibold">{t.tableLabel(tab.tableLabel, tab.sectorName)}</span>
+                      <span className="font-semibold">
+                        {tab.customerName
+                          ? t.counterLabel(tab.tableLabel, tab.customerName, tab.cardNumber, tab.sectorName)
+                          : t.tableLabel(tab.tableLabel, tab.sectorName)}
+                      </span>
                       <span className="text-sm text-muted-foreground sm:hidden">
                         {dateTime(tab.closedAt, timeZone)} · {tab.paymentMethod ? pay[tab.paymentMethod] : "—"}
                       </span>

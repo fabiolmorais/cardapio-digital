@@ -20,7 +20,8 @@ SELECT json_build_object(
                         WHERE m.establishment_id = e.id), '[]'),
     'setores', COALESCE((SELECT json_agg(json_build_object('nome', s.name, 'ativo', s.active) ORDER BY s.position)
                          FROM sector s WHERE s.establishment_id = e.id), '[]'),
-    'mesas', COALESCE((SELECT json_agg(json_build_object('mesa', t.label, 'setor', s.name, 'ativa', t.active)
+    'mesas', COALESCE((SELECT json_agg(json_build_object('mesa', t.label, 'setor', s.name, 'ativa', t.active,
+                                                         'tipo', t.kind)
                                        ORDER BY t.label)
                        FROM dining_table t JOIN sector s ON s.id = t.sector_id
                        WHERE t.establishment_id = e.id), '[]'),
@@ -56,7 +57,8 @@ SELECT json_build_object(
     'comandas', COALESCE((SELECT json_agg(json_build_object(
                               'mesa', t.label, 'status', tb.status, 'aberta_em', tb.opened_at,
                               'fechada_em', tb.closed_at, 'total_centavos', tb.total_cents,
-                              'pagamento', tb.payment_method,
+                              'pagamento', tb.payment_method, 'no_balcao', tb.at_counter,
+                              'cliente', tb.customer_name, 'cartao', tb.card_number,
                               'pedidos', COALESCE((SELECT json_agg(json_build_object(
                                                        'numero', co.number, 'status', co.status,
                                                        'feito_em', co.created_at,

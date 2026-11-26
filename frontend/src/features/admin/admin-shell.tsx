@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Beer,
   BellRing,
   BookOpen,
   Building2,
@@ -25,12 +26,15 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/account/use-me";
+import { fetchLiveFloor } from "@/features/live/live-api";
 import { useLiveCount } from "@/features/live/use-live-count";
+import { LIVE_FLOOR_KEY } from "@/features/live/use-live-floor";
 import { useReportContext } from "@/features/reports/reports-api";
 import { SubscriptionBanner } from "@/features/subscription/subscription-banner";
 import { UnitSwitcher } from "@/features/units/unit-switcher";
@@ -63,6 +67,7 @@ const LIVE: Item[] = [
   { href: "/painel", label: t.nav.panel, icon: BellRing },
   { href: "/painel/mesas", label: t.nav.floorLive, icon: LayoutGrid, roles: [...MANAGERS_AND_STAFF] },
   { href: "/painel/comandas", label: t.nav.openTabs, icon: Receipt, roles: [...MANAGERS_AND_STAFF] },
+  { href: "/painel/balcao", label: t.nav.counter, icon: Beer, roles: [...MANAGERS_AND_STAFF] },
   { href: "/painel/avaliacoes", label: t.nav.ratings, icon: Star, roles: MANAGERS },
 ];
 
@@ -242,6 +247,19 @@ function useUnitComparison(role: Role | undefined) {
   return many && context.data?.unitComparison === true;
 }
 
+/**
+ * "Balcão" aparece só quando o restaurante tem um balcão cadastrado (ADR 0015). Usa a mesma consulta
+ * do mapa ao vivo, que o tempo real já mantém em dia.
+ */
+function useHasCounter(role: Role | undefined) {
+  const floor = useQuery({
+    queryKey: LIVE_FLOOR_KEY,
+    queryFn: fetchLiveFloor,
+    enabled: role !== undefined && role !== "KITCHEN",
+  });
+  return floor.data?.tables.some((table) => table.kind === "COUNTER") === true;
+}
+
 function ShellNav({
   pathname,
   role,
@@ -251,7 +269,9 @@ function ShellNav({
   role: Role | undefined;
   onNavigate: () => void;
 }) {
-  const allowed = (item: Item) => !item.roles || (role !== undefined && item.roles.includes(role));
+  const counter = useHasCounter(role);
+  const allowed = (item: Item) =>
+    (!item.roles || (role !== undefined && item.roles.includes(role))) && (item.href !== "/painel/balcao" || counter);
   const live = useLiveCount(role);
   const units = useUnitComparison(role);
   const groups: { label: string | null; items: Item[] }[] = [

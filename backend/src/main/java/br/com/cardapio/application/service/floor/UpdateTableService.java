@@ -50,7 +50,7 @@ public class UpdateTableService implements UpdateTableUseCase {
         }
         if (command.active() != null) {
             // Reativar ocupa uma vaga do plano, como cadastrar uma mesa nova.
-            if (command.active() && !table.active()) {
+            if (command.active() && !table.active() && !table.isCounter()) {
                 PlanAllowances.requireRoomForOneMore(subscriptions, command.establishmentId(), PlanResource.TABLES);
             }
             table = command.active() ? table.activate() : table.deactivate();

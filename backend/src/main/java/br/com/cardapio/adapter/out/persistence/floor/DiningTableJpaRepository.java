@@ -62,7 +62,8 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
      */
     @Query(value = """
             SELECT t.id AS tableId,
-                   EXISTS (SELECT 1 FROM tab b WHERE b.table_id = t.id AND b.status IN ('OPEN', 'CLOSING')) AS tabOpen,
+                   EXISTS (SELECT 1 FROM tab b WHERE b.table_id = t.id AND b.status IN ('OPEN', 'CLOSING')
+                              AND NOT b.at_counter) AS tabOpen,
                    (EXISTS (SELECT 1 FROM call c WHERE c.table_id = t.id AND c.type = 'BILL'
                                 AND c.status IN ('PENDING', 'IN_PROGRESS'))
                     OR EXISTS (SELECT 1 FROM tab b WHERE b.table_id = t.id AND b.status = 'CLOSING')) AS billRequested,
@@ -80,7 +81,7 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
      * (índices em table_id, tab_id e order_id). Nativa: o restaurante vai no WHERE.
      */
     @Query(value = """
-            SELECT d.id AS tableId, d.label AS label, s.id AS sectorId, s.name AS sectorName,
+            SELECT d.id AS tableId, d.label AS label, s.id AS sectorId, s.name AS sectorName, d.kind AS kind,
                    (SELECT count(*) FROM table_session ts
                      WHERE ts.table_id = d.id AND ts.ended_at IS NULL AND ts.expires_at > :now
                        AND ts.blocked_at IS NULL) AS phones,
@@ -95,10 +96,23 @@ interface DiningTableJpaRepository extends JpaRepository<DiningTableJpaEntity, U
                      WHERE o.tab_id = t.id AND i.status IN ('PENDING', 'PREPARING', 'READY')) AS itemsOnTheWay,
                    COALESCE((SELECT sum(g.quantity) FROM tab_rodizio r
                               JOIN tab_rodizio_guest g ON g.tab_rodizio_id = r.id
-                             WHERE r.tab_id = t.id), 0) AS rodizioPeople
+                             WHERE r.tab_id = t.id), 0) AS rodizioPeople,
+                   (SELECT count(*) FROM tab ct
+                     WHERE ct.table_id = d.id AND ct.status IN ('OPEN', 'CLOSING') AND ct.at_counter) AS counterTabs,
+                   COALESCE((SELECT sum(i.unit_price_cents * i.quantity) FROM tab ct
+                              JOIN customer_order o ON o.tab_id = ct.id
+                              JOIN order_item i ON i.order_id = o.id
+                             WHERE ct.table_id = d.id AND ct.status IN ('OPEN', 'CLOSING') AND ct.at_counter
+                               AND i.status <> 'CANCELED'), 0) AS counterTotalCents,
+                   (SELECT count(*) FROM tab ct
+                      JOIN customer_order o ON o.tab_id = ct.id
+                      JOIN order_item i ON i.order_id = o.id
+                     WHERE ct.table_id = d.id AND ct.status IN ('OPEN', 'CLOSING') AND ct.at_counter
+                       AND i.status IN ('PENDING', 'PREPARING', 'READY')) AS counterItemsOnTheWay
               FROM dining_table d
               JOIN sector s ON s.id = d.sector_id
-              LEFT JOIN tab t ON t.table_id = d.id AND t.status IN ('OPEN', 'CLOSING')
+              -- A comanda da mesa (no balcão são várias, contadas acima: ADR 0015).
+              LEFT JOIN tab t ON t.table_id = d.id AND t.status IN ('OPEN', 'CLOSING') AND NOT t.at_counter
              WHERE d.establishment_id = :establishmentId AND d.active AND s.active
              ORDER BY s.position, s.name, length(d.label), d.label
             """, nativeQuery = true)

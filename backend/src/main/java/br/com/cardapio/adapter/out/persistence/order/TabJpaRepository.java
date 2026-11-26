@@ -17,6 +17,7 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
     @Query("""
             SELECT t FROM TabJpaEntity t
              WHERE t.establishmentId = :establishmentId AND t.tableId = :tableId AND t.status IN ('OPEN', 'CLOSING')
+               AND t.atCounter = false
             """)
     Optional<TabJpaEntity> findOpen(@Param("establishmentId") UUID establishmentId, @Param("tableId") UUID tableId);
 
@@ -33,7 +34,7 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
     @Query(nativeQuery = true, value = """
             INSERT INTO tab (id, establishment_id, table_id, status, opened_at)
             VALUES (:id, :establishmentId, :tableId, 'OPEN', :openedAt)
-            ON CONFLICT (table_id) WHERE status IN ('OPEN', 'CLOSING') DO NOTHING
+            ON CONFLICT (table_id) WHERE status IN ('OPEN', 'CLOSING') AND NOT at_counter DO NOTHING
             """)
     int insertIfNoneOpen(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
                          @Param("tableId") UUID tableId, @Param("openedAt") Instant openedAt);
@@ -80,7 +81,8 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
 
     /**
      * Quem mais atendeu a mesa nesta comanda: chamados aceitos na mesa desde a abertura e itens
-     * entregues da comanda. Empate: quem fez por último.
+     * entregues da comanda. No balcão, que não tem chamados, contam também os pedidos que a pessoa
+     * lançou (ADR 0015). Empate: quem fez por último.
      */
     @Query(nativeQuery = true, value = """
             SELECT who FROM (
@@ -91,6 +93,11 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
                 SELECT i.delivered_by AS who, i.delivered_at AS at FROM order_item i
                   JOIN customer_order o ON o.id = i.order_id
                  WHERE o.establishment_id = :establishmentId AND o.tab_id = :tabId AND i.delivered_by IS NOT NULL
+                UNION ALL
+                SELECT o.placed_by AS who, o.created_at AS at FROM customer_order o
+                  JOIN tab t ON t.id = o.tab_id
+                 WHERE o.establishment_id = :establishmentId AND o.tab_id = :tabId AND t.at_counter
+                   AND o.placed_by IS NOT NULL
             ) served
              GROUP BY who
              ORDER BY count(*) DESC, max(at) DESC
@@ -128,6 +135,34 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
             """)
     Page<OpenTabRow> findOpenTabs(@Param("establishmentId") UUID establishmentId, Pageable pageable);
 
+    /** As comandas abertas de um balcão (ADR 0015), com a mesma soma das comandas abertas. */
+    @Query(value = """
+            SELECT new br.com.cardapio.adapter.out.persistence.order.OpenTabRow(t, d.label, s.name,
+                       COALESCE(SUM(CASE WHEN i.status <> 'CANCELED' THEN i.unitPriceCents * i.quantity
+                                         ELSE 0 END), 0)
+                       + COALESCE((SELECT SUM(g.quantity * g.unitPriceCents)
+                                     FROM TabRodizioJpaEntity r, TabRodizioGuestJpaEntity g
+                                    WHERE r.tabId = t.id AND g.tabRodizioId = r.id), 0),
+                       COALESCE(SUM(CASE WHEN i.status IN ('PENDING', 'PREPARING', 'READY') THEN 1
+                                         ELSE 0 END), 0))
+              FROM TabJpaEntity t
+              JOIN DiningTableJpaEntity d ON d.id = t.tableId
+              JOIN SectorJpaEntity s ON s.id = d.sectorId
+              LEFT JOIN OrderJpaEntity o ON o.tabId = t.id
+              LEFT JOIN OrderItemJpaEntity i ON i.orderId = o.id
+             WHERE t.establishmentId = :establishmentId AND t.status IN ('OPEN', 'CLOSING')
+               AND t.atCounter = true AND t.tableId = :counterId
+             GROUP BY t, d.label, s.name
+             ORDER BY t.openedAt, t.id
+            """,
+            countQuery = """
+            SELECT count(t) FROM TabJpaEntity t
+             WHERE t.establishmentId = :establishmentId AND t.status IN ('OPEN', 'CLOSING')
+               AND t.atCounter = true AND t.tableId = :counterId
+            """)
+    Page<OpenTabRow> findOpenAtCounter(@Param("establishmentId") UUID establishmentId,
+                                       @Param("counterId") UUID counterId, Pageable pageable);
+
     /**
      * O histórico, em SQL nativo: o "dia" é o do restaurante, e o JPQL não tem o AT TIME ZONE do
      * Postgres. Por ser nativa, a consulta não passa pelo filtro do Hibernate: o establishment_id
@@ -140,7 +175,7 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
     @Query(nativeQuery = true, value = """
             SELECT t.id AS id, d.label AS tableLabel, s.name AS sectorName, t.opened_at AS openedAt,
                    t.closed_at AS closedAt, t.total_cents AS totalCents, t.payment_method AS paymentMethod,
-                   u.name AS closedByName
+                   u.name AS closedByName, t.customer_name AS customerName, t.card_number AS cardNumber
               FROM tab t
               JOIN establishment e ON e.id = t.establishment_id
               JOIN dining_table d ON d.id = t.table_id
@@ -169,11 +204,31 @@ interface TabJpaRepository extends JpaRepository<TabJpaEntity, UUID> {
     /** A comanda na mesa nova (e a abertura, na junção). Só se ainda estiver aberta: 1 linha ou 0. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = """
-            UPDATE tab SET table_id = :tableId, opened_at = :openedAt
+            UPDATE tab SET table_id = :tableId, opened_at = :openedAt, at_counter = :atCounter
              WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
             """)
     int saveMoved(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
-                  @Param("tableId") UUID tableId, @Param("openedAt") Instant openedAt);
+                  @Param("tableId") UUID tableId, @Param("openedAt") Instant openedAt,
+                  @Param("atCounter") boolean atCounter);
+
+    /** A comanda do balcão, já com o nome (e o cartão); o índice do cartão recusa um cartão em uso. */
+    @Modifying
+    @Query(nativeQuery = true, value = """
+            INSERT INTO tab (id, establishment_id, table_id, status, opened_at, at_counter, customer_name, card_number)
+            VALUES (:id, :establishmentId, :tableId, 'OPEN', :openedAt, TRUE, :name, :card)
+            """)
+    int insertAtCounter(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId,
+                        @Param("tableId") UUID tableId, @Param("openedAt") Instant openedAt,
+                        @Param("name") String name, @Param("card") String card);
+
+    /** O nome e o cartão de uma comanda aberta. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = """
+            UPDATE tab SET customer_name = :name, card_number = :card
+             WHERE id = :id AND establishment_id = :establishmentId AND status IN ('OPEN', 'CLOSING')
+            """)
+    int saveGuest(@Param("id") UUID id, @Param("establishmentId") UUID establishmentId, @Param("name") String name,
+                  @Param("card") String card);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = """

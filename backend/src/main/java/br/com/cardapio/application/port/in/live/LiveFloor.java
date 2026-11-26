@@ -5,6 +5,7 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.call.model.PaymentMethod;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.model.Money;
 
@@ -42,10 +43,11 @@ public record LiveFloor(List<Table> tables, int occupied, Money revenueToday, Lo
      * @param state         o que pinta a mesa no mapa
      * @param call          o chamado aberto que mais importa (o mais antigo); null se nenhum
      * @param waitingOrders pedidos parados na confirmação do garçom
+     * @param counterTabs   no balcão (ADR 0015), quantas comandas abertas; o total e os itens a caminho são a soma delas
      */
     public record Table(DiningTableId id, String label, SectorId sectorId, String sectorName, State state,
                         int phones, TabId tabId, Instant tabOpenedAt, Money tabTotal, int itemsOnTheWay,
-                        int rodizioPeople, Call call, int waitingOrders) {
+                        int rodizioPeople, Call call, int waitingOrders, TableKind kind, int counterTabs) {
     }
 
     /** O chamado aberto da mesa, como o mapa mostra. */

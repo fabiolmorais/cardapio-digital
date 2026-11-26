@@ -127,8 +127,9 @@ class PhoneRodizioReportPersistenceAdapter implements PhoneRodizioReportPort {
         // As sessões de até um dia antes: o celular pode ter escaneado antes da meia-noite.
         return sql("""
                         WITH tabs AS (
+                            -- O balcão nunca tem QR (ADR 0015): as comandas dele ficam fora do funil.
                             SELECT t.id FROM tab t
-                            WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED'
+                            WHERE t.establishment_id = :establishmentId AND t.status = 'CLOSED' AND NOT t.at_counter
                               AND t.closed_at >= :start AND t.closed_at < :end
                               AND""" + inSector("t.table_id", sector) + """
                         ), scanned AS (

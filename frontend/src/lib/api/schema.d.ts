@@ -1262,6 +1262,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/counter-tabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As comandas abertas de um balcão, da mais antiga para a mais nova */
+        get: operations["listCounterTabs"];
+        put?: never;
+        /** Abre a comanda de um cliente do balcão, com o nome */
+        post: operations["openCounterTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/counter-tabs/{id}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lança um pedido na comanda do balcão: vai direto para a cozinha */
+        post: operations["placeCounterOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{id}/release": {
         parameters: {
             query?: never;
@@ -1621,6 +1656,23 @@ export interface paths {
         head?: never;
         /** Renomeia a categoria */
         patch: operations["renameMenuCategory"];
+        trace?: never;
+    };
+    "/api/v1/counter-tabs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Corrige o nome ou o cartão da comanda aberta do balcão */
+        patch: operations["renameCounterTab"];
         trace?: never;
     };
     "/api/v1/units/allowance": {
@@ -2451,6 +2503,23 @@ export interface paths {
         };
         /** Avisos do restaurante em tempo real: "ready" ao conectar, "call" quando um chamado muda */
         get: operations["streamStaffEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/counter-tabs/{id}/staff-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A situação da comanda do balcão para lançar um pedido: o que já foi pedido */
+        get: operations["getCounterOrderSheet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3801,6 +3870,12 @@ export interface components {
             mergedIntoTabId?: string;
             /** @description A taxa de serviço: aberta, a que vale agora; fechada, a cobrada. Ausente sem taxa */
             service?: components["schemas"]["ServiceOffer"];
+            /** @description A comanda está no balcão (ADR 0015) */
+            atCounter: boolean;
+            /** @description Como a equipe chama o cliente do balcão (continua se a comanda foi para uma mesa) */
+            customerName?: string;
+            /** @description O número do cartão, se a casa usa */
+            cardNumber?: string;
         };
         StaffTabOrder: {
             /** Format: uuid */
@@ -3863,10 +3938,18 @@ export interface components {
             choices: components["schemas"]["ItemChoices"];
         };
         CreateTableRequest: {
-            /** @example 04 */
+            /**
+             * @description O rótulo da mesa (até 10) ou o nome do balcão (até 30)
+             * @example 04
+             */
             label: string;
             /** Format: uuid */
             sectorId: string;
+            /**
+             * @description Mesa (padrão) ou balcão (ADR 0015): sem QR Code, várias comandas, fora do limite de mesas
+             * @enum {string}
+             */
+            kind?: "TABLE" | "COUNTER";
         };
         /** @description Mesa do salão */
         DiningTable: {
@@ -3889,6 +3972,11 @@ export interface components {
              * @enum {string}
              */
             situation: "FREE" | "OCCUPIED" | "RODIZIO" | "BILL_REQUESTED" | "INACTIVE";
+            /**
+             * @description Mesa ou balcão (o balcão não tem QR Code)
+             * @enum {string}
+             */
+            kind: "TABLE" | "COUNTER";
         };
         ActivateRodizioRequest: {
             /** Format: uuid */
@@ -4394,6 +4482,10 @@ export interface components {
             orderedAt?: string;
             /** @description Os itens desta via; vazio se outra estação já imprimiu */
             items: components["schemas"]["PrintJobLine"][];
+            /** @description No balcão (ADR 0015): como a equipe chama o cliente */
+            counterName?: string;
+            /** @description No balcão: o número do cartão, se houver */
+            counterCard?: string;
         };
         CancelItemRequest: {
             /**
@@ -4523,6 +4615,49 @@ export interface components {
              * @example Sakura Sushi
              */
             establishmentName?: string;
+        };
+        OpenCounterTabRequest: {
+            /**
+             * Format: uuid
+             * @description O balcão
+             */
+            counterId: string;
+            /**
+             * @description Como a equipe chama o cliente
+             * @example João
+             */
+            name: string;
+            /**
+             * @description O número do cartão, se a casa usa
+             * @example 12
+             */
+            card?: string;
+        };
+        OpenTab: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tableId: string;
+            tableLabel: string;
+            sectorName: string;
+            /** Format: date-time */
+            openedAt: string;
+            /**
+             * Format: int64
+             * @description A soma dos itens não cancelados até agora
+             */
+            totalCents: number;
+            /**
+             * Format: int32
+             * @description Itens ainda a caminho (na fila, em preparo, prontos)
+             */
+            itemsOnTheWay: number;
+            /** @description A comanda está no balcão (ADR 0015) */
+            atCounter: boolean;
+            /** @description No balcão: como a equipe chama o cliente (continua se a comanda for para uma mesa) */
+            customerName?: string;
+            /** @description O número do cartão, se a casa usa */
+            cardNumber?: string;
         };
         /** @description O código que aparece no celular de quem pediu a liberação */
         ReleaseCallRequest: {
@@ -4662,6 +4797,12 @@ export interface components {
             /** @description false: "Esgotado hoje" */
             available: boolean;
         };
+        RenameCounterTabRequest: {
+            /** @example João */
+            name: string;
+            /** @example 12 */
+            card?: string;
+        };
         PageResponseUnit: {
             content: components["schemas"]["Unit"][];
             /** Format: int32 */
@@ -4721,6 +4862,10 @@ export interface components {
             paymentMethod?: "PIX" | "CARD" | "CASH";
             /** @description Quem fechou */
             closedByName?: string;
+            /** @description A comanda do balcão (ADR 0015): como a equipe chamou o cliente */
+            customerName?: string;
+            /** @description O número do cartão, se houve */
+            cardNumber?: string;
         };
         PageResponseClosedTab: {
             content: components["schemas"]["ClosedTab"][];
@@ -4732,26 +4877,6 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
-        };
-        OpenTab: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tableId: string;
-            tableLabel: string;
-            sectorName: string;
-            /** Format: date-time */
-            openedAt: string;
-            /**
-             * Format: int64
-             * @description A soma dos itens não cancelados até agora
-             */
-            totalCents: number;
-            /**
-             * Format: int32
-             * @description Itens ainda a caminho (na fila, em preparo, prontos)
-             */
-            itemsOnTheWay: number;
         };
         PageResponseOpenTab: {
             content: components["schemas"]["OpenTab"][];
@@ -4790,6 +4915,10 @@ export interface components {
             alreadyOrdered: components["schemas"]["AlreadyOrderedItem"][];
             /** @description O rodízio ativo na comanda; ausente se não houver */
             rodizio?: components["schemas"]["StaffOrderRodizio"];
+            /** @description No balcão (ADR 0015): como a equipe chama o cliente */
+            counterName?: string;
+            /** @description No balcão: o número do cartão, se houver */
+            counterCard?: string;
         };
         PublicMenu: {
             categories: components["schemas"]["PublicMenuCategory"][];
@@ -6551,6 +6680,10 @@ export interface components {
             readyAt?: string;
             /** @description O tamanho e as escolhas */
             choices: components["schemas"]["ItemChoices"];
+            /** @description No balcão (ADR 0015): como a equipe chama o cliente */
+            counterName?: string;
+            /** @description No balcão: o número do cartão, se houver */
+            counterCard?: string;
         };
         PageResponseKitchenItem: {
             content: components["schemas"]["KitchenItem"][];
@@ -6663,6 +6796,16 @@ export interface components {
              * @description Pedidos esperando a confirmação do garçom
              */
             waitingOrders: number;
+            /**
+             * @description Mesa ou balcão; no balcão, o total e os itens a caminho somam as comandas abertas dele
+             * @enum {string}
+             */
+            kind: "TABLE" | "COUNTER";
+            /**
+             * Format: int32
+             * @description No balcão, quantas comandas abertas; zero na mesa
+             */
+            counterTabs: number;
         };
         LiveTableCall: {
             /** @enum {string} */
@@ -10852,6 +10995,125 @@ export interface operations {
             };
         };
     };
+    listCounterTabs: {
+        parameters: {
+            query: {
+                counterId: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página das comandas do balcão */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseOpenTab"];
+                };
+            };
+            /** @description Não é um balcão deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    openCounterTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenCounterTabRequest"];
+            };
+        };
+        responses: {
+            /** @description Comanda aberta */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenTab"];
+                };
+            };
+            /** @description Não é um balcão deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O cartão já está em outra comanda aberta */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    placeCounterOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceStaffOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Pedido lançado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrder"];
+                };
+            };
+            /** @description Não é uma comanda do balcão deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A comanda já pediu estes itens (a lista vem em duplicates), ou um item esgotou */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DuplicateOrderProblem"];
+                };
+            };
+        };
+    };
     releaseCall: {
         parameters: {
             query?: never;
@@ -11804,6 +12066,50 @@ export interface operations {
                 };
             };
             /** @description Já existe uma categoria com esse nome */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    renameCounterTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameCounterTabRequest"];
+            };
+        };
+        responses: {
+            /** @description Comanda corrigida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenTab"];
+                };
+            };
+            /** @description Comanda não encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description O cartão já está em outra comanda aberta */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -13748,6 +14054,37 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": string;
+                };
+            };
+        };
+    };
+    getCounterOrderSheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A situação da comanda */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrderSheet"];
+                };
+            };
+            /** @description Não é uma comanda do balcão deste restaurante */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

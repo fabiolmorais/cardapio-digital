@@ -29,6 +29,19 @@ public interface TabPort {
      */
     boolean insertIfNoneOpen(Tab tab);
 
+    /**
+     * Abre a comanda do balcão (ADR 0015), já com o nome e o cartão. false: o cartão já está numa
+     * comanda aberta do restaurante, e nada foi gravado.
+     */
+    boolean insertAtCounter(Tab tab);
+
+    /** Grava o nome e o cartão da comanda aberta. false: o cartão já está em outra comanda aberta. */
+    boolean saveGuest(Tab tab);
+
+    /** As comandas abertas de um balcão, com o total e os itens a caminho, da mais antiga para a mais nova. */
+    ResultPage<OpenTabView> findOpenAtCounter(EstablishmentId establishmentId, DiningTableId counterId,
+                                              PageQuery page);
+
     /** A comanda com a mesa e o setor, aberta ou fechada. */
     Optional<TabView> findView(EstablishmentId establishmentId, TabId tabId);
 

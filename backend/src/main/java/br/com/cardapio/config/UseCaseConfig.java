@@ -107,6 +107,7 @@ import br.com.cardapio.application.port.in.order.ListTableOrdersUseCase;
 import br.com.cardapio.application.port.in.order.ListWaitingOrdersUseCase;
 import br.com.cardapio.application.port.in.menu.GetStaffMenuUseCase;
 import br.com.cardapio.application.port.in.order.GetStaffOrderSheetUseCase;
+import br.com.cardapio.application.port.in.order.ManageCounterTabsUseCase;
 import br.com.cardapio.application.port.in.order.PlaceOrderUseCase;
 import br.com.cardapio.application.port.in.order.PlaceStaffOrderUseCase;
 import br.com.cardapio.application.port.in.order.ReviewOrderUseCase;
@@ -272,6 +273,7 @@ import br.com.cardapio.application.service.order.ListTableOrdersService;
 import br.com.cardapio.application.service.order.ListWaitingOrdersService;
 import br.com.cardapio.application.service.menu.GetStaffMenuService;
 import br.com.cardapio.application.service.order.GetStaffOrderSheetService;
+import br.com.cardapio.application.service.order.ManageCounterTabsService;
 import br.com.cardapio.application.service.order.PlaceOrderService;
 import br.com.cardapio.application.service.order.PlaceStaffOrderService;
 import br.com.cardapio.application.service.order.ReviewOrderService;
@@ -906,6 +908,14 @@ class UseCaseConfig {
     @Bean
     CloseExpiredShiftsUseCase closeExpiredShiftsUseCase(StaffShiftPort staffShiftPort, Clock clock) {
         return new CloseExpiredShiftsService(staffShiftPort, clock);
+    }
+
+    @Bean
+    ManageCounterTabsUseCase manageCounterTabsUseCase(DiningTablePort diningTablePort, SectorPort sectorPort,
+                                                      TabPort tabPort, SubscriptionPort subscriptionPort,
+                                                      EventPublisherPort eventPublisherPort, Clock clock) {
+        return new ManageCounterTabsService(diningTablePort, sectorPort, tabPort, subscriptionPort,
+                eventPublisherPort, clock);
     }
 
     @Bean

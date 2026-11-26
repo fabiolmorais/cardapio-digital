@@ -67,6 +67,8 @@ function Floor() {
   }
 
   const tables = floor.data.tables;
+  // O balcão (ADR 0015) aparece no mapa, mas não conta como mesa.
+  const tableCount = tables.filter((table) => table.kind !== "COUNTER").length;
   const bills = tables.filter((table) => table.state === "BILL").length;
   const table = tables.find((tb) => tb.id === selected) ?? null;
 
@@ -76,7 +78,7 @@ function Floor() {
         <div className="mr-auto flex flex-col gap-0.5">
           <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{t.title}</h1>
           <span className="text-[13px] text-muted-foreground">
-            {t.subtitle(floor.data.occupied, tables.length, bills)}
+            {t.subtitle(floor.data.occupied, tableCount, bills)}
           </span>
         </div>
         <ul aria-label={t.legend} className="flex flex-wrap gap-3.5 text-[13px] text-muted-foreground">
@@ -98,25 +100,45 @@ function Floor() {
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-6">
                 {tables
                   .filter((tb) => tb.sectorName === sector)
-                  .map((tb) => (
-                    <button
-                      key={tb.id}
-                      type="button"
-                      aria-pressed={tb.id === selected}
-                      aria-label={`${t.select(tb.label)} · ${line(tb, now).text}`}
-                      onClick={() => setSelected(tb.id === selected ? null : tb.id)}
-                      className={cn(
-                        "flex h-27 flex-col justify-between rounded-[18px] border border-border p-3 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                        STATE_CLASS[tb.state],
-                        tb.id === selected && "outline-2 outline-offset-2 outline-foreground",
-                      )}
-                    >
-                      <span className="text-2xl leading-6 font-bold">{tb.label}</span>
-                      <span className={cn("text-[13px] leading-[18px]", line(tb, now).className)}>
-                        {line(tb, now).text}
-                      </span>
-                    </button>
-                  ))}
+                  .map((tb) =>
+                    tb.kind === "COUNTER" ? (
+                      <Link
+                        key={tb.id}
+                        href={`/painel/balcao?balcao=${tb.id}`}
+                        aria-label={`${messages.panel.counter.openMap(tb.label)} · ${messages.panel.counter.mapTabs(tb.counterTabs)}`}
+                        className={cn(
+                          "col-span-2 flex h-27 flex-col justify-between rounded-[18px] border p-3 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                          tb.counterTabs > 0
+                            ? "border-primary/60 bg-primary/15"
+                            : "border-dashed border-border bg-transparent",
+                        )}
+                      >
+                        <span className="truncate text-xl leading-6 font-bold">{tb.label}</span>
+                        <span className="text-[13px] leading-[18px] text-muted-foreground">
+                          {messages.panel.counter.mapTabs(tb.counterTabs)}
+                          {tb.counterTabs > 0 && ` · ${formatCents(tb.tabTotalCents)}`}
+                        </span>
+                      </Link>
+                    ) : (
+                      <button
+                        key={tb.id}
+                        type="button"
+                        aria-pressed={tb.id === selected}
+                        aria-label={`${t.select(tb.label)} · ${line(tb, now).text}`}
+                        onClick={() => setSelected(tb.id === selected ? null : tb.id)}
+                        className={cn(
+                          "flex h-27 flex-col justify-between rounded-[18px] border border-border p-3 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                          STATE_CLASS[tb.state],
+                          tb.id === selected && "outline-2 outline-offset-2 outline-foreground",
+                        )}
+                      >
+                        <span className="text-2xl leading-6 font-bold">{tb.label}</span>
+                        <span className={cn("text-[13px] leading-[18px]", line(tb, now).className)}>
+                          {line(tb, now).text}
+                        </span>
+                      </button>
+                    ),
+                  )}
               </div>
             </section>
           ))}
@@ -182,7 +204,7 @@ function Drawer({
   // Só aparece "Fazer pedido" se o restaurante liberou; a cozinha nem recebe esta resposta.
   const staffOrder = useQuery({
     queryKey: ["staff-order", table.id],
-    queryFn: () => fetchStaffOrderSheet(table.id),
+    queryFn: () => fetchStaffOrderSheet({ kind: "table", id: table.id }),
     retry: false,
   });
   const [rodizio, setRodizio] = useState<RodizioTarget | null>(null);

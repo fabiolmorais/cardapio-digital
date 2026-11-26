@@ -2,6 +2,7 @@ package br.com.cardapio.application.port.out.live;
 
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.model.Money;
 
@@ -17,7 +18,11 @@ import java.time.Instant;
  * @param itemsOnTheWay itens na fila, em preparo ou prontos
  * @param rodizioPeople as pessoas no rodízio; zero se a mesa não está no rodízio
  */
+/**
+ * No balcão (ADR 0015), {@code tabId} fica vazio, e o total e os itens a caminho somam as
+ * {@code counterTabs} comandas abertas dele.
+ */
 public record LiveTableView(DiningTableId id, String label, SectorId sectorId, String sectorName, int phones,
                             TabId tabId, Instant tabOpenedAt, Money tabTotal, int itemsOnTheWay,
-                            int rodizioPeople) {
+                            int rodizioPeople, TableKind kind, int counterTabs) {
 }

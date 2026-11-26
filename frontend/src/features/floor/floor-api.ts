@@ -5,6 +5,11 @@ export type Sector = Schemas["Sector"];
 export type DiningTable = Schemas["DiningTable"];
 export type UpdateTableRequest = Schemas["UpdateTableRequest"];
 
+/** O lugar é um balcão (ADR 0015)? */
+export function isCounter(table: Pick<DiningTable, "kind">) {
+  return table.kind === "COUNTER";
+}
+
 const t = messages.floor.errors;
 
 /** Problem Details do back vira mensagem pronta para a tela (409, 422, 404 trazem uma frase). */
@@ -56,8 +61,11 @@ export async function fetchTables(): Promise<DiningTable[]> {
   throw failure(response, error);
 }
 
-export async function createTable(label: string, sectorId: string): Promise<DiningTable> {
-  const { data, error, response } = await api.POST("/api/v1/tables", { body: { label, sectorId } });
+/** Cria uma mesa ou, com `counter`, um balcão (ADR 0015: sem QR Code, várias comandas). */
+export async function createTable(label: string, sectorId: string, counter = false): Promise<DiningTable> {
+  const { data, error, response } = await api.POST("/api/v1/tables", {
+    body: { label, sectorId, kind: counter ? "COUNTER" : "TABLE" },
+  });
   if (data) return data;
   throw failure(response, error);
 }

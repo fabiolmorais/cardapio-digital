@@ -31,11 +31,14 @@ class DiningTableJpaEntity extends EstablishmentScopedEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(nullable = false)
+    private String kind;
+
     protected DiningTableJpaEntity() {
     }
 
     DiningTableJpaEntity(UUID id, UUID establishmentId, UUID sectorId, String label, String publicToken,
-                         Instant tokenIssuedAt, boolean active) {
+                         Instant tokenIssuedAt, boolean active, String kind) {
         super(establishmentId);
         this.id = id;
         this.sectorId = sectorId;
@@ -43,6 +46,7 @@ class DiningTableJpaEntity extends EstablishmentScopedEntity {
         this.publicToken = publicToken;
         this.tokenIssuedAt = tokenIssuedAt;
         this.active = active;
+        this.kind = kind;
     }
 
     UUID getId() { return id; }
@@ -50,5 +54,6 @@ class DiningTableJpaEntity extends EstablishmentScopedEntity {
     String getLabel() { return label; }
     String getPublicToken() { return publicToken; }
     Instant getTokenIssuedAt() { return tokenIssuedAt; }
+    String getKind() { return kind; }
     boolean isActive() { return active; }
 }

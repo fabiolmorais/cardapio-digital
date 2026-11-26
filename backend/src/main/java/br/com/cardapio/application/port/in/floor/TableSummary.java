@@ -3,13 +3,14 @@ package br.com.cardapio.application.port.in.floor;
 import br.com.cardapio.domain.floor.model.DiningTable;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.floor.model.TableSituation;
 
 import java.time.Instant;
 
 /** A mesa para o painel. publicToken vai junto porque o painel mostra a prévia do QR. */
 public record TableSummary(DiningTableId id, SectorId sectorId, String label, String publicToken,
-                           Instant tokenIssuedAt, boolean active, TableSituation situation) {
+                           Instant tokenIssuedAt, boolean active, TableSituation situation, TableKind kind) {
 
     /** Sem o movimento (criar, editar, trocar o QR): a situação sai só de ativa ou não. */
     public static TableSummary from(DiningTable table) {
@@ -18,6 +19,6 @@ public record TableSummary(DiningTableId id, SectorId sectorId, String label, St
 
     public static TableSummary from(DiningTable table, TableSituation situation) {
         return new TableSummary(table.id(), table.sectorId(), table.label(), table.token().value(),
-                table.tokenIssuedAt(), table.active(), situation);
+                table.tokenIssuedAt(), table.active(), situation, table.kind());
     }
 }

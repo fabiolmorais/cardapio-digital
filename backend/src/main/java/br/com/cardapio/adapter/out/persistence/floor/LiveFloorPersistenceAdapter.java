@@ -5,6 +5,7 @@ import br.com.cardapio.application.port.out.live.LiveTableView;
 import br.com.cardapio.domain.account.model.EstablishmentId;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.floor.model.SectorId;
+import br.com.cardapio.domain.floor.model.TableKind;
 import br.com.cardapio.domain.order.model.TabId;
 import br.com.cardapio.domain.shared.model.Money;
 import org.springframework.stereotype.Component;
@@ -30,10 +31,16 @@ class LiveFloorPersistenceAdapter implements LiveFloorPort {
     @Override
     public List<LiveTableView> findTables(EstablishmentId establishmentId, Instant now) {
         return tables.findLive(establishmentId.value(), now).stream()
-                .map(r -> new LiveTableView(new DiningTableId(r.getTableId()), r.getLabel(),
-                        new SectorId(r.getSectorId()), r.getSectorName(), (int) r.getPhones(),
-                        r.getTabId() == null ? null : new TabId(r.getTabId()), r.getTabOpenedAt(),
-                        Money.ofCents(r.getTabTotalCents()), (int) r.getItemsOnTheWay(), (int) r.getRodizioPeople()))
+                .map(r -> {
+                    TableKind kind = TableKind.valueOf(r.getKind());
+                    boolean counter = kind.isCounter();
+                    return new LiveTableView(new DiningTableId(r.getTableId()), r.getLabel(),
+                            new SectorId(r.getSectorId()), r.getSectorName(), (int) r.getPhones(),
+                            r.getTabId() == null ? null : new TabId(r.getTabId()), r.getTabOpenedAt(),
+                            Money.ofCents(counter ? r.getCounterTotalCents() : r.getTabTotalCents()),
+                            (int) (counter ? r.getCounterItemsOnTheWay() : r.getItemsOnTheWay()),
+                            (int) r.getRodizioPeople(), kind, (int) r.getCounterTabs());
+                })
                 .toList();
     }
 

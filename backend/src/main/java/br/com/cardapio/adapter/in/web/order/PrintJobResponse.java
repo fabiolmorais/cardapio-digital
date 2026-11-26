@@ -19,7 +19,9 @@ record PrintJobResponse(
         @Schema(requiredMode = REQUIRED) String sectorName,
         @Schema(description = "Quando o pedido chegou; vazio se não há itens") Instant orderedAt,
         @Schema(requiredMode = REQUIRED, description = "Os itens desta via; vazio se outra estação já imprimiu")
-        List<Line> items
+        List<Line> items,
+        @Schema(description = "No balcão (ADR 0015): como a equipe chama o cliente") String counterName,
+        @Schema(description = "No balcão: o número do cartão, se houver") String counterCard
 ) {
 
     @Schema(name = "PrintJobLine")
@@ -37,7 +39,8 @@ record PrintJobResponse(
 
     static PrintJobResponse from(PrintJob job) {
         return new PrintJobResponse(job.orderId().value(), job.kind(), job.orderNumber(), job.tableLabel(),
-                job.sectorName(), job.orderedAt(), job.items().stream().map(PrintJobResponse::line).toList());
+                job.sectorName(), job.orderedAt(), job.items().stream().map(PrintJobResponse::line).toList(),
+                job.counter() == null ? null : job.counter().name(), job.counter() == null ? null : job.counter().card());
     }
 
     static Line line(PrintJob.Line l) {

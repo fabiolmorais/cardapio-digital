@@ -33,16 +33,19 @@ interface KitchenPrintJpaRepository extends JpaRepository<OrderItemJpaEntity, UU
 
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.PrintJobRow(
-                       o.id, o.number, o.tableId, t.label, s.name, min(i.createdAt))
+                       o.id, o.number, o.tableId, t.label, s.name, min(i.createdAt),
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT'
                AND i.printedAt IS NULL AND i.status IN ('PENDING', 'PREPARING', 'READY')
                AND NOT EXISTS (SELECT r.id FROM TabRodizioJpaEntity r
                                 WHERE r.id = i.tabRodizioId AND r.rodizioType = 'PASSAGEM')
-             GROUP BY o.id, o.number, o.tableId, t.label, s.name
+             GROUP BY o.id, o.number, o.tableId, t.label, s.name, tb.atCounter, tb.customerName, tb.cardNumber
              ORDER BY min(i.createdAt)
             """,
             countQuery = """
@@ -57,16 +60,19 @@ interface KitchenPrintJpaRepository extends JpaRepository<OrderItemJpaEntity, UU
 
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.PrintJobRow(
-                       o.id, o.number, o.tableId, t.label, s.name, min(i.canceledAt))
+                       o.id, o.number, o.tableId, t.label, s.name, min(i.canceledAt),
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT'
                AND i.printedAt IS NOT NULL AND i.cancelPrintedAt IS NULL AND i.status = 'CANCELED'
                AND NOT EXISTS (SELECT r.id FROM TabRodizioJpaEntity r
                                 WHERE r.id = i.tabRodizioId AND r.rodizioType = 'PASSAGEM')
-             GROUP BY o.id, o.number, o.tableId, t.label, s.name
+             GROUP BY o.id, o.number, o.tableId, t.label, s.name, tb.atCounter, tb.customerName, tb.cardNumber
              ORDER BY min(i.canceledAt)
             """,
             countQuery = """
@@ -81,16 +87,19 @@ interface KitchenPrintJpaRepository extends JpaRepository<OrderItemJpaEntity, UU
 
     @Query(value = """
             SELECT new br.com.cardapio.adapter.out.persistence.order.PrintJobRow(
-                       o.id, o.number, o.tableId, t.label, s.name, max(i.printedAt))
+                       o.id, o.number, o.tableId, t.label, s.name, max(i.printedAt),
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderItemJpaEntity i
               JOIN OrderJpaEntity o ON o.id = i.orderId
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE i.establishmentId = :establishmentId AND o.status = 'SENT'
                AND i.printedAt >= :since
                AND NOT EXISTS (SELECT r.id FROM TabRodizioJpaEntity r
                                 WHERE r.id = i.tabRodizioId AND r.rodizioType = 'PASSAGEM')
-             GROUP BY o.id, o.number, o.tableId, t.label, s.name
+             GROUP BY o.id, o.number, o.tableId, t.label, s.name, tb.atCounter, tb.customerName, tb.cardNumber
              ORDER BY max(i.printedAt) DESC
             """,
             countQuery = """
@@ -123,8 +132,11 @@ interface KitchenPrintJpaRepository extends JpaRepository<OrderItemJpaEntity, UU
     /** O cabeçalho de um pedido deste restaurante, tenha ou não algo a imprimir. */
     @Query("""
             SELECT new br.com.cardapio.adapter.out.persistence.order.PrintJobRow(
-                       o.id, o.number, o.tableId, t.label, s.name, o.createdAt)
+                       o.id, o.number, o.tableId, t.label, s.name, o.createdAt,
+                       CASE WHEN tb.atCounter = true THEN tb.customerName ELSE NULL END,
+                       CASE WHEN tb.atCounter = true THEN tb.cardNumber ELSE NULL END)
               FROM OrderJpaEntity o
+              JOIN TabJpaEntity tb ON tb.id = o.tabId
               JOIN DiningTableJpaEntity t ON t.id = o.tableId
               JOIN SectorJpaEntity s ON s.id = t.sectorId
              WHERE o.id = :orderId AND o.establishmentId = :establishmentId

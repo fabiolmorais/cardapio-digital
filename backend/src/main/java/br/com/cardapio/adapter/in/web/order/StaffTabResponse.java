@@ -43,7 +43,11 @@ record StaffTabResponse(
         @Schema(description = "Juntada (MERGED): a comanda que continuou, com os pedidos desta")
         UUID mergedIntoTabId,
         @Schema(description = "A taxa de serviço: aberta, a que vale agora; fechada, a cobrada. Ausente sem taxa")
-        ServiceOfferResponse service
+        ServiceOfferResponse service,
+        @Schema(requiredMode = REQUIRED, description = "A comanda está no balcão (ADR 0015)") boolean atCounter,
+        @Schema(description = "Como a equipe chama o cliente do balcão (continua se a comanda foi para uma mesa)")
+        String customerName,
+        @Schema(description = "O número do cartão, se a casa usa") String cardNumber
 ) {
 
     @Schema(name = "TabMove")
@@ -91,6 +95,7 @@ record StaffTabResponse(
                         o.items().stream().map(TableOrderResponse.Item::from).toList())).toList(),
                 t.moves().stream().map(m -> new Move(m.fromTableLabel(), m.toTableLabel(), m.merged(),
                         m.movedByName(), m.movedAt())).toList(),
-                t.mergedInto() == null ? null : t.mergedInto().value(), ServiceOfferResponse.from(t.service()));
+                t.mergedInto() == null ? null : t.mergedInto().value(), ServiceOfferResponse.from(t.service()),
+                t.atCounter(), t.guest() == null ? null : t.guest().name(), t.guest() == null ? null : t.guest().card());
     }
 }

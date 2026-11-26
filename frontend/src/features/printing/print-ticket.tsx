@@ -33,8 +33,18 @@ export function PrintTicket({ ticket, restaurant }: { ticket: Ticket; restaurant
       {variant === "test" && <p className="text-center text-[15px] font-bold">{t.test}</p>}
       {variant === "reprint" && <p className="text-center text-[15px] font-bold">{t.reprint}</p>}
       {canceled && <p className="text-center text-[17px] font-bold">{t.canceled}</p>}
-      <p className="text-center text-[26px] font-bold">{t.table(job.tableLabel)}</p>
-      <p className="text-center">{job.sectorName}</p>
+      {job.counterName ? (
+        <>
+          <p className="text-center text-[26px] font-bold">{t.counter}</p>
+          <p className="text-center text-[17px] font-bold">{t.counterGuest(job.counterName, job.counterCard)}</p>
+          <p className="text-center">{job.tableLabel}</p>
+        </>
+      ) : (
+        <>
+          <p className="text-center text-[26px] font-bold">{t.table(job.tableLabel)}</p>
+          <p className="text-center">{job.sectorName}</p>
+        </>
+      )}
       <p className="text-center">{t.order(job.orderNumber, time.format(orderedAt))}</p>
       <hr className="my-1 border-t border-dashed border-black" />
       <ul className="flex flex-col gap-1.5">

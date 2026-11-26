@@ -33,6 +33,7 @@ import {
   fetchStaffOrderSheet,
   placeStaffOrder,
   type AlreadyOrderedItem,
+  type StaffOrderTarget,
 } from "./staff-order-api";
 
 const t = messages.panel.staffOrder;
@@ -81,17 +82,24 @@ function lineKey(productId: string, variantId: string | undefined, options: Line
 
 const isOnTheWay = (item: AlreadyOrderedItem) => ["PENDING", "PREPARING", "READY"].includes(item.status);
 
-export function StaffOrderScreen({ tableId }: { tableId: string }) {
+/**
+ * O lançamento pela equipe (ADR 0011): na comanda da mesa (`tableId`) ou, no balcão (ADR 0015), na
+ * comanda do cliente (`counterTabId`).
+ */
+export function StaffOrderScreen(props: { tableId: string } | { counterTabId: string }) {
   const { status } = useRequiredSession();
   if (status !== "authenticated") return <p className="px-4 py-6 text-muted-foreground sm:px-7">{t.loading}</p>;
-  return <Screen tableId={tableId} />;
+  const target: StaffOrderTarget =
+    "tableId" in props ? { kind: "table", id: props.tableId } : { kind: "counter", id: props.counterTabId };
+  return <Screen target={target} />;
 }
 
-function Screen({ tableId }: { tableId: string }) {
+function Screen({ target }: { target: StaffOrderTarget }) {
   const queryClient = useQueryClient();
+  const tableId = target.id;
   const sheet = useQuery({
     queryKey: ["staff-order", tableId],
-    queryFn: () => fetchStaffOrderSheet(tableId),
+    queryFn: () => fetchStaffOrderSheet(target),
     retry: false,
   });
   const menu = useQuery({ queryKey: ["staff-menu"], queryFn: fetchStaffMenu, retry: false });
@@ -111,7 +119,10 @@ function Screen({ tableId }: { tableId: string }) {
   );
 
   const back = (
-    <Link href="/painel/mesas" className={cn(buttonVariants({ variant: "ghost" }), "h-11 self-start")}>
+    <Link
+      href={target.kind === "table" ? "/painel/mesas" : `/painel/comandas/${target.id}`}
+      className={cn(buttonVariants({ variant: "ghost" }), "h-11 self-start")}
+    >
       <ArrowLeft aria-hidden />
       {t.back}
     </Link>
@@ -135,21 +146,24 @@ function Screen({ tableId }: { tableId: string }) {
       </div>
     );
   }
-  return <OrderForm tableId={tableId} sheet={sheet.data} menu={menu.data} back={back} />;
+  return <OrderForm target={target} sheet={sheet.data} menu={menu.data} back={back} />;
 }
 
 function OrderForm({
-  tableId,
+  target,
   sheet,
   menu,
   back,
 }: {
-  tableId: string;
+  target: StaffOrderTarget;
   sheet: Awaited<ReturnType<typeof fetchStaffOrderSheet>>;
   menu: Awaited<ReturnType<typeof fetchStaffMenu>>;
   back: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const tableId = target.id;
+  // No balcão: "Balcão · João" no lugar de "Mesa 04".
+  const place = sheet.counterName ? messages.panel.counter.label(sheet.tableLabel, sheet.counterName) : null;
   const [mode, setMode] = useState<Mode>("menu");
   const [carts, setCarts] = useState<Record<Mode, Line[]>>({ menu: [], round: [] });
   const [search, setSearch] = useState("");
@@ -231,7 +245,7 @@ function OrderForm({
   const mutation = useMutation({
     mutationFn: ({ items, confirmed }: { items: Line[]; confirmed: string[] }) => {
       requestId.current ??= newRequestId();
-      return placeStaffOrder(tableId, {
+      return placeStaffOrder(target, {
         clientRequestId: requestId.current,
         round,
         confirmedDuplicates: confirmed,
@@ -280,7 +294,7 @@ function OrderForm({
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 pt-4 sm:px-7">
       {back}
       <header className="flex flex-col gap-0.5">
-        <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{t.heading(sheet.tableLabel)}</h1>
+        <h1 className="text-[28px] leading-[34px] font-bold tracking-tight">{place ?? t.heading(sheet.tableLabel)}</h1>
         <p className="text-sm text-muted-foreground">{t.hint}</p>
       </header>
 
@@ -439,7 +453,7 @@ function OrderForm({
       <Dialog open={reviewing} onOpenChange={setReviewing}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t.reviewTitle(sheet.tableLabel)}</DialogTitle>
+            <DialogTitle>{place ? t.reviewCounterTitle(place) : t.reviewTitle(sheet.tableLabel)}</DialogTitle>
           </DialogHeader>
           <ul className="flex flex-col gap-3">
             {lines.map((line) => (

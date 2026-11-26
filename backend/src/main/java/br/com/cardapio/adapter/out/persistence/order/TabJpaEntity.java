@@ -53,6 +53,15 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     @Column(name = "service_cents")
     private Long serviceCents;
 
+    @Column(name = "at_counter", nullable = false)
+    private boolean atCounter;
+
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "card_number")
+    private String cardNumber;
+
     protected TabJpaEntity() {
     }
 
@@ -68,4 +77,7 @@ class TabJpaEntity extends EstablishmentScopedEntity {
     Boolean getServiceAccepted() { return serviceAccepted; }
     Long getServiceCustomCents() { return serviceCustomCents; }
     Long getServiceCents() { return serviceCents; }
+    boolean isAtCounter() { return atCounter; }
+    String getCustomerName() { return customerName; }
+    String getCardNumber() { return cardNumber; }
 }

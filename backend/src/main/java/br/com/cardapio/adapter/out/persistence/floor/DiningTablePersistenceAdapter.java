@@ -60,8 +60,10 @@ class DiningTablePersistenceAdapter implements DiningTablePort {
 
     @Override
     public Optional<PublicTableView> findActiveByToken(TableToken token) {
+        // O balcão não tem página pública (ADR 0015): o token dele nunca abre nada.
         return tables.findByPublicTokenAndActiveTrue(token.value())
                 .map(FloorPersistenceMapper::toDomain)
+                .filter(table -> !table.isCounter())
                 .flatMap(table -> tables.findActiveEstablishmentName(table.establishmentId().value())
                         .map(name -> new PublicTableView(table, name)));
     }

@@ -3,6 +3,7 @@ package br.com.cardapio.application.port.in.realtime;
 import br.com.cardapio.domain.call.event.CallChanged;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
+import br.com.cardapio.domain.order.event.CounterTabChanged;
 import br.com.cardapio.domain.order.event.TabMoved;
 import br.com.cardapio.domain.rating.event.LowRatingReceived;
 import br.com.cardapio.domain.rodizio.event.RodizioChanged;
@@ -47,6 +48,10 @@ public record LiveEvent(String name, Map<String, String> data) {
             case LowRatingReceived r -> Optional.of(new LiveEvent("rating", Map.of(
                     "ratingId", r.ratingId().value().toString(),
                     "tableId", r.tableId().value().toString())));
+            // Uma comanda do balcão abriu ou mudou de nome (ADR 0015): a lista do balcão busca de novo.
+            case CounterTabChanged c -> Optional.of(new LiveEvent("counter-tab", Map.of(
+                    "tabId", c.tabId().value().toString(),
+                    "tableId", c.tableId().value().toString())));
             // A mudança sai uma vez para cada mesa; para a equipe, basta a da mesa de origem.
             case TabMoved t when t.leftThisTable() -> Optional.of(new LiveEvent("tab-moved", Map.of(
                     "tabId", t.tabId().value().toString(),

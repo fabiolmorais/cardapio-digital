@@ -8,6 +8,7 @@ import br.com.cardapio.domain.call.model.CallType;
 import br.com.cardapio.domain.floor.model.DiningTableId;
 import br.com.cardapio.domain.order.event.OrderChanged;
 import br.com.cardapio.domain.order.event.TabClosed;
+import br.com.cardapio.domain.order.event.CounterTabChanged;
 import br.com.cardapio.domain.order.event.TabMoved;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderStatus;
@@ -70,6 +71,11 @@ class RealtimeMessages {
         static final String KIND = "TabMoved";
     }
 
+    record CounterTabChangedMessage(String kind, UUID establishmentId, UUID tableId, UUID tabId,
+                                    Instant occurredAt) {
+        static final String KIND = "CounterTabChanged";
+    }
+
     record LowRatingReceivedMessage(String kind, UUID establishmentId, UUID tableId, UUID ratingId, int stars,
                                     Instant occurredAt) {
         static final String KIND = "LowRatingReceived";
@@ -91,6 +97,8 @@ class RealtimeMessages {
             case TabMoved t -> new TabMovedMessage(TabMovedMessage.KIND, t.establishmentId().value(),
                     t.tableId().value(), t.fromTableId().value(), t.toTableId().value(), t.tabId().value(),
                     t.occurredAt());
+            case CounterTabChanged c -> new CounterTabChangedMessage(CounterTabChangedMessage.KIND,
+                    c.establishmentId().value(), c.tableId().value(), c.tabId().value(), c.occurredAt());
             case LowRatingReceived r -> new LowRatingReceivedMessage(LowRatingReceivedMessage.KIND,
                     r.establishmentId().value(), r.tableId().value(), r.ratingId().value(), r.stars(), r.occurredAt());
             default -> throw new IllegalArgumentException("Evento sem mensagem de tempo real: " + event.getClass());
@@ -133,6 +141,11 @@ class RealtimeMessages {
             PhoneBlockChangedMessage m = json.treeToValue(node, PhoneBlockChangedMessage.class);
             return new PhoneBlockChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
                     new TableSessionId(m.sessionId()), m.blocked(), m.occurredAt());
+        }
+        if (CounterTabChangedMessage.KIND.equals(kind)) {
+            CounterTabChangedMessage m = json.treeToValue(node, CounterTabChangedMessage.class);
+            return new CounterTabChanged(new EstablishmentId(m.establishmentId()), new DiningTableId(m.tableId()),
+                    new TabId(m.tabId()), m.occurredAt());
         }
         if (LowRatingReceivedMessage.KIND.equals(kind)) {
             LowRatingReceivedMessage m = json.treeToValue(node, LowRatingReceivedMessage.class);

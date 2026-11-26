@@ -58,7 +58,9 @@ public class TableDisplayService implements RenderTableDisplayUseCase, RenderSec
     @Override
     @Transactional(readOnly = true)
     public RenderedFile render(EstablishmentId establishmentId, DiningTableId tableId, DisplayFormat format) {
-        DiningTable table = tables.find(establishmentId, tableId).orElseThrow(TableNotFoundException::new);
+        // O balcão não tem QR Code (ADR 0015).
+        DiningTable table = tables.find(establishmentId, tableId).filter(t -> !t.isCounter())
+                .orElseThrow(TableNotFoundException::new);
         DisplayContent content = content(printedBrand(establishmentId, format == DisplayFormat.PDF), table);
         byte[] bytes = switch (format) {
             case PNG -> renderer.qrPng(content.url());
@@ -77,6 +79,7 @@ public class TableDisplayService implements RenderTableDisplayUseCase, RenderSec
         PrintedBrand brand = printedBrand(establishmentId, true);
         List<DisplayContent> displays = tables.findAll(establishmentId, sectorId, ALL_TABLES).content().stream()
                 .filter(DiningTable::active)
+                .filter(table -> !table.isCounter())
                 .map(table -> content(brand, table))
                 .toList();
         if (displays.isEmpty()) {

@@ -2,6 +2,7 @@ package br.com.cardapio.application.port.in.order;
 
 import br.com.cardapio.domain.menu.model.ItemChoices;
 import br.com.cardapio.application.port.out.order.PrintJobView;
+import br.com.cardapio.domain.order.model.CounterGuest;
 import br.com.cardapio.domain.order.model.OrderId;
 import br.com.cardapio.domain.order.model.OrderItemId;
 import br.com.cardapio.domain.order.model.TicketKind;
@@ -15,7 +16,7 @@ import java.util.List;
  * @param orderedAt quando o pedido chegou (o primeiro item)
  */
 public record PrintJob(OrderId orderId, TicketKind kind, int orderNumber, String tableLabel, String sectorName,
-                       Instant orderedAt, List<Line> items) {
+                       Instant orderedAt, List<Line> items, CounterGuest counter) {
 
     /**
      * Um item na comanda.
@@ -36,6 +37,7 @@ public record PrintJob(OrderId orderId, TicketKind kind, int orderNumber, String
         Instant orderedAt = view.items().stream().map(i -> i.createdAt()).min(Instant::compareTo).orElse(null);
         return new PrintJob(view.orderId(), kind, view.orderNumber(), view.tableLabel(), view.sectorName(), orderedAt,
                 view.items().stream().map(i -> new Line(i.id(), i.productName(), i.quantity(), i.note(), i.inRodizio(),
-                        kind == TicketKind.CANCELLATION ? i.cancelReason() : null, i.choices())).toList());
+                        kind == TicketKind.CANCELLATION ? i.cancelReason() : null, i.choices())).toList(),
+                view.counter());
     }
 }
